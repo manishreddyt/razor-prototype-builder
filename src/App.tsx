@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import PaymentLinks from "./pages/PaymentLinks";
 import PaymentPages from "./pages/PaymentPages";
+import CreatePaymentPage from "./pages/CreatePaymentPage";
+import PaymentPageEditor from "./pages/PaymentPageEditor";
 import Subscriptions from "./pages/Subscriptions";
 import WebsiteBuilder from "./pages/WebsiteBuilder";
 import Receipts from "./pages/Receipts";
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/payment-links" element={<PaymentLinks />} />
           <Route path="/payment-pages" element={<PaymentPages />} />
+          <Route path="/payment-pages/create" element={<CreatePaymentPage />} />
+          <Route path="/payment-pages/editor" element={<PaymentPageEditor />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/website-builder" element={<WebsiteBuilder />} />
           <Route path="/receipts" element={<Receipts />} />
