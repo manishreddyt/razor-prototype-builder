@@ -1,67 +1,85 @@
 import { useState } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, X, ExternalLink, CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
+import { Plus, Search, X, ExternalLink, CheckCircle2, Sparkles, ArrowRight, Eye, Copy, MoreHorizontal, BarChart3, Trash2, Pause, Play } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const existingPages = [
   {
-    title: "Annual Tuition Fee — A...",
+    id: "pp_001",
+    title: "Annual Tuition Fee — Academy",
     totalSales: "₹ 3,75,000.00",
     itemName: "Tuition Fee",
     itemPrice: "₹ 25,000.00",
     unitsSold: 15,
-    pageUrl: "https://rzp.io/rzp/dHVpdG...",
+    pageUrl: "https://rzp.io/rzp/tuition-fee",
     createdOn: "10 Feb 2026",
     status: "Active" as const,
+    views: 1240,
+    conversion: "12.1%",
   },
   {
-    title: "Annual Tech Conferen...",
+    id: "pp_002",
+    title: "Annual Tech Conference 2026",
     totalSales: "₹ 89,970.00",
     itemName: "Registration Fee",
     itemPrice: "₹ 2,999.00",
     unitsSold: 30,
-    pageUrl: "https://rzp.io/rzp/dGVjaC...",
+    pageUrl: "https://rzp.io/rzp/tech-conf",
     createdOn: "5 Feb 2026",
     status: "Active" as const,
+    views: 3420,
+    conversion: "8.8%",
   },
   {
-    title: "Summer Collection —",
+    id: "pp_003",
+    title: "Summer Collection — Fashion",
     totalSales: "₹ 0.00",
     itemName: "Product Price",
     itemPrice: "₹ 1,999.00",
     unitsSold: 0,
-    pageUrl: "https://rzp.io/rzp/c3VtbW...",
+    pageUrl: "https://rzp.io/rzp/summer-col",
     createdOn: "16 Feb 2026",
     status: "Disabled" as const,
+    views: 45,
+    conversion: "0%",
   },
   {
+    id: "pp_004",
     title: "Full Stack Dev Bootcamp",
     totalSales: "₹ 44,51,658.00",
     itemName: "Course Fee",
     itemPrice: "₹ 12,999.00",
     unitsSold: 342,
-    pageUrl: "https://rzp.io/rzp/ZnVsbF...",
+    pageUrl: "https://rzp.io/rzp/bootcamp",
     createdOn: "1 Jan 2026",
     status: "Active" as const,
+    views: 28500,
+    conversion: "15.2%",
   },
   {
+    id: "pp_005",
     title: "UI/UX Weekend Workshop",
     totalSales: "₹ 10,87,872.00",
     itemName: "Workshop Fee",
     itemPrice: "₹ 8,499.00",
     unitsSold: 128,
-    pageUrl: "https://rzp.io/rzp/dWkvdX...",
+    pageUrl: "https://rzp.io/rzp/uiux-ws",
     createdOn: "15 Jan 2026",
     status: "Active" as const,
+    views: 9800,
+    conversion: "13.1%",
   },
 ];
 
@@ -71,6 +89,7 @@ const PaymentPages = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [countFilter, setCountFilter] = useState("25");
   const [showBanner, setShowBanner] = useState(true);
+  const [selectedPage, setSelectedPage] = useState<typeof existingPages[0] | null>(null);
 
   const filtered = existingPages.filter((p) => {
     const matchTitle = p.title.toLowerCase().includes(searchTitle.toLowerCase());
@@ -78,35 +97,34 @@ const PaymentPages = () => {
     return matchTitle && matchStatus;
   });
 
+  const copyLink = (url: string) => {
+    navigator.clipboard.writeText(url);
+    toast.success("Link copied!");
+  };
+
   return (
     <DashboardLayout>
       <div className="animate-fade-in space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Payment Pages</h1>
-          </div>
+          <h1 className="text-2xl font-semibold text-foreground">Payment Pages</h1>
           <div className="flex items-center gap-3">
             <button className="text-sm text-primary hover:underline font-medium">Need help? Take a tour</button>
             <button className="text-sm text-primary hover:underline font-medium">Documentation</button>
             <Button onClick={() => navigate("/payment-pages/create")} className="gap-2">
-              <Plus className="h-4 w-4" />
-              Create Payment Page
+              <Plus className="h-4 w-4" /> Create Payment Page
             </Button>
           </div>
         </div>
 
-        {/* Smart AI Page Builder Banner */}
+        {/* Smart AI Banner */}
         {showBanner && (
           <div className="blade-card p-6 relative">
-            <button
-              onClick={() => setShowBanner(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-            >
+            <button onClick={() => setShowBanner(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
             <div className="flex gap-6">
-              <div className="w-32 h-24 rounded-md bg-[hsl(var(--primary)/0.15)] flex-shrink-0 flex items-center justify-center">
+              <div className="w-32 h-24 rounded-md bg-accent flex-shrink-0 flex items-center justify-center">
                 <Sparkles className="h-8 w-8 text-primary" />
               </div>
               <div className="flex-1">
@@ -116,25 +134,17 @@ const PaymentPages = () => {
                   <span className="blade-badge-new">New</span>
                 </div>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Build professional payment pages in minutes with AI assistance. Describe what you need and our AI builder creates a fully customized page — complete with forms, branding, and payment integration.
+                  Build professional payment pages in minutes with AI assistance. Describe what you need and our AI builder creates a fully customized page.
                 </p>
                 <div className="space-y-1.5 mb-4">
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    Category-specific templates for Education, Events & E-commerce
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    AI chat assistant to refine your page in real-time
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-foreground">
-                    <CheckCircle2 className="h-4 w-4 text-primary" />
-                    Click-to-edit text, drag-and-drop form fields
-                  </div>
+                  {["Category-specific templates for Education, Events & E-commerce", "AI chat assistant to refine your page in real-time", "Click-to-edit text, drag-and-drop form fields"].map((f) => (
+                    <div key={f} className="flex items-center gap-2 text-sm text-foreground">
+                      <CheckCircle2 className="h-4 w-4 text-primary" /> {f}
+                    </div>
+                  ))}
                 </div>
                 <Button onClick={() => navigate("/payment-pages/create")} className="gap-2">
-                  Try Smart Builder
-                  <ArrowRight className="h-4 w-4" />
+                  Try Smart Builder <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -145,19 +155,12 @@ const PaymentPages = () => {
         <div className="flex items-end gap-4">
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-foreground">Title</label>
-            <Input
-              placeholder="Search by title"
-              value={searchTitle}
-              onChange={(e) => setSearchTitle(e.target.value)}
-              className="w-48"
-            />
+            <Input placeholder="Search by title" value={searchTitle} onChange={(e) => setSearchTitle(e.target.value)} className="w-48" />
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-foreground">Status</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
@@ -168,9 +171,7 @@ const PaymentPages = () => {
           <div className="space-y-1.5">
             <label className="text-xs font-medium text-foreground">Count</label>
             <Select value={countFilter} onValueChange={setCountFilter}>
-              <SelectTrigger className="w-24">
-                <SelectValue />
-              </SelectTrigger>
+              <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
@@ -178,13 +179,8 @@ const PaymentPages = () => {
               </SelectContent>
             </Select>
           </div>
-          <Button className="gap-2">
-            <Search className="h-4 w-4" />
-            Search
-          </Button>
-          <Button variant="outline" onClick={() => { setSearchTitle(""); setStatusFilter("all"); }}>
-            Clear
-          </Button>
+          <Button className="gap-2"><Search className="h-4 w-4" /> Search</Button>
+          <Button variant="outline" onClick={() => { setSearchTitle(""); setStatusFilter("all"); }}>Clear</Button>
         </div>
 
         {/* Table */}
@@ -199,36 +195,60 @@ const PaymentPages = () => {
                 <th className="blade-table-header px-5 py-3 text-left">Page Url</th>
                 <th className="blade-table-header px-5 py-3 text-left">Created On</th>
                 <th className="blade-table-header px-5 py-3 text-left">Status</th>
+                <th className="blade-table-header px-5 py-3 text-left"></th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((p) => (
-                <tr key={p.title} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                <tr key={p.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
                   <td className="px-5 py-3">
-                    <span
-                      className="font-medium text-primary cursor-pointer hover:underline"
-                      onClick={() => navigate("/payment-pages/editor")}
-                    >
+                    <span className="font-medium text-primary cursor-pointer hover:underline" onClick={() => navigate(`/payment-pages/editor?title=${encodeURIComponent(p.title)}`)}>
                       {p.title}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-foreground">{p.totalSales}</td>
+                  <td className="px-5 py-3 text-foreground font-medium">{p.totalSales}</td>
                   <td className="px-5 py-3">
                     <div className="text-foreground">{p.itemName}</div>
                     <div className="text-muted-foreground text-xs">{p.itemPrice}</div>
                   </td>
                   <td className="px-5 py-3 text-foreground">{p.unitsSold}</td>
                   <td className="px-5 py-3">
-                    <a href="#" className="text-primary hover:underline text-xs flex items-center gap-1">
-                      {p.pageUrl}
-                      <ExternalLink className="h-3 w-3" />
-                    </a>
+                    <div className="flex items-center gap-1">
+                      <a href="#" className="text-primary hover:underline text-xs flex items-center gap-1">
+                        {p.pageUrl.substring(0, 28)}... <ExternalLink className="h-3 w-3" />
+                      </a>
+                      <button onClick={() => copyLink(p.pageUrl)} className="text-muted-foreground hover:text-primary">
+                        <Copy className="h-3 w-3" />
+                      </button>
+                    </div>
                   </td>
                   <td className="px-5 py-3 text-muted-foreground">{p.createdOn}</td>
                   <td className="px-5 py-3">
-                    <span className={p.status === "Active" ? "blade-badge-success" : "blade-badge-expired"}>
-                      {p.status}
-                    </span>
+                    <span className={p.status === "Active" ? "blade-badge-success" : "blade-badge-expired"}>{p.status}</span>
+                  </td>
+                  <td className="px-5 py-3">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button className="text-muted-foreground hover:text-foreground"><MoreHorizontal className="h-4 w-4" /></button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => navigate(`/payment-pages/editor?title=${encodeURIComponent(p.title)}`)}>
+                          <Eye className="h-4 w-4 mr-2" /> Edit Page
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setSelectedPage(p)}>
+                          <BarChart3 className="h-4 w-4 mr-2" /> View Analytics
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => copyLink(p.pageUrl)}>
+                          <Copy className="h-4 w-4 mr-2" /> Copy Link
+                        </DropdownMenuItem>
+                        <DropdownMenuItem>
+                          {p.status === "Active" ? <><Pause className="h-4 w-4 mr-2" /> Disable</> : <><Play className="h-4 w-4 mr-2" /> Enable</>}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </td>
                 </tr>
               ))}
@@ -239,6 +259,47 @@ const PaymentPages = () => {
           </div>
         </div>
       </div>
+
+      {/* Analytics Dialog */}
+      <Dialog open={!!selectedPage} onOpenChange={() => setSelectedPage(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>{selectedPage?.title} — Analytics</DialogTitle></DialogHeader>
+          {selectedPage && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: "Total Sales", value: selectedPage.totalSales },
+                  { label: "Units Sold", value: selectedPage.unitsSold.toString() },
+                  { label: "Page Views", value: selectedPage.views.toLocaleString() },
+                  { label: "Conversion Rate", value: selectedPage.conversion },
+                ].map((s) => (
+                  <div key={s.label} className="blade-stat">
+                    <p className="text-xs text-muted-foreground">{s.label}</p>
+                    <p className="text-lg font-semibold text-foreground mt-0.5">{s.value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="blade-card p-4">
+                <h4 className="text-sm font-semibold text-foreground mb-3">Sales Trend (Last 7 Days)</h4>
+                <div className="flex items-end gap-1 h-24">
+                  {[35, 52, 48, 72, 68, 85, 92].map((val, i) => (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full bg-primary/20 rounded-t" style={{ height: `${val}%` }}>
+                        <div className="w-full bg-primary rounded-t" style={{ height: `${Math.min(val + 10, 100)}%` }} />
+                      </div>
+                      <span className="text-[9px] text-muted-foreground">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i]}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => copyLink(selectedPage.pageUrl)}>Copy Link</Button>
+                <Button className="flex-1" onClick={() => { setSelectedPage(null); navigate(`/payment-pages/editor?title=${encodeURIComponent(selectedPage.title)}`); }}>Edit Page</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
