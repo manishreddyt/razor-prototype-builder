@@ -4,7 +4,6 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Plus, Settings, MoreHorizontal, Trash2, Copy, Globe, ExternalLink, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { templates } from "@/data/smartPageTemplates";
@@ -16,6 +15,8 @@ export interface SmartPageSite {
   type: string;
   category: string;
   url: string;
+  slug: string;
+  templateId: string;
   created: string;
   views: number;
   conversions: number;
@@ -26,16 +27,37 @@ export interface SmartPageSite {
 
 const STORAGE_KEY = "smart-pages-sites";
 
+// Migration: ensure old sites have slug/templateId
+const migrateSite = (s: any): SmartPageSite => {
+  if (!s.slug) {
+    const tpl = templates.find(t => t.title.toLowerCase() === s.type?.toLowerCase() || t.id === s.type);
+    s.templateId = tpl?.id || s.type || "";
+    s.slug = s.name?.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || `page-${s.id}`;
+    s.url = `/s/${s.slug}`;
+  }
+  if (!s.amount && s.amount !== 0) s.amount = 0;
+  if (!s.transactions && s.transactions !== 0) s.transactions = 0;
+  return s as SmartPageSite;
+};
+
 export const getStoredSites = (): SmartPageSite[] => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      const migrated = parsed.map(migrateSite);
+      // Persist migration
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+      return migrated;
+    }
   } catch {}
-  return [
-    { id: "sp_1", name: "Full Stack Bootcamp", type: "Single Online Course", category: "education", url: "https://rzp.io/s/bootcamp", created: "10 Feb 2026", views: 1240, conversions: 342, status: "Published", amount: 12999, transactions: 342 },
-    { id: "sp_2", name: "Creator Portfolio", type: "Personal Portfolio", category: "general", url: "https://rzp.io/s/portfolio", created: "1 Feb 2026", views: 3420, conversions: 89, status: "Published", amount: 0, transactions: 0 },
-    { id: "sp_3", name: "Weekend Workshop", type: "Webinar", category: "education", url: "https://rzp.io/s/workshop", created: "15 Jan 2026", views: 890, conversions: 156, status: "Published", amount: 1999, transactions: 156 },
+  const defaults: SmartPageSite[] = [
+    { id: "sp_1", name: "Full Stack Bootcamp", type: "Single Online Course", category: "education", slug: "full-stack-bootcamp", templateId: "single-course", url: "/s/full-stack-bootcamp", created: "10 Feb 2026", views: 1240, conversions: 342, status: "Published", amount: 12999, transactions: 342 },
+    { id: "sp_2", name: "Creator Portfolio", type: "Personal Portfolio", category: "general", slug: "creator-portfolio", templateId: "portfolio", url: "/s/creator-portfolio", created: "1 Feb 2026", views: 3420, conversions: 89, status: "Published", amount: 0, transactions: 0 },
+    { id: "sp_3", name: "Weekend Workshop", type: "Webinar", category: "education", slug: "weekend-workshop", templateId: "webinar", url: "/s/weekend-workshop", created: "15 Jan 2026", views: 890, conversions: 156, status: "Published", amount: 1999, transactions: 156 },
   ];
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
+  return defaults;
 };
 
 export const storeSites = (sites: SmartPageSite[]) => {
@@ -69,17 +91,23 @@ const WebsiteBuilder = () => {
   };
 
   const duplicateSite = (site: SmartPageSite) => {
-    const dup: SmartPageSite = { ...site, id: `sp_${Date.now()}`, name: `${site.name} (Copy)`, status: "Draft", url: "—", views: 0, conversions: 0, amount: 0, transactions: 0, created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) };
+    const newSlug = `${site.slug}-copy-${Date.now()}`;
+    const dup: SmartPageSite = { ...site, id: `sp_${Date.now()}`, name: `${site.name} (Copy)`, status: "Draft", slug: newSlug, url: `/s/${newSlug}`, views: 0, conversions: 0, amount: 0, transactions: 0, created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) };
     const updated = [dup, ...sites];
     setSites(updated);
     storeSites(updated);
     toast.success("Site duplicated as draft");
   };
 
-  const copyUrl = (url: string, e: React.MouseEvent) => {
+  const getFullUrl = (site: SmartPageSite) => {
+    return `${window.location.origin}${site.url}`;
+  };
+
+  const copyUrl = (site: SmartPageSite, e: React.MouseEvent) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(url);
-    setCopiedUrl(url);
+    const fullUrl = getFullUrl(site);
+    navigator.clipboard.writeText(fullUrl);
+    setCopiedUrl(site.id);
     toast.success("URL copied");
     setTimeout(() => setCopiedUrl(null), 2000);
   };
@@ -156,7 +184,7 @@ const WebsiteBuilder = () => {
               <tbody>
                 {filtered.map((site) => {
                   const tpl = templates.find(
-                    (t) => t.title.toLowerCase() === site.type.toLowerCase() || t.id === site.type
+                    (t) => t.id === site.templateId || t.title.toLowerCase() === site.type.toLowerCase()
                   );
                   return (
                     <tr
@@ -164,7 +192,6 @@ const WebsiteBuilder = () => {
                       className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer"
                       onClick={() => navigate(`/website-builder/${site.id}`)}
                     >
-                      {/* Thumbnail + Name */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="w-16 h-10 rounded-md border border-border overflow-hidden flex-shrink-0 bg-muted/30">
@@ -181,19 +208,25 @@ const WebsiteBuilder = () => {
                           <span className="font-medium text-foreground truncate max-w-[180px]">{site.name}</span>
                         </div>
                       </td>
-                      {/* Type */}
                       <td className="px-4 py-3 text-muted-foreground text-xs">{site.type}</td>
-                      {/* URL with copy */}
                       <td className="px-4 py-3">
-                        {site.url !== "—" ? (
-                          <div className="group/url flex items-center gap-1.5 max-w-[200px]">
-                            <span className="text-xs text-muted-foreground truncate">{site.url}</span>
+                        {site.status === "Published" ? (
+                          <div className="group/url flex items-center gap-1.5 max-w-[220px]">
+                            <a
+                              href={site.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-primary hover:underline truncate"
+                            >
+                              {site.url}
+                            </a>
                             <button
-                              onClick={(e) => copyUrl(site.url, e)}
+                              onClick={(e) => copyUrl(site, e)}
                               className="opacity-0 group-hover/url:opacity-100 transition-opacity p-0.5 rounded hover:bg-secondary flex-shrink-0"
                               title="Copy URL"
                             >
-                              {copiedUrl === site.url ? (
+                              {copiedUrl === site.id ? (
                                 <span className="text-[10px] text-primary font-medium">Copied!</span>
                               ) : (
                                 <Copy className="h-3 w-3 text-muted-foreground" />
@@ -204,21 +237,16 @@ const WebsiteBuilder = () => {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </td>
-                      {/* Status */}
                       <td className="px-4 py-3">
                         <span className={site.status === "Published" ? "blade-badge-paid" : "blade-badge-expired"}>{site.status}</span>
                       </td>
-                      {/* Amount */}
                       <td className="px-4 py-3 text-right font-medium text-foreground">
                         {site.amount ? `₹${site.amount.toLocaleString()}` : "—"}
                       </td>
-                      {/* Transactions */}
                       <td className="px-4 py-3 text-right text-foreground">
                         {site.transactions || 0}
                       </td>
-                      {/* Created */}
                       <td className="px-4 py-3 text-xs text-muted-foreground">{site.created}</td>
-                      {/* Actions */}
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <Button
@@ -239,6 +267,11 @@ const WebsiteBuilder = () => {
                               <DropdownMenuItem onClick={() => navigate(`/website-builder/editor?id=${site.id}`)}>
                                 <Settings className="h-4 w-4 mr-2" /> Edit
                               </DropdownMenuItem>
+                              {site.status === "Published" && (
+                                <DropdownMenuItem onClick={() => window.open(site.url, "_blank")}>
+                                  <ExternalLink className="h-4 w-4 mr-2" /> View Live
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem onClick={() => duplicateSite(site)}>
                                 <Copy className="h-4 w-4 mr-2" /> Duplicate
                               </DropdownMenuItem>

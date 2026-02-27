@@ -17,6 +17,8 @@ interface SitePreviewProps {
   onRemoveSection?: (id: string) => void;
   onMoveSection?: (index: number, dir: "up" | "down") => void;
   onAddSection?: (type: string) => void;
+  onCtaClick?: () => void;
+  onProductClick?: (index: number) => void;
 }
 
 // Inline editable text
@@ -101,7 +103,7 @@ const AddSectionDivider = ({ onAdd }: { onAdd: (type: string) => void }) => {
   );
 };
 
-export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection }: SitePreviewProps) => {
+export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection, onCtaClick, onProductClick }: SitePreviewProps) => {
   const templateId = template.id;
   const category = template.category;
   const Text = editable ? EditableText : ({ value, className, tag }: any) => <ReadOnlyText value={value} className={className} tag={tag} />;
@@ -139,7 +141,9 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
                 <InlineInput value={template.heroCta} onChange={(v) => onUpdateHero?.({ heroCta: v })} />
               </Button>
             ) : (
-              <Button size="lg" className="text-base px-8 py-6 rounded-xl shadow-lg shadow-primary/20">{template.heroCta}</Button>
+              <Button size="lg" className="text-base px-8 py-6 rounded-xl shadow-lg shadow-primary/20" onClick={() => onCtaClick?.()}>
+                {template.heroCta}
+              </Button>
             )}
             <Button variant="outline" size="lg" className="text-base px-8 py-6 rounded-xl">
               Learn More
@@ -197,7 +201,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
                   />
                 )}
                 <div className={editable ? "ring-0 hover:ring-1 hover:ring-primary/20 rounded-lg transition-shadow" : ""}>
-                  <SectionRenderer section={section} editable={editable} onUpdate={(data) => onUpdateSection?.(section.id, data)} templateId={templateId} category={category} />
+                  <SectionRenderer section={section} editable={editable} onUpdate={(data) => onUpdateSection?.(section.id, data)} templateId={templateId} category={category} onCtaClick={onCtaClick} onProductClick={onProductClick} />
                 </div>
               </div>
               {editable && onAddSection && <AddSectionDivider onAdd={onAddSection} />}
@@ -218,20 +222,20 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
 
 // ──────────────── Section Renderer ────────────────
 
-const SectionRenderer = ({ section, editable, onUpdate, templateId, category }: { section: SectionData; editable: boolean; onUpdate: (data: Record<string, any>) => void; templateId?: string; category?: string }) => {
+const SectionRenderer = ({ section, editable, onUpdate, templateId, category, onCtaClick, onProductClick }: { section: SectionData; editable: boolean; onUpdate: (data: Record<string, any>) => void; templateId?: string; category?: string; onCtaClick?: () => void; onProductClick?: (index: number) => void }) => {
   const { type, data } = section;
   switch (type) {
     case "about": return <AboutSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "services": return <CardsSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "features": return <CardsSection data={data} editable={editable} onUpdate={onUpdate} />;
-    case "pricing": return <PricingSection data={data} editable={editable} onUpdate={onUpdate} />;
+    case "pricing": return <PricingSection data={data} editable={editable} onUpdate={onUpdate} onCtaClick={onCtaClick} />;
     case "testimonials": return <TestimonialsSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "google-reviews": return <GoogleReviewsSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "faq": return <FaqSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "team": return <TeamSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "gallery": return <GallerySection data={data} />;
     case "stats": return <StatsSection data={data} editable={editable} onUpdate={onUpdate} />;
-    case "cta-banner": return <CtaBannerSection data={data} editable={editable} onUpdate={onUpdate} />;
+    case "cta-banner": return <CtaBannerSection data={data} editable={editable} onUpdate={onUpdate} onCtaClick={onCtaClick} />;
     case "contact-form": return <ContactFormSection data={data} />;
     case "curriculum": return <CurriculumSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "schedule": return <ScheduleSection data={data} editable={editable} onUpdate={onUpdate} />;
@@ -241,7 +245,7 @@ const SectionRenderer = ({ section, editable, onUpdate, templateId, category }: 
     case "portfolio": return <PortfolioSection data={data} />;
     case "impact": return <ImpactSection data={data} />;
     case "donation": return <DonationSection data={data} editable={editable} onUpdate={onUpdate} />;
-    case "products": return <ProductsSection data={data} editable={editable} onUpdate={onUpdate} templateId={templateId} category={category} />;
+    case "products": return <ProductsSection data={data} editable={editable} onUpdate={onUpdate} templateId={templateId} category={category} onProductClick={onProductClick} />;
     case "video-embed": return <VideoSection data={data} />;
     case "countdown": return <CountdownSection data={data} />;
     default: return null;
@@ -353,7 +357,7 @@ const CardsSection = ({ data, editable, onUpdate }: any) => {
   );
 };
 
-const PricingSection = ({ data, editable, onUpdate }: any) => (
+const PricingSection = ({ data, editable, onUpdate, onCtaClick }: any) => (
   <SectionWrapper>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
     <div className={`grid gap-6 ${data.tiers?.length === 2 ? "grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto" : "grid-cols-1 md:grid-cols-3"}`}>
@@ -386,7 +390,7 @@ const PricingSection = ({ data, editable, onUpdate }: any) => (
               </li>
             ))}
           </ul>
-          <Button variant={tier.highlighted ? "default" : "outline"} className={`w-full rounded-xl py-5 ${tier.highlighted ? "shadow-md shadow-primary/20" : ""}`}>
+          <Button variant={tier.highlighted ? "default" : "outline"} className={`w-full rounded-xl py-5 ${tier.highlighted ? "shadow-md shadow-primary/20" : ""}`} onClick={() => !editable && onCtaClick?.()}>
             Choose {tier.name}
           </Button>
         </div>
@@ -550,7 +554,7 @@ const StatsSection = ({ data, editable, onUpdate }: any) => (
   </div>
 );
 
-const CtaBannerSection = ({ data, editable, onUpdate }: any) => (
+const CtaBannerSection = ({ data, editable, onUpdate, onCtaClick }: any) => (
   <div className="relative overflow-hidden">
     <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70" />
     <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-primary-foreground/5 -translate-y-1/2 translate-x-1/2" />
@@ -568,7 +572,7 @@ const CtaBannerSection = ({ data, editable, onUpdate }: any) => (
         <>
           <h3 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-3">{data.heading}</h3>
           <p className="text-sm text-primary-foreground/80 mb-6">{data.text}</p>
-          <Button variant="secondary" size="lg" className="rounded-xl px-8 py-5 shadow-lg">{data.buttonText}</Button>
+          <Button variant="secondary" size="lg" className="rounded-xl px-8 py-5 shadow-lg" onClick={() => onCtaClick?.()}>{data.buttonText}</Button>
         </>
       )}
     </div>
@@ -788,7 +792,7 @@ const DonationSection = ({ data, editable, onUpdate }: any) => {
   );
 };
 
-const ProductsSection = ({ data, editable, onUpdate, templateId, category }: any) => {
+const ProductsSection = ({ data, editable, onUpdate, templateId, category, onProductClick }: any) => {
   const isEducation = category === "education";
   return (
     <SectionWrapper>
@@ -797,8 +801,8 @@ const ProductsSection = ({ data, editable, onUpdate, templateId, category }: any
         {data.items?.map((item: any, i: number) => (
           <div key={i} className="relative group/item rounded-2xl border border-border bg-background overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
             {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
-            {isEducation && !editable ? (
-              <a href={`/website-builder/product?template=${templateId}&product=${i}`} className="block">
+            {!editable ? (
+              <div className="cursor-pointer" onClick={() => onProductClick?.(i)}>
                 <div className="relative overflow-hidden">
                   <img src={item.image} alt={item.title} className="w-full h-44 object-cover group-hover/item:scale-110 transition-transform duration-500" />
                   {item.badge && <span className="absolute top-3 left-3 text-[10px] font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg">{item.badge}</span>}
@@ -806,9 +810,9 @@ const ProductsSection = ({ data, editable, onUpdate, templateId, category }: any
                 <div className="p-4">
                   <p className="text-sm font-semibold text-foreground">{item.title}</p>
                   <p className="text-lg font-bold text-primary mt-1">{item.price}</p>
-                  <Button size="sm" className="w-full mt-3 rounded-xl">View Details</Button>
+                  <Button size="sm" className="w-full mt-3 rounded-xl">{isEducation ? "View Details" : "Buy Now"}</Button>
                 </div>
-              </a>
+              </div>
             ) : (
               <>
                 <div className="relative overflow-hidden">
@@ -816,17 +820,8 @@ const ProductsSection = ({ data, editable, onUpdate, templateId, category }: any
                   {item.badge && <span className="absolute top-3 left-3 text-[10px] font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg">{item.badge}</span>}
                 </div>
                 <div className="p-4">
-                  {editable ? (
-                    <>
-                      <InlineInput value={item.title} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "title", v) })} className="text-sm font-semibold text-foreground block" />
-                      <InlineInput value={item.price} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "price", v) })} className="text-lg font-bold text-primary mt-1 block" />
-                    </>
-                  ) : (
-                    <>
-                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                      <p className="text-lg font-bold text-primary mt-1">{item.price}</p>
-                    </>
-                  )}
+                  <InlineInput value={item.title} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "title", v) })} className="text-sm font-semibold text-foreground block" />
+                  <InlineInput value={item.price} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "price", v) })} className="text-lg font-bold text-primary mt-1 block" />
                   <Button size="sm" className="w-full mt-3 rounded-xl">Add to Cart</Button>
                 </div>
               </>
