@@ -296,53 +296,245 @@ export const templates: TemplateData[] = [
   },
 
   // ─── Education ───
+
+  // 1. MULTI-COURSE PLATFORM — Course catalog marketplace style
   {
-    id: "multi-course", title: "Online Courses (Multi)", desc: "Course catalog with multiple offerings, categories, and enrollment.", category: "education", icon: BookOpen,
-    pages: ["Home", "Courses", "Course Detail", "Enroll", "About"],
+    id: "multi-course", title: "Online Courses (Multi)", desc: "Course marketplace with catalog, categories, and student dashboard.", category: "education", icon: BookOpen,
+    pages: ["Home", "Courses", "Instructors", "Pricing", "Blog"],
     heroTitle: "Learn Without Limits", heroTagline: "100+ courses by industry experts",
     heroDescription: "From programming to design, marketing to data science — master new skills with hands-on courses and expert mentors.",
     heroCta: "Browse Courses", bannerImage: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&h=300&fit=crop",
-    sections: [heroSection(), featuresSection([{ title: "Self-Paced Learning", desc: "Learn at your own speed with lifetime access.", icon: "🕐" }, { title: "Expert Instructors", desc: "Learn from industry practitioners.", icon: "👨‍🏫" }, { title: "Certificates", desc: "Earn recognized certificates on completion.", icon: "🏆" }]), productsSection([{ title: "Full Stack Web Dev", price: "₹4,999", image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=300&h=300&fit=crop", badge: "Best Seller" }, { title: "UI/UX Design", price: "₹3,999", image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&h=300&fit=crop", badge: "Popular" }, { title: "Data Science", price: "₹5,999", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=300&fit=crop", badge: "" }, { title: "Digital Marketing", price: "₹2,999", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=300&fit=crop", badge: "New" }]), statsSection([{ value: "100+", label: "Courses" }, { value: "15K+", label: "Students" }, { value: "50+", label: "Instructors" }, { value: "4.8★", label: "Rating" }]), testimonialsSection(), googleReviewsSection(), faqSection(), ctaBannerSection("Start Learning Today", "Join 15,000+ students already enrolled.", "Explore Courses"), newsletterSection()],
+    sections: [
+      heroSection(),
+      statsSection([{ value: "100+", label: "Courses" }, { value: "15K+", label: "Students" }, { value: "50+", label: "Instructors" }, { value: "4.8★", label: "Rating" }]),
+      productsSection([
+        { title: "Full Stack Web Dev", price: "₹4,999", image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=300&h=300&fit=crop", badge: "Best Seller" },
+        { title: "UI/UX Design Mastery", price: "₹3,999", image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&h=300&fit=crop", badge: "Popular" },
+        { title: "Data Science & ML", price: "₹5,999", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=300&fit=crop", badge: "" },
+        { title: "Digital Marketing", price: "₹2,999", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=300&fit=crop", badge: "New" },
+      ]),
+      featuresSection([
+        { title: "Self-Paced Learning", desc: "Learn at your own speed with lifetime access.", icon: "🕐" },
+        { title: "Expert Instructors", desc: "Learn from industry practitioners.", icon: "👨‍🏫" },
+        { title: "Certificates", desc: "Earn recognized certificates on completion.", icon: "🏆" },
+      ]),
+      teamSection([
+        { name: "Dr. Meera Shah", role: "Head of Curriculum", avatar: "MS", bio: "PhD Stanford. 20 years in EdTech." },
+        { name: "Arjun Reddy", role: "Lead Instructor", avatar: "AR", bio: "Ex-Google. Full stack expert." },
+        { name: "Priya Nair", role: "Student Success", avatar: "PN", bio: "Ensuring every student thrives." },
+      ]),
+      clientsSection(["Google", "Microsoft", "Amazon", "Flipkart", "Infosys", "TCS"]),
+      testimonialsSection(),
+      googleReviewsSection(),
+      ctaBannerSection("Start Learning Today", "Join 15,000+ students already enrolled.", "Explore Courses"),
+      newsletterSection(),
+    ],
   },
+
+  // 2. SINGLE COURSE — Deep-dive sales page with curriculum & social proof
   {
-    id: "single-course", title: "Single Online Course", desc: "Focused landing page for a single course with modules and pricing.", category: "education", icon: GraduationCap,
+    id: "single-course", title: "Single Online Course", desc: "High-converting sales page for one course with modules, instructor bio, and enrollment.", category: "education", icon: GraduationCap,
     pages: ["Home", "Curriculum", "Pricing", "Enroll", "FAQ"],
-    heroTitle: "Master Full Stack Development", heroTagline: "12-Week Intensive Bootcamp",
-    heroDescription: "Go from zero to job-ready full stack developer. Learn React, Node.js, databases, and deployment with real-world projects.",
+    heroTitle: "Master Full Stack Development", heroTagline: "12-Week Intensive Bootcamp • Next Batch: March 2026",
+    heroDescription: "Go from zero to job-ready full stack developer. Learn React, Node.js, databases, and deployment with real-world projects. 2000+ alumni placed.",
     heroCta: "Enroll Now — ₹12,999", bannerImage: "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=900&h=300&fit=crop",
-    sections: [heroSection(), videoEmbedSection(), curriculumSection(), pricingSection([{ name: "Self-Paced", price: "₹9,999", period: "", features: ["Video lectures", "Assignments", "Community access", "Certificate"], highlighted: false }, { name: "Mentored", price: "₹12,999", period: "", features: ["Everything in Self-Paced", "Weekly 1:1 mentoring", "Code reviews", "Job prep"], highlighted: true }, { name: "Premium", price: "₹19,999", period: "", features: ["Everything in Mentored", "Guaranteed internship", "Resume building", "Interview prep"], highlighted: false }]), statsSection([{ value: "2000+", label: "Graduates" }, { value: "92%", label: "Completion" }, { value: "85%", label: "Placed" }, { value: "4.9★", label: "Rating" }]), testimonialsSection([{ name: "Karthik M.", text: "Went from zero coding knowledge to landing a ₹8 LPA job in 6 months!", rating: 5, avatar: "KM" }, { name: "Divya R.", text: "The mentorship made all the difference. Best investment I've made.", rating: 5, avatar: "DR" }, { name: "Amit P.", text: "Real projects, real skills. Not just theory like other courses.", rating: 5, avatar: "AP" }]), googleReviewsSection(), faqSection([{ q: "Do I need prior coding experience?", a: "No! This course starts from absolute basics and builds up." }, { q: "How long do I have access?", a: "Lifetime access to all course materials and future updates." }, { q: "Is there a certificate?", a: "Yes, you'll receive a verified completion certificate." }, { q: "What if I fall behind?", a: "No worries — you can learn at your own pace with lifetime access." }]), ctaBannerSection("Limited Seats Available", "Next batch starts March 1, 2026. Don't miss out!", "Reserve Your Seat"), newsletterSection()],
+    sections: [
+      heroSection(),
+      videoEmbedSection(),
+      aboutSection("Meet Your Instructor", "I'm Karthik Rajan, ex-Amazon engineer with 10 years of full-stack experience. I've trained 2000+ developers and my students work at Google, Microsoft, Flipkart, and more. This course distills everything I know into 12 intensive weeks."),
+      curriculumSection([
+        { title: "Weeks 1-2: HTML, CSS & JavaScript Foundations", lessons: ["Semantic HTML", "Flexbox & Grid", "JavaScript ES6+", "DOM Manipulation"], duration: "20 hours" },
+        { title: "Weeks 3-5: React & Frontend Architecture", lessons: ["Components & Hooks", "State Management", "API Integration", "Testing with Jest"], duration: "30 hours" },
+        { title: "Weeks 6-8: Node.js, Express & Databases", lessons: ["REST APIs", "MongoDB & PostgreSQL", "Authentication", "File Uploads"], duration: "30 hours" },
+        { title: "Weeks 9-10: DevOps & Deployment", lessons: ["Docker Basics", "CI/CD Pipelines", "AWS/Vercel Deploy", "Monitoring"], duration: "20 hours" },
+        { title: "Weeks 11-12: Capstone Project & Career Prep", lessons: ["Full-Stack Project", "Code Review", "Resume Workshop", "Mock Interviews"], duration: "20 hours" },
+      ]),
+      statsSection([{ value: "2000+", label: "Graduates" }, { value: "92%", label: "Completion Rate" }, { value: "85%", label: "Placed in 6 Months" }, { value: "4.9★", label: "Rating" }]),
+      pricingSection([
+        { name: "Self-Paced", price: "₹9,999", period: "", features: ["Video lectures", "Assignments", "Community access", "Certificate"], highlighted: false },
+        { name: "Mentored", price: "₹12,999", period: "", features: ["Everything in Self-Paced", "Weekly 1:1 mentoring", "Code reviews", "Job prep"], highlighted: true },
+        { name: "Premium", price: "₹19,999", period: "", features: ["Everything in Mentored", "Guaranteed internship", "Resume building", "Interview prep"], highlighted: false },
+      ]),
+      testimonialsSection([
+        { name: "Karthik M.", text: "Went from zero coding knowledge to landing a ₹8 LPA job in 6 months!", rating: 5, avatar: "KM" },
+        { name: "Divya R.", text: "The mentorship made all the difference. Best investment I've made.", rating: 5, avatar: "DR" },
+        { name: "Amit P.", text: "Real projects, real skills. Not just theory like other courses.", rating: 5, avatar: "AP" },
+      ]),
+      googleReviewsSection(),
+      faqSection([
+        { q: "Do I need prior coding experience?", a: "No! This course starts from absolute basics and builds up." },
+        { q: "How long do I have access?", a: "Lifetime access to all course materials and future updates." },
+        { q: "Is there a certificate?", a: "Yes, you'll receive a verified completion certificate." },
+        { q: "What if I fall behind?", a: "No worries — you can learn at your own pace with lifetime access." },
+      ]),
+      ctaBannerSection("Limited Seats Available", "Next batch starts March 1, 2026. Don't miss out!", "Reserve Your Seat"),
+    ],
   },
+
+  // 3. WEBINAR — Urgency-driven registration page with countdown & speakers
   {
-    id: "webinar", title: "Webinar", desc: "Webinar registration page with speaker bio, agenda, and countdown.", category: "education", icon: Video,
+    id: "webinar", title: "Webinar", desc: "High-converting webinar registration page with countdown, speakers, and social proof.", category: "education", icon: Video,
     pages: ["Home", "Agenda", "Register"],
     heroTitle: "Free Masterclass: AI in 2026", heroTagline: "Live Webinar • March 15, 2026 • 7:00 PM IST",
-    heroDescription: "Discover how AI is transforming industries and learn practical skills to leverage it in your career. Limited spots available.",
+    heroDescription: "Discover how AI is transforming industries and learn practical skills to leverage it in your career. 5,000+ already registered.",
     heroCta: "Register for Free", bannerImage: "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=900&h=300&fit=crop",
-    sections: [heroSection(), countdownSection("2026-03-15T19:00:00"), speakersSection([{ name: "Dr. Kavita Nair", title: "AI Research Lead, Google", avatar: "KN", bio: "15+ years in machine learning and natural language processing." }, { name: "Raj Venkatesh", title: "CTO, TechStartup.io", avatar: "RV", bio: "Built AI products used by 10M+ users worldwide." }]), scheduleSection([{ time: "7:00 PM", title: "Welcome & Introduction", speaker: "" }, { time: "7:15 PM", title: "AI Landscape in 2026", speaker: "Dr. Kavita Nair" }, { time: "7:45 PM", title: "Building AI Products", speaker: "Raj Venkatesh" }, { time: "8:15 PM", title: "Live Demo & Q&A", speaker: "Both Speakers" }, { time: "8:45 PM", title: "Exclusive Offer & Wrap-up", speaker: "" }]), featuresSection([{ title: "100% Free", desc: "No hidden charges or upsells during the session.", icon: "🎁" }, { title: "Live Q&A", desc: "Get your questions answered in real-time.", icon: "💬" }, { title: "Recording Access", desc: "Can't attend live? Get the replay link.", icon: "📹" }]), testimonialsSection([{ name: "Neha K.", text: "Best free webinar I've attended. So much actionable content!", rating: 5, avatar: "NK" }, { name: "Siddharth J.", text: "Dr. Kavita's insights were mind-blowing. Must attend!", rating: 5, avatar: "SJ" }, { name: "Pooja R.", text: "Signed up for the full course after this webinar. Amazing!", rating: 5, avatar: "PR" }]), faqSection([{ q: "Is this really free?", a: "Yes, 100% free. No credit card required." }, { q: "Will I get a recording?", a: "Yes, all registered attendees get the replay within 24 hours." }, { q: "Do I need any prior knowledge?", a: "No, this is beginner-friendly with something for everyone." }]), contactFormSection(), googleReviewsSection()],
+    sections: [
+      heroSection(),
+      countdownSection("2026-03-15T19:00:00"),
+      statsSection([{ value: "5,000+", label: "Registered" }, { value: "2", label: "Expert Speakers" }, { value: "90 min", label: "Duration" }, { value: "FREE", label: "Cost" }]),
+      speakersSection([
+        { name: "Dr. Kavita Nair", title: "AI Research Lead, Google", avatar: "KN", bio: "15+ years in machine learning and natural language processing. Published 40+ papers." },
+        { name: "Raj Venkatesh", title: "CTO, TechStartup.io", avatar: "RV", bio: "Built AI products used by 10M+ users worldwide. Forbes 30 Under 30." },
+      ]),
+      scheduleSection([
+        { time: "7:00 PM", title: "Welcome & Introduction", speaker: "" },
+        { time: "7:15 PM", title: "The AI Landscape in 2026 — What's Changed", speaker: "Dr. Kavita Nair" },
+        { time: "7:45 PM", title: "Building Your First AI Product — Live Demo", speaker: "Raj Venkatesh" },
+        { time: "8:15 PM", title: "Career Opportunities in AI — Panel + Live Q&A", speaker: "Both Speakers" },
+        { time: "8:45 PM", title: "Exclusive Offer & Wrap-up", speaker: "" },
+      ]),
+      featuresSection([
+        { title: "100% Free", desc: "No hidden charges or upsells during the session.", icon: "🎁" },
+        { title: "Live Q&A", desc: "Get your questions answered in real-time.", icon: "💬" },
+        { title: "Recording Access", desc: "Can't attend live? Get the replay link.", icon: "📹" },
+      ]),
+      testimonialsSection([
+        { name: "Neha K.", text: "Best free webinar I've attended. So much actionable content!", rating: 5, avatar: "NK" },
+        { name: "Siddharth J.", text: "Dr. Kavita's insights were mind-blowing. Must attend!", rating: 5, avatar: "SJ" },
+        { name: "Pooja R.", text: "Signed up for the full course after this webinar. Amazing!", rating: 5, avatar: "PR" },
+      ]),
+      faqSection([
+        { q: "Is this really free?", a: "Yes, 100% free. No credit card required." },
+        { q: "Will I get a recording?", a: "Yes, all registered attendees get the replay within 24 hours." },
+        { q: "Do I need any prior knowledge?", a: "No, this is beginner-friendly with something for everyone." },
+      ]),
+      contactFormSection(),
+    ],
   },
+
+  // 4. 1:1 COACHING — Personal brand + booking focused
   {
-    id: "coaching", title: "1:1 Coaching", desc: "Book personal coaching sessions with calendar and pricing.", category: "education", icon: UserCheck,
-    pages: ["Home", "Services", "Book Session", "Testimonials", "Contact"],
-    heroTitle: "Transform Your Career", heroTagline: "Personal coaching with industry experts",
-    heroDescription: "Get personalized guidance, accountability, and proven strategies to accelerate your professional growth. Book your first session today.",
+    id: "coaching", title: "1:1 Coaching", desc: "Personal coaching page with booking, coach bio, and transformation stories.", category: "education", icon: UserCheck,
+    pages: ["Home", "About", "Book Session", "Results", "Contact"],
+    heroTitle: "Unlock Your Full Potential", heroTagline: "Personalized coaching for ambitious professionals",
+    heroDescription: "Get clarity, accountability, and proven strategies from a certified coach who's helped 200+ professionals land dream roles at top companies.",
     heroCta: "Book a Free Discovery Call", bannerImage: "https://images.unsplash.com/photo-1552581234-26160f608093?w=900&h=300&fit=crop",
-    sections: [heroSection(), aboutSection("Your Coach", "I'm a certified executive coach with 12+ years of experience helping professionals land dream roles at top companies. 200+ successful career transitions guided."), servicesSection([{ title: "Career Coaching", desc: "Strategic career planning and transition support.", icon: "🎯" }, { title: "Interview Prep", desc: "Mock interviews with detailed feedback.", icon: "🗣️" }, { title: "Resume Review", desc: "ATS-optimized resume and LinkedIn makeover.", icon: "📄" }, { title: "Leadership Coaching", desc: "Executive presence and management skills.", icon: "👔" }]), pricingSection([{ name: "Single Session", price: "₹2,999", period: "", features: ["60-min video call", "Personalized advice", "Follow-up email", "Resource list"], highlighted: false }, { name: "4 Sessions", price: "₹9,999", period: "", features: ["4 × 60-min calls", "WhatsApp support", "Resume review", "Mock interview"], highlighted: true }, { name: "12 Sessions", price: "₹24,999", period: "", features: ["12 × 60-min calls", "Priority scheduling", "Unlimited chat", "Career roadmap", "Guarantee"], highlighted: false }]), statsSection([{ value: "200+", label: "Careers Transformed" }, { value: "95%", label: "Got Offers" }, { value: "3x", label: "Avg Salary Jump" }, { value: "4.9★", label: "Rating" }]), testimonialsSection([{ name: "Ravi K.", text: "Went from stuck mid-level to VP in 8 months. Life-changing coaching!", rating: 5, avatar: "RK" }, { name: "Preethi S.", text: "Her interview prep is unmatched. Got offers from 3 FAANG companies.", rating: 5, avatar: "PS" }, { name: "Manish G.", text: "The career roadmap gave me clarity I'd been missing for years.", rating: 5, avatar: "MG" }]), googleReviewsSection(), faqSection([{ q: "How do sessions work?", a: "All sessions are via Google Meet/Zoom. Flexible scheduling." }, { q: "What's the cancellation policy?", a: "Free rescheduling up to 24 hours before. No cancellation fees." }, { q: "Do you offer group coaching?", a: "Yes, corporate and group packages available. Contact for details." }]), contactFormSection(), newsletterSection()],
+    sections: [
+      heroSection(),
+      aboutSection("Hi, I'm Nandini 👋", "I'm a certified executive coach (ICF-PCC) with 12+ years of corporate experience at McKinsey and Google. After my own career transformation, I've dedicated myself to helping others navigate career transitions, leadership challenges, and professional growth. 200+ careers transformed and counting."),
+      servicesSection([
+        { title: "Career Transition", desc: "Navigate job changes with confidence and strategy.", icon: "🚀" },
+        { title: "Interview Mastery", desc: "Ace any interview with mock sessions and feedback.", icon: "🗣️" },
+        { title: "Executive Presence", desc: "Build leadership skills and boardroom confidence.", icon: "👔" },
+        { title: "Work-Life Design", desc: "Create sustainable success without burnout.", icon: "⚖️" },
+      ]),
+      statsSection([{ value: "200+", label: "Careers Transformed" }, { value: "95%", label: "Got Offers" }, { value: "3x", label: "Avg Salary Jump" }, { value: "4.9★", label: "Rating" }]),
+      pricingSection([
+        { name: "Discovery Call", price: "Free", period: "", features: ["30-min video call", "Goal assessment", "Personalized plan", "No commitment"], highlighted: false },
+        { name: "Growth Package", price: "₹9,999", period: "/4 sessions", features: ["4 × 60-min calls", "WhatsApp support", "Resume review", "Mock interview"], highlighted: true },
+        { name: "Transformation", price: "₹24,999", period: "/12 sessions", features: ["12 × 60-min calls", "Priority scheduling", "Unlimited chat", "Career roadmap", "Placement guarantee"], highlighted: false },
+      ]),
+      testimonialsSection([
+        { name: "Ravi K.", text: "Went from stuck mid-level manager to VP in 8 months. Nandini's coaching is life-changing!", rating: 5, avatar: "RK" },
+        { name: "Preethi S.", text: "Her interview prep is unmatched. Got offers from 3 FAANG companies and negotiated 40% higher.", rating: 5, avatar: "PS" },
+        { name: "Manish G.", text: "The career roadmap gave me clarity I'd been missing for years. Worth every rupee.", rating: 5, avatar: "MG" },
+      ]),
+      googleReviewsSection(),
+      faqSection([
+        { q: "How do sessions work?", a: "All sessions are via Zoom with flexible scheduling. I work across time zones." },
+        { q: "What's the cancellation policy?", a: "Free rescheduling up to 24 hours before. No cancellation fees." },
+        { q: "Is this for experienced professionals only?", a: "No — I work with early-career, mid-level, and senior professionals." },
+      ]),
+      contactFormSection(),
+    ],
   },
+
+  // 5. WORKSHOP SERIES — Event-catalog style with schedules
   {
-    id: "workshop", title: "Workshop Series", desc: "Multi-session workshops with schedules and pricing tiers.", category: "education", icon: Calendar,
+    id: "workshop", title: "Workshop Series", desc: "Multi-session hands-on workshops with schedules, batches, and enrollment.", category: "education", icon: Calendar,
     pages: ["Home", "Workshops", "Schedule", "Enroll"],
-    heroTitle: "Hands-on Workshops", heroTagline: "Learn by doing — weekend batches available",
-    heroDescription: "Intensive, project-based workshops designed for professionals. Small batches, expert mentors, real-world projects.",
+    heroTitle: "Weekend Workshops", heroTagline: "Hands-on learning • Small batches • Real projects",
+    heroDescription: "Intensive, project-based workshops by industry practitioners. Max 20 per batch for personalized attention.",
     heroCta: "View Upcoming Workshops", bannerImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=900&h=300&fit=crop",
-    sections: [heroSection(), productsSection([{ title: "React Masterclass", price: "₹3,999", image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=300&fit=crop", badge: "Weekend" }, { title: "Python for Data", price: "₹2,999", image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=300&h=300&fit=crop", badge: "Next Batch" }, { title: "Figma Design", price: "₹1,999", image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&h=300&fit=crop", badge: "" }, { title: "DevOps & Cloud", price: "₹4,999", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop", badge: "Advanced" }]), featuresSection([{ title: "Small Batches", desc: "Max 20 participants for focused learning.", icon: "👥" }, { title: "Project-Based", desc: "Build real projects, not just exercises.", icon: "🔨" }, { title: "Certificate", desc: "Industry-recognized completion certificate.", icon: "📜" }]), scheduleSection([{ time: "Sat 10 AM", title: "React Masterclass — Batch 5", speaker: "Starts Mar 8" }, { time: "Sun 11 AM", title: "Python for Data — Batch 3", speaker: "Starts Mar 9" }, { time: "Sat 2 PM", title: "Figma Design — Batch 2", speaker: "Starts Mar 15" }]), statsSection([{ value: "100+", label: "Workshops Done" }, { value: "2000+", label: "Graduates" }, { value: "4.8★", label: "Avg Rating" }, { value: "20", label: "Max Batch Size" }]), testimonialsSection(), googleReviewsSection(), faqSection(), ctaBannerSection("Next Batch Starting Soon", "Limited seats available. Reserve yours today.", "Enroll Now"), newsletterSection()],
+    sections: [
+      heroSection(),
+      productsSection([
+        { title: "React Masterclass", price: "₹3,999", image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=300&fit=crop", badge: "This Weekend" },
+        { title: "Python for Data Science", price: "₹2,999", image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=300&h=300&fit=crop", badge: "Mar 9" },
+        { title: "Figma to Production", price: "₹1,999", image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&h=300&fit=crop", badge: "Mar 15" },
+        { title: "DevOps & AWS", price: "₹4,999", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop", badge: "Advanced" },
+      ]),
+      scheduleSection([
+        { time: "Sat 10 AM", title: "React Masterclass — Batch 5", speaker: "Starts Mar 8" },
+        { time: "Sun 11 AM", title: "Python for Data Science — Batch 3", speaker: "Starts Mar 9" },
+        { time: "Sat 2 PM", title: "Figma to Production — Batch 2", speaker: "Starts Mar 15" },
+        { time: "Sat 10 AM", title: "DevOps & AWS — Batch 1", speaker: "Starts Mar 22" },
+      ]),
+      featuresSection([
+        { title: "Max 20 Per Batch", desc: "Small groups for focused, interactive learning.", icon: "👥" },
+        { title: "Build Real Projects", desc: "Take home a portfolio-worthy project each weekend.", icon: "🔨" },
+        { title: "Certificate Included", desc: "Industry-recognized completion certificate.", icon: "📜" },
+        { title: "Replay Access", desc: "Missed a session? Watch the recording anytime.", icon: "🔄" },
+      ]),
+      statsSection([{ value: "100+", label: "Workshops Completed" }, { value: "2000+", label: "Graduates" }, { value: "4.8★", label: "Avg Rating" }, { value: "20", label: "Max Batch Size" }]),
+      testimonialsSection([
+        { name: "Sneha T.", text: "Built a full React app in one weekend. The pace was perfect!", rating: 5, avatar: "ST" },
+        { name: "Vikram P.", text: "Small batch = lots of personal attention. Way better than video courses.", rating: 5, avatar: "VP" },
+        { name: "Anita M.", text: "The instructor answered every single question. Incredible experience.", rating: 4, avatar: "AM" },
+      ]),
+      googleReviewsSection(),
+      faqSection([
+        { q: "Do I need a laptop?", a: "Yes, please bring your own laptop with the software pre-installed (setup guide provided)." },
+        { q: "What if I can't attend one session?", a: "You get recording access and can attend the next batch for free." },
+        { q: "Are there group discounts?", a: "Yes! Teams of 3+ get 15% off. Contact us for corporate rates." },
+      ]),
+      ctaBannerSection("Next Batch Starting Soon", "Limited to 20 seats per workshop. Reserve yours today.", "Enroll Now"),
+    ],
   },
+
+  // 6. MEMBERSHIP / COMMUNITY — Exclusive community with gated content
   {
-    id: "membership", title: "Membership / Community", desc: "Gated community with membership tiers and content access.", category: "education", icon: Users,
-    pages: ["Home", "Plans", "Content", "Join"],
-    heroTitle: "Join the Inner Circle", heroTagline: "Exclusive community for ambitious professionals",
-    heroDescription: "Weekly masterclasses, curated resources, peer network, and direct access to mentors. Your growth community awaits.",
+    id: "membership", title: "Membership / Community", desc: "Exclusive gated community with membership tiers, content library, and networking.", category: "education", icon: Users,
+    pages: ["Home", "What You Get", "Plans", "Join"],
+    heroTitle: "The Inner Circle", heroTagline: "An exclusive community for ambitious builders",
+    heroDescription: "Weekly masterclasses, curated resources, peer accountability, and direct mentor access. Your growth tribe awaits.",
     heroCta: "Join the Community", bannerImage: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&h=300&fit=crop",
-    sections: [heroSection(), featuresSection([{ title: "Weekly Masterclasses", desc: "Live sessions with industry leaders every week.", icon: "🎓" }, { title: "Resource Library", desc: "500+ curated templates, guides, and tools.", icon: "📚" }, { title: "Peer Network", desc: "Connect with 1000+ ambitious professionals.", icon: "🤝" }, { title: "Mentor Access", desc: "Monthly 1:1 with experienced mentors.", icon: "💎" }]), pricingSection([{ name: "Free", price: "₹0", period: "/mo", features: ["Community access", "Monthly newsletter", "Public events"], highlighted: false }, { name: "Pro", price: "₹999", period: "/mo", features: ["Everything in Free", "Weekly masterclasses", "Resource library", "Private channels"], highlighted: true }, { name: "VIP", price: "₹2,999", period: "/mo", features: ["Everything in Pro", "Monthly 1:1 mentoring", "Priority support", "Exclusive retreats"], highlighted: false }]), statsSection([{ value: "1000+", label: "Members" }, { value: "200+", label: "Resources" }, { value: "50+", label: "Masterclasses" }, { value: "98%", label: "Retention" }]), testimonialsSection(), googleReviewsSection(), faqSection(), ctaBannerSection(), newsletterSection()],
+    sections: [
+      heroSection(),
+      featuresSection([
+        { title: "Weekly Live Sessions", desc: "Masterclasses with industry leaders every Thursday.", icon: "🎓" },
+        { title: "Resource Vault", desc: "500+ templates, playbooks, guides, and tools.", icon: "📚" },
+        { title: "Private Network", desc: "Connect with 1000+ ambitious professionals on Slack.", icon: "🤝" },
+        { title: "Mentor Office Hours", desc: "Monthly 1:1 with experienced mentors.", icon: "💎" },
+      ]),
+      gallerySection([
+        "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=400&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&h=300&fit=crop",
+        "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=400&h=300&fit=crop",
+      ]),
+      pricingSection([
+        { name: "Free", price: "₹0", period: "/mo", features: ["Community access", "Monthly newsletter", "Public events", "Job board"], highlighted: false },
+        { name: "Pro", price: "₹999", period: "/mo", features: ["Everything in Free", "Weekly masterclasses", "Resource vault", "Private Slack channels", "Event recordings"], highlighted: true },
+        { name: "VIP", price: "₹2,999", period: "/mo", features: ["Everything in Pro", "Monthly 1:1 mentoring", "Priority support", "Annual retreat invite", "Co-working passes"], highlighted: false },
+      ]),
+      statsSection([{ value: "1,000+", label: "Active Members" }, { value: "200+", label: "Resources" }, { value: "50+", label: "Masterclasses" }, { value: "98%", label: "Retention Rate" }]),
+      testimonialsSection([
+        { name: "Aditya S.", text: "The network alone is worth 10x the membership. Found my co-founder here!", rating: 5, avatar: "AS" },
+        { name: "Kavya M.", text: "Weekly masterclasses are gold. Better than any MBA elective I've taken.", rating: 5, avatar: "KM" },
+        { name: "Rohan D.", text: "The accountability groups keep me on track. Best professional investment.", rating: 5, avatar: "RD" },
+      ]),
+      googleReviewsSection(),
+      faqSection([
+        { q: "Can I cancel anytime?", a: "Yes, cancel anytime with one click. No lock-in or hidden fees." },
+        { q: "How active is the community?", a: "Very! We have 50+ messages daily and weekly events with 100+ attendees." },
+        { q: "Is this for beginners?", a: "We have members at all levels. The community is organized into interest-based channels." },
+      ]),
+      ctaBannerSection("Start Your Free Membership", "Join 1,000+ members. Upgrade to Pro anytime.", "Join Free"),
+      newsletterSection(),
+    ],
   },
 
   // ─── Services ───
