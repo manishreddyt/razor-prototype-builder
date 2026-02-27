@@ -18,11 +18,9 @@ const FloatingOrb = ({ className }: { className: string }) => (
 
 // Suggestion chips
 const promptSuggestions = [
-  "Online yoga studio with class schedules & pricing",
-  "SaaS product landing page with features & testimonials",
-  "Photography portfolio with gallery & booking",
-  "E-commerce store for handmade jewelry",
-  "Coaching business with 1:1 session booking",
+  "Online yoga classes with 3 months, 6 months, yearly plans",
+  "1:1 coaching session for new parents",
+  "Study in US/Canada - Education consulting services",
 ];
 
 // Scaled-down live preview thumbnail
