@@ -172,11 +172,8 @@ const WebsiteBuilder = () => {
               <thead>
                 <tr className="border-b border-border bg-secondary/50">
                   <th className="blade-table-header px-4 py-3 text-left">Page</th>
-                  <th className="blade-table-header px-4 py-3 text-left">Type</th>
                   <th className="blade-table-header px-4 py-3 text-left">URL</th>
                   <th className="blade-table-header px-4 py-3 text-left">Status</th>
-                  <th className="blade-table-header px-4 py-3 text-right">Amount</th>
-                  <th className="blade-table-header px-4 py-3 text-right">Transactions</th>
                   <th className="blade-table-header px-4 py-3 text-left">Created</th>
                   <th className="blade-table-header px-4 py-3 text-right">Actions</th>
                 </tr>
@@ -194,10 +191,20 @@ const WebsiteBuilder = () => {
                     >
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <div className="w-16 h-10 rounded-md border border-border overflow-hidden flex-shrink-0 bg-muted/30">
+                          <div className="w-16 h-10 rounded-md border border-border overflow-hidden flex-shrink-0 bg-muted/30 relative">
                             {tpl ? (
-                              <div className="origin-top-left relative" style={{ width: 1200, height: 800, transform: "scale(0.0133)", transformOrigin: "top left" }}>
-                                <SitePreview template={tpl} sections={tpl.sections} />
+                              <div className="absolute inset-0 overflow-hidden">
+                                <div
+                                  style={{
+                                    width: 1200,
+                                    height: 800,
+                                    transform: "scale(0.0133)",
+                                    transformOrigin: "top left",
+                                    pointerEvents: "none",
+                                  }}
+                                >
+                                  <SitePreview template={tpl} sections={tpl.sections} />
+                                </div>
                               </div>
                             ) : (
                               <div className="w-full h-full flex items-center justify-center">
@@ -205,10 +212,19 @@ const WebsiteBuilder = () => {
                               </div>
                             )}
                           </div>
-                          <span className="font-medium text-foreground truncate max-w-[180px]">{site.name}</span>
+                          <div className="min-w-0">
+                            <span className="font-medium text-foreground truncate block max-w-[180px]">{site.name}</span>
+                            <div className="flex items-center gap-3 mt-0.5">
+                              <span className="text-[11px] text-muted-foreground">
+                                {site.amount ? `₹${site.amount.toLocaleString()}` : "₹0"}
+                              </span>
+                              <span className="text-[11px] text-muted-foreground">
+                                {site.transactions || 0} txns
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted-foreground text-xs">{site.type}</td>
                       <td className="px-4 py-3">
                         {site.status === "Published" ? (
                           <div className="group/url flex items-center gap-1.5 max-w-[220px]">
@@ -239,12 +255,6 @@ const WebsiteBuilder = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span className={site.status === "Published" ? "blade-badge-paid" : "blade-badge-expired"}>{site.status}</span>
-                      </td>
-                      <td className="px-4 py-3 text-right font-medium text-foreground">
-                        {site.amount ? `₹${site.amount.toLocaleString()}` : "—"}
-                      </td>
-                      <td className="px-4 py-3 text-right text-foreground">
-                        {site.transactions || 0}
                       </td>
                       <td className="px-4 py-3 text-xs text-muted-foreground">{site.created}</td>
                       <td className="px-4 py-3 text-right">
