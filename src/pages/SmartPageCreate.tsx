@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft, Sparkles, Search, ArrowRight, Eye, Monitor, Smartphone,
   Globe, Palette, Zap, Layout, Send,
@@ -8,7 +8,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { categories, templates, type TemplateData } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
 
@@ -65,8 +64,9 @@ const SmartPageCreate = () => {
   };
 
   return (
-    <DashboardLayout>
-      <div className="animate-fade-in">
+    <div className="h-screen flex flex-col bg-background overflow-hidden">
+      <ScrollArea className="flex-1">
+      <div className="animate-fade-in max-w-6xl mx-auto px-6 py-6">
         {/* Back button */}
         <div className="mb-4">
           <Button variant="outline" size="sm" onClick={() => navigate("/website-builder")} className="gap-2">
@@ -264,7 +264,8 @@ const SmartPageCreate = () => {
           </ScrollArea>
         </DialogContent>
       </Dialog>
-    </DashboardLayout>
+      </ScrollArea>
+    </div>
   );
 };
 
