@@ -243,6 +243,9 @@ const SmartPageEditor = () => {
               editable
               onUpdateHero={(updates) => updateTemplate(updates)}
               onUpdateSection={(id, data) => updateSectionData(id, data)}
+              onRemoveSection={removeSection}
+              onMoveSection={moveSection}
+              onAddSection={addSection}
             />
           </div>
         </ScrollArea>
