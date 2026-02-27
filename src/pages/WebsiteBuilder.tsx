@@ -1,7 +1,7 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Plus, ExternalLink, Eye, Settings, MoreHorizontal, BarChart3, Trash2, Copy, Globe } from "lucide-react";
+import { Plus, Settings, MoreHorizontal, Trash2, Copy, Globe, ExternalLink, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,9 +20,10 @@ export interface SmartPageSite {
   views: number;
   conversions: number;
   status: "Published" | "Draft";
+  amount?: number;
+  transactions?: number;
 }
 
-// Shared state via localStorage for demo persistence
 const STORAGE_KEY = "smart-pages-sites";
 
 export const getStoredSites = (): SmartPageSite[] => {
@@ -31,9 +32,9 @@ export const getStoredSites = (): SmartPageSite[] => {
     if (stored) return JSON.parse(stored);
   } catch {}
   return [
-    { id: "sp_1", name: "Full Stack Bootcamp", type: "Single Online Course", category: "education", url: "https://rzp.io/s/bootcamp", created: "10 Feb 2026", views: 1240, conversions: 342, status: "Published" },
-    { id: "sp_2", name: "Creator Portfolio", type: "Personal Portfolio", category: "general", url: "https://rzp.io/s/portfolio", created: "1 Feb 2026", views: 3420, conversions: 89, status: "Published" },
-    { id: "sp_3", name: "Weekend Workshop", type: "Webinar", category: "education", url: "https://rzp.io/s/workshop", created: "15 Jan 2026", views: 890, conversions: 156, status: "Published" },
+    { id: "sp_1", name: "Full Stack Bootcamp", type: "Single Online Course", category: "education", url: "https://rzp.io/s/bootcamp", created: "10 Feb 2026", views: 1240, conversions: 342, status: "Published", amount: 12999, transactions: 342 },
+    { id: "sp_2", name: "Creator Portfolio", type: "Personal Portfolio", category: "general", url: "https://rzp.io/s/portfolio", created: "1 Feb 2026", views: 3420, conversions: 89, status: "Published", amount: 0, transactions: 0 },
+    { id: "sp_3", name: "Weekend Workshop", type: "Webinar", category: "education", url: "https://rzp.io/s/workshop", created: "15 Jan 2026", views: 890, conversions: 156, status: "Published", amount: 1999, transactions: 156 },
   ];
 };
 
@@ -47,17 +48,12 @@ export const addSite = (site: SmartPageSite) => {
   storeSites(sites);
 };
 
-const statusClass: Record<string, string> = {
-  Published: "blade-badge-paid",
-  Draft: "blade-badge-expired",
-};
-
 const WebsiteBuilder = () => {
   const navigate = useNavigate();
   const [sites, setSites] = useState<SmartPageSite[]>(getStoredSites());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "Published" | "Draft">("all");
-  const [analyticsDialog, setAnalyticsDialog] = useState<SmartPageSite | null>(null);
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
 
   const filtered = sites.filter((s) => {
     const matchSearch = !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.type.toLowerCase().includes(searchQuery.toLowerCase());
@@ -73,12 +69,23 @@ const WebsiteBuilder = () => {
   };
 
   const duplicateSite = (site: SmartPageSite) => {
-    const dup: SmartPageSite = { ...site, id: `sp_${Date.now()}`, name: `${site.name} (Copy)`, status: "Draft", url: "—", views: 0, conversions: 0, created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) };
+    const dup: SmartPageSite = { ...site, id: `sp_${Date.now()}`, name: `${site.name} (Copy)`, status: "Draft", url: "—", views: 0, conversions: 0, amount: 0, transactions: 0, created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) };
     const updated = [dup, ...sites];
     setSites(updated);
     storeSites(updated);
     toast.success("Site duplicated as draft");
   };
+
+  const copyUrl = (url: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(url);
+    setCopiedUrl(url);
+    toast.success("URL copied");
+    setTimeout(() => setCopiedUrl(null), 2000);
+  };
+
+  const totalRevenue = sites.reduce((a, s) => a + (s.amount || 0) * (s.transactions || 0), 0);
+  const totalTxns = sites.reduce((a, s) => a + (s.transactions || 0), 0);
 
   return (
     <DashboardLayout>
@@ -102,8 +109,8 @@ const WebsiteBuilder = () => {
           {[
             { label: "Total Sites", value: sites.length.toString() },
             { label: "Published", value: sites.filter((s) => s.status === "Published").length.toString() },
-            { label: "Total Views", value: sites.reduce((a, s) => a + s.views, 0).toLocaleString() },
-            { label: "Total Conversions", value: sites.reduce((a, s) => a + s.conversions, 0).toLocaleString() },
+            { label: "Transactions", value: totalTxns.toLocaleString() },
+            { label: "Revenue", value: `₹${totalRevenue.toLocaleString()}` },
           ].map((s) => (
             <div key={s.label} className="blade-stat">
               <p className="text-sm text-muted-foreground">{s.label}</p>
@@ -130,80 +137,123 @@ const WebsiteBuilder = () => {
           </div>
         </div>
 
-        {/* Sites Grid */}
+        {/* List View */}
         {filtered.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((site) => {
-              const tpl = templates.find(
-                (t) => t.title.toLowerCase() === site.type.toLowerCase() || t.id === site.type
-              );
-              return (
-                <div
-                  key={site.id}
-                  onClick={() => navigate(`/website-builder/${site.id}`)}
-                  className="blade-card overflow-hidden group cursor-pointer hover:border-primary/40 hover:shadow-lg transition-all duration-200"
-                >
-                  {/* Thumbnail */}
-                  <div className="h-40 overflow-hidden relative bg-muted/30 border-b border-border">
-                    {tpl ? (
-                      <div className="origin-top-left absolute" style={{ width: 1200, transform: "scale(0.28)", transformOrigin: "top left" }}>
-                        <SitePreview template={tpl} sections={tpl.sections} />
-                      </div>
-                    ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                        <Globe className="h-10 w-10 text-primary/30" />
-                      </div>
-                    )}
-                    <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <Button size="sm" variant="secondary" className="gap-1.5 shadow-lg">
-                        <Eye className="h-3.5 w-3.5" /> View Details
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Info */}
-                  <div className="p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="font-semibold text-foreground text-sm truncate">{site.name}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{site.type}</p>
-                      </div>
-                      <span className={`flex-shrink-0 ${site.status === "Published" ? "blade-badge-paid" : "blade-badge-expired"}`}>{site.status}</span>
-                    </div>
-                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
-                      <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {site.views.toLocaleString()}</span>
-                      <span className="flex items-center gap-1"><BarChart3 className="h-3 w-3" /> {site.conversions}</span>
-                      <span className="ml-auto">{site.created}</span>
-                    </div>
-                  </div>
-
-                  {/* Actions row */}
-                  <div className="px-4 pb-3 flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7 gap-1" onClick={(e) => { e.stopPropagation(); navigate(`/website-builder/editor?id=${site.id}`); }}>
-                      <Settings className="h-3 w-3" /> Edit
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button onClick={(e) => e.stopPropagation()} className="p-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
-                          <MoreHorizontal className="h-3.5 w-3.5" />
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setAnalyticsDialog(site)}>
-                          <BarChart3 className="h-4 w-4 mr-2" /> Analytics
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => duplicateSite(site)}>
-                          <Copy className="h-4 w-4 mr-2" /> Duplicate
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive" onClick={() => deleteSite(site.id)}>
-                          <Trash2 className="h-4 w-4 mr-2" /> Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="blade-card overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-secondary/50">
+                  <th className="blade-table-header px-4 py-3 text-left">Page</th>
+                  <th className="blade-table-header px-4 py-3 text-left">Type</th>
+                  <th className="blade-table-header px-4 py-3 text-left">URL</th>
+                  <th className="blade-table-header px-4 py-3 text-left">Status</th>
+                  <th className="blade-table-header px-4 py-3 text-right">Amount</th>
+                  <th className="blade-table-header px-4 py-3 text-right">Transactions</th>
+                  <th className="blade-table-header px-4 py-3 text-left">Created</th>
+                  <th className="blade-table-header px-4 py-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((site) => {
+                  const tpl = templates.find(
+                    (t) => t.title.toLowerCase() === site.type.toLowerCase() || t.id === site.type
+                  );
+                  return (
+                    <tr
+                      key={site.id}
+                      className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer"
+                      onClick={() => navigate(`/website-builder/${site.id}`)}
+                    >
+                      {/* Thumbnail + Name */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-16 h-10 rounded-md border border-border overflow-hidden flex-shrink-0 bg-muted/30">
+                            {tpl ? (
+                              <div className="origin-top-left relative" style={{ width: 1200, height: 800, transform: "scale(0.0133)", transformOrigin: "top left" }}>
+                                <SitePreview template={tpl} sections={tpl.sections} />
+                              </div>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center">
+                                <Globe className="h-4 w-4 text-muted-foreground/40" />
+                              </div>
+                            )}
+                          </div>
+                          <span className="font-medium text-foreground truncate max-w-[180px]">{site.name}</span>
+                        </div>
+                      </td>
+                      {/* Type */}
+                      <td className="px-4 py-3 text-muted-foreground text-xs">{site.type}</td>
+                      {/* URL with copy */}
+                      <td className="px-4 py-3">
+                        {site.url !== "—" ? (
+                          <div className="group/url flex items-center gap-1.5 max-w-[200px]">
+                            <span className="text-xs text-muted-foreground truncate">{site.url}</span>
+                            <button
+                              onClick={(e) => copyUrl(site.url, e)}
+                              className="opacity-0 group-hover/url:opacity-100 transition-opacity p-0.5 rounded hover:bg-secondary flex-shrink-0"
+                              title="Copy URL"
+                            >
+                              {copiedUrl === site.url ? (
+                                <span className="text-[10px] text-primary font-medium">Copied!</span>
+                              ) : (
+                                <Copy className="h-3 w-3 text-muted-foreground" />
+                              )}
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      {/* Status */}
+                      <td className="px-4 py-3">
+                        <span className={site.status === "Published" ? "blade-badge-paid" : "blade-badge-expired"}>{site.status}</span>
+                      </td>
+                      {/* Amount */}
+                      <td className="px-4 py-3 text-right font-medium text-foreground">
+                        {site.amount ? `₹${site.amount.toLocaleString()}` : "—"}
+                      </td>
+                      {/* Transactions */}
+                      <td className="px-4 py-3 text-right text-foreground">
+                        {site.transactions || 0}
+                      </td>
+                      {/* Created */}
+                      <td className="px-4 py-3 text-xs text-muted-foreground">{site.created}</td>
+                      {/* Actions */}
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-7 gap-1"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/website-builder/${site.id}`); }}
+                          >
+                            Manage
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button onClick={(e) => e.stopPropagation()} className="p-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                                <MoreHorizontal className="h-3.5 w-3.5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => navigate(`/website-builder/editor?id=${site.id}`)}>
+                                <Settings className="h-4 w-4 mr-2" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => duplicateSite(site)}>
+                                <Copy className="h-4 w-4 mr-2" /> Duplicate
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="text-destructive" onClick={() => deleteSite(site.id)}>
+                                <Trash2 className="h-4 w-4 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         ) : (
           <div className="blade-card p-12 text-center">
@@ -216,30 +266,6 @@ const WebsiteBuilder = () => {
           </div>
         )}
       </div>
-
-      {/* Analytics Dialog */}
-      <Dialog open={!!analyticsDialog} onOpenChange={() => setAnalyticsDialog(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>{analyticsDialog?.name} — Analytics</DialogTitle></DialogHeader>
-          {analyticsDialog && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: "Total Views", value: analyticsDialog.views.toLocaleString() },
-                  { label: "Conversions", value: analyticsDialog.conversions.toLocaleString() },
-                  { label: "Conversion Rate", value: analyticsDialog.views > 0 ? `${((analyticsDialog.conversions / analyticsDialog.views) * 100).toFixed(1)}%` : "—" },
-                  { label: "Status", value: analyticsDialog.status },
-                ].map((s) => (
-                  <div key={s.label} className="bg-secondary rounded-md p-3">
-                    <p className="text-xs text-muted-foreground">{s.label}</p>
-                    <p className="text-lg font-semibold text-foreground">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 };

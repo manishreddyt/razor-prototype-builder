@@ -102,6 +102,8 @@ const AddSectionDivider = ({ onAdd }: { onAdd: (type: string) => void }) => {
 };
 
 export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection }: SitePreviewProps) => {
+  const templateId = template.id;
+  const category = template.category;
   const Text = editable ? EditableText : ({ value, className, tag }: any) => <ReadOnlyText value={value} className={className} tag={tag} />;
   const visibleSections = sections.filter((s) => s.visible);
 
@@ -195,7 +197,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
                   />
                 )}
                 <div className={editable ? "ring-0 hover:ring-1 hover:ring-primary/20 rounded-lg transition-shadow" : ""}>
-                  <SectionRenderer section={section} editable={editable} onUpdate={(data) => onUpdateSection?.(section.id, data)} />
+                  <SectionRenderer section={section} editable={editable} onUpdate={(data) => onUpdateSection?.(section.id, data)} templateId={templateId} category={category} />
                 </div>
               </div>
               {editable && onAddSection && <AddSectionDivider onAdd={onAddSection} />}
@@ -216,7 +218,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
 
 // ──────────────── Section Renderer ────────────────
 
-const SectionRenderer = ({ section, editable, onUpdate }: { section: SectionData; editable: boolean; onUpdate: (data: Record<string, any>) => void }) => {
+const SectionRenderer = ({ section, editable, onUpdate, templateId, category }: { section: SectionData; editable: boolean; onUpdate: (data: Record<string, any>) => void; templateId?: string; category?: string }) => {
   const { type, data } = section;
   switch (type) {
     case "about": return <AboutSection data={data} editable={editable} onUpdate={onUpdate} />;
@@ -239,7 +241,7 @@ const SectionRenderer = ({ section, editable, onUpdate }: { section: SectionData
     case "portfolio": return <PortfolioSection data={data} />;
     case "impact": return <ImpactSection data={data} />;
     case "donation": return <DonationSection data={data} editable={editable} onUpdate={onUpdate} />;
-    case "products": return <ProductsSection data={data} editable={editable} onUpdate={onUpdate} />;
+    case "products": return <ProductsSection data={data} editable={editable} onUpdate={onUpdate} templateId={templateId} category={category} />;
     case "video-embed": return <VideoSection data={data} />;
     case "countdown": return <CountdownSection data={data} />;
     default: return null;
@@ -786,37 +788,56 @@ const DonationSection = ({ data, editable, onUpdate }: any) => {
   );
 };
 
-const ProductsSection = ({ data, editable, onUpdate }: any) => (
-  <SectionWrapper>
-    <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-      {data.items?.map((item: any, i: number) => (
-        <div key={i} className="relative group/item rounded-2xl border border-border bg-background overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-          {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
-          <div className="relative overflow-hidden">
-            <img src={item.image} alt={item.title} className="w-full h-44 object-cover group-hover/item:scale-110 transition-transform duration-500" />
-            {item.badge && <span className="absolute top-3 left-3 text-[10px] font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg">{item.badge}</span>}
-          </div>
-          <div className="p-4">
-            {editable ? (
-              <>
-                <InlineInput value={item.title} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "title", v) })} className="text-sm font-semibold text-foreground block" />
-                <InlineInput value={item.price} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "price", v) })} className="text-lg font-bold text-primary mt-1 block" />
-              </>
+const ProductsSection = ({ data, editable, onUpdate, templateId, category }: any) => {
+  const isEducation = category === "education";
+  return (
+    <SectionWrapper>
+      <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+        {data.items?.map((item: any, i: number) => (
+          <div key={i} className="relative group/item rounded-2xl border border-border bg-background overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
+            {isEducation && !editable ? (
+              <a href={`/website-builder/product?template=${templateId}&product=${i}`} className="block">
+                <div className="relative overflow-hidden">
+                  <img src={item.image} alt={item.title} className="w-full h-44 object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                  {item.badge && <span className="absolute top-3 left-3 text-[10px] font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg">{item.badge}</span>}
+                </div>
+                <div className="p-4">
+                  <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                  <p className="text-lg font-bold text-primary mt-1">{item.price}</p>
+                  <Button size="sm" className="w-full mt-3 rounded-xl">View Details</Button>
+                </div>
+              </a>
             ) : (
               <>
-                <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                <p className="text-lg font-bold text-primary mt-1">{item.price}</p>
+                <div className="relative overflow-hidden">
+                  <img src={item.image} alt={item.title} className="w-full h-44 object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                  {item.badge && <span className="absolute top-3 left-3 text-[10px] font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg">{item.badge}</span>}
+                </div>
+                <div className="p-4">
+                  {editable ? (
+                    <>
+                      <InlineInput value={item.title} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "title", v) })} className="text-sm font-semibold text-foreground block" />
+                      <InlineInput value={item.price} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "price", v) })} className="text-lg font-bold text-primary mt-1 block" />
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                      <p className="text-lg font-bold text-primary mt-1">{item.price}</p>
+                    </>
+                  )}
+                  <Button size="sm" className="w-full mt-3 rounded-xl">Add to Cart</Button>
+                </div>
               </>
             )}
-            <Button size="sm" className="w-full mt-3 rounded-xl">Add to Cart</Button>
           </div>
-        </div>
-      ))}
-      {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { title: "New Product", price: "$0", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop" }] })} label="Add product" /></div>}
-    </div>
-  </SectionWrapper>
-);
+        ))}
+        {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { title: "New Product", price: "$0", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop" }] })} label="Add product" /></div>}
+      </div>
+    </SectionWrapper>
+  );
+};
 
 const VideoSection = ({ data }: any) => (
   <SectionWrapper>
