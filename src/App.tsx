@@ -16,6 +16,7 @@ import Subscriptions from "./pages/Subscriptions";
 import WebsiteBuilder from "./pages/WebsiteBuilder";
 import SmartPageCreate from "./pages/SmartPageCreate";
 import SmartPageEditor from "./pages/SmartPageEditor";
+import SmartPageDetail from "./pages/SmartPageDetail";
 import EmailWorkflows from "./pages/EmailWorkflows";
 import Forms from "./pages/Forms";
 import Offers from "./pages/Offers";
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/website-builder" element={<WebsiteBuilder />} />
           <Route path="/website-builder/create" element={<SmartPageCreate />} />
           <Route path="/website-builder/editor" element={<SmartPageEditor />} />
+          <Route path="/website-builder/:id" element={<SmartPageDetail />} />
           <Route path="/email-workflows" element={<EmailWorkflows />} />
           <Route path="/forms" element={<Forms />} />
           <Route path="/offers" element={<Offers />} />

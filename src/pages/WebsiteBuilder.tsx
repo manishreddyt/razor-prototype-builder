@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Plus, ExternalLink, Eye, Settings, MoreHorizontal, BarChart3, Trash2, Copy, Globe } from "lucide-react";
@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { templates } from "@/data/smartPageTemplates";
+import { SitePreview } from "@/components/SitePreview";
 
 export interface SmartPageSite {
   id: string;
@@ -128,65 +130,80 @@ const WebsiteBuilder = () => {
           </div>
         </div>
 
-        {/* Sites Table */}
+        {/* Sites Grid */}
         {filtered.length > 0 ? (
-          <div className="blade-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-secondary/50">
-                  <th className="blade-table-header px-5 py-3 text-left">Site Name</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Type</th>
-                  <th className="blade-table-header px-5 py-3 text-left">URL</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Views</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Conversions</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Created</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((site) => (
-                  <tr key={site.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                    <td className="px-5 py-3 font-medium text-foreground">{site.name}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{site.type}</td>
-                    <td className="px-5 py-3">
-                      {site.url !== "—" ? (
-                        <span className="flex items-center gap-1 text-primary text-xs cursor-pointer hover:underline">
-                          {site.url} <ExternalLink className="h-3 w-3" />
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-foreground">{site.views.toLocaleString()}</td>
-                    <td className="px-5 py-3 text-foreground">{site.conversions}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{site.created}</td>
-                    <td className="px-5 py-3"><span className={statusClass[site.status] || "blade-badge"}>{site.status}</span></td>
-                    <td className="px-5 py-3">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="text-muted-foreground hover:text-foreground"><MoreHorizontal className="h-4 w-4" /></button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => navigate(`/website-builder/editor?id=${site.id}`)}>
-                            <Settings className="h-4 w-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => setAnalyticsDialog(site)}>
-                            <BarChart3 className="h-4 w-4 mr-2" /> Analytics
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => duplicateSite(site)}>
-                            <Copy className="h-4 w-4 mr-2" /> Duplicate
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => deleteSite(site.id)}>
-                            <Trash2 className="h-4 w-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {filtered.map((site) => {
+              const tpl = templates.find(
+                (t) => t.title.toLowerCase() === site.type.toLowerCase() || t.id === site.type
+              );
+              return (
+                <div
+                  key={site.id}
+                  onClick={() => navigate(`/website-builder/${site.id}`)}
+                  className="blade-card overflow-hidden group cursor-pointer hover:border-primary/40 hover:shadow-lg transition-all duration-200"
+                >
+                  {/* Thumbnail */}
+                  <div className="h-40 overflow-hidden relative bg-muted/30 border-b border-border">
+                    {tpl ? (
+                      <div className="origin-top-left absolute" style={{ width: 1200, transform: "scale(0.28)", transformOrigin: "top left" }}>
+                        <SitePreview template={tpl} sections={tpl.sections} />
+                      </div>
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                        <Globe className="h-10 w-10 text-primary/30" />
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/40 transition-all duration-200 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <Button size="sm" variant="secondary" className="gap-1.5 shadow-lg">
+                        <Eye className="h-3.5 w-3.5" /> View Details
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-foreground text-sm truncate">{site.name}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{site.type}</p>
+                      </div>
+                      <span className={`flex-shrink-0 ${site.status === "Published" ? "blade-badge-paid" : "blade-badge-expired"}`}>{site.status}</span>
+                    </div>
+                    <div className="flex items-center gap-4 mt-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {site.views.toLocaleString()}</span>
+                      <span className="flex items-center gap-1"><BarChart3 className="h-3 w-3" /> {site.conversions}</span>
+                      <span className="ml-auto">{site.created}</span>
+                    </div>
+                  </div>
+
+                  {/* Actions row */}
+                  <div className="px-4 pb-3 flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7 gap-1" onClick={(e) => { e.stopPropagation(); navigate(`/website-builder/editor?id=${site.id}`); }}>
+                      <Settings className="h-3 w-3" /> Edit
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button onClick={(e) => e.stopPropagation()} className="p-1.5 rounded-md border border-border text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                          <MoreHorizontal className="h-3.5 w-3.5" />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setAnalyticsDialog(site)}>
+                          <BarChart3 className="h-4 w-4 mr-2" /> Analytics
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => duplicateSite(site)}>
+                          <Copy className="h-4 w-4 mr-2" /> Duplicate
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive" onClick={() => deleteSite(site.id)}>
+                          <Trash2 className="h-4 w-4 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         ) : (
           <div className="blade-card p-12 text-center">
