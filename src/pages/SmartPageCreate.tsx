@@ -2,14 +2,28 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
-  ArrowLeft, Sparkles, Search, ArrowRight, Eye, X, Monitor, Smartphone,
+  ArrowLeft, Sparkles, Search, ArrowRight, Eye, Monitor, Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { categories, templates, type TemplateData } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
+
+// Scaled-down live preview thumbnail
+const TemplateThumb = ({ template }: { template: TemplateData }) => (
+  <div className="h-52 rounded-t-lg border-b border-border overflow-hidden relative bg-background">
+    <div
+      className="origin-top-left absolute"
+      style={{ width: 1200, transform: "scale(0.3)", transformOrigin: "top left" }}
+    >
+      <SitePreview template={template} sections={template.sections} />
+    </div>
+    {/* Fade-out at bottom */}
+    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent" />
+  </div>
+);
 
 const SmartPageCreate = () => {
   const navigate = useNavigate();
@@ -92,44 +106,44 @@ const SmartPageCreate = () => {
           </div>
         </div>
 
-        {/* Template Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Template Grid — WordPress-style cards with live previews */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {filtered.map((t) => (
             <div
               key={t.id}
-              className="blade-card p-5 text-left hover:border-primary/40 hover:shadow-md transition-all group"
+              className="rounded-lg border border-border bg-background overflow-hidden group hover:border-primary/40 hover:shadow-lg transition-all"
             >
-              {/* Mini preview thumbnail */}
-              <div className="h-36 rounded-md bg-gradient-to-br from-primary/10 via-secondary to-primary/5 mb-4 flex items-center justify-center border border-border relative overflow-hidden">
-                <t.icon className="h-8 w-8 text-primary/40 group-hover:text-primary transition-colors" />
-                <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-                  <Button size="sm" variant="secondary" className="gap-1.5 shadow-md" onClick={() => setPreviewTemplate(t)}>
-                    <Eye className="h-3.5 w-3.5" /> Preview
+              {/* Live scaled preview */}
+              <div className="relative cursor-pointer" onClick={() => setPreviewTemplate(t)}>
+                <TemplateThumb template={t} />
+                {/* Hover overlay */}
+                <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/60 transition-all flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                  <Button size="sm" variant="secondary" className="gap-1.5 shadow-lg" onClick={(e) => { e.stopPropagation(); setPreviewTemplate(t); }}>
+                    <Eye className="h-3.5 w-3.5" /> Live Preview
+                  </Button>
+                  <Button size="sm" className="gap-1.5 shadow-lg" onClick={(e) => { e.stopPropagation(); handleUseTemplate(t); }}>
+                    Use Template
                   </Button>
                 </div>
               </div>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="font-medium text-foreground group-hover:text-primary transition-colors">{t.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.desc}</p>
+
+              {/* Info */}
+              <div className="p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-semibold text-foreground text-sm">{t.title}</p>
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.desc}</p>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize whitespace-nowrap flex-shrink-0">
+                    {t.category === "nonprofit" ? "Non-Profit" : t.category}
+                  </span>
                 </div>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize whitespace-nowrap">
-                  {t.category === "nonprofit" ? "Non-Profit" : t.category}
-                </span>
-              </div>
-              <div className="flex flex-wrap gap-1 mt-3">
-                {t.pages.slice(0, 4).map((p) => (
-                  <span key={p} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{p}</span>
-                ))}
-                {t.pages.length > 4 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{t.pages.length - 4}</span>}
-              </div>
-              <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => setPreviewTemplate(t)}>
-                  <Eye className="h-3.5 w-3.5" /> Preview
-                </Button>
-                <Button size="sm" className="flex-1 gap-1" onClick={() => handleUseTemplate(t)}>
-                  Use Template <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
+                <div className="flex flex-wrap gap-1 mt-3">
+                  {t.pages.slice(0, 4).map((p) => (
+                    <span key={p} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{p}</span>
+                  ))}
+                  {t.pages.length > 4 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{t.pages.length - 4}</span>}
+                </div>
               </div>
             </div>
           ))}
@@ -144,7 +158,7 @@ const SmartPageCreate = () => {
 
       {/* Template Preview Dialog — Full rendered preview */}
       <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
-        <DialogContent className="max-w-5xl h-[90vh] p-0 gap-0 flex flex-col">
+        <DialogContent className="max-w-5xl h-[90vh] p-0 gap-0 flex flex-col [&>button]:z-50 [&>button]:bg-background [&>button]:border [&>button]:border-border [&>button]:rounded-full [&>button]:shadow-md [&>button]:h-8 [&>button]:w-8 [&>button]:-top-3 [&>button]:-right-3">
           {/* Header */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-border flex-shrink-0">
             <div>
@@ -162,8 +176,8 @@ const SmartPageCreate = () => {
             </div>
           </div>
           {/* Preview body */}
-          <ScrollArea className="flex-1">
-            <div className={`mx-auto bg-background ${previewDevice === "mobile" ? "max-w-sm" : ""}`}>
+          <ScrollArea className="flex-1 bg-muted/30">
+            <div className={`mx-auto bg-background ${previewDevice === "mobile" ? "max-w-sm border-x border-border" : ""}`}>
               {previewTemplate && (
                 <SitePreview template={previewTemplate} sections={previewTemplate.sections} />
               )}
