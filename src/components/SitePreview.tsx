@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Star, MapPin, Clock, Play, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Pencil, ArrowUp, ArrowDown } from "lucide-react";
+import { Star, MapPin, Clock, Play, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Pencil, ArrowUp, ArrowDown, CheckCircle2, Users, Award, BookOpen } from "lucide-react";
 
 interface SitePreviewProps {
   template: TemplateData;
@@ -105,50 +105,78 @@ export const SitePreview = ({ template, sections, editable = false, onUpdateSect
 
   return (
     <div className="font-sans">
-      {/* Banner */}
-      <div className="relative group">
-        <img src={template.bannerImage} alt="Banner" className="w-full h-56 object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=900&h=300&fit=crop"; }} />
+      {/* ─── HERO ─── */}
+      <div className="relative overflow-hidden">
+        {/* Background image with overlay */}
+        <div className="absolute inset-0">
+          <img src={template.bannerImage} alt="Banner" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=900&h=300&fit=crop"; }} />
+          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/80" />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10" />
+        </div>
         {editable && (
-          <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-            <span className="bg-background/90 text-foreground text-xs font-medium px-3 py-1.5 rounded-md shadow-sm">Click to change banner</span>
+          <div className="absolute top-3 right-3 z-20">
+            <span className="bg-background/90 text-foreground text-xs font-medium px-3 py-1.5 rounded-md shadow-sm border border-border cursor-pointer hover:bg-background">Change banner</span>
           </div>
         )}
-      </div>
-
-      <div className="p-6 space-y-2">
-        {/* Hero */}
-        <div className="text-center space-y-3 pb-6">
-          <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl mx-auto">
-            {template.heroTitle.charAt(0)}
+        <div className="relative z-10 px-8 py-16 md:py-24 max-w-4xl mx-auto text-center">
+          {/* Badge/tagline */}
+          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <Text value={template.heroTagline} onChange={(v: string) => onUpdateHero?.({ heroTagline: v })} className="text-xs font-medium text-primary" tag="span" />
           </div>
-          <Text value={template.heroTitle} onChange={(v: string) => onUpdateHero?.({ heroTitle: v })} className="text-3xl font-bold text-foreground block" tag="h1" />
-          <Text value={template.heroTagline} onChange={(v: string) => onUpdateHero?.({ heroTagline: v })} className="text-lg text-muted-foreground block" tag="p" />
-          <Text value={template.heroDescription} onChange={(v: string) => onUpdateHero?.({ heroDescription: v })} className="text-sm text-muted-foreground max-w-2xl mx-auto block" tag="p" />
-          {editable ? (
-            <div className="inline-flex items-center gap-1">
-              <Button className="mt-4" size="lg">
+          
+          <Text value={template.heroTitle} onChange={(v: string) => onUpdateHero?.({ heroTitle: v })} className="text-4xl md:text-5xl font-extrabold text-foreground block leading-tight tracking-tight" tag="h1" />
+          
+          <Text value={template.heroDescription} onChange={(v: string) => onUpdateHero?.({ heroDescription: v })} className="text-base text-muted-foreground max-w-2xl mx-auto block mt-5 leading-relaxed" tag="p" />
+          
+          <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
+            {editable ? (
+              <Button size="lg" className="text-base px-8 py-6 rounded-xl shadow-lg shadow-primary/20">
                 <InlineInput value={template.heroCta} onChange={(v) => onUpdateHero?.({ heroCta: v })} />
               </Button>
-            </div>
-          ) : (
-            <Button className="mt-4" size="lg">{template.heroCta}</Button>
-          )}
-        </div>
+            ) : (
+              <Button size="lg" className="text-base px-8 py-6 rounded-xl shadow-lg shadow-primary/20">{template.heroCta}</Button>
+            )}
+            <Button variant="outline" size="lg" className="text-base px-8 py-6 rounded-xl">
+              Learn More
+            </Button>
+          </div>
 
-        {/* Nav */}
-        <div className="flex items-center justify-center gap-4 border-b border-border pb-4 flex-wrap">
-          {template.pages.map((p) => (
-            <span key={p} className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors">{p}</span>
+          {/* Trust indicators */}
+          <div className="mt-10 flex items-center justify-center gap-6 text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <div className="flex -space-x-2">
+                {["A", "B", "C", "D"].map((l, i) => (
+                  <div key={i} className="w-7 h-7 rounded-full bg-primary/10 border-2 border-background text-primary flex items-center justify-center text-[10px] font-bold">{l}</div>
+                ))}
+              </div>
+              <span className="text-xs ml-1">Trusted by <span className="font-semibold text-foreground">30K+</span> students</span>
+            </div>
+            <div className="hidden md:flex items-center gap-1">
+              <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}</div>
+              <span className="text-xs"><span className="font-semibold text-foreground">4.9</span> rating</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav */}
+      <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="flex items-center justify-center gap-6 px-6 py-3 flex-wrap max-w-4xl mx-auto">
+          {template.pages.map((p, i) => (
+            <span key={p} className={`text-sm font-medium cursor-pointer transition-colors ${i === 0 ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>{p}</span>
           ))}
         </div>
+      </div>
 
-        {/* Sections with inline controls */}
+      {/* Sections */}
+      <div className="space-y-0">
         {editable && onAddSection && <AddSectionDivider onAdd={onAddSection} />}
         {visibleSections.map((section, idx) => {
           const sectionIndex = sections.findIndex(s => s.id === section.id);
           return (
             <div key={section.id}>
-              <div className="relative group/section py-4">
+              <div className="relative group/section">
                 {editable && onRemoveSection && onMoveSection && (
                   <SectionToolbar
                     label={section.label}
@@ -158,7 +186,7 @@ export const SitePreview = ({ template, sections, editable = false, onUpdateSect
                     onMove={(dir) => onMoveSection(sectionIndex, dir)}
                   />
                 )}
-                <div className={editable ? "ring-0 hover:ring-1 hover:ring-primary/20 rounded-lg transition-shadow p-1" : ""}>
+                <div className={editable ? "ring-0 hover:ring-1 hover:ring-primary/20 rounded-lg transition-shadow" : ""}>
                   <SectionRenderer section={section} editable={editable} onUpdate={(data) => onUpdateSection?.(section.id, data)} />
                 </div>
               </div>
@@ -168,8 +196,10 @@ export const SitePreview = ({ template, sections, editable = false, onUpdateSect
         })}
 
         {/* Footer */}
-        <div className="text-center border-t border-border pt-6 mt-8">
-          <p className="text-xs text-muted-foreground">Built with Smart Pages • Powered by Razorpay</p>
+        <div className="bg-muted/30 border-t border-border">
+          <div className="max-w-4xl mx-auto px-8 py-10 text-center">
+            <p className="text-xs text-muted-foreground">Built with Smart Pages • Powered by Razorpay</p>
+          </div>
         </div>
       </div>
     </div>
@@ -208,17 +238,34 @@ const SectionRenderer = ({ section, editable, onUpdate }: { section: SectionData
   }
 };
 
-// ──────────────── Helper ────────────────
+// ──────────────── Helpers ────────────────
 
-const SectionHeading = ({ text, editable, onChange }: { text: string; editable?: boolean; onChange?: (v: string) => void }) => {
+const SectionWrapper = ({ children, className = "", alternate = false }: { children: React.ReactNode; className?: string; alternate?: boolean }) => (
+  <div className={`px-8 py-14 ${alternate ? "bg-muted/30" : ""} ${className}`}>
+    <div className="max-w-4xl mx-auto">{children}</div>
+  </div>
+);
+
+const SectionHeading = ({ text, subtitle, editable, onChange }: { text: string; subtitle?: string; editable?: boolean; onChange?: (v: string) => void }) => {
   if (editable && onChange) {
-    return <InlineInput value={text} onChange={onChange} className="text-xl font-semibold text-foreground text-center mb-6 block" />;
+    return (
+      <div className="text-center mb-10">
+        <InlineInput value={text} onChange={onChange} className="text-2xl md:text-3xl font-bold text-foreground block" />
+        {subtitle && <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto">{subtitle}</p>}
+      </div>
+    );
   }
-  return <h3 className="text-xl font-semibold text-foreground text-center mb-6">{text}</h3>;
+  return (
+    <div className="text-center mb-10">
+      <h3 className="text-2xl md:text-3xl font-bold text-foreground">{text}</h3>
+      {subtitle && <p className="text-sm text-muted-foreground mt-2 max-w-lg mx-auto">{subtitle}</p>}
+      <div className="mt-3 mx-auto w-12 h-1 rounded-full bg-primary/60" />
+    </div>
+  );
 };
 
 const ItemAddButton = ({ onClick, label = "Add item" }: { onClick: () => void; label?: string }) => (
-  <button onClick={onClick} className="flex items-center justify-center gap-1 rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors w-full">
+  <button onClick={onClick} className="flex items-center justify-center gap-1 rounded-xl border border-dashed border-border p-4 text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground transition-colors w-full">
     <Plus className="h-3 w-3" /> {label}
   </button>
 );
@@ -229,7 +276,6 @@ const ItemRemoveBtn = ({ onClick }: { onClick: () => void }) => (
   </button>
 );
 
-// Helper to update an item in a list
 const updateItem = (items: any[], index: number, field: string, value: string) => {
   const updated = [...items];
   updated[index] = { ...updated[index], [field]: value };
@@ -239,99 +285,126 @@ const updateItem = (items: any[], index: number, field: string, value: string) =
 // ──────────────── Individual Sections ────────────────
 
 const AboutSection = ({ data, editable, onUpdate }: any) => (
-  <div className="max-w-3xl mx-auto flex flex-col md:flex-row gap-6 items-center">
-    {data.image && <img src={data.image} alt="About" className="w-full md:w-1/3 rounded-lg object-cover h-48" />}
-    <div className="flex-1">
-      {editable ? (
-        <>
-          <InlineInput value={data.heading} onChange={(v) => onUpdate({ heading: v })} className="text-xl font-semibold text-foreground mb-3 block" />
-          <InlineInput value={data.text} onChange={(v) => onUpdate({ text: v })} className="text-sm text-muted-foreground leading-relaxed block" />
-        </>
-      ) : (
-        <>
-          <h3 className="text-xl font-semibold text-foreground mb-3">{data.heading}</h3>
-          <p className="text-sm text-muted-foreground leading-relaxed">{data.text}</p>
-        </>
+  <SectionWrapper>
+    <div className="grid md:grid-cols-2 gap-10 items-center">
+      {data.image && (
+        <div className="relative">
+          <img src={data.image} alt="About" className="w-full rounded-2xl object-cover h-72 shadow-xl" />
+          <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-2xl bg-primary/10 -z-10" />
+        </div>
       )}
+      <div className="space-y-4">
+        <div className="inline-flex items-center gap-2 bg-primary/10 rounded-full px-3 py-1 text-xs font-medium text-primary mb-2">About Us</div>
+        {editable ? (
+          <>
+            <InlineInput value={data.heading} onChange={(v) => onUpdate({ heading: v })} className="text-2xl font-bold text-foreground block" />
+            <InlineInput value={data.text} onChange={(v) => onUpdate({ text: v })} className="text-sm text-muted-foreground leading-relaxed block" />
+          </>
+        ) : (
+          <>
+            <h3 className="text-2xl font-bold text-foreground">{data.heading}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{data.text}</p>
+          </>
+        )}
+        <Button className="mt-2">Get Started</Button>
+      </div>
     </div>
-  </div>
+  </SectionWrapper>
 );
 
-const CardsSection = ({ data, editable, onUpdate }: any) => (
-  <div>
-    <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {data.items?.map((item: any, i: number) => (
-        <div key={i} className="relative group/item rounded-lg border border-border p-4 text-center hover:shadow-md transition-shadow">
-          {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
-          <div className="text-2xl mb-2">{item.icon}</div>
-          {editable ? (
-            <>
-              <InlineInput value={item.title} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "title", v) })} className="font-medium text-foreground text-sm block" />
-              <InlineInput value={item.desc} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "desc", v) })} className="text-xs text-muted-foreground mt-1 block" />
-            </>
-          ) : (
-            <>
-              <p className="font-medium text-foreground text-sm">{item.title}</p>
-              <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
-            </>
-          )}
-        </div>
-      ))}
-      {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { icon: "✨", title: "New Item", desc: "Description" }] })} /></div>}
-    </div>
-  </div>
-);
+const CardsSection = ({ data, editable, onUpdate }: any) => {
+  const iconBgs = ["bg-blue-500/10 text-blue-600", "bg-emerald-500/10 text-emerald-600", "bg-amber-500/10 text-amber-600", "bg-purple-500/10 text-purple-600", "bg-rose-500/10 text-rose-600", "bg-cyan-500/10 text-cyan-600"];
+  return (
+    <SectionWrapper alternate>
+      <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        {data.items?.map((item: any, i: number) => (
+          <div key={i} className="relative group/item rounded-2xl border border-border bg-background p-6 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl mb-4 ${iconBgs[i % iconBgs.length]}`}>
+              {item.icon}
+            </div>
+            {editable ? (
+              <>
+                <InlineInput value={item.title} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "title", v) })} className="font-semibold text-foreground text-sm block mb-2" />
+                <InlineInput value={item.desc} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "desc", v) })} className="text-xs text-muted-foreground leading-relaxed block" />
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-foreground text-sm mb-2">{item.title}</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{item.desc}</p>
+              </>
+            )}
+          </div>
+        ))}
+        {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { icon: "✨", title: "New Item", desc: "Description" }] })} /></div>}
+      </div>
+    </SectionWrapper>
+  );
+};
 
 const PricingSection = ({ data, editable, onUpdate }: any) => (
-  <div>
+  <SectionWrapper>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className={`grid gap-4 ${data.tiers?.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
+    <div className={`grid gap-6 ${data.tiers?.length === 2 ? "grid-cols-1 md:grid-cols-2 max-w-2xl mx-auto" : "grid-cols-1 md:grid-cols-3"}`}>
       {data.tiers?.map((tier: any, i: number) => (
-        <div key={i} className={`relative group/item rounded-lg border p-5 text-center ${tier.highlighted ? "border-primary bg-primary/5 ring-2 ring-primary/20" : "border-border"}`}>
+        <div key={i} className={`relative group/item rounded-2xl border-2 p-7 transition-all duration-300 hover:shadow-xl ${tier.highlighted ? "border-primary bg-primary/[0.03] shadow-lg shadow-primary/10 scale-[1.03]" : "border-border hover:-translate-y-1"}`}>
           {editable && <ItemRemoveBtn onClick={() => onUpdate({ tiers: data.tiers.filter((_: any, j: number) => j !== i) })} />}
-          {tier.highlighted && <span className="text-[10px] font-semibold uppercase text-primary bg-primary/10 px-2 py-0.5 rounded-full">Most Popular</span>}
-          {editable ? (
-            <>
-              <InlineInput value={tier.name} onChange={(v) => onUpdate({ tiers: updateItem(data.tiers, i, "name", v) })} className="font-medium text-foreground mt-2 block" />
-              <InlineInput value={tier.price} onChange={(v) => onUpdate({ tiers: updateItem(data.tiers, i, "price", v) })} className="text-3xl font-bold text-foreground my-3 block" />
-            </>
-          ) : (
-            <>
-              <p className="font-medium text-foreground mt-2">{tier.name}</p>
-              <p className="text-3xl font-bold text-foreground my-3">{tier.price}<span className="text-sm font-normal text-muted-foreground">{tier.period}</span></p>
-            </>
+          {tier.highlighted && (
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+              <span className="text-[11px] font-bold uppercase text-primary-foreground bg-primary px-4 py-1 rounded-full shadow-lg">Most Popular</span>
+            </div>
           )}
-          <ul className="text-xs text-muted-foreground space-y-2 mb-4 text-left">
-            {tier.features?.map((f: string, j: number) => <li key={j} className="flex items-start gap-1.5"><span className="text-primary mt-0.5">✓</span>{f}</li>)}
+          <div className="text-center">
+            {editable ? (
+              <>
+                <InlineInput value={tier.name} onChange={(v) => onUpdate({ tiers: updateItem(data.tiers, i, "name", v) })} className="font-semibold text-foreground text-lg block" />
+                <InlineInput value={tier.price} onChange={(v) => onUpdate({ tiers: updateItem(data.tiers, i, "price", v) })} className="text-4xl font-extrabold text-foreground my-4 block" />
+              </>
+            ) : (
+              <>
+                <p className="font-semibold text-foreground text-lg">{tier.name}</p>
+                <p className="text-4xl font-extrabold text-foreground my-4">{tier.price}<span className="text-sm font-normal text-muted-foreground">{tier.period}</span></p>
+              </>
+            )}
+          </div>
+          <ul className="text-sm text-muted-foreground space-y-3 mb-6">
+            {tier.features?.map((f: string, j: number) => (
+              <li key={j} className="flex items-start gap-2.5">
+                <CheckCircle2 className={`h-4 w-4 mt-0.5 flex-shrink-0 ${tier.highlighted ? "text-primary" : "text-muted-foreground/60"}`} />
+                {f}
+              </li>
+            ))}
           </ul>
-          <Button variant={tier.highlighted ? "default" : "outline"} size="sm" className="w-full">Choose {tier.name}</Button>
+          <Button variant={tier.highlighted ? "default" : "outline"} className={`w-full rounded-xl py-5 ${tier.highlighted ? "shadow-md shadow-primary/20" : ""}`}>
+            Choose {tier.name}
+          </Button>
         </div>
       ))}
     </div>
     {editable && <div className="mt-4"><ItemAddButton onClick={() => onUpdate({ tiers: [...(data.tiers || []), { name: "New Plan", price: "$0", period: "/mo", features: ["Feature 1"], highlighted: false }] })} label="Add pricing tier" /></div>}
-  </div>
+  </SectionWrapper>
 );
 
 const TestimonialsSection = ({ data, editable, onUpdate }: any) => (
-  <div>
+  <SectionWrapper alternate>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
       {data.items?.map((t: any, i: number) => (
-        <div key={i} className="relative group/item rounded-lg border border-border p-5">
+        <div key={i} className="relative group/item rounded-2xl border border-border bg-background p-6 hover:shadow-lg transition-all">
           {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
-          <div className="flex gap-0.5 mb-3">{Array.from({ length: t.rating }).map((_, j) => <Star key={j} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}</div>
+          <div className="flex gap-0.5 mb-4">{Array.from({ length: t.rating }).map((_, j) => <Star key={j} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}</div>
           {editable ? (
             <>
-              <InlineInput value={t.text} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "text", v) })} className="text-sm text-muted-foreground italic mb-3 block" />
-              <InlineInput value={t.name} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "name", v) })} className="text-xs font-medium text-foreground block" />
+              <InlineInput value={t.text} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "text", v) })} className="text-sm text-muted-foreground leading-relaxed mb-5 block" />
+              <InlineInput value={t.name} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "name", v) })} className="text-sm font-semibold text-foreground block" />
             </>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground italic mb-3">"{t.text}"</p>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold">{t.avatar}</div>
-                <p className="text-xs font-medium text-foreground">{t.name}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-5">"{t.text}"</p>
+              <div className="flex items-center gap-3 pt-4 border-t border-border">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-sm font-bold">{t.avatar}</div>
+                <p className="text-sm font-semibold text-foreground">{t.name}</p>
               </div>
             </>
           )}
@@ -339,186 +412,200 @@ const TestimonialsSection = ({ data, editable, onUpdate }: any) => (
       ))}
       {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { name: "New User", text: "Great experience!", rating: 5, avatar: "N" }] })} label="Add testimonial" /></div>}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const GoogleReviewsSection = ({ data, editable, onUpdate }: any) => (
-  <div>
+  <SectionWrapper>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="text-center mb-4">
-      <div className="flex items-center justify-center gap-1 mb-1">
-        <img src="https://www.google.com/favicon.ico" alt="Google" className="h-5 w-5" />
-        <span className="text-2xl font-bold text-foreground">{data.overallRating}</span>
-        <div className="flex gap-0.5 ml-1">{Array.from({ length: 5 }).map((_, j) => <Star key={j} className={`h-4 w-4 ${j < Math.floor(data.overallRating) ? "fill-yellow-400 text-yellow-400" : "text-border"}`} />)}</div>
+    <div className="text-center mb-6">
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <img src="https://www.google.com/favicon.ico" alt="Google" className="h-6 w-6" />
+        <span className="text-3xl font-bold text-foreground">{data.overallRating}</span>
+        <div className="flex gap-0.5 ml-1">{Array.from({ length: 5 }).map((_, j) => <Star key={j} className={`h-5 w-5 ${j < Math.floor(data.overallRating) ? "fill-yellow-400 text-yellow-400" : "text-border"}`} />)}</div>
       </div>
-      <p className="text-xs text-muted-foreground">{data.totalReviews} reviews on Google</p>
+      <p className="text-sm text-muted-foreground">{data.totalReviews} reviews on Google</p>
     </div>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
       {data.reviews?.map((r: any, i: number) => (
-        <div key={i} className="relative group/item rounded-lg border border-border p-4">
+        <div key={i} className="relative group/item rounded-2xl border border-border bg-background p-5">
           {editable && <ItemRemoveBtn onClick={() => onUpdate({ reviews: data.reviews.filter((_: any, j: number) => j !== i) })} />}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex gap-0.5">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-3 w-3 fill-yellow-400 text-yellow-400" />)}</div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex gap-0.5">{Array.from({ length: r.rating }).map((_, j) => <Star key={j} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}</div>
             <span className="text-[10px] text-muted-foreground">{r.date}</span>
           </div>
           {editable ? (
             <>
-              <InlineInput value={r.text} onChange={(v) => onUpdate({ reviews: updateItem(data.reviews, i, "text", v) })} className="text-sm text-muted-foreground mb-2 block" />
-              <InlineInput value={r.name} onChange={(v) => onUpdate({ reviews: updateItem(data.reviews, i, "name", v) })} className="text-xs font-medium text-foreground block" />
+              <InlineInput value={r.text} onChange={(v) => onUpdate({ reviews: updateItem(data.reviews, i, "text", v) })} className="text-sm text-muted-foreground mb-3 block" />
+              <InlineInput value={r.name} onChange={(v) => onUpdate({ reviews: updateItem(data.reviews, i, "name", v) })} className="text-sm font-medium text-foreground block" />
             </>
           ) : (
             <>
-              <p className="text-sm text-muted-foreground mb-2">"{r.text}"</p>
-              <p className="text-xs font-medium text-foreground">{r.name}</p>
+              <p className="text-sm text-muted-foreground mb-3">"{r.text}"</p>
+              <p className="text-sm font-medium text-foreground">{r.name}</p>
             </>
           )}
         </div>
       ))}
       {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ reviews: [...(data.reviews || []), { name: "New Reviewer", text: "Amazing!", rating: 5, date: "Recently" }] })} label="Add review" /></div>}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const FaqSection = ({ data, editable, onUpdate }: any) => (
-  <div className="max-w-2xl mx-auto">
+  <SectionWrapper>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="space-y-3">
+    <div className="max-w-2xl mx-auto space-y-3">
       {data.items?.map((faq: any, i: number) => (
         <div key={i} className="relative group/item">
           {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
-          <details className="rounded-lg border border-border p-4 group open:bg-secondary/30">
-            <summary className="text-sm font-medium text-foreground cursor-pointer list-none flex items-center justify-between">
+          <details className="rounded-xl border border-border p-5 group open:bg-primary/[0.02] open:border-primary/20 transition-colors">
+            <summary className="text-sm font-semibold text-foreground cursor-pointer list-none flex items-center justify-between gap-2">
               {editable ? <InlineInput value={faq.q} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "q", v) })} className="flex-1" /> : faq.q}
-              <ChevronDown className="h-4 w-4 text-muted-foreground group-open:rotate-180 transition-transform" />
+              <ChevronDown className="h-4 w-4 text-muted-foreground group-open:rotate-180 transition-transform flex-shrink-0" />
             </summary>
             {editable ? (
-              <InlineInput value={faq.a} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "a", v) })} className="text-sm text-muted-foreground mt-3 pt-3 border-t border-border block" />
+              <InlineInput value={faq.a} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "a", v) })} className="text-sm text-muted-foreground mt-3 pt-3 border-t border-border leading-relaxed block" />
             ) : (
-              <p className="text-sm text-muted-foreground mt-3 pt-3 border-t border-border">{faq.a}</p>
+              <p className="text-sm text-muted-foreground mt-3 pt-3 border-t border-border leading-relaxed">{faq.a}</p>
             )}
           </details>
         </div>
       ))}
       {editable && <ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { q: "New Question?", a: "Answer here." }] })} label="Add FAQ" />}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const TeamSection = ({ data, editable, onUpdate }: any) => (
-  <div>
+  <SectionWrapper alternate>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
       {data.members?.map((m: any, i: number) => (
-        <div key={i} className="relative group/item text-center p-4 rounded-lg border border-border">
+        <div key={i} className="relative group/item text-center p-6 rounded-2xl border border-border bg-background hover:shadow-lg transition-all">
           {editable && <ItemRemoveBtn onClick={() => onUpdate({ members: data.members.filter((_: any, j: number) => j !== i) })} />}
-          <div className="w-16 h-16 rounded-full bg-primary/10 text-primary flex items-center justify-center text-lg font-semibold mx-auto mb-3">{m.avatar}</div>
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-xl font-bold mx-auto mb-4 ring-4 ring-primary/10">{m.avatar}</div>
           {editable ? (
             <>
-              <InlineInput value={m.name} onChange={(v) => onUpdate({ members: updateItem(data.members, i, "name", v) })} className="font-medium text-foreground text-sm block" />
-              <InlineInput value={m.role} onChange={(v) => onUpdate({ members: updateItem(data.members, i, "role", v) })} className="text-xs text-primary block" />
-              <InlineInput value={m.bio} onChange={(v) => onUpdate({ members: updateItem(data.members, i, "bio", v) })} className="text-xs text-muted-foreground mt-1 block" />
+              <InlineInput value={m.name} onChange={(v) => onUpdate({ members: updateItem(data.members, i, "name", v) })} className="font-semibold text-foreground block" />
+              <InlineInput value={m.role} onChange={(v) => onUpdate({ members: updateItem(data.members, i, "role", v) })} className="text-xs text-primary font-medium block mt-1" />
+              <InlineInput value={m.bio} onChange={(v) => onUpdate({ members: updateItem(data.members, i, "bio", v) })} className="text-xs text-muted-foreground mt-2 block" />
             </>
           ) : (
             <>
-              <p className="font-medium text-foreground text-sm">{m.name}</p>
-              <p className="text-xs text-primary">{m.role}</p>
-              <p className="text-xs text-muted-foreground mt-1">{m.bio}</p>
+              <p className="font-semibold text-foreground">{m.name}</p>
+              <p className="text-xs text-primary font-medium mt-1">{m.role}</p>
+              <p className="text-xs text-muted-foreground mt-2">{m.bio}</p>
             </>
           )}
         </div>
       ))}
       {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ members: [...(data.members || []), { name: "New Member", role: "Role", bio: "Bio", avatar: "N" }] })} label="Add member" /></div>}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const GallerySection = ({ data }: any) => (
-  <div>
+  <SectionWrapper alternate>
     <SectionHeading text={data.heading} />
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
       {data.images?.map((img: string, i: number) => (
-        <img key={i} src={img} alt={`Gallery ${i + 1}`} className="rounded-lg object-cover h-40 w-full" />
+        <img key={i} src={img} alt={`Gallery ${i + 1}`} className="rounded-2xl object-cover h-48 w-full hover:scale-[1.02] transition-transform shadow-md" />
       ))}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const StatsSection = ({ data, editable, onUpdate }: any) => (
-  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-    {data.items?.map((s: any, i: number) => (
-      <div key={i} className="relative group/item text-center p-4 rounded-lg bg-secondary/50">
-        {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
-        {editable ? (
-          <>
-            <InlineInput value={s.value} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "value", v) })} className="text-2xl font-bold text-foreground block" />
-            <InlineInput value={s.label} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "label", v) })} className="text-xs text-muted-foreground mt-1 block" />
-          </>
-        ) : (
-          <>
-            <p className="text-2xl font-bold text-foreground">{s.value}</p>
-            <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
-          </>
-        )}
-      </div>
-    ))}
-    {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { value: "0", label: "New Stat" }] })} label="Add stat" /></div>}
+  <div className="bg-gradient-to-r from-primary to-primary/80 px-8 py-12">
+    <div className="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6">
+      {data.items?.map((s: any, i: number) => (
+        <div key={i} className="relative group/item text-center">
+          {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
+          {editable ? (
+            <>
+              <InlineInput value={s.value} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "value", v) })} className="text-3xl md:text-4xl font-extrabold text-primary-foreground block" />
+              <InlineInput value={s.label} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "label", v) })} className="text-sm text-primary-foreground/70 mt-1 block" />
+            </>
+          ) : (
+            <>
+              <p className="text-3xl md:text-4xl font-extrabold text-primary-foreground">{s.value}</p>
+              <p className="text-sm text-primary-foreground/70 mt-1">{s.label}</p>
+            </>
+          )}
+        </div>
+      ))}
+      {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { value: "0", label: "New Stat" }] })} label="Add stat" /></div>}
+    </div>
   </div>
 );
 
 const CtaBannerSection = ({ data, editable, onUpdate }: any) => (
-  <div className="rounded-lg bg-primary p-8 text-center">
-    {editable ? (
-      <>
-        <InlineInput value={data.heading} onChange={(v) => onUpdate({ heading: v })} className="text-xl font-bold text-primary-foreground mb-2 block" />
-        <InlineInput value={data.text} onChange={(v) => onUpdate({ text: v })} className="text-sm text-primary-foreground/80 mb-4 block" />
-        <Button variant="secondary" size="lg">
-          <InlineInput value={data.buttonText} onChange={(v) => onUpdate({ buttonText: v })} />
-        </Button>
-      </>
-    ) : (
-      <>
-        <h3 className="text-xl font-bold text-primary-foreground mb-2">{data.heading}</h3>
-        <p className="text-sm text-primary-foreground/80 mb-4">{data.text}</p>
-        <Button variant="secondary" size="lg">{data.buttonText}</Button>
-      </>
-    )}
-  </div>
-);
-
-const ContactFormSection = ({ data }: any) => (
-  <div className="max-w-lg mx-auto">
-    <SectionHeading text={data.heading} />
-    <div className="space-y-3">
-      {data.fields?.map((f: any, i: number) => (
-        <div key={i}>
-          <label className="text-xs font-medium text-foreground">{f.label}{f.required && <span className="text-destructive"> *</span>}</label>
-          {f.type === "textarea" ? (
-            <textarea className="w-full mt-1 rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]" placeholder={f.label} />
-          ) : (
-            <Input type={f.type} placeholder={f.label} className="mt-1" />
-          )}
-        </div>
-      ))}
-      <Button className="w-full">{data.submitText}</Button>
+  <div className="relative overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary/90 to-primary/70" />
+    <div className="absolute top-0 right-0 w-64 h-64 rounded-full bg-primary-foreground/5 -translate-y-1/2 translate-x-1/2" />
+    <div className="absolute bottom-0 left-0 w-48 h-48 rounded-full bg-primary-foreground/5 translate-y-1/2 -translate-x-1/2" />
+    <div className="relative z-10 px-8 py-16 text-center max-w-2xl mx-auto">
+      {editable ? (
+        <>
+          <InlineInput value={data.heading} onChange={(v) => onUpdate({ heading: v })} className="text-2xl md:text-3xl font-bold text-primary-foreground mb-3 block" />
+          <InlineInput value={data.text} onChange={(v) => onUpdate({ text: v })} className="text-sm text-primary-foreground/80 mb-6 block" />
+          <Button variant="secondary" size="lg" className="rounded-xl px-8 py-5 shadow-lg">
+            <InlineInput value={data.buttonText} onChange={(v) => onUpdate({ buttonText: v })} />
+          </Button>
+        </>
+      ) : (
+        <>
+          <h3 className="text-2xl md:text-3xl font-bold text-primary-foreground mb-3">{data.heading}</h3>
+          <p className="text-sm text-primary-foreground/80 mb-6">{data.text}</p>
+          <Button variant="secondary" size="lg" className="rounded-xl px-8 py-5 shadow-lg">{data.buttonText}</Button>
+        </>
+      )}
     </div>
   </div>
 );
 
+const ContactFormSection = ({ data }: any) => (
+  <SectionWrapper alternate>
+    <SectionHeading text={data.heading} />
+    <div className="max-w-lg mx-auto bg-background rounded-2xl border border-border p-8 shadow-sm">
+      <div className="space-y-4">
+        {data.fields?.map((f: any, i: number) => (
+          <div key={i}>
+            <label className="text-xs font-semibold text-foreground mb-1.5 block">{f.label}{f.required && <span className="text-destructive"> *</span>}</label>
+            {f.type === "textarea" ? (
+              <textarea className="w-full rounded-xl border border-input bg-background px-4 py-3 text-sm min-h-[100px] focus:ring-2 focus:ring-primary/20 focus:border-primary/40 outline-none transition-all" placeholder={f.label} />
+            ) : (
+              <Input type={f.type} placeholder={f.label} className="rounded-xl py-5" />
+            )}
+          </div>
+        ))}
+        <Button className="w-full rounded-xl py-5 text-base">{data.submitText}</Button>
+      </div>
+    </div>
+  </SectionWrapper>
+);
+
 const CurriculumSection = ({ data, editable, onUpdate }: any) => (
-  <div className="max-w-2xl mx-auto">
+  <SectionWrapper alternate>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="space-y-3">
+    <div className="max-w-2xl mx-auto space-y-3">
       {data.modules?.map((m: any, i: number) => (
         <div key={i} className="relative group/item">
           {editable && <ItemRemoveBtn onClick={() => onUpdate({ modules: data.modules.filter((_: any, j: number) => j !== i) })} />}
-          <details className="rounded-lg border border-border p-4 group">
-            <summary className="font-medium text-foreground text-sm cursor-pointer list-none flex items-center justify-between">
-              {editable ? <InlineInput value={m.title} onChange={(v) => onUpdate({ modules: updateItem(data.modules, i, "title", v) })} /> : <span>{m.title}</span>}
-              <span className="text-xs text-muted-foreground">{m.duration}</span>
+          <details className="rounded-xl border border-border bg-background p-5 group open:border-primary/20 open:shadow-md transition-all">
+            <summary className="font-semibold text-foreground text-sm cursor-pointer list-none flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{i + 1}</span>
+                {editable ? <InlineInput value={m.title} onChange={(v) => onUpdate({ modules: updateItem(data.modules, i, "title", v) })} /> : <span>{m.title}</span>}
+              </div>
+              <span className="text-xs text-muted-foreground bg-muted px-2.5 py-1 rounded-full">{m.duration}</span>
             </summary>
-            <ul className="mt-3 space-y-1.5 pl-4">
+            <ul className="mt-4 space-y-2 pl-11">
               {m.lessons?.map((l: string, j: number) => (
-                <li key={j} className="text-sm text-muted-foreground flex items-center gap-2"><Play className="h-3 w-3 text-primary" />{l}</li>
+                <li key={j} className="text-sm text-muted-foreground flex items-center gap-2.5">
+                  <Play className="h-3.5 w-3.5 text-primary flex-shrink-0" />{l}
+                </li>
               ))}
             </ul>
           </details>
@@ -526,199 +613,215 @@ const CurriculumSection = ({ data, editable, onUpdate }: any) => (
       ))}
       {editable && <ItemAddButton onClick={() => onUpdate({ modules: [...(data.modules || []), { title: "New Module", duration: "1h", lessons: ["Lesson 1"] }] })} label="Add module" />}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const ScheduleSection = ({ data, editable, onUpdate }: any) => (
-  <div className="max-w-2xl mx-auto">
+  <SectionWrapper>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="space-y-2">
+    <div className="max-w-2xl mx-auto space-y-3">
       {data.events?.map((e: any, i: number) => (
-        <div key={i} className="relative group/item flex items-center gap-4 p-3 rounded-lg border border-border">
+        <div key={i} className="relative group/item flex items-center gap-5 p-4 rounded-xl border border-border bg-background hover:border-primary/20 hover:shadow-sm transition-all">
           {editable && <ItemRemoveBtn onClick={() => onUpdate({ events: data.events.filter((_: any, j: number) => j !== i) })} />}
-          <div className="text-xs font-semibold text-primary w-20 flex-shrink-0 flex items-center gap-1"><Clock className="h-3 w-3" />{e.time}</div>
+          <div className="text-xs font-bold text-primary bg-primary/10 rounded-lg px-3 py-2 flex-shrink-0 flex items-center gap-1.5">
+            <Clock className="h-3 w-3" />{e.time}
+          </div>
           <div className="flex-1">
             {editable ? (
-              <InlineInput value={e.title} onChange={(v) => onUpdate({ events: updateItem(data.events, i, "title", v) })} className="text-sm font-medium text-foreground block" />
+              <InlineInput value={e.title} onChange={(v) => onUpdate({ events: updateItem(data.events, i, "title", v) })} className="text-sm font-semibold text-foreground block" />
             ) : (
-              <p className="text-sm font-medium text-foreground">{e.title}</p>
+              <p className="text-sm font-semibold text-foreground">{e.title}</p>
             )}
-            {e.speaker && <p className="text-xs text-muted-foreground">{e.speaker}</p>}
+            {e.speaker && <p className="text-xs text-muted-foreground mt-0.5">{e.speaker}</p>}
           </div>
         </div>
       ))}
       {editable && <ItemAddButton onClick={() => onUpdate({ events: [...(data.events || []), { time: "TBD", title: "New Event", speaker: "" }] })} label="Add event" />}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const SpeakersSection = ({ data, editable, onUpdate }: any) => (
-  <div>
+  <SectionWrapper alternate>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {data.speakers?.map((s: any, i: number) => (
-        <div key={i} className="relative group/item text-center p-5 rounded-lg border border-border">
+        <div key={i} className="relative group/item flex gap-5 p-6 rounded-2xl border border-border bg-background hover:shadow-lg transition-all">
           {editable && <ItemRemoveBtn onClick={() => onUpdate({ speakers: data.speakers.filter((_: any, j: number) => j !== i) })} />}
-          <div className="w-20 h-20 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xl font-semibold mx-auto mb-3">{s.avatar}</div>
-          {editable ? (
-            <>
-              <InlineInput value={s.name} onChange={(v) => onUpdate({ speakers: updateItem(data.speakers, i, "name", v) })} className="font-medium text-foreground block" />
-              <InlineInput value={s.title} onChange={(v) => onUpdate({ speakers: updateItem(data.speakers, i, "title", v) })} className="text-xs text-primary block" />
-              <InlineInput value={s.bio} onChange={(v) => onUpdate({ speakers: updateItem(data.speakers, i, "bio", v) })} className="text-xs text-muted-foreground mt-2 block" />
-            </>
-          ) : (
-            <>
-              <p className="font-medium text-foreground">{s.name}</p>
-              <p className="text-xs text-primary">{s.title}</p>
-              <p className="text-xs text-muted-foreground mt-2">{s.bio}</p>
-            </>
-          )}
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 text-primary flex items-center justify-center text-2xl font-bold flex-shrink-0">{s.avatar}</div>
+          <div>
+            {editable ? (
+              <>
+                <InlineInput value={s.name} onChange={(v) => onUpdate({ speakers: updateItem(data.speakers, i, "name", v) })} className="font-bold text-foreground text-lg block" />
+                <InlineInput value={s.title} onChange={(v) => onUpdate({ speakers: updateItem(data.speakers, i, "title", v) })} className="text-xs text-primary font-medium block mt-0.5" />
+                <InlineInput value={s.bio} onChange={(v) => onUpdate({ speakers: updateItem(data.speakers, i, "bio", v) })} className="text-sm text-muted-foreground mt-2 leading-relaxed block" />
+              </>
+            ) : (
+              <>
+                <p className="font-bold text-foreground text-lg">{s.name}</p>
+                <p className="text-xs text-primary font-medium mt-0.5">{s.title}</p>
+                <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{s.bio}</p>
+              </>
+            )}
+          </div>
         </div>
       ))}
       {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ speakers: [...(data.speakers || []), { name: "New Speaker", title: "Title", bio: "Bio", avatar: "N" }] })} label="Add speaker" /></div>}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const NewsletterSection = ({ data, editable, onUpdate }: any) => (
-  <div className="max-w-md mx-auto text-center rounded-lg border border-border p-6 bg-secondary/30">
-    {editable ? (
-      <>
-        <InlineInput value={data.heading} onChange={(v) => onUpdate({ heading: v })} className="text-lg font-semibold text-foreground mb-1 block" />
-        <InlineInput value={data.text} onChange={(v) => onUpdate({ text: v })} className="text-sm text-muted-foreground mb-4 block" />
-      </>
-    ) : (
-      <>
-        <h3 className="text-lg font-semibold text-foreground mb-1">{data.heading}</h3>
-        <p className="text-sm text-muted-foreground mb-4">{data.text}</p>
-      </>
-    )}
-    <div className="flex gap-2">
-      <Input placeholder="your@email.com" className="flex-1" />
-      <Button>{data.buttonText}</Button>
+  <SectionWrapper>
+    <div className="max-w-md mx-auto text-center rounded-2xl border border-border p-8 bg-gradient-to-br from-muted/50 to-muted/20">
+      {editable ? (
+        <>
+          <InlineInput value={data.heading} onChange={(v) => onUpdate({ heading: v })} className="text-lg font-bold text-foreground mb-2 block" />
+          <InlineInput value={data.text} onChange={(v) => onUpdate({ text: v })} className="text-sm text-muted-foreground mb-5 block" />
+        </>
+      ) : (
+        <>
+          <h3 className="text-lg font-bold text-foreground mb-2">{data.heading}</h3>
+          <p className="text-sm text-muted-foreground mb-5">{data.text}</p>
+        </>
+      )}
+      <div className="flex gap-2">
+        <Input placeholder="your@email.com" className="flex-1 rounded-xl py-5" />
+        <Button className="rounded-xl px-6">{data.buttonText}</Button>
+      </div>
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const ClientsSection = ({ data, editable, onUpdate }: any) => (
-  <div>
-    <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="flex items-center justify-center gap-8 flex-wrap">
-      {data.names?.map((name: string, i: number) => (
-        <div key={i} className="relative group/item">
-          {editable && <ItemRemoveBtn onClick={() => onUpdate({ names: data.names.filter((_: any, j: number) => j !== i) })} />}
-          {editable ? (
-            <InlineInput value={name} onChange={(v) => { const updated = [...data.names]; updated[i] = v; onUpdate({ names: updated }); }} className="text-lg font-bold text-muted-foreground/40 hover:text-muted-foreground" />
-          ) : (
-            <div className="text-lg font-bold text-muted-foreground/40 hover:text-muted-foreground transition-colors">{name}</div>
-          )}
-        </div>
-      ))}
-      {editable && <button onClick={() => onUpdate({ names: [...(data.names || []), "New Client"] })} className="text-muted-foreground hover:text-foreground"><Plus className="h-5 w-5" /></button>}
+  <div className="px-8 py-10 border-y border-border bg-muted/20">
+    <div className="max-w-4xl mx-auto">
+      <p className="text-xs font-semibold uppercase tracking-widest text-center text-muted-foreground mb-6">{data.heading}</p>
+      <div className="flex items-center justify-center gap-10 flex-wrap">
+        {data.names?.map((name: string, i: number) => (
+          <div key={i} className="relative group/item">
+            {editable && <ItemRemoveBtn onClick={() => onUpdate({ names: data.names.filter((_: any, j: number) => j !== i) })} />}
+            {editable ? (
+              <InlineInput value={name} onChange={(v) => { const updated = [...data.names]; updated[i] = v; onUpdate({ names: updated }); }} className="text-xl font-bold text-muted-foreground/30 hover:text-muted-foreground transition-colors" />
+            ) : (
+              <div className="text-xl font-bold text-muted-foreground/30 hover:text-muted-foreground transition-colors cursor-default">{name}</div>
+            )}
+          </div>
+        ))}
+        {editable && <button onClick={() => onUpdate({ names: [...(data.names || []), "New Client"] })} className="text-muted-foreground hover:text-foreground"><Plus className="h-5 w-5" /></button>}
+      </div>
     </div>
   </div>
 );
 
 const PortfolioSection = ({ data }: any) => (
-  <div>
+  <SectionWrapper>
     <SectionHeading text={data.heading} />
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
       {data.items?.map((item: any, i: number) => (
-        <div key={i} className="rounded-lg border border-border overflow-hidden group hover:shadow-md transition-shadow">
-          <img src={item.image} alt={item.title} className="w-full h-32 object-cover group-hover:scale-105 transition-transform" />
-          <div className="p-3">
-            <p className="text-sm font-medium text-foreground">{item.title}</p>
-            <p className="text-xs text-primary">{item.category}</p>
+        <div key={i} className="rounded-2xl border border-border overflow-hidden group hover:shadow-xl transition-all duration-300">
+          <div className="overflow-hidden">
+            <img src={item.image} alt={item.title} className="w-full h-40 object-cover group-hover:scale-110 transition-transform duration-500" />
+          </div>
+          <div className="p-4">
+            <p className="text-sm font-semibold text-foreground">{item.title}</p>
+            <p className="text-xs text-primary font-medium">{item.category}</p>
           </div>
         </div>
       ))}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const ImpactSection = ({ data }: any) => (
-  <div>
+  <SectionWrapper>
     <SectionHeading text={data.heading} />
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       {data.stories?.map((story: any, i: number) => (
-        <div key={i} className="rounded-lg border border-border overflow-hidden">
-          <img src={story.image} alt={story.title} className="w-full h-40 object-cover" />
-          <div className="p-4">
-            <p className="font-medium text-foreground mb-1">{story.title}</p>
-            <p className="text-sm text-muted-foreground">{story.text}</p>
+        <div key={i} className="rounded-2xl border border-border overflow-hidden hover:shadow-xl transition-all group">
+          <div className="overflow-hidden">
+            <img src={story.image} alt={story.title} className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" />
+          </div>
+          <div className="p-5">
+            <p className="font-semibold text-foreground mb-2">{story.title}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{story.text}</p>
           </div>
         </div>
       ))}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const DonationSection = ({ data, editable, onUpdate }: any) => {
   const percent = parseInt(data.raised?.replace(/[^0-9]/g, "") || "0") / parseInt(data.goal?.replace(/[^0-9]/g, "") || "1") * 100;
   return (
-    <div className="max-w-lg mx-auto text-center">
+    <SectionWrapper>
       <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-      {editable ? (
-        <InlineInput value={data.text} onChange={(v) => onUpdate({ text: v })} className="text-sm text-muted-foreground mb-4 block" />
-      ) : (
-        <p className="text-sm text-muted-foreground mb-4">{data.text}</p>
-      )}
-      <div className="w-full bg-secondary rounded-full h-3 mb-3">
-        <div className="bg-primary h-3 rounded-full transition-all" style={{ width: `${Math.min(percent, 100)}%` }} />
+      <div className="max-w-lg mx-auto text-center">
+        {editable ? (
+          <InlineInput value={data.text} onChange={(v) => onUpdate({ text: v })} className="text-sm text-muted-foreground mb-6 block" />
+        ) : (
+          <p className="text-sm text-muted-foreground mb-6">{data.text}</p>
+        )}
+        <div className="w-full bg-muted rounded-full h-4 mb-3 overflow-hidden">
+          <div className="bg-gradient-to-r from-primary to-primary/70 h-4 rounded-full transition-all" style={{ width: `${Math.min(percent, 100)}%` }} />
+        </div>
+        <p className="text-sm text-foreground mb-6"><span className="font-bold text-lg">{data.raised}</span> raised of {data.goal} goal</p>
+        <div className="flex gap-3 justify-center flex-wrap">
+          {data.amounts?.map((amt: string, i: number) => (
+            <Button key={i} variant="outline" className="rounded-xl px-6">{amt}</Button>
+          ))}
+          <Button className="rounded-xl px-6">Custom Amount</Button>
+        </div>
       </div>
-      <p className="text-sm text-foreground mb-4"><span className="font-bold">{data.raised}</span> raised of {data.goal} goal</p>
-      <div className="flex gap-2 justify-center flex-wrap">
-        {data.amounts?.map((amt: string, i: number) => (
-          <Button key={i} variant="outline" size="sm">{amt}</Button>
-        ))}
-        <Button size="sm">Custom Amount</Button>
-      </div>
-    </div>
+    </SectionWrapper>
   );
 };
 
 const ProductsSection = ({ data, editable, onUpdate }: any) => (
-  <div>
+  <SectionWrapper>
     <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
       {data.items?.map((item: any, i: number) => (
-        <div key={i} className="relative group/item rounded-lg border border-border overflow-hidden hover:shadow-md transition-shadow">
+        <div key={i} className="relative group/item rounded-2xl border border-border bg-background overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
           {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
-          <div className="relative">
-            <img src={item.image} alt={item.title} className="w-full h-40 object-cover" />
-            {item.badge && <span className="absolute top-2 left-2 text-[10px] font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">{item.badge}</span>}
+          <div className="relative overflow-hidden">
+            <img src={item.image} alt={item.title} className="w-full h-44 object-cover group-hover/item:scale-110 transition-transform duration-500" />
+            {item.badge && <span className="absolute top-3 left-3 text-[10px] font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg">{item.badge}</span>}
           </div>
-          <div className="p-3">
+          <div className="p-4">
             {editable ? (
               <>
-                <InlineInput value={item.title} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "title", v) })} className="text-sm font-medium text-foreground block" />
-                <InlineInput value={item.price} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "price", v) })} className="text-sm font-bold text-primary mt-1 block" />
+                <InlineInput value={item.title} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "title", v) })} className="text-sm font-semibold text-foreground block" />
+                <InlineInput value={item.price} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "price", v) })} className="text-lg font-bold text-primary mt-1 block" />
               </>
             ) : (
               <>
-                <p className="text-sm font-medium text-foreground">{item.title}</p>
-                <p className="text-sm font-bold text-primary mt-1">{item.price}</p>
+                <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                <p className="text-lg font-bold text-primary mt-1">{item.price}</p>
               </>
             )}
-            <Button size="sm" variant="outline" className="w-full mt-2">Add to Cart</Button>
+            <Button size="sm" className="w-full mt-3 rounded-xl">Add to Cart</Button>
           </div>
         </div>
       ))}
       {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { title: "New Product", price: "$0", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop" }] })} label="Add product" /></div>}
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const VideoSection = ({ data }: any) => (
-  <div className="max-w-2xl mx-auto">
+  <SectionWrapper>
     <SectionHeading text={data.heading} />
-    <div className="aspect-video rounded-lg overflow-hidden border border-border bg-secondary flex items-center justify-center">
+    <div className="max-w-2xl mx-auto aspect-video rounded-2xl overflow-hidden border border-border bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center shadow-xl cursor-pointer group hover:shadow-2xl transition-all">
       <div className="text-center">
-        <Play className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
-        <p className="text-sm text-muted-foreground">Video preview</p>
+        <div className="w-16 h-16 rounded-full bg-primary/90 text-primary-foreground flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform shadow-lg shadow-primary/30">
+          <Play className="h-7 w-7 ml-1" />
+        </div>
+        <p className="text-sm text-muted-foreground font-medium">Click to play</p>
       </div>
     </div>
-  </div>
+  </SectionWrapper>
 );
 
 const CountdownSection = ({ data }: any) => {
@@ -734,15 +837,17 @@ const CountdownSection = ({ data }: any) => {
   }, [data.targetDate]);
 
   return (
-    <div className="text-center">
-      <SectionHeading text={data.heading} />
-      <div className="flex items-center justify-center gap-4">
-        {Object.entries(timeLeft).map(([label, val]) => (
-          <div key={label} className="text-center">
-            <div className="text-3xl font-bold text-foreground bg-secondary rounded-lg w-20 h-20 flex items-center justify-center">{val}</div>
-            <p className="text-xs text-muted-foreground mt-1.5 capitalize">{label}</p>
-          </div>
-        ))}
+    <div className="bg-gradient-to-r from-muted/50 to-muted/30 px-8 py-14">
+      <div className="max-w-4xl mx-auto text-center">
+        <SectionHeading text={data.heading} />
+        <div className="flex items-center justify-center gap-4 md:gap-6">
+          {Object.entries(timeLeft).map(([label, val]) => (
+            <div key={label} className="text-center">
+              <div className="text-3xl md:text-5xl font-extrabold text-foreground bg-background rounded-2xl w-20 h-20 md:w-24 md:h-24 flex items-center justify-center shadow-lg border border-border">{val}</div>
+              <p className="text-xs text-muted-foreground mt-2 capitalize font-medium">{label}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
