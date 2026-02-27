@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Monitor, Smartphone, Eye, Settings, Sparkles, Send,
   X, Copy, Share2, Save, Loader2, CheckCircle2, Plus, Trash2, GripVertical,
-  FileText,
+  FileText, CreditCard, ShoppingCart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,10 +12,14 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { addSite, type SmartPageSite } from "./WebsiteBuilder";
-import { templates, availableSectionTypes, createDefaultSection, type TemplateData, type SectionData, type PageData } from "@/data/smartPageTemplates";
+import { templates, availableSectionTypes, createDefaultSection, createCheckoutConfig, type TemplateData, type SectionData, type PageData, type CheckoutConfig, type CheckoutFormField } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
+import { SmartPageCheckout } from "@/components/SmartPageCheckout";
 
 interface PageState {
   heroTitle: string;
@@ -31,6 +35,7 @@ interface EditorState {
   /** Per-page state. Key = page name. */
   pages: Record<string, PageState>;
   activePage: string;
+  checkout: CheckoutConfig | null;
 }
 
 const buildPageState = (pd: PageData | undefined, fallback: TemplateData): PageState => {
@@ -90,7 +95,7 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
     pages[pageName] = buildPageState(pd, base);
   }
 
-  return { template: base, pages, activePage: homePage };
+  return { template: base, pages, activePage: homePage, checkout: base.checkout || null };
 };
 
 interface ChatMsg {
@@ -134,11 +139,43 @@ const SmartPageEditor = () => {
 
   // Current page helpers
   const activePage = state.activePage;
-  const currentPage = state.pages[activePage];
+  const isCheckoutPage = activePage === "__checkout__";
+  const currentPage = isCheckoutPage ? state.pages[state.template.pages[0]] : state.pages[activePage];
   const pageNames = state.template.pages;
+  const hasCheckout = !!state.checkout?.enabled;
 
   const setActivePage = (pageName: string) => {
     setState((prev) => ({ ...prev, activePage: pageName }));
+  };
+
+  const updateCheckout = (updates: Partial<CheckoutConfig>) => {
+    setState((prev) => ({
+      ...prev,
+      checkout: prev.checkout ? { ...prev.checkout, ...updates } : null,
+    }));
+    setUnsavedChanges(true);
+  };
+
+  const updateCheckoutField = (fieldId: string, updates: Partial<CheckoutFormField>) => {
+    if (!state.checkout) return;
+    updateCheckout({
+      formFields: state.checkout.formFields.map((f) =>
+        f.id === fieldId ? { ...f, ...updates } : f
+      ),
+    });
+  };
+
+  const addCheckoutField = () => {
+    if (!state.checkout) return;
+    const newField: CheckoutFormField = {
+      id: `f_${Date.now()}`, label: "New Field", type: "text", required: false, placeholder: "Enter value",
+    };
+    updateCheckout({ formFields: [...state.checkout.formFields, newField] });
+  };
+
+  const removeCheckoutField = (fieldId: string) => {
+    if (!state.checkout) return;
+    updateCheckout({ formFields: state.checkout.formFields.filter((f) => f.id !== fieldId) });
   };
 
   // Build a virtual TemplateData for the current page to pass to SitePreview
@@ -356,42 +393,63 @@ const SmartPageEditor = () => {
       </div>
 
       {/* Page Tabs Bar */}
-      {pageNames.length > 1 && (
-        <div className="flex items-center gap-1 px-4 py-1.5 border-b border-border bg-muted/30 overflow-x-auto">
-          {pageNames.map((page) => (
-            <button
-              key={page}
-              onClick={() => setActivePage(page)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
-                activePage === page
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              <FileText className="h-3 w-3" />
-              {page}
-            </button>
-          ))}
-          <AddPageButton onAdd={addPage} />
-        </div>
-      )}
+      <div className="flex items-center gap-1 px-4 py-1.5 border-b border-border bg-muted/30 overflow-x-auto">
+        {pageNames.map((page) => (
+          <button
+            key={page}
+            onClick={() => setActivePage(page)}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+              activePage === page && !isCheckoutPage
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+            }`}
+          >
+            <FileText className="h-3 w-3" />
+            {page}
+          </button>
+        ))}
+        {hasCheckout && (
+          <button
+            onClick={() => setActivePage("__checkout__")}
+            className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+              isCheckoutPage
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+            }`}
+          >
+            <ShoppingCart className="h-3 w-3" />
+            Checkout
+          </button>
+        )}
+        <AddPageButton onAdd={addPage} />
+      </div>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Preview Area */}
         <ScrollArea className="flex-1 bg-muted/30 p-6">
           <div className={`mx-auto bg-background rounded-lg shadow-sm border border-border overflow-hidden transition-all ${viewMode === "mobile" ? "max-w-sm" : "max-w-4xl"}`}>
-            <SitePreview
-              template={currentTemplate}
-              sections={currentPage.sections}
-              editable
-              activePage={activePage}
-              onPageChange={setActivePage}
-              onUpdateHero={(updates) => updatePageHero(updates)}
-              onUpdateSection={(id, data) => updateSectionData(id, data)}
-              onRemoveSection={removeSection}
-              onMoveSection={moveSection}
-              onAddSection={addSection}
-            />
+            {isCheckoutPage && state.checkout ? (
+              <SmartPageCheckout
+                template={currentTemplate}
+                checkout={state.checkout}
+                viewMode={viewMode}
+                editable
+                onUpdateCheckout={updateCheckout}
+              />
+            ) : (
+              <SitePreview
+                template={currentTemplate}
+                sections={currentPage.sections}
+                editable
+                activePage={activePage}
+                onPageChange={setActivePage}
+                onUpdateHero={(updates) => updatePageHero(updates)}
+                onUpdateSection={(id, data) => updateSectionData(id, data)}
+                onRemoveSection={removeSection}
+                onMoveSection={moveSection}
+                onAddSection={addSection}
+              />
+            )}
           </div>
         </ScrollArea>
 
@@ -438,6 +496,7 @@ const SmartPageEditor = () => {
                 <TabsTrigger value="page" className="text-xs">Page</TabsTrigger>
                 <TabsTrigger value="pages" className="text-xs">Pages</TabsTrigger>
                 <TabsTrigger value="sections" className="text-xs">Sections</TabsTrigger>
+                {hasCheckout && <TabsTrigger value="checkout" className="text-xs">Checkout</TabsTrigger>}
                 <TabsTrigger value="seo" className="text-xs">SEO</TabsTrigger>
               </TabsList>
 
@@ -492,6 +551,102 @@ const SmartPageEditor = () => {
                     <Plus className="h-3.5 w-3.5" /> Add Section
                   </Button>
                 </TabsContent>
+
+                {hasCheckout && state.checkout && (
+                  <TabsContent value="checkout" className="p-4 space-y-4">
+                    <p className="text-xs text-muted-foreground mb-2">Configure the checkout page for your product/service.</p>
+
+                    <div className="space-y-3">
+                      <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Payment</h4>
+                      <div>
+                        <label className="text-xs font-medium text-foreground">Amount Type</label>
+                        <Select value={state.checkout.amountType} onValueChange={(v) => updateCheckout({ amountType: v as "fixed" | "custom" })}>
+                          <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="fixed">Fixed Amount</SelectItem>
+                            <SelectItem value="custom">Customer Enters Amount</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground">Amount (₹)</label>
+                        <Input type="number" value={state.checkout.amount} onChange={(e) => updateCheckout({ amount: Number(e.target.value) })} className="mt-1.5" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium text-foreground">Button Text</label>
+                        <Input value={state.checkout.buttonText} onChange={(e) => updateCheckout({ buttonText: e.target.value })} className="mt-1.5" />
+                      </div>
+                      <div className="space-y-2 pt-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-foreground">Send receipt</span>
+                          <Switch checked={state.checkout.sendReceipt} onCheckedChange={(v) => updateCheckout({ sendReceipt: v })} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-foreground">Enable GST</span>
+                          <Switch checked={state.checkout.gstEnabled} onCheckedChange={(v) => updateCheckout({ gstEnabled: v })} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-foreground">Collect Address</span>
+                          <Switch checked={state.checkout.collectAddress} onCheckedChange={(v) => updateCheckout({ collectAddress: v })} />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Form Fields</h4>
+                      <p className="text-xs text-muted-foreground">Customize what information you collect.</p>
+                      {state.checkout.formFields.map((field) => (
+                        <div key={field.id} className="flex items-center gap-2 p-2.5 rounded-md border border-border bg-secondary/30">
+                          <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                          <div className="flex-1">
+                            <Input value={field.label} onChange={(e) => updateCheckoutField(field.id, { label: e.target.value })} className="h-7 text-xs" />
+                          </div>
+                          <Select value={field.type} onValueChange={(v) => updateCheckoutField(field.id, { type: v as CheckoutFormField["type"] })}>
+                            <SelectTrigger className="w-20 h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="text">Text</SelectItem>
+                              <SelectItem value="email">Email</SelectItem>
+                              <SelectItem value="phone">Phone</SelectItem>
+                              <SelectItem value="number">Number</SelectItem>
+                              <SelectItem value="select">Dropdown</SelectItem>
+                              <SelectItem value="textarea">Textarea</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[10px] text-muted-foreground">Req</span>
+                            <Switch checked={field.required} onCheckedChange={(v) => updateCheckoutField(field.id, { required: v })} />
+                          </div>
+                          <button onClick={() => removeCheckoutField(field.id)} className="text-muted-foreground hover:text-destructive">
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={addCheckoutField}>
+                        <Plus className="h-3.5 w-3.5" /> Add Field
+                      </Button>
+                    </div>
+
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Product Highlights</h4>
+                      <p className="text-xs text-muted-foreground">Shown on the left side of checkout.</p>
+                      {state.checkout.highlights.map((h, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <Input value={h} onChange={(e) => { const u = [...state.checkout!.highlights]; u[i] = e.target.value; updateCheckout({ highlights: u }); }} className="flex-1 h-7 text-xs" />
+                          <button onClick={() => updateCheckout({ highlights: state.checkout!.highlights.filter((_, j) => j !== i) })} className="text-muted-foreground hover:text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+                        </div>
+                      ))}
+                      <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => updateCheckout({ highlights: [...state.checkout!.highlights, "New highlight"] })}>
+                        <Plus className="h-3.5 w-3.5" /> Add Highlight
+                      </Button>
+                    </div>
+
+                    <div className="border-t border-border pt-4 space-y-3">
+                      <h4 className="text-xs font-semibold text-foreground uppercase tracking-wider">Post-Payment</h4>
+                      <div><label className="text-xs font-medium text-foreground">Success Message</label><Textarea value={state.checkout.successMessage} onChange={(e) => updateCheckout({ successMessage: e.target.value })} rows={2} className="mt-1.5" /></div>
+                      <div><label className="text-xs font-medium text-foreground">Redirect URL</label><Input value={state.checkout.redirectUrl} onChange={(e) => updateCheckout({ redirectUrl: e.target.value })} placeholder="https://..." className="mt-1.5" /></div>
+                    </div>
+                  </TabsContent>
+                )}
 
                 <TabsContent value="seo" className="p-4 space-y-4">
                   <div>

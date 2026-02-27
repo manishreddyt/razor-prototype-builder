@@ -27,6 +27,31 @@ export interface PageData {
   sections: SectionData[];
 }
 
+export interface CheckoutFormField {
+  id: string;
+  label: string;
+  type: "text" | "email" | "phone" | "select" | "textarea" | "number";
+  required: boolean;
+  placeholder: string;
+  options?: string[]; // for select type
+}
+
+export interface CheckoutConfig {
+  enabled: boolean;
+  amount: number;
+  amountType: "fixed" | "custom";
+  currency: string;
+  buttonText: string;
+  successMessage: string;
+  redirectUrl: string;
+  collectAddress: boolean;
+  sendReceipt: boolean;
+  gstEnabled: boolean;
+  formFields: CheckoutFormField[];
+  /** Product features/highlights shown on checkout left side */
+  highlights: string[];
+}
+
 export interface TemplateData {
   id: string;
   title: string;
@@ -42,6 +67,8 @@ export interface TemplateData {
   sections: SectionData[];
   /** Per-page content. Key = page name. "Home" maps to the top-level hero/sections. */
   pagesData?: Record<string, PageData>;
+  /** Checkout/payment configuration */
+  checkout?: CheckoutConfig;
 }
 
 const makeId = () => `s_${Math.random().toString(36).slice(2, 8)}`;
@@ -269,7 +296,38 @@ export const categories = [
   { id: "ecommerce", label: "E-commerce", icon: ShoppingBag },
 ];
 
+// ──────────────── Default checkout config factory ────────────────
+
+const defaultCheckoutFields = (): CheckoutFormField[] => [
+  { id: "f_name", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
+  { id: "f_email", label: "Email", type: "email", required: true, placeholder: "Enter your email" },
+  { id: "f_phone", label: "Phone", type: "phone", required: false, placeholder: "Enter your phone number" },
+];
+
+export const createCheckoutConfig = (
+  amount: number,
+  buttonText = "Pay Now",
+  highlights: string[] = [],
+  extraFields: CheckoutFormField[] = [],
+  overrides: Partial<CheckoutConfig> = {},
+): CheckoutConfig => ({
+  enabled: true,
+  amount,
+  amountType: "fixed",
+  currency: "INR",
+  buttonText,
+  successMessage: "Payment successful! You'll receive a confirmation email shortly.",
+  redirectUrl: "",
+  collectAddress: false,
+  sendReceipt: true,
+  gstEnabled: true,
+  formFields: [...defaultCheckoutFields(), ...extraFields],
+  highlights,
+  ...overrides,
+});
+
 // ──────────────── FULL TEMPLATES ────────────────
+
 
 export const templates: TemplateData[] = [
   // ─── General ───
@@ -419,6 +477,13 @@ export const templates: TemplateData[] = [
         ],
       },
     },
+    checkout: createCheckoutConfig(4999, "Enroll Now — ₹4,999", [
+      "Lifetime access to 100+ courses",
+      "Expert-led video lessons",
+      "Completion certificates",
+      "Community forum access",
+      "Monthly live Q&A sessions",
+    ]),
   },
 
   // 2. SINGLE COURSE
@@ -531,6 +596,16 @@ export const templates: TemplateData[] = [
         ],
       },
     },
+    checkout: createCheckoutConfig(12999, "Enroll Now — ₹12,999", [
+      "12-week intensive bootcamp",
+      "120+ hours of hands-on content",
+      "Real-world capstone projects",
+      "1:1 mentor sessions",
+      "Job placement assistance",
+      "Lifetime community access",
+    ], [
+      { id: "f_exp", label: "Experience Level", type: "select", required: true, placeholder: "Select your level", options: ["Beginner", "Intermediate", "Advanced"] },
+    ]),
   },
 
   // 3. WEBINAR
@@ -617,6 +692,13 @@ export const templates: TemplateData[] = [
         ],
       },
     },
+    checkout: createCheckoutConfig(0, "Register for Free", [
+      "90-minute live masterclass",
+      "Expert AI insights from Google & MIT",
+      "Downloadable resources & slides",
+      "Certificate of attendance",
+      "Recording access for 7 days",
+    ], [], { amountType: "fixed", amount: 0, gstEnabled: false, buttonText: "Register Now — Free" }),
   },
 
   // 4. 1:1 COACHING
@@ -724,6 +806,16 @@ export const templates: TemplateData[] = [
         ],
       },
     },
+    checkout: createCheckoutConfig(7999, "Book Your Session — ₹7,999", [
+      "60-minute 1:1 coaching call",
+      "Personalized action plan",
+      "Career roadmap document",
+      "2 weeks of follow-up support",
+      "Access to resource library",
+    ], [
+      { id: "f_goal", label: "What's your primary goal?", type: "textarea", required: true, placeholder: "Tell us about your goals..." },
+      { id: "f_slot", label: "Preferred Time Slot", type: "select", required: true, placeholder: "Select time", options: ["Morning (9-12)", "Afternoon (12-5)", "Evening (5-8)"] },
+    ]),
   },
 
   // 5. WORKSHOP SERIES
@@ -827,6 +919,16 @@ export const templates: TemplateData[] = [
         ],
       },
     },
+    checkout: createCheckoutConfig(3999, "Enroll in Workshop — ₹3,999", [
+      "Full-day hands-on workshop",
+      "Max 20 seats per batch",
+      "Take-home project & materials",
+      "Completion certificate",
+      "Workshop recording access",
+    ], [
+      { id: "f_workshop", label: "Workshop", type: "select", required: true, placeholder: "Select workshop", options: ["React Masterclass", "Python for Data Science", "Figma to Production", "DevOps & AWS"] },
+      { id: "f_batch", label: "Preferred Batch", type: "select", required: true, placeholder: "Select batch", options: ["This Weekend", "Mar 9", "Mar 15", "Mar 22"] },
+    ]),
   },
 
   // 6. MEMBERSHIP / COMMUNITY
@@ -940,6 +1042,15 @@ export const templates: TemplateData[] = [
         ],
       },
     },
+    checkout: createCheckoutConfig(999, "Join Pro — ₹999/mo", [
+      "Weekly live masterclasses",
+      "Full resource vault (500+ items)",
+      "Private Slack community",
+      "Event recordings library",
+      "Accountability group matching",
+    ], [
+      { id: "f_plan", label: "Membership Plan", type: "select", required: true, placeholder: "Select plan", options: ["Free (₹0/mo)", "Pro (₹999/mo)", "VIP (₹2,999/mo)"] },
+    ]),
   },
 
   // ─── Services ───
