@@ -328,9 +328,13 @@ const SmartPageEditor = () => {
         name: homePage.heroTitle,
         type: state.template.title,
         category: state.template.category,
-        url: `https://rzp.io/s/${slug}`,
+        slug,
+        templateId: state.template.id,
+        url: `/s/${slug}`,
         created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
         views: 0, conversions: 0, status: "Published",
+        amount: state.checkout?.amount || 0,
+        transactions: 0,
       };
       addSite(newSite);
       toast.success("Website published!");
@@ -339,7 +343,7 @@ const SmartPageEditor = () => {
   };
 
   const copyLink = () => {
-    navigator.clipboard.writeText(`https://rzp.io/s/${slug}`);
+    navigator.clipboard.writeText(`${window.location.origin}/s/${slug}`);
     toast.success("Link copied!");
   };
 
@@ -652,7 +656,7 @@ const SmartPageEditor = () => {
                   <div>
                     <label className="text-xs font-medium text-foreground">URL Slug</label>
                     <div className="flex items-center gap-1 mt-1.5">
-                      <span className="text-xs text-muted-foreground">rzp.io/s/</span>
+                      <span className="text-xs text-muted-foreground">/s/</span>
                       <Input value={slug} onChange={(e) => { setSlug(e.target.value); setUnsavedChanges(true); }} className="flex-1" />
                     </div>
                   </div>
@@ -702,7 +706,7 @@ const SmartPageEditor = () => {
             <div>
               <label className="text-xs font-medium text-foreground">Site URL</label>
               <div className="flex items-center gap-2 mt-1.5">
-                <Input value={`https://rzp.io/s/${slug}`} readOnly className="flex-1 text-xs" />
+              <Input value={`${window.location.origin}/s/${slug}`} readOnly className="flex-1 text-xs" />
                 <Button variant="outline" size="sm" onClick={copyLink}><Copy className="h-3.5 w-3.5" /></Button>
               </div>
             </div>
@@ -725,7 +729,7 @@ const SmartPageEditor = () => {
           <DialogHeader><DialogTitle>Share Website</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="p-3 bg-secondary rounded-md flex items-center justify-between">
-              <span className="text-sm text-muted-foreground truncate mr-2">https://rzp.io/s/{slug}</span>
+              <span className="text-sm text-muted-foreground truncate mr-2">/s/{slug}</span>
               <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0" onClick={copyLink}><Copy className="h-3.5 w-3.5" /> Copy</Button>
             </div>
             <div className="grid grid-cols-2 gap-2">

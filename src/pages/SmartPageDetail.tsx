@@ -119,10 +119,10 @@ const SmartPageDetail = () => {
               <span>{site.type}</span>
               <span>•</span>
               <span>Created {site.created}</span>
-              {site.url !== "—" && (
+              {site.url !== "—" && site.status === "Published" && (
                 <>
                   <span>•</span>
-                  <a href="#" className="text-primary hover:underline flex items-center gap-1">{site.url} <ExternalLink className="h-3 w-3" /></a>
+                  <a href={site.url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">{site.url} <ExternalLink className="h-3 w-3" /></a>
                 </>
               )}
             </div>
@@ -131,7 +131,7 @@ const SmartPageDetail = () => {
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/website-builder/editor?id=${site.id}`)}>
               <Pencil className="h-3.5 w-3.5" /> Edit Site
             </Button>
-            <Button size="sm" className="gap-1.5">
+            <Button size="sm" className="gap-1.5" onClick={() => { if (site.url && site.url !== "—") window.open(site.url, "_blank"); }}>
               <Eye className="h-3.5 w-3.5" /> View Live
             </Button>
           </div>
