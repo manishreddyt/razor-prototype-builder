@@ -44,6 +44,25 @@ const SmartPageCreate = () => {
   const [isFocused, setIsFocused] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateData | null>(null);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [previewActivePage, setPreviewActivePage] = useState<string>("Home");
+
+  // Compute preview template/sections for the active page
+  const previewPageTemplate = (() => {
+    if (!previewTemplate) return null;
+    if (previewActivePage === "Home" || previewActivePage === previewTemplate.pages[0]) {
+      return previewTemplate;
+    }
+    const pageData = previewTemplate.pagesData?.[previewActivePage];
+    if (!pageData) return previewTemplate;
+    return {
+      ...previewTemplate,
+      heroTitle: pageData.heroTitle,
+      heroTagline: pageData.heroTagline,
+      heroDescription: pageData.heroDescription || previewTemplate.heroDescription,
+      heroCta: pageData.heroCta || previewTemplate.heroCta,
+      sections: pageData.sections,
+    };
+  })();
 
   const filtered = templates.filter((t) => {
     const matchCat = activeCategory === "all" || t.category === activeCategory;
@@ -236,7 +255,7 @@ const SmartPageCreate = () => {
       </div>
 
       {/* Template Preview Dialog */}
-      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+      <Dialog open={!!previewTemplate} onOpenChange={() => { setPreviewTemplate(null); setPreviewActivePage("Home"); }}>
         <DialogContent className="max-w-5xl h-[90vh] p-0 gap-0 flex flex-col [&>button]:z-50 [&>button]:bg-background [&>button]:border [&>button]:border-border [&>button]:rounded-full [&>button]:shadow-md [&>button]:h-8 [&>button]:w-8 [&>button]:-top-3 [&>button]:-right-3">
           <div className="flex items-center justify-between px-5 py-3 border-b border-border flex-shrink-0">
             <div>
@@ -255,8 +274,13 @@ const SmartPageCreate = () => {
           </div>
           <ScrollArea className="flex-1 bg-muted/30">
             <div className={`mx-auto bg-background ${previewDevice === "mobile" ? "max-w-sm border-x border-border" : ""}`}>
-              {previewTemplate && (
-                <SitePreview template={previewTemplate} sections={previewTemplate.sections} />
+              {previewPageTemplate && (
+                <SitePreview
+                  template={previewPageTemplate}
+                  sections={previewPageTemplate.sections}
+                  activePage={previewActivePage}
+                  onPageChange={(page) => setPreviewActivePage(page)}
+                />
               )}
             </div>
           </ScrollArea>
