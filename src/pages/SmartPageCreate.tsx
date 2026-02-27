@@ -2,67 +2,22 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
-  ArrowLeft, Sparkles, Search, Globe, GraduationCap, Briefcase, Heart,
-  ShoppingBag, LayoutGrid, BookOpen, Video, UserCheck, Calendar, Users,
-  Store, Gift, FileText, ArrowRight,
+  ArrowLeft, Sparkles, Search, ArrowRight, Eye, X, Monitor, Smartphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-
-type Template = {
-  id: string;
-  title: string;
-  desc: string;
-  category: string;
-  icon: any;
-  pages: string[];
-};
-
-const categories = [
-  { id: "all", label: "All", icon: LayoutGrid },
-  { id: "general", label: "General", icon: Globe },
-  { id: "education", label: "Education", icon: GraduationCap },
-  { id: "services", label: "Services", icon: Briefcase },
-  { id: "nonprofit", label: "Non-Profit", icon: Heart },
-  { id: "ecommerce", label: "E-commerce", icon: ShoppingBag },
-];
-
-const templates: Template[] = [
-  // General
-  { id: "portfolio", title: "Personal Portfolio", desc: "Showcase your work, bio, and contact info.", category: "general", icon: Users, pages: ["Home", "About", "Portfolio", "Contact"] },
-  { id: "business", title: "Business Website", desc: "Company website with services and team pages.", category: "general", icon: Briefcase, pages: ["Home", "About", "Services", "Team", "Contact"] },
-  { id: "biolink", title: "Bio Link Page", desc: "Single-page link hub for social bios.", category: "general", icon: Globe, pages: ["Link Page"] },
-  { id: "event", title: "Event Landing", desc: "Promote events with countdown and registration.", category: "general", icon: Calendar, pages: ["Home", "Schedule", "Speakers", "Register"] },
-
-  // Education
-  { id: "multi-course", title: "Online Courses (Multi)", desc: "Course catalog with multiple offerings, categories, and enrollment.", category: "education", icon: BookOpen, pages: ["Home", "Courses", "Course Detail", "Enroll", "About"] },
-  { id: "single-course", title: "Single Online Course", desc: "Focused landing page for a single course with modules and pricing.", category: "education", icon: GraduationCap, pages: ["Home", "Curriculum", "Pricing", "Enroll", "FAQ"] },
-  { id: "webinar", title: "Webinar", desc: "Webinar registration page with speaker bio, agenda, and countdown.", category: "education", icon: Video, pages: ["Home", "Agenda", "Register"] },
-  { id: "coaching", title: "1:1 Coaching", desc: "Book personal coaching sessions with calendar and pricing.", category: "education", icon: UserCheck, pages: ["Home", "Services", "Book Session", "Testimonials", "Contact"] },
-  { id: "workshop", title: "Workshop Series", desc: "Multi-session workshops with schedules and pricing tiers.", category: "education", icon: Calendar, pages: ["Home", "Workshops", "Schedule", "Enroll"] },
-  { id: "membership", title: "Membership / Community", desc: "Gated community with membership tiers and content access.", category: "education", icon: Users, pages: ["Home", "Plans", "Content", "Join"] },
-
-  // Services
-  { id: "consulting", title: "Consulting Firm", desc: "Professional consulting with case studies and booking.", category: "services", icon: Briefcase, pages: ["Home", "Services", "Case Studies", "Book", "Contact"] },
-  { id: "freelancer", title: "Freelancer Profile", desc: "Showcase skills, past work, and testimonials.", category: "services", icon: UserCheck, pages: ["Home", "Work", "Testimonials", "Hire Me"] },
-  { id: "agency", title: "Creative Agency", desc: "Agency website with portfolio and client testimonials.", category: "services", icon: Store, pages: ["Home", "Work", "Team", "Clients", "Contact"] },
-
-  // Non-Profit
-  { id: "ngo", title: "NGO / Charity", desc: "Cause page with impact stories and donation collection.", category: "nonprofit", icon: Heart, pages: ["Home", "Our Cause", "Impact", "Donate", "Volunteer"] },
-  { id: "fundraiser", title: "Fundraiser Campaign", desc: "Campaign page with progress bar and donate button.", category: "nonprofit", icon: Gift, pages: ["Campaign Page"] },
-
-  // E-commerce
-  { id: "store", title: "Online Store", desc: "Product catalog with cart and checkout.", category: "ecommerce", icon: ShoppingBag, pages: ["Home", "Products", "Product Detail", "Cart", "Checkout"] },
-  { id: "digital", title: "Digital Products", desc: "Sell e-books, templates, presets with instant delivery.", category: "ecommerce", icon: FileText, pages: ["Home", "Products", "Download", "About"] },
-];
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { categories, templates, type TemplateData } from "@/data/smartPageTemplates";
+import { SitePreview } from "@/components/SitePreview";
 
 const SmartPageCreate = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
+  const [previewTemplate, setPreviewTemplate] = useState<TemplateData | null>(null);
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
 
   const filtered = templates.filter((t) => {
     const matchCat = activeCategory === "all" || t.category === activeCategory;
@@ -75,8 +30,8 @@ const SmartPageCreate = () => {
     navigate(`/website-builder/editor?prompt=${encodeURIComponent(aiPrompt)}`);
   };
 
-  const handleUseTemplate = (template: Template) => {
-    setSelectedTemplate(null);
+  const handleUseTemplate = (template: TemplateData) => {
+    setPreviewTemplate(null);
     navigate(`/website-builder/editor?template=${encodeURIComponent(template.id)}&title=${encodeURIComponent(template.title)}&type=${encodeURIComponent(template.title)}`);
   };
 
@@ -123,9 +78,7 @@ const SmartPageCreate = () => {
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
-                  activeCategory === cat.id
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  activeCategory === cat.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                 }`}
               >
                 <cat.icon className="h-3.5 w-3.5" />
@@ -142,13 +95,18 @@ const SmartPageCreate = () => {
         {/* Template Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((t) => (
-            <button
+            <div
               key={t.id}
-              onClick={() => setSelectedTemplate(t)}
               className="blade-card p-5 text-left hover:border-primary/40 hover:shadow-md transition-all group"
             >
-              <div className="h-28 rounded-md bg-gradient-to-br from-primary/10 via-secondary to-primary/5 mb-4 flex items-center justify-center border border-border">
-                <t.icon className="h-8 w-8 text-primary/50 group-hover:text-primary transition-colors" />
+              {/* Mini preview thumbnail */}
+              <div className="h-36 rounded-md bg-gradient-to-br from-primary/10 via-secondary to-primary/5 mb-4 flex items-center justify-center border border-border relative overflow-hidden">
+                <t.icon className="h-8 w-8 text-primary/40 group-hover:text-primary transition-colors" />
+                <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
+                  <Button size="sm" variant="secondary" className="gap-1.5 shadow-md" onClick={() => setPreviewTemplate(t)}>
+                    <Eye className="h-3.5 w-3.5" /> Preview
+                  </Button>
+                </div>
               </div>
               <div className="flex items-start justify-between gap-2">
                 <div>
@@ -165,7 +123,15 @@ const SmartPageCreate = () => {
                 ))}
                 {t.pages.length > 4 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{t.pages.length - 4}</span>}
               </div>
-            </button>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => setPreviewTemplate(t)}>
+                  <Eye className="h-3.5 w-3.5" /> Preview
+                </Button>
+                <Button size="sm" className="flex-1 gap-1" onClick={() => handleUseTemplate(t)}>
+                  Use Template <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
           ))}
         </div>
 
@@ -176,32 +142,33 @@ const SmartPageCreate = () => {
         )}
       </div>
 
-      {/* Template Preview Dialog */}
-      <Dialog open={!!selectedTemplate} onOpenChange={() => setSelectedTemplate(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{selectedTemplate?.title}</DialogTitle></DialogHeader>
-          {selectedTemplate && (
-            <div className="space-y-4">
-              <div className="h-40 rounded-md bg-gradient-to-br from-primary/15 via-secondary to-primary/5 flex items-center justify-center border border-border">
-                <selectedTemplate.icon className="h-12 w-12 text-primary/40" />
-              </div>
-              <p className="text-sm text-muted-foreground">{selectedTemplate.desc}</p>
-              <div>
-                <p className="text-xs font-medium text-foreground mb-2">Included Pages</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {selectedTemplate.pages.map((p) => (
-                    <span key={p} className="text-xs px-2 py-1 rounded-md bg-secondary text-foreground">{p}</span>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setSelectedTemplate(null)}>Cancel</Button>
-                <Button className="flex-1 gap-1.5" onClick={() => handleUseTemplate(selectedTemplate)}>
-                  Use Template <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+      {/* Template Preview Dialog — Full rendered preview */}
+      <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
+        <DialogContent className="max-w-5xl h-[90vh] p-0 gap-0 flex flex-col">
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-3 border-b border-border flex-shrink-0">
+            <div>
+              <h2 className="font-semibold text-foreground">{previewTemplate?.title}</h2>
+              <p className="text-xs text-muted-foreground">{previewTemplate?.desc}</p>
             </div>
-          )}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center border border-border rounded-md overflow-hidden">
+                <button onClick={() => setPreviewDevice("desktop")} className={`p-1.5 ${previewDevice === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground"}`}><Monitor className="h-4 w-4" /></button>
+                <button onClick={() => setPreviewDevice("mobile")} className={`p-1.5 ${previewDevice === "mobile" ? "bg-secondary text-foreground" : "text-muted-foreground"}`}><Smartphone className="h-4 w-4" /></button>
+              </div>
+              <Button size="sm" className="gap-1.5" onClick={() => previewTemplate && handleUseTemplate(previewTemplate)}>
+                Use Template <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+          {/* Preview body */}
+          <ScrollArea className="flex-1">
+            <div className={`mx-auto bg-background ${previewDevice === "mobile" ? "max-w-sm" : ""}`}>
+              {previewTemplate && (
+                <SitePreview template={previewTemplate} sections={previewTemplate.sections} />
+              )}
+            </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </DashboardLayout>
