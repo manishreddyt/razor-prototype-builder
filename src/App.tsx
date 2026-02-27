@@ -14,7 +14,7 @@ import CreatePaymentPage from "./pages/CreatePaymentPage";
 import PaymentPageEditor from "./pages/PaymentPageEditor";
 import Subscriptions from "./pages/Subscriptions";
 import WebsiteBuilder from "./pages/WebsiteBuilder";
-import Receipts from "./pages/Receipts";
+
 import EmailWorkflows from "./pages/EmailWorkflows";
 import Forms from "./pages/Forms";
 import Offers from "./pages/Offers";
@@ -41,7 +41,7 @@ const App = () => (
           <Route path="/payment-pages/editor" element={<PaymentPageEditor />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/website-builder" element={<WebsiteBuilder />} />
-          <Route path="/receipts" element={<Receipts />} />
+          {/* Receipts route removed */}
           <Route path="/email-workflows" element={<EmailWorkflows />} />
           <Route path="/forms" element={<Forms />} />
           <Route path="/offers" element={<Offers />} />

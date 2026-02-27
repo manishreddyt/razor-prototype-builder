@@ -10,7 +10,7 @@ import {
   FileText,
   CreditCard,
   Globe,
-  Receipt,
+  
   Mail,
   Users,
   Tag,
@@ -42,9 +42,8 @@ const navSections = [
   {
     title: "CREATOR TOOLS",
     items: [
-      { icon: Globe, label: "AI Website Builder", path: "/website-builder", badge: "new" },
-      { icon: Receipt, label: "Receipts", path: "/receipts" },
-      { icon: Mail, label: "Email Workflows", path: "/email-workflows" },
+      { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
+      { icon: Mail, label: "Workflows", path: "/email-workflows" },
     ],
   },
   {
