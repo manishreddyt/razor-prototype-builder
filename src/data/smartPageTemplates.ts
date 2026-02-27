@@ -18,6 +18,15 @@ export interface SectionData {
   data: Record<string, any>;
 }
 
+export interface PageData {
+  heroTitle: string;
+  heroTagline: string;
+  heroDescription: string;
+  heroCta: string;
+  bannerImage: string;
+  sections: SectionData[];
+}
+
 export interface TemplateData {
   id: string;
   title: string;
@@ -31,6 +40,8 @@ export interface TemplateData {
   heroCta: string;
   bannerImage: string;
   sections: SectionData[];
+  /** Per-page content. Key = page name. "Home" maps to the top-level hero/sections. */
+  pagesData?: Record<string, PageData>;
 }
 
 const makeId = () => `s_${Math.random().toString(36).slice(2, 8)}`;
@@ -297,7 +308,7 @@ export const templates: TemplateData[] = [
 
   // ─── Education ───
 
-  // 1. MULTI-COURSE PLATFORM — Course catalog marketplace style
+  // 1. MULTI-COURSE PLATFORM
   {
     id: "multi-course", title: "Online Courses (Multi)", desc: "Course marketplace with catalog, categories, and student dashboard.", category: "education", icon: BookOpen,
     pages: ["Home", "Courses", "Instructors", "Pricing", "Blog"],
@@ -329,9 +340,88 @@ export const templates: TemplateData[] = [
       ctaBannerSection("Start Learning Today", "Join 15,000+ students already enrolled.", "Explore Courses"),
       newsletterSection(),
     ],
+    pagesData: {
+      "Courses": {
+        heroTitle: "Explore Our Courses", heroTagline: "Find the perfect course for your goals",
+        heroDescription: "Browse through 100+ courses across programming, design, marketing, data science, and more. Filter by category, level, or instructor.",
+        heroCta: "View All Courses", bannerImage: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=900&h=300&fit=crop",
+        sections: [
+          featuresSection([
+            { title: "Programming", desc: "Python, JavaScript, React, Node.js, and more.", icon: "💻" },
+            { title: "Design", desc: "UI/UX, Figma, Adobe Suite, motion design.", icon: "🎨" },
+            { title: "Marketing", desc: "SEO, social media, content, paid ads.", icon: "📈" },
+            { title: "Data Science", desc: "Python, ML, AI, data visualization.", icon: "📊" },
+          ]),
+          productsSection([
+            { title: "Full Stack Web Dev", price: "₹4,999", image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=300&h=300&fit=crop", badge: "Best Seller" },
+            { title: "UI/UX Design Mastery", price: "₹3,999", image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&h=300&fit=crop", badge: "Popular" },
+            { title: "Data Science & ML", price: "₹5,999", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=300&fit=crop", badge: "" },
+            { title: "Digital Marketing", price: "₹2,999", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300&h=300&fit=crop", badge: "New" },
+            { title: "Python Programming", price: "₹1,999", image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=300&h=300&fit=crop", badge: "" },
+            { title: "Mobile App Development", price: "₹6,999", image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=300&h=300&fit=crop", badge: "Advanced" },
+            { title: "Cloud & DevOps", price: "₹4,499", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop", badge: "" },
+            { title: "Graphic Design Bootcamp", price: "₹3,499", image: "https://images.unsplash.com/photo-1626785774573-4b799315345d?w=300&h=300&fit=crop", badge: "Popular" },
+          ]),
+          ctaBannerSection("Can't Decide?", "Take our 2-minute quiz to find the right course for you.", "Take the Quiz"),
+        ],
+      },
+      "Instructors": {
+        heroTitle: "Learn from the Best", heroTagline: "50+ industry experts and practitioners",
+        heroDescription: "Our instructors bring real-world experience from top companies like Google, Amazon, and Microsoft. Learn directly from those who've built and shipped products at scale.",
+        heroCta: "Meet Our Team", bannerImage: "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=900&h=300&fit=crop",
+        sections: [
+          teamSection([
+            { name: "Dr. Meera Shah", role: "Head of Curriculum · PhD Stanford", avatar: "MS", bio: "20 years in EdTech. Led curriculum design at Coursera and Udacity." },
+            { name: "Arjun Reddy", role: "Full Stack Lead · Ex-Google", avatar: "AR", bio: "10 years building web apps. Taught 5,000+ students." },
+            { name: "Priya Nair", role: "Data Science · Ex-Amazon", avatar: "PN", bio: "ML engineer turned educator. Published researcher." },
+            { name: "Vikram Joshi", role: "DevOps · Ex-Microsoft", avatar: "VJ", bio: "Cloud architect. AWS & Azure certified." },
+            { name: "Sneha Kapoor", role: "UI/UX · Ex-Flipkart", avatar: "SK", bio: "Design systems expert. 8 years in product design." },
+            { name: "Rahul Menon", role: "Marketing · Ex-Zomato", avatar: "RM", bio: "Growth marketing specialist. Scaled 0 to 10M users." },
+          ]),
+          statsSection([{ value: "50+", label: "Instructors" }, { value: "200+", label: "Years Combined Experience" }, { value: "15K+", label: "Students Taught" }, { value: "4.9★", label: "Avg Rating" }]),
+          ctaBannerSection("Become an Instructor", "Share your expertise with thousands of eager learners.", "Apply to Teach"),
+        ],
+      },
+      "Pricing": {
+        heroTitle: "Simple, Transparent Pricing", heroTagline: "Choose the plan that fits your learning goals",
+        heroDescription: "Whether you're exploring a single topic or building a complete career, we have a plan for you. All plans include lifetime access.",
+        heroCta: "Get Started", bannerImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=900&h=300&fit=crop",
+        sections: [
+          pricingSection([
+            { name: "Single Course", price: "₹2,999", period: "", features: ["1 course of your choice", "Lifetime access", "Certificate", "Community forum", "Email support"], highlighted: false },
+            { name: "All Access", price: "₹9,999", period: "/year", features: ["All 100+ courses", "Lifetime access", "All certificates", "Priority support", "1:1 mentorship (monthly)", "New courses free"], highlighted: true },
+            { name: "Enterprise", price: "Custom", period: "", features: ["Custom course bundles", "Team dashboards", "Dedicated account manager", "API access", "Bulk certificates", "Custom branding"], highlighted: false },
+          ]),
+          featuresSection([
+            { title: "Money-Back Guarantee", desc: "Full refund within 7 days, no questions asked.", icon: "💰" },
+            { title: "Flexible Payments", desc: "Pay via UPI, cards, net banking, or EMI.", icon: "💳" },
+            { title: "Team Discounts", desc: "Special rates for teams of 5+ people.", icon: "👥" },
+          ]),
+          faqSection([
+            { q: "Can I switch plans?", a: "Yes, upgrade or downgrade anytime. We'll prorate the difference." },
+            { q: "Is there a free trial?", a: "Yes, every course has 3 free preview lessons." },
+            { q: "What payment methods do you accept?", a: "UPI, credit/debit cards, net banking, and EMI options." },
+          ]),
+        ],
+      },
+      "Blog": {
+        heroTitle: "Learning Hub", heroTagline: "Articles, tutorials, and industry insights",
+        heroDescription: "Stay updated with the latest trends in tech, design, and career growth. Written by our expert instructors.",
+        heroCta: "Read Latest Posts", bannerImage: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=900&h=300&fit=crop",
+        sections: [
+          productsSection([
+            { title: "10 React Patterns Every Dev Should Know", price: "Free", image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=300&fit=crop", badge: "Trending" },
+            { title: "Career Guide: From Junior to Senior Dev", price: "Free", image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=300&h=300&fit=crop", badge: "" },
+            { title: "UI Design Trends for 2026", price: "Free", image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&h=300&fit=crop", badge: "New" },
+            { title: "Machine Learning for Beginners", price: "Free", image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&h=300&fit=crop", badge: "" },
+          ]),
+          newsletterSection(),
+        ],
+      },
+    },
   },
 
-  // 2. SINGLE COURSE — Deep-dive sales page with curriculum & social proof
+  // 2. SINGLE COURSE
   {
     id: "single-course", title: "Single Online Course", desc: "High-converting sales page for one course with modules, instructor bio, and enrollment.", category: "education", icon: GraduationCap,
     pages: ["Home", "Curriculum", "Pricing", "Enroll", "FAQ"],
@@ -341,7 +431,7 @@ export const templates: TemplateData[] = [
     sections: [
       heroSection(),
       videoEmbedSection(),
-      aboutSection("Meet Your Instructor", "I'm Karthik Rajan, ex-Amazon engineer with 10 years of full-stack experience. I've trained 2000+ developers and my students work at Google, Microsoft, Flipkart, and more. This course distills everything I know into 12 intensive weeks."),
+      aboutSection("Meet Your Instructor", "I'm Karthik Rajan, ex-Amazon engineer with 10 years of full-stack experience. I've trained 2000+ developers and my students work at Google, Microsoft, Flipkart, and more."),
       curriculumSection([
         { title: "Weeks 1-2: HTML, CSS & JavaScript Foundations", lessons: ["Semantic HTML", "Flexbox & Grid", "JavaScript ES6+", "DOM Manipulation"], duration: "20 hours" },
         { title: "Weeks 3-5: React & Frontend Architecture", lessons: ["Components & Hooks", "State Management", "API Integration", "Testing with Jest"], duration: "30 hours" },
@@ -369,9 +459,81 @@ export const templates: TemplateData[] = [
       ]),
       ctaBannerSection("Limited Seats Available", "Next batch starts March 1, 2026. Don't miss out!", "Reserve Your Seat"),
     ],
+    pagesData: {
+      "Curriculum": {
+        heroTitle: "Course Curriculum", heroTagline: "120+ hours of hands-on, project-based learning",
+        heroDescription: "Every module is designed to build on the previous one. By the end, you'll have 5+ portfolio projects and the skills to land your first developer job.",
+        heroCta: "Start Learning", bannerImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&h=300&fit=crop",
+        sections: [
+          curriculumSection([
+            { title: "Weeks 1-2: HTML, CSS & JavaScript Foundations", lessons: ["Semantic HTML & Accessibility", "CSS Flexbox & Grid Layouts", "Responsive Design & Media Queries", "JavaScript ES6+ Fundamentals", "DOM Manipulation & Events", "Project: Personal Portfolio Site"], duration: "20 hours" },
+            { title: "Weeks 3-5: React & Modern Frontend", lessons: ["React Components & JSX", "useState, useEffect, useRef", "React Router & Navigation", "State Management (Context, Zustand)", "API Integration & Async Patterns", "Testing with Jest & React Testing Library", "Project: Task Management App"], duration: "30 hours" },
+            { title: "Weeks 6-8: Backend with Node.js", lessons: ["Node.js & Express Fundamentals", "REST API Design Patterns", "MongoDB with Mongoose", "PostgreSQL with Prisma", "Authentication (JWT, OAuth)", "File Upload & Cloud Storage", "Project: E-commerce API"], duration: "30 hours" },
+            { title: "Weeks 9-10: DevOps & Deployment", lessons: ["Docker & Containerization", "CI/CD with GitHub Actions", "Deployment (Vercel, Railway, AWS)", "Environment Variables & Secrets", "Monitoring & Error Tracking", "Project: Deploy Full Stack App"], duration: "20 hours" },
+            { title: "Weeks 11-12: Capstone & Career", lessons: ["Full Stack Capstone Project", "Code Review & Best Practices", "Resume & LinkedIn Optimization", "Portfolio Website Polish", "Mock Interviews (Technical + HR)", "Salary Negotiation Workshop"], duration: "20 hours" },
+          ]),
+          statsSection([{ value: "120+", label: "Hours of Content" }, { value: "50+", label: "Hands-on Exercises" }, { value: "5+", label: "Portfolio Projects" }, { value: "12", label: "Weeks" }]),
+          ctaBannerSection("Ready to Start?", "Enroll now and get immediate access to Week 1.", "Enroll Now"),
+        ],
+      },
+      "Pricing": {
+        heroTitle: "Choose Your Plan", heroTagline: "Invest in your career today",
+        heroDescription: "All plans include lifetime access to course materials, future updates, and a verified completion certificate.",
+        heroCta: "Compare Plans", bannerImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=900&h=300&fit=crop",
+        sections: [
+          pricingSection([
+            { name: "Self-Paced", price: "₹9,999", period: "", features: ["All video lectures", "Assignments & projects", "Community forum access", "Completion certificate", "Lifetime access"], highlighted: false },
+            { name: "Mentored", price: "₹12,999", period: "", features: ["Everything in Self-Paced", "Weekly 1:1 mentoring (30 min)", "Code reviews on projects", "Job preparation sessions", "Priority doubt resolution"], highlighted: true },
+            { name: "Premium", price: "₹19,999", period: "", features: ["Everything in Mentored", "Guaranteed internship placement", "Resume & LinkedIn building", "Mock interview sessions (5x)", "Salary negotiation coaching", "Lifetime mentor access"], highlighted: false },
+          ]),
+          featuresSection([
+            { title: "7-Day Refund", desc: "Not satisfied? Full refund within 7 days.", icon: "💰" },
+            { title: "EMI Available", desc: "Pay in 3-6 monthly installments at 0% interest.", icon: "💳" },
+            { title: "Group Discount", desc: "Enroll with friends and save 20%.", icon: "👥" },
+          ]),
+          testimonialsSection([
+            { name: "Ravi K.", text: "The Mentored plan was perfect. Weekly calls kept me accountable.", rating: 5, avatar: "RK" },
+            { name: "Shruti M.", text: "Premium plan's placement guarantee actually worked! Got placed at Flipkart.", rating: 5, avatar: "SM" },
+            { name: "Dev P.", text: "Self-paced worked great for me since I have a day job.", rating: 5, avatar: "DP" },
+          ]),
+        ],
+      },
+      "Enroll": {
+        heroTitle: "Enroll Now", heroTagline: "Next batch starts March 1, 2026 — limited seats",
+        heroDescription: "Complete the form below to reserve your spot. You'll get instant access to pre-course materials and our student community.",
+        heroCta: "Reserve My Seat", bannerImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=900&h=300&fit=crop",
+        sections: [
+          contactFormSection(),
+          featuresSection([
+            { title: "Instant Access", desc: "Get pre-course materials immediately after enrollment.", icon: "⚡" },
+            { title: "Community Access", desc: "Join our Slack community of 2000+ developers.", icon: "🤝" },
+            { title: "Flexible Schedule", desc: "Learn at your own pace with recorded sessions.", icon: "📅" },
+          ]),
+          ctaBannerSection("Still Have Questions?", "Book a free 15-minute call with our admissions team.", "Book a Call"),
+        ],
+      },
+      "FAQ": {
+        heroTitle: "Frequently Asked Questions", heroTagline: "Everything you need to know before enrolling",
+        heroDescription: "Can't find your answer here? Reach out to our support team — we're happy to help.",
+        heroCta: "Contact Support", bannerImage: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=900&h=300&fit=crop",
+        sections: [
+          faqSection([
+            { q: "Do I need prior coding experience?", a: "No! This course starts from absolute basics. Many of our successful graduates had zero coding experience before joining." },
+            { q: "How long do I have access?", a: "Lifetime access to all course materials, including future updates and new modules." },
+            { q: "What's the time commitment?", a: "Plan for 10-15 hours per week. The course is designed for working professionals." },
+            { q: "Is there a certificate?", a: "Yes, you'll receive a verified digital certificate upon completion that you can share on LinkedIn." },
+            { q: "What if I fall behind?", a: "No worries — all content is self-paced with lifetime access. You can also join the next batch's live sessions." },
+            { q: "Do you help with job placement?", a: "Yes! Our Premium plan includes guaranteed internship placement. All plans include resume review and interview prep resources." },
+            { q: "Can I pay in installments?", a: "Yes, EMI options available at 0% interest for 3-6 months." },
+            { q: "What tech stack will I learn?", a: "HTML, CSS, JavaScript, React, Node.js, Express, MongoDB, PostgreSQL, Docker, AWS, and Git." },
+          ]),
+          contactFormSection(),
+        ],
+      },
+    },
   },
 
-  // 3. WEBINAR — Urgency-driven registration page with countdown & speakers
+  // 3. WEBINAR
   {
     id: "webinar", title: "Webinar", desc: "High-converting webinar registration page with countdown, speakers, and social proof.", category: "education", icon: Video,
     pages: ["Home", "Agenda", "Register"],
@@ -410,9 +572,54 @@ export const templates: TemplateData[] = [
       ]),
       contactFormSection(),
     ],
+    pagesData: {
+      "Agenda": {
+        heroTitle: "Webinar Agenda", heroTagline: "90 minutes of actionable AI insights",
+        heroDescription: "Here's exactly what we'll cover in our masterclass. Every minute is packed with practical, actionable content.",
+        heroCta: "Register Now", bannerImage: "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=900&h=300&fit=crop",
+        sections: [
+          scheduleSection([
+            { time: "7:00 PM", title: "Welcome & Introductions", speaker: "Host: Ananya Sharma" },
+            { time: "7:10 PM", title: "The State of AI in 2026 — Key Trends & Breakthroughs", speaker: "Dr. Kavita Nair" },
+            { time: "7:30 PM", title: "Live Demo: Build a ChatBot in 15 Minutes", speaker: "Raj Venkatesh" },
+            { time: "7:50 PM", title: "AI Career Paths — Where the Jobs Are", speaker: "Dr. Kavita Nair" },
+            { time: "8:10 PM", title: "Panel Discussion & Live Q&A", speaker: "Both Speakers" },
+            { time: "8:35 PM", title: "Exclusive Course Launch Offer", speaker: "Host" },
+            { time: "8:45 PM", title: "Closing & Next Steps", speaker: "" },
+          ]),
+          speakersSection([
+            { name: "Dr. Kavita Nair", title: "AI Research Lead, Google", avatar: "KN", bio: "15+ years in ML/NLP. Published 40+ papers. Former professor at IIT Bombay." },
+            { name: "Raj Venkatesh", title: "CTO, TechStartup.io", avatar: "RV", bio: "Built AI products for 10M+ users. Forbes 30 Under 30. Ex-Microsoft AI team." },
+          ]),
+          featuresSection([
+            { title: "Actionable Takeaways", desc: "Walk away with a clear AI roadmap for your career.", icon: "🎯" },
+            { title: "Live Coding Demo", desc: "Watch a real AI product built live in 15 minutes.", icon: "💻" },
+            { title: "Q&A Session", desc: "Get your specific questions answered by experts.", icon: "❓" },
+          ]),
+          ctaBannerSection("Don't Miss Out", "5,000+ have already registered. Secure your free spot now.", "Register for Free"),
+        ],
+      },
+      "Register": {
+        heroTitle: "Register for Free", heroTagline: "Secure your spot — limited virtual seats available",
+        heroDescription: "Fill in your details below and we'll send you the joining link, calendar invite, and pre-event materials.",
+        heroCta: "Complete Registration", bannerImage: "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=900&h=300&fit=crop",
+        sections: [
+          contactFormSection(),
+          featuresSection([
+            { title: "Instant Confirmation", desc: "Get your joining link immediately after registration.", icon: "✅" },
+            { title: "Calendar Invite", desc: "We'll send a Google Calendar invite so you don't forget.", icon: "📅" },
+            { title: "Pre-Event Kit", desc: "Receive AI resources and prep materials before the event.", icon: "📦" },
+          ]),
+          testimonialsSection([
+            { name: "Past Attendee", text: "Registration took 10 seconds. Got the link instantly. Smooth!", rating: 5, avatar: "PA" },
+            { name: "Corporate Team", text: "Registered our entire team of 15. Great group experience.", rating: 5, avatar: "CT" },
+          ]),
+        ],
+      },
+    },
   },
 
-  // 4. 1:1 COACHING — Personal brand + booking focused
+  // 4. 1:1 COACHING
   {
     id: "coaching", title: "1:1 Coaching", desc: "Personal coaching page with booking, coach bio, and transformation stories.", category: "education", icon: UserCheck,
     pages: ["Home", "About", "Book Session", "Results", "Contact"],
@@ -447,9 +654,79 @@ export const templates: TemplateData[] = [
       ]),
       contactFormSection(),
     ],
+    pagesData: {
+      "About": {
+        heroTitle: "About Nandini", heroTagline: "ICF-PCC Certified Executive Coach",
+        heroDescription: "From McKinsey consultant to Google leader to full-time coach — here's my story and why I'm passionate about transforming careers.",
+        heroCta: "Book a Call", bannerImage: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=900&h=300&fit=crop",
+        sections: [
+          aboutSection("My Journey", "I spent 8 years at McKinsey solving business problems, then 4 years at Google leading product teams. But my most rewarding work was always mentoring — helping people find clarity and courage in their careers. In 2022, I became a certified coach (ICF-PCC) and haven't looked back. 200+ professionals later, I can say coaching is my calling."),
+          featuresSection([
+            { title: "ICF-PCC Certified", desc: "Professional Certified Coach by International Coaching Federation.", icon: "🏅" },
+            { title: "12+ Years Corporate", desc: "Real-world experience at McKinsey, Google, and startups.", icon: "💼" },
+            { title: "200+ Transformations", desc: "Proven track record across industries and levels.", icon: "🌟" },
+            { title: "Published Author", desc: "\"Career by Design\" — a bestselling career guide.", icon: "📚" },
+          ]),
+          statsSection([{ value: "12+", label: "Years Experience" }, { value: "200+", label: "Clients Coached" }, { value: "95%", label: "Success Rate" }, { value: "15+", label: "Industries" }]),
+          testimonialsSection([
+            { name: "Arjun T.", text: "Nandini understands corporate politics and career strategy like no one else.", rating: 5, avatar: "AT" },
+            { name: "Priya M.", text: "She helped me transition from engineering to product management seamlessly.", rating: 5, avatar: "PM" },
+          ]),
+        ],
+      },
+      "Book Session": {
+        heroTitle: "Book Your Session", heroTagline: "Start with a free 30-minute discovery call",
+        heroDescription: "Choose a time that works for you. We'll discuss your goals, challenges, and create a personalized action plan.",
+        heroCta: "Select a Time Slot", bannerImage: "https://images.unsplash.com/photo-1552581234-26160f608093?w=900&h=300&fit=crop",
+        sections: [
+          pricingSection([
+            { name: "Discovery Call", price: "Free", period: "", features: ["30-min video call", "Goal assessment", "Personalized plan", "No commitment"], highlighted: false },
+            { name: "Growth Package", price: "₹9,999", period: "/4 sessions", features: ["4 × 60-min calls", "WhatsApp support", "Resume review", "Mock interview"], highlighted: true },
+            { name: "Transformation", price: "₹24,999", period: "/12 sessions", features: ["12 × 60-min calls", "Priority scheduling", "Unlimited chat", "Career roadmap", "Placement guarantee"], highlighted: false },
+          ]),
+          contactFormSection(),
+          faqSection([
+            { q: "How do I book?", a: "Fill the form above and I'll send you my calendar link within 24 hours." },
+            { q: "What platform do we use?", a: "All sessions are on Zoom. I'll send the link before each session." },
+            { q: "Can I reschedule?", a: "Yes, free rescheduling up to 24 hours before the session." },
+          ]),
+        ],
+      },
+      "Results": {
+        heroTitle: "Client Results", heroTagline: "Real transformations, real people",
+        heroDescription: "Don't take my word for it — here are the stories of professionals who transformed their careers through coaching.",
+        heroCta: "Start Your Transformation", bannerImage: "https://images.unsplash.com/photo-1552581234-26160f608093?w=900&h=300&fit=crop",
+        sections: [
+          statsSection([{ value: "200+", label: "Careers Transformed" }, { value: "95%", label: "Got Offers" }, { value: "3x", label: "Avg Salary Jump" }, { value: "40%", label: "Avg Raise Negotiated" }]),
+          testimonialsSection([
+            { name: "Ravi K.", text: "Went from stuck mid-level manager to VP at a Fortune 500 in 8 months. Nandini helped me see blind spots I didn't know existed.", rating: 5, avatar: "RK" },
+            { name: "Preethi S.", text: "Got offers from Google, Amazon, and Microsoft after her interview prep. Negotiated 40% higher than the initial offer.", rating: 5, avatar: "PS" },
+            { name: "Manish G.", text: "Transitioned from engineering to product management. The career roadmap gave me clarity I'd been missing for years.", rating: 5, avatar: "MG" },
+            { name: "Deepa R.", text: "After 3 years of feeling stuck, 4 sessions with Nandini changed everything. I'm now leading a team of 20.", rating: 5, avatar: "DR" },
+            { name: "Suresh M.", text: "The work-life design coaching saved my marriage and my career. Went from burnout to balanced leader.", rating: 5, avatar: "SM" },
+            { name: "Kavya L.", text: "As a first-time manager, Nandini's executive presence coaching was invaluable. My team's engagement scores went up 35%.", rating: 5, avatar: "KL" },
+          ]),
+          googleReviewsSection(),
+          ctaBannerSection("Your Transformation is Next", "Book a free discovery call and let's discuss your goals.", "Book Free Call"),
+        ],
+      },
+      "Contact": {
+        heroTitle: "Get in Touch", heroTagline: "I'd love to hear from you",
+        heroDescription: "Whether you have questions about coaching, want to discuss a corporate workshop, or just want to say hello — reach out!",
+        heroCta: "Send a Message", bannerImage: "https://images.unsplash.com/photo-1552581234-26160f608093?w=900&h=300&fit=crop",
+        sections: [
+          contactFormSection(),
+          featuresSection([
+            { title: "Email", desc: "nandini@coachingsite.com — response within 24 hours.", icon: "📧" },
+            { title: "LinkedIn", desc: "Connect with me for daily career tips.", icon: "💼" },
+            { title: "Instagram", desc: "@nandini.coach — behind-the-scenes and tips.", icon: "📱" },
+          ]),
+        ],
+      },
+    },
   },
 
-  // 5. WORKSHOP SERIES — Event-catalog style with schedules
+  // 5. WORKSHOP SERIES
   {
     id: "workshop", title: "Workshop Series", desc: "Multi-session hands-on workshops with schedules, batches, and enrollment.", category: "education", icon: Calendar,
     pages: ["Home", "Workshops", "Schedule", "Enroll"],
@@ -490,9 +767,69 @@ export const templates: TemplateData[] = [
       ]),
       ctaBannerSection("Next Batch Starting Soon", "Limited to 20 seats per workshop. Reserve yours today.", "Enroll Now"),
     ],
+    pagesData: {
+      "Workshops": {
+        heroTitle: "All Workshops", heroTagline: "Choose from our growing catalog of hands-on workshops",
+        heroDescription: "Each workshop is a self-contained, weekend-intensive experience. Pick the topic that interests you and start building.",
+        heroCta: "Browse Workshops", bannerImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=900&h=300&fit=crop",
+        sections: [
+          productsSection([
+            { title: "React Masterclass", price: "₹3,999", image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&h=300&fit=crop", badge: "This Weekend" },
+            { title: "Python for Data Science", price: "₹2,999", image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=300&h=300&fit=crop", badge: "Mar 9" },
+            { title: "Figma to Production", price: "₹1,999", image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&h=300&fit=crop", badge: "Mar 15" },
+            { title: "DevOps & AWS", price: "₹4,999", image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=300&h=300&fit=crop", badge: "Advanced" },
+            { title: "SQL & Database Design", price: "₹2,499", image: "https://images.unsplash.com/photo-1544383835-bda2bc66a55d?w=300&h=300&fit=crop", badge: "Beginner" },
+            { title: "TypeScript Deep Dive", price: "₹2,999", image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=300&h=300&fit=crop", badge: "Mar 22" },
+            { title: "System Design Basics", price: "₹3,999", image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?w=300&h=300&fit=crop", badge: "Interview Prep" },
+            { title: "Git & GitHub Mastery", price: "₹999", image: "https://images.unsplash.com/photo-1556075798-4825dfaaf498?w=300&h=300&fit=crop", badge: "Free Intro" },
+          ]),
+          ctaBannerSection("Request a Workshop", "Don't see a topic you need? We create custom workshops on demand.", "Request Topic"),
+        ],
+      },
+      "Schedule": {
+        heroTitle: "Upcoming Schedule", heroTagline: "Plan your learning weekends ahead",
+        heroDescription: "All workshops run on weekends. Each session is 4-6 hours with breaks. Check the schedule below and pick your dates.",
+        heroCta: "View Calendar", bannerImage: "https://images.unsplash.com/photo-1506784983877-45594efa4cbe?w=900&h=300&fit=crop",
+        sections: [
+          scheduleSection([
+            { time: "Mar 8, Sat 10 AM", title: "React Masterclass — Batch 5 (Day 1/2)", speaker: "Instructor: Arjun Reddy" },
+            { time: "Mar 9, Sun 10 AM", title: "React Masterclass — Batch 5 (Day 2/2)", speaker: "Instructor: Arjun Reddy" },
+            { time: "Mar 9, Sun 11 AM", title: "Python for Data Science — Batch 3 (Day 1/2)", speaker: "Instructor: Priya Nair" },
+            { time: "Mar 15, Sat 10 AM", title: "Python for Data Science — Batch 3 (Day 2/2)", speaker: "Instructor: Priya Nair" },
+            { time: "Mar 15, Sat 2 PM", title: "Figma to Production — Batch 2 (Single Day)", speaker: "Instructor: Sneha Kapoor" },
+            { time: "Mar 22, Sat 10 AM", title: "DevOps & AWS — Batch 1 (Day 1/3)", speaker: "Instructor: Vikram Joshi" },
+            { time: "Mar 23, Sun 10 AM", title: "DevOps & AWS — Batch 1 (Day 2/3)", speaker: "Instructor: Vikram Joshi" },
+            { time: "Mar 29, Sat 10 AM", title: "DevOps & AWS — Batch 1 (Day 3/3)", speaker: "Instructor: Vikram Joshi" },
+          ]),
+          featuresSection([
+            { title: "Weekend Only", desc: "All workshops run on Saturdays and Sundays.", icon: "📅" },
+            { title: "4-6 Hours/Session", desc: "Intensive but manageable with breaks included.", icon: "⏱️" },
+            { title: "Recordings Available", desc: "Every session is recorded for later review.", icon: "🎥" },
+          ]),
+        ],
+      },
+      "Enroll": {
+        heroTitle: "Enroll in a Workshop", heroTagline: "Secure your seat — max 20 per batch",
+        heroDescription: "Select your workshop, fill in your details, and pay to confirm your spot. You'll receive a setup guide and joining link immediately.",
+        heroCta: "Complete Enrollment", bannerImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=900&h=300&fit=crop",
+        sections: [
+          contactFormSection(),
+          featuresSection([
+            { title: "Setup Guide", desc: "Get a pre-workshop setup guide with all requirements.", icon: "📋" },
+            { title: "Community Access", desc: "Join the workshop Slack channel for support.", icon: "💬" },
+            { title: "100% Refund", desc: "Cancel up to 48 hours before for a full refund.", icon: "💰" },
+          ]),
+          faqSection([
+            { q: "How do I pay?", a: "UPI, cards, net banking, or wallet. Payment link sent after form submission." },
+            { q: "Can I attend online?", a: "Select workshops offer hybrid mode. Check the workshop details." },
+            { q: "What if the batch is full?", a: "You'll be waitlisted and notified when the next batch opens." },
+          ]),
+        ],
+      },
+    },
   },
 
-  // 6. MEMBERSHIP / COMMUNITY — Exclusive community with gated content
+  // 6. MEMBERSHIP / COMMUNITY
   {
     id: "membership", title: "Membership / Community", desc: "Exclusive gated community with membership tiers, content library, and networking.", category: "education", icon: Users,
     pages: ["Home", "What You Get", "Plans", "Join"],
@@ -535,6 +872,74 @@ export const templates: TemplateData[] = [
       ctaBannerSection("Start Your Free Membership", "Join 1,000+ members. Upgrade to Pro anytime.", "Join Free"),
       newsletterSection(),
     ],
+    pagesData: {
+      "What You Get": {
+        heroTitle: "What's Inside", heroTagline: "Everything included in your membership",
+        heroDescription: "From live sessions to curated resources to a private network — here's exactly what you get when you join The Inner Circle.",
+        heroCta: "Join Now", bannerImage: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&h=300&fit=crop",
+        sections: [
+          featuresSection([
+            { title: "Weekly Live Masterclasses", desc: "Every Thursday at 8 PM IST. Topics: tech, business, career, mindset.", icon: "🎓" },
+            { title: "Resource Vault (500+)", desc: "Templates, playbooks, checklists, guides, and tools — all downloadable.", icon: "📚" },
+            { title: "Private Slack Community", desc: "1,000+ members. Channels for tech, careers, freelancing, startups, and more.", icon: "💬" },
+            { title: "Accountability Groups", desc: "Join a group of 5 peers. Weekly check-ins to stay on track.", icon: "🎯" },
+          ]),
+          featuresSection([
+            { title: "Monthly Mentor 1:1 (VIP)", desc: "30-minute sessions with experienced mentors in your field.", icon: "💎" },
+            { title: "Job Board", desc: "Exclusive job postings from partner companies. Members-first access.", icon: "💼" },
+            { title: "Annual Retreat", desc: "VIP members get invited to our annual in-person retreat.", icon: "✈️" },
+            { title: "Event Recordings", desc: "Can't attend live? All sessions are recorded and searchable.", icon: "🎥" },
+          ]),
+          gallerySection([
+            "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=400&h=300&fit=crop",
+            "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=400&h=300&fit=crop",
+            "https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=400&h=300&fit=crop",
+            "https://images.unsplash.com/photo-1511632765486-a01980e01a18?w=400&h=300&fit=crop",
+            "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=400&h=300&fit=crop",
+            "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=400&h=300&fit=crop",
+          ]),
+          statsSection([{ value: "50+", label: "Masterclasses/Year" }, { value: "500+", label: "Resources" }, { value: "1,000+", label: "Members" }, { value: "15+", label: "Mentors" }]),
+          ctaBannerSection("Ready to Join?", "Start free. Upgrade to Pro anytime.", "Join Free"),
+        ],
+      },
+      "Plans": {
+        heroTitle: "Membership Plans", heroTagline: "Start free, upgrade when ready",
+        heroDescription: "Every plan includes community access and our monthly newsletter. Upgrade for masterclasses, resources, and mentoring.",
+        heroCta: "Compare Plans", bannerImage: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=900&h=300&fit=crop",
+        sections: [
+          pricingSection([
+            { name: "Free", price: "₹0", period: "/mo", features: ["Community Slack access", "Monthly newsletter", "Public events (quarterly)", "Job board", "Member directory"], highlighted: false },
+            { name: "Pro", price: "₹999", period: "/mo", features: ["Everything in Free", "Weekly masterclasses (50+/year)", "Full resource vault (500+)", "Private Slack channels", "Event recordings library", "Accountability group matching"], highlighted: true },
+            { name: "VIP", price: "₹2,999", period: "/mo", features: ["Everything in Pro", "Monthly 1:1 mentor session", "Priority support & responses", "Annual retreat invitation", "Co-working space passes (4/mo)", "Early access to new content"], highlighted: false },
+          ]),
+          faqSection([
+            { q: "Can I switch between plans?", a: "Yes, upgrade or downgrade anytime. Changes take effect next billing cycle." },
+            { q: "Is there a yearly discount?", a: "Yes! Pay annually for Pro at ₹9,999/year (save 17%) or VIP at ₹29,999/year (save 17%)." },
+            { q: "Can my company pay?", a: "Absolutely. We provide invoices and support corporate billing." },
+            { q: "What if I cancel?", a: "You keep access until end of billing period. No exit fees." },
+          ]),
+          testimonialsSection([
+            { name: "Free Member", text: "Even the free tier is incredibly valuable. The community alone is worth it.", rating: 5, avatar: "FM" },
+            { name: "Pro Member", text: "Upgraded after 1 week. The masterclasses are worth 10x the price.", rating: 5, avatar: "PM" },
+            { name: "VIP Member", text: "Mentor sessions have accelerated my career growth like nothing else.", rating: 5, avatar: "VM" },
+          ]),
+        ],
+      },
+      "Join": {
+        heroTitle: "Join The Inner Circle", heroTagline: "Start your journey today — it takes 30 seconds",
+        heroDescription: "Fill in your details below to create your free account. You'll get instant access to the community, newsletter, and public events.",
+        heroCta: "Create Free Account", bannerImage: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&h=300&fit=crop",
+        sections: [
+          contactFormSection(),
+          featuresSection([
+            { title: "Instant Access", desc: "Get your Slack invite and welcome kit immediately.", icon: "⚡" },
+            { title: "No Credit Card", desc: "Free tier requires no payment information.", icon: "🆓" },
+            { title: "Upgrade Anytime", desc: "Try free, then upgrade to Pro or VIP when ready.", icon: "🚀" },
+          ]),
+          ctaBannerSection("1,000+ Members Can't Be Wrong", "Join the fastest-growing professional community in India.", "Join Free Now"),
+        ],
+      },
+    },
   },
 
   // ─── Services ───

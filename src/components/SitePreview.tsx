@@ -10,6 +10,8 @@ interface SitePreviewProps {
   template: TemplateData;
   sections: SectionData[];
   editable?: boolean;
+  activePage?: string;
+  onPageChange?: (page: string) => void;
   onUpdateSection?: (id: string, data: Record<string, any>) => void;
   onUpdateHero?: (updates: Partial<Pick<TemplateData, "heroTitle" | "heroTagline" | "heroDescription" | "heroCta" | "bannerImage">>) => void;
   onRemoveSection?: (id: string) => void;
@@ -99,7 +101,7 @@ const AddSectionDivider = ({ onAdd }: { onAdd: (type: string) => void }) => {
   );
 };
 
-export const SitePreview = ({ template, sections, editable = false, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection }: SitePreviewProps) => {
+export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection }: SitePreviewProps) => {
   const Text = editable ? EditableText : ({ value, className, tag }: any) => <ReadOnlyText value={value} className={className} tag={tag} />;
   const visibleSections = sections.filter((s) => s.visible);
 
@@ -163,8 +165,14 @@ export const SitePreview = ({ template, sections, editable = false, onUpdateSect
       {/* Nav */}
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-center gap-6 px-6 py-3 flex-wrap max-w-4xl mx-auto">
-          {template.pages.map((p, i) => (
-            <span key={p} className={`text-sm font-medium cursor-pointer transition-colors ${i === 0 ? "text-primary" : "text-muted-foreground hover:text-foreground"}`}>{p}</span>
+          {template.pages.map((p) => (
+            <span
+              key={p}
+              onClick={() => onPageChange?.(p)}
+              className={`text-sm font-medium cursor-pointer transition-colors ${
+                activePage === p ? "text-primary" : "text-muted-foreground hover:text-foreground"
+              }`}
+            >{p}</span>
           ))}
         </div>
       </div>

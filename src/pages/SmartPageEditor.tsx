@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Monitor, Smartphone, Eye, Settings, Sparkles, Send,
   X, Copy, Share2, Save, Loader2, CheckCircle2, Plus, Trash2, GripVertical,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +14,45 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { addSite, type SmartPageSite } from "./WebsiteBuilder";
-import { templates, availableSectionTypes, createDefaultSection, type TemplateData, type SectionData } from "@/data/smartPageTemplates";
+import { templates, availableSectionTypes, createDefaultSection, type TemplateData, type SectionData, type PageData } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
+
+interface PageState {
+  heroTitle: string;
+  heroTagline: string;
+  heroDescription: string;
+  heroCta: string;
+  bannerImage: string;
+  sections: SectionData[];
+}
 
 interface EditorState {
   template: TemplateData;
-  sections: SectionData[];
+  /** Per-page state. Key = page name. */
+  pages: Record<string, PageState>;
+  activePage: string;
 }
+
+const buildPageState = (pd: PageData | undefined, fallback: TemplateData): PageState => {
+  if (pd) {
+    return {
+      heroTitle: pd.heroTitle,
+      heroTagline: pd.heroTagline,
+      heroDescription: pd.heroDescription,
+      heroCta: pd.heroCta,
+      bannerImage: pd.bannerImage,
+      sections: pd.sections.map((s) => ({ ...s, data: { ...s.data } })),
+    };
+  }
+  return {
+    heroTitle: fallback.heroTitle,
+    heroTagline: fallback.heroTagline,
+    heroDescription: fallback.heroDescription,
+    heroCta: fallback.heroCta,
+    bannerImage: fallback.bannerImage,
+    sections: fallback.sections.map((s) => ({ ...s, data: { ...s.data } })),
+  };
+};
 
 const buildInitialState = (searchParams: URLSearchParams): EditorState => {
   const templateId = searchParams.get("template") || "";
@@ -27,25 +60,37 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
   const title = searchParams.get("title") || "My Smart Page";
 
   const found = templates.find((t) => t.id === templateId);
+  const tpl = found || templates[0];
+  const base = found ? { ...tpl } : {
+    ...tpl,
+    heroTitle: prompt ? "AI Generated Site" : title,
+    heroTagline: prompt || "Welcome to our website",
+    heroDescription: prompt || "A professional website built with Smart Pages.",
+  };
 
-  if (found) {
-    return {
-      template: { ...found },
-      sections: found.sections.map((s) => ({ ...s, data: { ...s.data } })),
-    };
+  // Build per-page state
+  const pages: Record<string, PageState> = {};
+  const pageNames = base.pages;
+  const homePage = pageNames[0] || "Home";
+
+  // Home page uses top-level hero/sections
+  pages[homePage] = {
+    heroTitle: base.heroTitle,
+    heroTagline: base.heroTagline,
+    heroDescription: base.heroDescription,
+    heroCta: base.heroCta,
+    bannerImage: base.bannerImage,
+    sections: base.sections.map((s) => ({ ...s, data: { ...s.data } })),
+  };
+
+  // Other pages from pagesData
+  for (const pageName of pageNames) {
+    if (pageName === homePage) continue;
+    const pd = base.pagesData?.[pageName];
+    pages[pageName] = buildPageState(pd, base);
   }
 
-  // AI-generated fallback
-  const fallback = templates[0];
-  return {
-    template: {
-      ...fallback,
-      heroTitle: prompt ? "AI Generated Site" : title,
-      heroTagline: prompt || "Welcome to our website",
-      heroDescription: prompt || "A professional website built with Smart Pages.",
-    },
-    sections: fallback.sections.map((s) => ({ ...s, data: { ...s.data } })),
-  };
+  return { template: base, pages, activePage: homePage };
 };
 
 interface ChatMsg {
@@ -87,41 +132,112 @@ const SmartPageEditor = () => {
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  const updateTemplate = (updates: Partial<TemplateData>) => {
-    setState((prev) => ({ ...prev, template: { ...prev.template, ...updates } }));
+  // Current page helpers
+  const activePage = state.activePage;
+  const currentPage = state.pages[activePage];
+  const pageNames = state.template.pages;
+
+  const setActivePage = (pageName: string) => {
+    setState((prev) => ({ ...prev, activePage: pageName }));
+  };
+
+  // Build a virtual TemplateData for the current page to pass to SitePreview
+  const currentTemplate: TemplateData = {
+    ...state.template,
+    heroTitle: currentPage.heroTitle,
+    heroTagline: currentPage.heroTagline,
+    heroDescription: currentPage.heroDescription,
+    heroCta: currentPage.heroCta,
+    bannerImage: currentPage.bannerImage,
+  };
+
+  const updatePageHero = (updates: Partial<Pick<TemplateData, "heroTitle" | "heroTagline" | "heroDescription" | "heroCta" | "bannerImage">>) => {
+    setState((prev) => ({
+      ...prev,
+      pages: {
+        ...prev.pages,
+        [prev.activePage]: { ...prev.pages[prev.activePage], ...updates },
+      },
+    }));
     setUnsavedChanges(true);
   };
 
-  const updateSections = (sections: SectionData[]) => {
-    setState((prev) => ({ ...prev, sections }));
+  const updatePageSections = (sections: SectionData[]) => {
+    setState((prev) => ({
+      ...prev,
+      pages: {
+        ...prev.pages,
+        [prev.activePage]: { ...prev.pages[prev.activePage], sections },
+      },
+    }));
     setUnsavedChanges(true);
   };
 
   const toggleSection = (id: string) => {
-    updateSections(state.sections.map((s) => s.id === id ? { ...s, visible: !s.visible } : s));
+    updatePageSections(currentPage.sections.map((s) => s.id === id ? { ...s, visible: !s.visible } : s));
   };
 
   const removeSection = (id: string) => {
-    updateSections(state.sections.filter((s) => s.id !== id));
+    updatePageSections(currentPage.sections.filter((s) => s.id !== id));
   };
 
   const addSection = (type: string) => {
     const newSection = createDefaultSection(type as any);
-    updateSections([...state.sections, newSection]);
+    updatePageSections([...currentPage.sections, newSection]);
     setAddSectionOpen(false);
     toast.success(`${newSection.label} section added`);
   };
 
   const moveSection = (index: number, dir: "up" | "down") => {
-    const arr = [...state.sections];
+    const arr = [...currentPage.sections];
     const target = dir === "up" ? index - 1 : index + 1;
     if (target < 0 || target >= arr.length) return;
     [arr[index], arr[target]] = [arr[target], arr[index]];
-    updateSections(arr);
+    updatePageSections(arr);
   };
 
   const updateSectionData = (id: string, data: Record<string, any>) => {
-    updateSections(state.sections.map((s) => s.id === id ? { ...s, data: { ...s.data, ...data } } : s));
+    updatePageSections(currentPage.sections.map((s) => s.id === id ? { ...s, data: { ...s.data, ...data } } : s));
+  };
+
+  // Add a new page
+  const addPage = (name: string) => {
+    if (state.pages[name]) return;
+    setState((prev) => ({
+      ...prev,
+      template: { ...prev.template, pages: [...prev.template.pages, name] },
+      pages: {
+        ...prev.pages,
+        [name]: {
+          heroTitle: name,
+          heroTagline: `Welcome to ${name}`,
+          heroDescription: `Content for the ${name} page.`,
+          heroCta: "Learn More",
+          bannerImage: prev.pages[prev.activePage].bannerImage,
+          sections: [createDefaultSection("about")],
+        },
+      },
+      activePage: name,
+    }));
+    setUnsavedChanges(true);
+    toast.success(`"${name}" page added`);
+  };
+
+  const removePage = (name: string) => {
+    if (pageNames.length <= 1) return;
+    if (name === pageNames[0]) { toast.error("Can't remove the home page"); return; }
+    setState((prev) => {
+      const newPages = { ...prev.pages };
+      delete newPages[name];
+      return {
+        ...prev,
+        template: { ...prev.template, pages: prev.template.pages.filter((p) => p !== name) },
+        pages: newPages,
+        activePage: prev.activePage === name ? prev.template.pages[0] : prev.activePage,
+      };
+    });
+    setUnsavedChanges(true);
+    toast.success(`"${name}" page removed`);
   };
 
   const sendMessage = (text: string) => {
@@ -133,26 +249,26 @@ const SmartPageEditor = () => {
       let response = "";
       const lower = text.toLowerCase();
       if (lower.includes("testimonial") || lower.includes("review")) {
-        const ts = state.sections.find((s) => s.type === "testimonials");
+        const ts = currentPage.sections.find((s) => s.type === "testimonials");
         if (ts) { toggleSection(ts.id); response = `Testimonials section is now ${ts.visible ? "hidden" : "visible"}.`; }
         else { addSection("testimonials"); response = "Added a testimonials section!"; }
       } else if (lower.includes("google review")) {
-        const gr = state.sections.find((s) => s.type === "google-reviews");
+        const gr = currentPage.sections.find((s) => s.type === "google-reviews");
         if (gr) { toggleSection(gr.id); response = `Google Reviews section is now ${gr.visible ? "hidden" : "visible"}.`; }
         else { addSection("google-reviews"); response = "Added Google Reviews section!"; }
       } else if (lower.includes("faq")) {
-        const faq = state.sections.find((s) => s.type === "faq");
+        const faq = currentPage.sections.find((s) => s.type === "faq");
         if (faq) { toggleSection(faq.id); response = `FAQ section is now ${faq.visible ? "hidden" : "visible"}.`; }
         else { addSection("faq"); response = "Added an FAQ section!"; }
       } else if (lower.includes("pricing")) {
-        const p = state.sections.find((s) => s.type === "pricing");
+        const p = currentPage.sections.find((s) => s.type === "pricing");
         if (p) { toggleSection(p.id); response = `Pricing section is now ${p.visible ? "hidden" : "visible"}.`; }
         else { addSection("pricing"); response = "Added a pricing section!"; }
       } else if (lower.includes("banner") || lower.includes("image")) {
-        updateTemplate({ bannerImage: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=900&h=300&fit=crop" });
+        updatePageHero({ bannerImage: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=900&h=300&fit=crop" });
         response = "Banner image updated!";
       } else if (lower.includes("title") || lower.includes("headline")) {
-        updateTemplate({ heroTitle: "Premium " + state.template.heroTitle });
+        updatePageHero({ heroTitle: "Premium " + currentPage.heroTitle });
         response = `Title updated. You can also edit directly in the preview.`;
       } else {
         response = `Noted! I'll apply "${text}" to your page. Use Settings for detailed edits.`;
@@ -169,9 +285,10 @@ const SmartPageEditor = () => {
       setPublishDialogOpen(false);
       setUnsavedChanges(false);
 
+      const homePage = state.pages[pageNames[0]];
       const newSite: SmartPageSite = {
         id: `sp_${Date.now()}`,
-        name: state.template.heroTitle,
+        name: homePage.heroTitle,
         type: state.template.title,
         category: state.template.category,
         url: `https://rzp.io/s/${slug}`,
@@ -205,7 +322,12 @@ const SmartPageEditor = () => {
         </div>
         <ScrollArea className="flex-1 bg-muted/30 p-6">
           <div className={`mx-auto bg-background rounded-lg shadow-lg border border-border overflow-hidden ${viewMode === "mobile" ? "max-w-sm" : "max-w-4xl"}`}>
-            <SitePreview template={state.template} sections={state.sections} />
+            <SitePreview
+              template={currentTemplate}
+              sections={currentPage.sections}
+              activePage={activePage}
+              onPageChange={setActivePage}
+            />
           </div>
         </ScrollArea>
       </div>
@@ -218,7 +340,7 @@ const SmartPageEditor = () => {
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background z-10">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => navigate("/website-builder")} className="gap-2"><ArrowLeft className="h-4 w-4" /> Back</Button>
-          <input type="text" value={state.template.heroTitle} onChange={(e) => updateTemplate({ heroTitle: e.target.value })} className="font-semibold text-foreground text-sm bg-transparent border-none focus:outline-none hover:bg-secondary/50 rounded px-2 py-1" />
+          <input type="text" value={currentPage.heroTitle} onChange={(e) => updatePageHero({ heroTitle: e.target.value })} className="font-semibold text-foreground text-sm bg-transparent border-none focus:outline-none hover:bg-secondary/50 rounded px-2 py-1" />
           {unsavedChanges && <span className="w-2 h-2 rounded-full bg-orange-400" />}
           <span className={status === "published" ? "blade-badge-paid text-[10px]" : "blade-badge-expired text-[10px]"}>{status === "published" ? "Published" : "Draft"}</span>
         </div>
@@ -233,15 +355,38 @@ const SmartPageEditor = () => {
         </div>
       </div>
 
+      {/* Page Tabs Bar */}
+      {pageNames.length > 1 && (
+        <div className="flex items-center gap-1 px-4 py-1.5 border-b border-border bg-muted/30 overflow-x-auto">
+          {pageNames.map((page) => (
+            <button
+              key={page}
+              onClick={() => setActivePage(page)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                activePage === page
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              <FileText className="h-3 w-3" />
+              {page}
+            </button>
+          ))}
+          <AddPageButton onAdd={addPage} />
+        </div>
+      )}
+
       <div className="flex flex-1 overflow-hidden">
         {/* Preview Area */}
         <ScrollArea className="flex-1 bg-muted/30 p-6">
           <div className={`mx-auto bg-background rounded-lg shadow-sm border border-border overflow-hidden transition-all ${viewMode === "mobile" ? "max-w-sm" : "max-w-4xl"}`}>
             <SitePreview
-              template={state.template}
-              sections={state.sections}
+              template={currentTemplate}
+              sections={currentPage.sections}
               editable
-              onUpdateHero={(updates) => updateTemplate(updates)}
+              activePage={activePage}
+              onPageChange={setActivePage}
+              onUpdateHero={(updates) => updatePageHero(updates)}
               onUpdateSection={(id, data) => updateSectionData(id, data)}
               onRemoveSection={removeSection}
               onMoveSection={moveSection}
@@ -291,26 +436,52 @@ const SmartPageEditor = () => {
             <Tabs value={settingsTab} onValueChange={setSettingsTab} className="flex-1 flex flex-col">
               <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-4">
                 <TabsTrigger value="page" className="text-xs">Page</TabsTrigger>
+                <TabsTrigger value="pages" className="text-xs">Pages</TabsTrigger>
                 <TabsTrigger value="sections" className="text-xs">Sections</TabsTrigger>
                 <TabsTrigger value="seo" className="text-xs">SEO</TabsTrigger>
               </TabsList>
 
               <ScrollArea className="flex-1">
                 <TabsContent value="page" className="p-4 space-y-4">
-                  <div><label className="text-xs font-medium text-foreground">Site Title</label><Input value={state.template.heroTitle} onChange={(e) => updateTemplate({ heroTitle: e.target.value })} className="mt-1.5" /></div>
-                  <div><label className="text-xs font-medium text-foreground">Tagline</label><Input value={state.template.heroTagline} onChange={(e) => updateTemplate({ heroTagline: e.target.value })} className="mt-1.5" /></div>
-                  <div><label className="text-xs font-medium text-foreground">Description</label><Textarea value={state.template.heroDescription} onChange={(e) => updateTemplate({ heroDescription: e.target.value })} rows={3} className="mt-1.5" /></div>
-                  <div><label className="text-xs font-medium text-foreground">Banner Image URL</label><Input value={state.template.bannerImage} onChange={(e) => updateTemplate({ bannerImage: e.target.value })} className="mt-1.5" /></div>
-                  <div><label className="text-xs font-medium text-foreground">CTA Button Text</label><Input value={state.template.heroCta} onChange={(e) => updateTemplate({ heroCta: e.target.value })} className="mt-1.5" /></div>
+                  <div className="text-xs text-muted-foreground mb-2">Editing: <span className="font-semibold text-foreground">{activePage}</span></div>
+                  <div><label className="text-xs font-medium text-foreground">Page Title</label><Input value={currentPage.heroTitle} onChange={(e) => updatePageHero({ heroTitle: e.target.value })} className="mt-1.5" /></div>
+                  <div><label className="text-xs font-medium text-foreground">Tagline</label><Input value={currentPage.heroTagline} onChange={(e) => updatePageHero({ heroTagline: e.target.value })} className="mt-1.5" /></div>
+                  <div><label className="text-xs font-medium text-foreground">Description</label><Textarea value={currentPage.heroDescription} onChange={(e) => updatePageHero({ heroDescription: e.target.value })} rows={3} className="mt-1.5" /></div>
+                  <div><label className="text-xs font-medium text-foreground">Banner Image URL</label><Input value={currentPage.bannerImage} onChange={(e) => updatePageHero({ bannerImage: e.target.value })} className="mt-1.5" /></div>
+                  <div><label className="text-xs font-medium text-foreground">CTA Button Text</label><Input value={currentPage.heroCta} onChange={(e) => updatePageHero({ heroCta: e.target.value })} className="mt-1.5" /></div>
+                </TabsContent>
+
+                <TabsContent value="pages" className="p-4 space-y-2">
+                  <p className="text-xs text-muted-foreground mb-3">Manage the pages in your website. Click a page to edit it.</p>
+                  {pageNames.map((page, i) => (
+                    <div
+                      key={page}
+                      onClick={() => setActivePage(page)}
+                      className={`flex items-center gap-2 p-2.5 rounded-md border cursor-pointer transition-colors ${
+                        activePage === page ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
+                      }`}
+                    >
+                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="text-sm text-foreground flex-1">{page}</span>
+                      {i === 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Home</span>}
+                      {i > 0 && (
+                        <button onClick={(e) => { e.stopPropagation(); removePage(page); }} className="text-muted-foreground hover:text-destructive p-1">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <AddPageButton onAdd={addPage} fullWidth />
                 </TabsContent>
 
                 <TabsContent value="sections" className="p-4 space-y-2">
+                  <p className="text-xs text-muted-foreground mb-1">Sections for: <span className="font-semibold text-foreground">{activePage}</span></p>
                   <p className="text-xs text-muted-foreground mb-3">Toggle, reorder, or remove sections. Click + to add new ones.</p>
-                  {state.sections.map((section, i) => (
+                  {currentPage.sections.map((section, i) => (
                     <div key={section.id} className={`flex items-center gap-2 p-2.5 rounded-md border transition-colors ${section.visible ? "border-border bg-background" : "border-border/50 bg-muted/30 opacity-60"}`}>
                       <div className="flex flex-col gap-0.5">
                         <button onClick={() => moveSection(i, "up")} disabled={i === 0} className="text-muted-foreground hover:text-foreground disabled:opacity-30 p-0.5"><GripVertical className="h-3 w-3 rotate-180" /></button>
-                        <button onClick={() => moveSection(i, "down")} disabled={i === state.sections.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 p-0.5"><GripVertical className="h-3 w-3" /></button>
+                        <button onClick={() => moveSection(i, "down")} disabled={i === currentPage.sections.length - 1} className="text-muted-foreground hover:text-foreground disabled:opacity-30 p-0.5"><GripVertical className="h-3 w-3" /></button>
                       </div>
                       <span className="text-sm text-foreground flex-1">{section.label}</span>
                       <Switch checked={section.visible} onCheckedChange={() => toggleSection(section.id)} />
@@ -330,8 +501,8 @@ const SmartPageEditor = () => {
                       <Input value={slug} onChange={(e) => { setSlug(e.target.value); setUnsavedChanges(true); }} className="flex-1" />
                     </div>
                   </div>
-                  <div><label className="text-xs font-medium text-foreground">Meta Title</label><Input value={state.template.heroTitle} onChange={(e) => updateTemplate({ heroTitle: e.target.value })} className="mt-1.5" /><p className="text-[10px] text-muted-foreground mt-1">{state.template.heroTitle.length}/60</p></div>
-                  <div><label className="text-xs font-medium text-foreground">Meta Description</label><Textarea value={state.template.heroDescription} onChange={(e) => updateTemplate({ heroDescription: e.target.value })} rows={2} className="mt-1.5" /><p className="text-[10px] text-muted-foreground mt-1">{state.template.heroDescription.length}/160</p></div>
+                  <div><label className="text-xs font-medium text-foreground">Meta Title</label><Input value={currentPage.heroTitle} onChange={(e) => updatePageHero({ heroTitle: e.target.value })} className="mt-1.5" /><p className="text-[10px] text-muted-foreground mt-1">{currentPage.heroTitle.length}/60</p></div>
+                  <div><label className="text-xs font-medium text-foreground">Meta Description</label><Textarea value={currentPage.heroDescription} onChange={(e) => updatePageHero({ heroDescription: e.target.value })} rows={2} className="mt-1.5" /><p className="text-[10px] text-muted-foreground mt-1">{currentPage.heroDescription.length}/160</p></div>
                 </TabsContent>
               </ScrollArea>
             </Tabs>
@@ -366,9 +537,10 @@ const SmartPageEditor = () => {
           <DialogHeader><DialogTitle>Publish Website</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="bg-secondary/50 rounded-lg p-4">
-              <h3 className="font-semibold text-foreground text-sm mb-2">{state.template.heroTitle}</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-muted-foreground text-xs">Sections</span><p className="font-medium text-foreground">{state.sections.filter((s) => s.visible).length} visible</p></div>
+              <h3 className="font-semibold text-foreground text-sm mb-2">{state.pages[pageNames[0]]?.heroTitle}</h3>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div><span className="text-muted-foreground text-xs">Pages</span><p className="font-medium text-foreground">{pageNames.length}</p></div>
+                <div><span className="text-muted-foreground text-xs">Sections</span><p className="font-medium text-foreground">{currentPage.sections.filter((s) => s.visible).length}</p></div>
                 <div><span className="text-muted-foreground text-xs">Type</span><p className="font-medium text-foreground">{state.template.title}</p></div>
               </div>
             </div>
@@ -383,6 +555,7 @@ const SmartPageEditor = () => {
               <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> SSL-secured</div>
               <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> Mobile responsive</div>
               <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> SEO optimized</div>
+              <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> {pageNames.length} pages</div>
             </div>
             <Button className="w-full gap-2" onClick={handlePublish} disabled={publishing}>
               {publishing ? <><Loader2 className="h-4 w-4 animate-spin" /> Publishing...</> : "Publish Now"}
@@ -408,6 +581,47 @@ const SmartPageEditor = () => {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+};
+
+// ─── Add Page Button ───
+const AddPageButton = ({ onAdd, fullWidth = false }: { onAdd: (name: string) => void; fullWidth?: boolean }) => {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+
+  const handleAdd = () => {
+    if (!name.trim()) return;
+    onAdd(name.trim());
+    setName("");
+    setOpen(false);
+  };
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors ${fullWidth ? "w-full justify-center border border-dashed border-border mt-2" : ""}`}
+      >
+        <Plus className="h-3 w-3" /> Add Page
+      </button>
+    );
+  }
+
+  return (
+    <div className={`flex items-center gap-1.5 ${fullWidth ? "mt-2" : ""}`}>
+      <Input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+        placeholder="Page name..."
+        className="h-7 text-xs w-32"
+        autoFocus
+      />
+      <Button size="sm" className="h-7 px-2 text-xs" onClick={handleAdd}>Add</Button>
+      <Button size="sm" variant="ghost" className="h-7 px-1.5" onClick={() => { setOpen(false); setName(""); }}>
+        <X className="h-3 w-3" />
+      </Button>
     </div>
   );
 };
