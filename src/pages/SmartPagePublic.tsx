@@ -6,6 +6,8 @@ import { SitePreview } from "@/components/SitePreview";
 import { SmartPageCheckout } from "@/components/SmartPageCheckout";
 import { getStoredSites } from "@/pages/WebsiteBuilder";
 import { ArrowLeft } from "lucide-react";
+import WebinarLandingPreview from "@/components/WebinarLandingPreview";
+import type { WebinarData } from "@/types/smartPages";
 
 type PublicView = "site" | "checkout" | "product-detail";
 
@@ -25,6 +27,15 @@ const SmartPagePublic = () => {
     const sites = getStoredSites();
     return sites.find((s) => s.slug === slug) || null;
   }, [slug]);
+
+  // Check if this is a webinar page and load webinar data
+  const webinarData = useMemo<WebinarData | null>(() => {
+    if (!site || site.pageType !== "webinar") return null;
+    try {
+      const stored = localStorage.getItem(`webinar_${site.id}`);
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  }, [site]);
 
   // Find matching template
   const template = useMemo(() => {
@@ -80,6 +91,15 @@ const SmartPagePublic = () => {
       highlights: ["Access to all materials", "Certificate on completion", "Community access"],
     };
   }, [product, template]);
+
+  // ─── Webinar Page ───
+  if (site && site.pageType === "webinar" && webinarData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <WebinarLandingPreview data={webinarData} interactive />
+      </div>
+    );
+  }
 
   // Not found
   if (!site || !template || !pageTemplate) {

@@ -1,16 +1,20 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  ArrowLeft, ArrowRight, Check, Plus, Trash2, Video, Calendar,
-  Clock, Globe, Users, CreditCard, Eye, Sparkles, Link2, Upload,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft, Send, Sparkles, Check, Copy, ExternalLink, Share2,
+  Calendar, Clock, Video, Plus, Trash2, Globe, PartyPopper, Eye,
+  MessageSquare, Settings, ChevronDown, ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { addSite, type SmartPageSite } from "./WebsiteBuilder";
@@ -18,500 +22,819 @@ import {
   defaultRegistrationFields, defaultWorkflows,
   type RegistrationField, type EventConfig, type WebinarData,
 } from "@/types/smartPages";
+import WebinarLandingPreview from "@/components/WebinarLandingPreview";
 
-const steps = [
-  { label: "Basic Details", icon: Sparkles },
-  { label: "Schedule & Meeting", icon: Calendar },
-  { label: "Registration Form", icon: Users },
-  { label: "Preview", icon: Eye },
-  { label: "Publish", icon: Check },
+type Phase = "chat" | "builder" | "confirmation";
+
+interface ChatMsg {
+  id: string;
+  role: "bot" | "user";
+  content: string;
+  type?: "text" | "platform-select" | "paid-toggle" | "date-time" | "duration" | "reg-fields" | "transition";
+  answered?: boolean;
+}
+
+// The questions the bot asks sequentially
+const QUESTION_SEQUENCE = [
+  { key: "name", message: "👋 Hey! Let's create your webinar landing page. **What's the name of your webinar?**", type: "text" as const },
+  { key: "description", message: "Great name! **Describe what attendees will learn** — a few sentences is perfect.", type: "text" as const },
+  { key: "isPaid", message: "Is this a **paid or free** webinar?", type: "paid-toggle" as const },
+  { key: "amount", message: "How much would you like to charge? **Enter the amount in ₹**.", type: "text" as const, condition: (state: Partial<WebinarData>) => state.isPaid },
+  { key: "dateTime", message: "When is the webinar? **Pick a date and time.**", type: "date-time" as const },
+  { key: "duration", message: "How long will it be? **Select the duration.**", type: "duration" as const },
+  { key: "platform", message: "Which platform are you hosting on?", type: "platform-select" as const },
+  { key: "meetingLink", message: "Got it! **Paste your meeting link** (or skip for now).", type: "text" as const },
+  { key: "regFields", message: "I've set up default registration fields (Name, Email, Phone). Want to **add any custom fields**?", type: "reg-fields" as const },
 ];
 
 const timezones = [
-  "Asia/Kolkata (IST)",
-  "America/New_York (EST)",
-  "America/Los_Angeles (PST)",
-  "Europe/London (GMT)",
-  "Asia/Singapore (SGT)",
-  "Australia/Sydney (AEST)",
+  "Asia/Kolkata (IST)", "America/New_York (EST)", "America/Los_Angeles (PST)",
+  "Europe/London (GMT)", "Asia/Singapore (SGT)", "Australia/Sydney (AEST)",
 ];
 
 const WebinarCreate = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(0);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // Step 1: Basic Details
+  const [phase, setPhase] = useState<Phase>("chat");
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isTyping, setIsTyping] = useState(false);
+
+  // Webinar state
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [bannerImage, setBannerImage] = useState("https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&h=400&fit=crop");
+  const [bannerImage] = useState("https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&h=400&fit=crop");
   const [isPaid, setIsPaid] = useState(false);
   const [amount, setAmount] = useState(999);
-
-  // Step 2: Schedule & Meeting
   const [eventConfig, setEventConfig] = useState<EventConfig>({
-    date: "2026-04-15",
-    time: "10:00",
-    duration: 60,
-    timezone: "Asia/Kolkata (IST)",
-    platform: "zoom",
-    meetingLink: "",
-    eventName: "",
+    date: "", time: "", duration: 60, timezone: "Asia/Kolkata (IST)",
+    platform: "zoom", meetingLink: "", eventName: "",
   });
-  const [connectionMode, setConnectionMode] = useState<"link" | "connect">("link");
-
-  // Step 3: Registration Fields
   const [regFields, setRegFields] = useState<RegistrationField[]>([...defaultRegistrationFields]);
-  const [newFieldLabel, setNewFieldLabel] = useState("");
-
-  // Speakers
   const [speakers] = useState([
-    { name: "Dr. Arun Kumar", title: "AI Researcher", avatar: "AK", bio: "Leading expert in machine learning with 15+ years of research experience." },
+    { name: "Dr. Arun Kumar", title: "AI Researcher", avatar: "AK", bio: "Leading expert in machine learning." },
   ]);
 
-  const canProceed = () => {
-    if (currentStep === 0) return name.trim().length > 0;
-    if (currentStep === 1) return eventConfig.date && eventConfig.time;
-    return true;
+  // Builder state
+  const [builderTab, setBuilderTab] = useState<"chat" | "settings">("chat");
+  const [builderChatInput, setBuilderChatInput] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState<Record<string, boolean>>({ details: true, schedule: false, registration: false });
+
+  // Confirmation state
+  const [publishedSlug, setPublishedSlug] = useState("");
+  const [publishedSiteId, setPublishedSiteId] = useState("");
+
+  // Add a bot message with typing effect
+  const addBotMessage = useCallback((content: string, type?: ChatMsg["type"]) => {
+    setIsTyping(true);
+    setTimeout(() => {
+      setMessages((prev) => [...prev, {
+        id: `msg_${Date.now()}`,
+        role: "bot",
+        content,
+        type: type || "text",
+      }]);
+      setIsTyping(false);
+    }, 600 + Math.random() * 400);
+  }, []);
+
+  // Initialize first question
+  useEffect(() => {
+    if (messages.length === 0) {
+      addBotMessage(QUESTION_SEQUENCE[0].message, QUESTION_SEQUENCE[0].type);
+    }
+  }, []); // eslint-disable-line
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isTyping]);
+
+  const getProgress = () => {
+    const total = QUESTION_SEQUENCE.filter(q => !q.condition || q.condition({ isPaid })).length;
+    return Math.round((questionIndex / total) * 100);
   };
 
-  const addCustomField = () => {
-    if (!newFieldLabel.trim()) return;
-    setRegFields([
-      ...regFields,
-      {
-        id: `rf_custom_${Date.now()}`,
-        label: newFieldLabel,
-        type: "text",
-        required: false,
-        placeholder: `Enter ${newFieldLabel.toLowerCase()}`,
-      },
-    ]);
-    setNewFieldLabel("");
+  const advanceQuestion = useCallback((currentIdx: number) => {
+    let nextIdx = currentIdx + 1;
+    // Skip conditional questions
+    while (nextIdx < QUESTION_SEQUENCE.length) {
+      const q = QUESTION_SEQUENCE[nextIdx];
+      if (q.condition && !q.condition({ isPaid, name, description })) {
+        nextIdx++;
+        continue;
+      }
+      break;
+    }
+    if (nextIdx >= QUESTION_SEQUENCE.length) {
+      // All questions answered → transition
+      addBotMessage("✨ Perfect! I have everything I need. **Let me build your landing page...**", "transition");
+      setTimeout(() => setPhase("builder"), 2000);
+    } else {
+      setQuestionIndex(nextIdx);
+      const q = QUESTION_SEQUENCE[nextIdx];
+      addBotMessage(q.message, q.type);
+    }
+  }, [isPaid, name, description, addBotMessage]);
+
+  const handleUserResponse = (text: string) => {
+    if (!text.trim()) return;
+    setMessages((prev) => [...prev, {
+      id: `msg_${Date.now()}`,
+      role: "user",
+      content: text,
+    }]);
+    setChatInput("");
+
+    const currentQ = QUESTION_SEQUENCE[questionIndex];
+    switch (currentQ.key) {
+      case "name":
+        setName(text);
+        setEventConfig(prev => ({ ...prev, eventName: text }));
+        break;
+      case "description":
+        setDescription(text);
+        break;
+      case "amount":
+        setAmount(parseInt(text.replace(/[^0-9]/g, "")) || 999);
+        break;
+      case "meetingLink":
+        setEventConfig(prev => ({ ...prev, meetingLink: text }));
+        break;
+    }
+
+    advanceQuestion(questionIndex);
   };
 
-  const removeField = (id: string) => {
-    setRegFields(regFields.filter((f) => f.id !== id));
+  const handlePlatformSelect = (platform: "zoom" | "gmeet" | "custom") => {
+    setEventConfig(prev => ({ ...prev, platform }));
+    setMessages(prev => [...prev, {
+      id: `msg_${Date.now()}`, role: "user",
+      content: platform === "zoom" ? "Zoom" : platform === "gmeet" ? "Google Meet" : "Custom Link",
+    }]);
+    advanceQuestion(questionIndex);
   };
 
+  const handlePaidToggle = (paid: boolean) => {
+    setIsPaid(paid);
+    setMessages(prev => [...prev, {
+      id: `msg_${Date.now()}`, role: "user",
+      content: paid ? "Paid webinar" : "Free webinar",
+    }]);
+    // Need to advance, but we have to handle the condition check for amount
+    // advanceQuestion will skip amount if free
+    setTimeout(() => {
+      let nextIdx = questionIndex + 1;
+      while (nextIdx < QUESTION_SEQUENCE.length) {
+        const q = QUESTION_SEQUENCE[nextIdx];
+        if (q.condition && !q.condition({ isPaid: paid })) { nextIdx++; continue; }
+        break;
+      }
+      if (nextIdx >= QUESTION_SEQUENCE.length) {
+        addBotMessage("✨ Perfect! Let me build your landing page...", "transition");
+        setTimeout(() => setPhase("builder"), 2000);
+      } else {
+        setQuestionIndex(nextIdx);
+        addBotMessage(QUESTION_SEQUENCE[nextIdx].message, QUESTION_SEQUENCE[nextIdx].type);
+      }
+    }, 100);
+  };
+
+  const handleDateTimeSet = (date: string, time: string) => {
+    setEventConfig(prev => ({ ...prev, date, time }));
+    const dateStr = date ? new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "TBD";
+    setMessages(prev => [...prev, {
+      id: `msg_${Date.now()}`, role: "user",
+      content: `${dateStr} at ${time || "TBD"}`,
+    }]);
+    advanceQuestion(questionIndex);
+  };
+
+  const handleDurationSet = (d: number) => {
+    setEventConfig(prev => ({ ...prev, duration: d }));
+    setMessages(prev => [...prev, {
+      id: `msg_${Date.now()}`, role: "user", content: `${d} minutes`,
+    }]);
+    advanceQuestion(questionIndex);
+  };
+
+  const handleRegFieldsDone = () => {
+    setMessages(prev => [...prev, {
+      id: `msg_${Date.now()}`, role: "user",
+      content: `${regFields.length} fields configured`,
+    }]);
+    advanceQuestion(questionIndex);
+  };
+
+  // Build webinar data object
+  const buildWebinarData = (): WebinarData => ({
+    name, description, bannerImage, isPaid, amount: isPaid ? amount : 0,
+    eventConfig: { ...eventConfig, eventName: eventConfig.eventName || name },
+    registrationFields: regFields, workflows: defaultWorkflows,
+    attendees: [], speakers,
+  });
+
+  // Handle publish
   const handlePublish = () => {
-    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "webinar";
     const site: SmartPageSite = {
-      id: `sp_${Date.now()}`,
-      name,
-      type: "Webinar",
-      category: "education",
-      slug,
-      templateId: "webinar",
-      url: `/s/${slug}`,
+      id: `sp_${Date.now()}`, name, type: "Webinar", category: "education",
+      slug, templateId: "webinar", url: `/s/${slug}`,
       created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
-      views: 0,
-      conversions: 0,
-      status: "Published",
-      amount: isPaid ? amount : 0,
-      transactions: 0,
-      pageType: "webinar",
+      views: 0, conversions: 0, status: "Published",
+      amount: isPaid ? amount : 0, transactions: 0, pageType: "webinar",
     };
-
-    // Store webinar-specific data
-    const webinarData: WebinarData = {
-      name,
-      description,
-      bannerImage,
-      isPaid,
-      amount: isPaid ? amount : 0,
-      eventConfig: { ...eventConfig, eventName: eventConfig.eventName || name },
-      registrationFields: regFields,
-      workflows: defaultWorkflows,
-      attendees: [],
-      speakers,
-    };
-    localStorage.setItem(`webinar_${site.id}`, JSON.stringify(webinarData));
-
+    localStorage.setItem(`webinar_${site.id}`, JSON.stringify(buildWebinarData()));
     addSite(site);
-    toast.success("Webinar published successfully!");
-    navigate("/website-builder");
+    setPublishedSlug(slug);
+    setPublishedSiteId(site.id);
+    setPhase("confirmation");
   };
 
-  return (
-    <DashboardLayout>
-      <div className="animate-fade-in max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => navigate("/website-builder/create")} className="gap-1.5">
-            <ArrowLeft className="h-4 w-4" /> Back
-          </Button>
-          <div className="h-5 w-px bg-border" />
-          <h1 className="text-xl font-semibold text-foreground">Create Webinar</h1>
+  // Builder chat handler
+  const handleBuilderChat = (text: string) => {
+    if (!text.trim()) return;
+    setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "user", content: text }]);
+    setBuilderChatInput("");
+
+    setTimeout(() => {
+      const lower = text.toLowerCase();
+      let response = "";
+      if (lower.includes("title") || lower.includes("name")) {
+        response = "You can edit the webinar name in the Details section on the left. The preview will update live.";
+      } else if (lower.includes("paid") || lower.includes("free") || lower.includes("price")) {
+        response = "Toggle paid/free in the Details section. If paid, set the amount there too.";
+      } else if (lower.includes("date") || lower.includes("time") || lower.includes("schedule")) {
+        response = "Expand the Schedule section to update date, time, and platform details.";
+      } else if (lower.includes("publish") || lower.includes("live") || lower.includes("done")) {
+        response = "Click the **Publish** button in the top bar when you're ready! 🚀";
+      } else {
+        response = `Got it! I've noted "${text}". You can make detailed edits in the Settings tab on the left.`;
+      }
+      setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "bot", content: response }]);
+    }, 500);
+  };
+
+  const webinarData = buildWebinarData();
+  const fullUrl = `${window.location.origin}/s/${publishedSlug}`;
+
+  // ─── PHASE 1: Chat Flow ───
+  if (phase === "chat") {
+    return (
+      <div className="h-screen flex flex-col bg-background">
+        {/* Top bar */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-background">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => navigate("/website-builder/create")} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+            <div className="h-5 w-px bg-border" />
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="text-sm font-medium text-foreground">Create Webinar</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground">{getProgress()}% complete</span>
+            <Progress value={getProgress()} className="w-32 h-1.5" />
+          </div>
         </div>
 
-        {/* Step Indicator */}
-        <div className="flex items-center gap-2">
-          {steps.map((step, i) => (
-            <div key={i} className="flex items-center gap-2">
+        {/* Chat area */}
+        <ScrollArea className="flex-1 px-4 py-6">
+          <div className="max-w-2xl mx-auto space-y-4">
+            {messages.map((msg) => (
+              <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5"
+                    : "bg-secondary/70 text-foreground rounded-2xl rounded-bl-md px-4 py-2.5"
+                }`}>
+                  <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{
+                    __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  }} />
+                </div>
+              </div>
+            ))}
+
+            {/* Inline interactive elements based on current question */}
+            {!isTyping && questionIndex < QUESTION_SEQUENCE.length && (
+              <ChatInlineWidget
+                questionKey={QUESTION_SEQUENCE[questionIndex]?.key}
+                type={QUESTION_SEQUENCE[questionIndex]?.type}
+                eventConfig={eventConfig}
+                onPlatformSelect={handlePlatformSelect}
+                onPaidToggle={handlePaidToggle}
+                onDateTimeSet={handleDateTimeSet}
+                onDurationSet={handleDurationSet}
+                onRegFieldsDone={handleRegFieldsDone}
+                regFields={regFields}
+                setRegFields={setRegFields}
+              />
+            )}
+
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-secondary/70 rounded-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={chatEndRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Input bar (only for text questions) */}
+        {!isTyping && questionIndex < QUESTION_SEQUENCE.length &&
+          ["name", "description", "amount", "meetingLink"].includes(QUESTION_SEQUENCE[questionIndex]?.key) && (
+          <div className="border-t border-border px-4 py-3 bg-background">
+            <div className="max-w-2xl mx-auto flex gap-2">
+              <Input
+                ref={inputRef}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder={
+                  QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink"
+                    ? "Paste link or type 'skip'..."
+                    : "Type your response..."
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    if (QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink" && (!chatInput.trim() || chatInput.trim().toLowerCase() === "skip")) {
+                      handleUserResponse("Skipped for now");
+                    } else {
+                      handleUserResponse(chatInput);
+                    }
+                  }
+                }}
+                autoFocus
+              />
+              <Button
+                onClick={() => {
+                  if (QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink" && (!chatInput.trim() || chatInput.trim().toLowerCase() === "skip")) {
+                    handleUserResponse("Skipped for now");
+                  } else {
+                    handleUserResponse(chatInput);
+                  }
+                }}
+                size="icon"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // ─── PHASE 2: Builder ───
+  if (phase === "builder") {
+    return (
+      <div className="h-screen flex flex-col bg-background">
+        {/* Top bar */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background z-10">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => setPhase("chat")} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Chat
+            </Button>
+            <div className="h-5 w-px bg-border" />
+            <span className="font-medium text-sm text-foreground">{name || "Untitled Webinar"}</span>
+            <Badge variant="secondary" className="text-[10px]">Draft</Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`/s/${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`, "_blank")}>
+              <Eye className="h-4 w-4" /> Preview
+            </Button>
+            <Button size="sm" onClick={handlePublish} className="gap-1.5">
+              <Check className="h-4 w-4" /> Publish
+            </Button>
+          </div>
+        </div>
+
+        {/* Split pane */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* LEFT: Chat + Settings */}
+          <div className="w-[380px] border-r border-border flex flex-col bg-background">
+            {/* Tab switch */}
+            <div className="flex border-b border-border">
               <button
-                onClick={() => i <= currentStep && setCurrentStep(i)}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  i === currentStep
-                    ? "bg-primary text-primary-foreground"
-                    : i < currentStep
-                    ? "bg-primary/10 text-primary"
-                    : "bg-secondary text-muted-foreground"
+                onClick={() => setBuilderTab("chat")}
+                className={`flex-1 px-4 py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                  builderTab === "chat" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <step.icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{step.label}</span>
+                <MessageSquare className="h-3.5 w-3.5" /> AI Chat
               </button>
-              {i < steps.length - 1 && <div className="w-6 h-px bg-border" />}
+              <button
+                onClick={() => setBuilderTab("settings")}
+                className={`flex-1 px-4 py-2.5 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                  builderTab === "settings" ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Settings className="h-3.5 w-3.5" /> Settings
+              </button>
             </div>
-          ))}
-        </div>
 
-        {/* Step Content */}
-        <div className="blade-card p-6">
-          {/* ─── Step 1: Basic Details ─── */}
-          {currentStep === 0 && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground mb-1">Basic Details</h2>
-                <p className="text-sm text-muted-foreground">Set up the core information for your webinar.</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <Label>Webinar Name *</Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Mastering AI in 2026" className="mt-1.5" />
-                </div>
-                <div>
-                  <Label>Description</Label>
-                  <Textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe what attendees will learn..." className="mt-1.5" rows={4} />
-                </div>
-                <div>
-                  <Label>Banner Image URL</Label>
-                  <Input value={bannerImage} onChange={(e) => setBannerImage(e.target.value)} placeholder="https://..." className="mt-1.5" />
-                  {bannerImage && (
-                    <div className="mt-2 rounded-lg overflow-hidden border border-border h-40">
-                      <img src={bannerImage} alt="Banner" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 border border-border">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Paid Webinar</p>
-                    <p className="text-xs text-muted-foreground">Charge attendees for registration</p>
-                  </div>
-                  <Switch checked={isPaid} onCheckedChange={setIsPaid} />
-                </div>
-                {isPaid && (
-                  <div>
-                    <Label>Amount (₹)</Label>
-                    <Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="mt-1.5 max-w-xs" />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ─── Step 2: Schedule & Meeting ─── */}
-          {currentStep === 1 && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground mb-1">Schedule & Meeting</h2>
-                <p className="text-sm text-muted-foreground">Set the date, time, and meeting platform.</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Date *</Label>
-                  <Input type="date" value={eventConfig.date} onChange={(e) => setEventConfig({ ...eventConfig, date: e.target.value })} className="mt-1.5" />
-                </div>
-                <div>
-                  <Label>Time *</Label>
-                  <Input type="time" value={eventConfig.time} onChange={(e) => setEventConfig({ ...eventConfig, time: e.target.value })} className="mt-1.5" />
-                </div>
-                <div>
-                  <Label>Duration (minutes)</Label>
-                  <Select value={String(eventConfig.duration)} onValueChange={(v) => setEventConfig({ ...eventConfig, duration: Number(v) })}>
-                    <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {[30, 45, 60, 90, 120, 180].map((d) => (
-                        <SelectItem key={d} value={String(d)}>{d} min</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Timezone</Label>
-                  <Select value={eventConfig.timezone} onValueChange={(v) => setEventConfig({ ...eventConfig, timezone: v })}>
-                    <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {timezones.map((tz) => (
-                        <SelectItem key={tz} value={tz}>{tz}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <Label>Meeting Platform</Label>
-                <div className="grid grid-cols-3 gap-3">
-                  {([
-                    { id: "zoom", label: "Zoom", icon: "🎥" },
-                    { id: "gmeet", label: "Google Meet", icon: "📹" },
-                    { id: "custom", label: "Custom Link", icon: "🔗" },
-                  ] as const).map((p) => (
-                    <button
-                      key={p.id}
-                      onClick={() => setEventConfig({ ...eventConfig, platform: p.id })}
-                      className={`p-4 rounded-lg border text-center transition-all ${
-                        eventConfig.platform === p.id
-                          ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                          : "border-border hover:border-primary/30"
-                      }`}
-                    >
-                      <span className="text-2xl">{p.icon}</span>
-                      <p className="text-sm font-medium text-foreground mt-1">{p.label}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {eventConfig.platform !== "custom" && (
-                <div className="flex gap-3">
-                  <Button
-                    variant={connectionMode === "connect" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setConnectionMode("connect")}
-                    className="gap-1.5"
-                  >
-                    <Link2 className="h-3.5 w-3.5" /> Connect {eventConfig.platform === "zoom" ? "Zoom" : "Google Meet"}
-                  </Button>
-                  <Button
-                    variant={connectionMode === "link" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setConnectionMode("link")}
-                    className="gap-1.5"
-                  >
-                    <Globe className="h-3.5 w-3.5" /> Paste Meeting Link
-                  </Button>
-                </div>
-              )}
-
-              {connectionMode === "connect" && eventConfig.platform !== "custom" && (
-                <div className="p-4 rounded-lg border border-dashed border-primary/30 bg-primary/5 text-center space-y-2">
-                  <Video className="h-8 w-8 text-primary mx-auto" />
-                  <p className="text-sm font-medium text-foreground">Connect your {eventConfig.platform === "zoom" ? "Zoom" : "Google Meet"} account</p>
-                  <p className="text-xs text-muted-foreground">Go to Connectors to set up the integration first.</p>
-                  <Button size="sm" variant="outline" onClick={() => navigate("/connectors")} className="gap-1.5">
-                    <Link2 className="h-3.5 w-3.5" /> Open Connectors
-                  </Button>
-                </div>
-              )}
-
-              {(connectionMode === "link" || eventConfig.platform === "custom") && (
-                <div>
-                  <Label>Meeting Link</Label>
-                  <Input
-                    value={eventConfig.meetingLink}
-                    onChange={(e) => setEventConfig({ ...eventConfig, meetingLink: e.target.value })}
-                    placeholder="https://zoom.us/j/... or https://meet.google.com/..."
-                    className="mt-1.5"
-                  />
-                </div>
-              )}
-
-              <div>
-                <Label>Event Name (on calendar)</Label>
-                <Input
-                  value={eventConfig.eventName}
-                  onChange={(e) => setEventConfig({ ...eventConfig, eventName: e.target.value })}
-                  placeholder={name || "Webinar event name"}
-                  className="mt-1.5"
-                />
-              </div>
-            </div>
-          )}
-
-          {/* ─── Step 3: Registration Form ─── */}
-          {currentStep === 2 && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground mb-1">Registration Form</h2>
-                <p className="text-sm text-muted-foreground">Configure what information to collect from registrants.</p>
-              </div>
-
-              <div className="space-y-3">
-                {regFields.map((field) => (
-                  <div key={field.id} className="flex items-center gap-3 p-3 rounded-lg border border-border bg-secondary/30">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">{field.label}</p>
-                      <p className="text-xs text-muted-foreground">{field.type} • {field.required ? "Required" : "Optional"}</p>
-                    </div>
-                    <Badge variant="secondary" className="text-[10px]">{field.type}</Badge>
-                    {!["rf_name", "rf_email"].includes(field.id) && (
-                      <Button variant="ghost" size="sm" onClick={() => removeField(field.id)} className="h-7 w-7 p-0">
-                        <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Input
-                  value={newFieldLabel}
-                  onChange={(e) => setNewFieldLabel(e.target.value)}
-                  placeholder="Add custom field (e.g. Company, Experience Level)"
-                  onKeyDown={(e) => e.key === "Enter" && addCustomField()}
-                />
-                <Button variant="outline" onClick={addCustomField} className="gap-1.5 flex-shrink-0">
-                  <Plus className="h-4 w-4" /> Add
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* ─── Step 4: Preview ─── */}
-          {currentStep === 3 && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground mb-1">Landing Page Preview</h2>
-                <p className="text-sm text-muted-foreground">This is what your attendees will see.</p>
-              </div>
-
-              <div className="border border-border rounded-xl overflow-hidden">
-                {/* Mock webinar landing page */}
-                <div className="relative">
-                  <img src={bannerImage} alt="Banner" className="w-full h-56 object-cover" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 to-transparent" />
-                  <div className="absolute bottom-0 left-0 right-0 p-6">
-                    <Badge className="mb-2">{isPaid ? `₹${amount}` : "Free"}</Badge>
-                    <h2 className="text-2xl font-bold text-background">{name || "Webinar Name"}</h2>
-                    <p className="text-sm text-background/80 mt-1">{description || "Webinar description"}</p>
-                  </div>
-                </div>
-
-                <div className="p-6 space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span className="text-foreground">{eventConfig.date ? new Date(eventConfig.date).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" }) : "TBD"}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Clock className="h-4 w-4 text-primary" />
-                      <span className="text-foreground">{eventConfig.time} • {eventConfig.duration} min</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Video className="h-4 w-4 text-primary" />
-                      <span className="text-foreground capitalize">{eventConfig.platform}</span>
-                    </div>
-                  </div>
-
-                  {speakers.length > 0 && (
-                    <div>
-                      <h3 className="text-sm font-semibold text-foreground mb-2">Speakers</h3>
-                      <div className="flex gap-3">
-                        {speakers.map((s, i) => (
-                          <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-secondary/50">
-                            <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold">{s.avatar}</div>
-                            <div>
-                              <p className="text-xs font-medium text-foreground">{s.name}</p>
-                              <p className="text-[10px] text-muted-foreground">{s.title}</p>
-                            </div>
-                          </div>
-                        ))}
+            {builderTab === "chat" ? (
+              <>
+                <ScrollArea className="flex-1 px-3 py-4">
+                  <div className="space-y-3">
+                    {/* Show transition message */}
+                    <div className="flex justify-start">
+                      <div className="bg-secondary/70 text-foreground rounded-2xl rounded-bl-md px-3 py-2 max-w-[90%]">
+                        <p className="text-xs">🎨 Your landing page is ready! I've built it from your responses. Use the **Settings** tab to make edits, or ask me anything here.</p>
                       </div>
                     </div>
-                  )}
-
-                  <div className="border border-border rounded-lg p-4 space-y-3">
-                    <h3 className="text-sm font-semibold text-foreground">Registration Form Preview</h3>
-                    {regFields.map((f) => (
-                      <div key={f.id}>
-                        <Label className="text-xs">{f.label} {f.required && <span className="text-destructive">*</span>}</Label>
-                        <Input placeholder={f.placeholder} className="mt-1" disabled />
+                    {messages.filter(m => phase === "builder" || m.id > "msg_builder").map(msg => (
+                      <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                        <div className={`max-w-[90%] ${
+                          msg.role === "user"
+                            ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-3 py-2"
+                            : "bg-secondary/70 text-foreground rounded-2xl rounded-bl-md px-3 py-2"
+                        }`}>
+                          <p className="text-xs whitespace-pre-wrap" dangerouslySetInnerHTML={{
+                            __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                          }} />
+                        </div>
                       </div>
                     ))}
-                    <Button className="w-full mt-2" disabled>
-                      {isPaid ? `Register & Pay ₹${amount}` : "Register for Free"}
+                    <div ref={chatEndRef} />
+                  </div>
+                </ScrollArea>
+                <div className="border-t border-border p-3">
+                  <div className="flex gap-2">
+                    <Input
+                      value={builderChatInput}
+                      onChange={e => setBuilderChatInput(e.target.value)}
+                      placeholder="Ask me to change anything..."
+                      className="text-xs"
+                      onKeyDown={e => e.key === "Enter" && handleBuilderChat(builderChatInput)}
+                    />
+                    <Button size="icon" className="h-9 w-9" onClick={() => handleBuilderChat(builderChatInput)}>
+                      <Send className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
-              </div>
+              </>
+            ) : (
+              <ScrollArea className="flex-1">
+                <div className="p-4 space-y-3">
+                  {/* Details Section */}
+                  <CollapsibleSection
+                    title="Details" icon={<Sparkles className="h-3.5 w-3.5" />}
+                    open={settingsOpen.details}
+                    onToggle={() => setSettingsOpen(p => ({ ...p, details: !p.details }))}
+                  >
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs">Webinar Name</Label>
+                        <Input value={name} onChange={e => setName(e.target.value)} className="mt-1 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Description</Label>
+                        <Textarea value={description} onChange={e => setDescription(e.target.value)} className="mt-1 text-xs" rows={3} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Paid Webinar</Label>
+                        <Switch checked={isPaid} onCheckedChange={setIsPaid} />
+                      </div>
+                      {isPaid && (
+                        <div>
+                          <Label className="text-xs">Amount (₹)</Label>
+                          <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} className="mt-1 text-xs" />
+                        </div>
+                      )}
+                    </div>
+                  </CollapsibleSection>
+
+                  {/* Schedule Section */}
+                  <CollapsibleSection
+                    title="Schedule & Platform" icon={<Calendar className="h-3.5 w-3.5" />}
+                    open={settingsOpen.schedule}
+                    onToggle={() => setSettingsOpen(p => ({ ...p, schedule: !p.schedule }))}
+                  >
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Date</Label>
+                          <Input type="date" value={eventConfig.date} onChange={e => setEventConfig(p => ({ ...p, date: e.target.value }))} className="mt-1 text-xs" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Time</Label>
+                          <Input type="time" value={eventConfig.time} onChange={e => setEventConfig(p => ({ ...p, time: e.target.value }))} className="mt-1 text-xs" />
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Duration</Label>
+                        <Select value={String(eventConfig.duration)} onValueChange={v => setEventConfig(p => ({ ...p, duration: Number(v) }))}>
+                          <SelectTrigger className="mt-1 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {[30, 45, 60, 90, 120, 180].map(d => (
+                              <SelectItem key={d} value={String(d)}>{d} min</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Platform</Label>
+                        <div className="grid grid-cols-3 gap-2 mt-1">
+                          {(["zoom", "gmeet", "custom"] as const).map(p => (
+                            <button
+                              key={p}
+                              onClick={() => setEventConfig(prev => ({ ...prev, platform: p }))}
+                              className={`p-2 rounded-lg border text-center text-xs font-medium transition-all ${
+                                eventConfig.platform === p
+                                  ? "border-primary bg-primary/5 text-primary"
+                                  : "border-border text-muted-foreground hover:border-primary/30"
+                              }`}
+                            >
+                              {p === "zoom" ? "Zoom" : p === "gmeet" ? "GMeet" : "Custom"}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <Label className="text-xs">Meeting Link</Label>
+                        <Input
+                          value={eventConfig.meetingLink}
+                          onChange={e => setEventConfig(p => ({ ...p, meetingLink: e.target.value }))}
+                          placeholder="https://..."
+                          className="mt-1 text-xs"
+                        />
+                      </div>
+                    </div>
+                  </CollapsibleSection>
+
+                  {/* Registration Section */}
+                  <CollapsibleSection
+                    title="Registration Fields" icon={<Globe className="h-3.5 w-3.5" />}
+                    open={settingsOpen.registration}
+                    onToggle={() => setSettingsOpen(p => ({ ...p, registration: !p.registration }))}
+                  >
+                    <div className="space-y-2">
+                      {regFields.map(f => (
+                        <div key={f.id} className="flex items-center gap-2 p-2 rounded-md border border-border text-xs">
+                          <span className="flex-1 font-medium text-foreground">{f.label}</span>
+                          <Badge variant="secondary" className="text-[9px]">{f.required ? "Required" : "Optional"}</Badge>
+                          {!["rf_name", "rf_email"].includes(f.id) && (
+                            <button onClick={() => setRegFields(prev => prev.filter(x => x.id !== f.id))} className="text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-3 w-3" />
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      <Button
+                        variant="outline" size="sm" className="w-full text-xs gap-1 mt-1"
+                        onClick={() => setRegFields(prev => [...prev, {
+                          id: `rf_${Date.now()}`, label: "Custom Field", type: "text", required: false, placeholder: "Enter value",
+                        }])}
+                      >
+                        <Plus className="h-3 w-3" /> Add Field
+                      </Button>
+                    </div>
+                  </CollapsibleSection>
+                </div>
+              </ScrollArea>
+            )}
+          </div>
+
+          {/* RIGHT: Live Preview */}
+          <div className="flex-1 bg-muted/30 overflow-auto">
+            <div className="max-w-3xl mx-auto my-6 bg-background rounded-xl shadow-lg border border-border overflow-hidden">
+              <WebinarLandingPreview data={webinarData} />
             </div>
-          )}
-
-          {/* ─── Step 5: Publish ─── */}
-          {currentStep === 4 && (
-            <div className="space-y-5">
-              <div>
-                <h2 className="text-lg font-semibold text-foreground mb-1">Review & Publish</h2>
-                <p className="text-sm text-muted-foreground">Review your webinar details before publishing.</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="blade-card p-4 space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium uppercase">Webinar</p>
-                  <p className="text-foreground font-semibold">{name}</p>
-                  <p className="text-sm text-muted-foreground">{isPaid ? `₹${amount}` : "Free"}</p>
-                </div>
-                <div className="blade-card p-4 space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium uppercase">Schedule</p>
-                  <p className="text-foreground font-semibold">
-                    {eventConfig.date ? new Date(eventConfig.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "TBD"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{eventConfig.time} • {eventConfig.duration} min • {eventConfig.platform}</p>
-                </div>
-                <div className="blade-card p-4 space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium uppercase">Registration Fields</p>
-                  <p className="text-foreground font-semibold">{regFields.length} fields</p>
-                  <p className="text-sm text-muted-foreground">{regFields.filter((f) => f.required).length} required</p>
-                </div>
-                <div className="blade-card p-4 space-y-2">
-                  <p className="text-xs text-muted-foreground font-medium uppercase">URL</p>
-                  <p className="text-foreground font-semibold text-sm font-mono">/s/{name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 p-4 rounded-lg bg-primary/5 border border-primary/20">
-                <Check className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">Ready to publish</p>
-                  <p className="text-xs text-muted-foreground">Your webinar landing page will be live immediately after publishing.</p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Navigation */}
-        <div className="flex items-center justify-between">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
-            disabled={currentStep === 0}
-            className="gap-1.5"
-          >
-            <ArrowLeft className="h-4 w-4" /> Previous
-          </Button>
-
-          {currentStep < steps.length - 1 ? (
-            <Button
-              onClick={() => setCurrentStep(currentStep + 1)}
-              disabled={!canProceed()}
-              className="gap-1.5"
-            >
-              Next <ArrowRight className="h-4 w-4" />
-            </Button>
-          ) : (
-            <Button onClick={handlePublish} className="gap-1.5">
-              <Check className="h-4 w-4" /> Publish Webinar
-            </Button>
-          )}
+          </div>
         </div>
       </div>
-    </DashboardLayout>
+    );
+  }
+
+  // ─── PHASE 3: Confirmation ───
+  return (
+    <div className="h-screen flex items-center justify-center bg-background">
+      <div className="max-w-lg w-full mx-auto px-6 text-center space-y-6 animate-fade-in">
+        {/* Success animation */}
+        <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+          <PartyPopper className="h-10 w-10 text-primary" />
+        </div>
+
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Webinar Published! 🎉</h1>
+          <p className="text-muted-foreground mt-1">{name} is now live and ready for registrations.</p>
+        </div>
+
+        {/* URL Card */}
+        <div className="p-4 rounded-xl border border-border bg-secondary/30 space-y-2">
+          <p className="text-xs text-muted-foreground font-medium">Your webinar URL</p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-sm font-mono text-foreground bg-background px-3 py-2 rounded-lg border border-border truncate text-left">
+              {fullUrl}
+            </code>
+            <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0" onClick={() => { navigator.clipboard.writeText(fullUrl); toast.success("URL copied!"); }}>
+              <Copy className="h-3.5 w-3.5" /> Copy
+            </Button>
+          </div>
+        </div>
+
+        {/* Share Options */}
+        <div className="flex items-center justify-center gap-3">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(fullUrl); toast.success("Link copied!"); }}>
+            <Copy className="h-3.5 w-3.5" /> Copy Link
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`Check out my webinar: ${name} — ${fullUrl}`)}`, "_blank")}>
+            <Share2 className="h-3.5 w-3.5" /> WhatsApp
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`mailto:?subject=${encodeURIComponent(name)}&body=${encodeURIComponent(`Register here: ${fullUrl}`)}`, "_blank")}>
+            <Share2 className="h-3.5 w-3.5" /> Email
+          </Button>
+        </div>
+
+        {/* Actions */}
+        <div className="grid grid-cols-2 gap-3">
+          <Button className="gap-1.5" onClick={() => window.open(`/s/${publishedSlug}`, "_blank")}>
+            <ExternalLink className="h-4 w-4" /> View Live Page
+          </Button>
+          <Button variant="outline" className="gap-1.5" onClick={() => navigate(`/website-builder/${publishedSiteId}`)}>
+            <Settings className="h-4 w-4" /> Manage Webinar
+          </Button>
+          <Button variant="outline" className="gap-1.5" onClick={() => navigate("/website-builder/webinar/create")}>
+            <Plus className="h-4 w-4" /> Create Another
+          </Button>
+          <Button variant="ghost" className="gap-1.5" onClick={() => navigate("/website-builder")}>
+            <Globe className="h-4 w-4" /> View All Pages
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
+
+// ─── Inline Chat Widgets ───
+interface ChatInlineWidgetProps {
+  questionKey: string;
+  type: string;
+  eventConfig: EventConfig;
+  onPlatformSelect: (p: "zoom" | "gmeet" | "custom") => void;
+  onPaidToggle: (paid: boolean) => void;
+  onDateTimeSet: (date: string, time: string) => void;
+  onDurationSet: (d: number) => void;
+  onRegFieldsDone: () => void;
+  regFields: RegistrationField[];
+  setRegFields: (fn: (prev: RegistrationField[]) => RegistrationField[]) => void;
+}
+
+const ChatInlineWidget = ({ questionKey, type, eventConfig, onPlatformSelect, onPaidToggle, onDateTimeSet, onDurationSet, onRegFieldsDone, regFields, setRegFields }: ChatInlineWidgetProps) => {
+  const [date, setDate] = useState(eventConfig.date);
+  const [time, setTime] = useState(eventConfig.time);
+  const [newFieldLabel, setNewFieldLabel] = useState("");
+
+  if (type === "platform-select") {
+    return (
+      <div className="flex justify-start">
+        <div className="flex gap-2">
+          {([
+            { id: "zoom" as const, label: "Zoom", emoji: "🎥" },
+            { id: "gmeet" as const, label: "Google Meet", emoji: "📹" },
+            { id: "custom" as const, label: "Custom Link", emoji: "🔗" },
+          ]).map(p => (
+            <button
+              key={p.id}
+              onClick={() => onPlatformSelect(p.id)}
+              className="px-4 py-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-center"
+            >
+              <span className="text-xl">{p.emoji}</span>
+              <p className="text-xs font-medium text-foreground mt-1">{p.label}</p>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "paid-toggle") {
+    return (
+      <div className="flex justify-start">
+        <div className="flex gap-2">
+          <button
+            onClick={() => onPaidToggle(false)}
+            className="px-5 py-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all"
+          >
+            <span className="text-lg">🆓</span>
+            <p className="text-xs font-medium text-foreground mt-1">Free</p>
+          </button>
+          <button
+            onClick={() => onPaidToggle(true)}
+            className="px-5 py-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all"
+          >
+            <span className="text-lg">💰</span>
+            <p className="text-xs font-medium text-foreground mt-1">Paid</p>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "date-time") {
+    return (
+      <div className="flex justify-start">
+        <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
+          <div className="flex gap-2">
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-xs" />
+            <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="text-xs" />
+          </div>
+          <Button size="sm" className="w-full text-xs" onClick={() => onDateTimeSet(date, time)} disabled={!date || !time}>
+            Confirm
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "duration") {
+    return (
+      <div className="flex justify-start">
+        <div className="flex flex-wrap gap-2">
+          {[30, 45, 60, 90, 120].map(d => (
+            <button
+              key={d}
+              onClick={() => onDurationSet(d)}
+              className="px-4 py-2 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-xs font-medium text-foreground"
+            >
+              {d} min
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "reg-fields") {
+    return (
+      <div className="flex justify-start">
+        <div className="bg-secondary/50 rounded-xl p-3 space-y-2 max-w-sm">
+          <div className="space-y-1.5">
+            {regFields.map(f => (
+              <div key={f.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-background border border-border">
+                <span className="flex-1 text-foreground">{f.label}</span>
+                <Badge variant="secondary" className="text-[8px]">{f.required ? "Req" : "Opt"}</Badge>
+                {!["rf_name", "rf_email"].includes(f.id) && (
+                  <button onClick={() => setRegFields(prev => prev.filter(x => x.id !== f.id))} className="text-muted-foreground hover:text-destructive">
+                    <Trash2 className="h-2.5 w-2.5" />
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex gap-1.5">
+            <Input
+              value={newFieldLabel}
+              onChange={e => setNewFieldLabel(e.target.value)}
+              placeholder="Add field..."
+              className="text-xs h-8"
+              onKeyDown={e => {
+                if (e.key === "Enter" && newFieldLabel.trim()) {
+                  setRegFields(prev => [...prev, { id: `rf_${Date.now()}`, label: newFieldLabel, type: "text", required: false, placeholder: `Enter ${newFieldLabel.toLowerCase()}` }]);
+                  setNewFieldLabel("");
+                }
+              }}
+            />
+            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => {
+              if (newFieldLabel.trim()) {
+                setRegFields(prev => [...prev, { id: `rf_${Date.now()}`, label: newFieldLabel, type: "text", required: false, placeholder: `Enter ${newFieldLabel.toLowerCase()}` }]);
+                setNewFieldLabel("");
+              }
+            }}>
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+          <Button size="sm" className="w-full text-xs" onClick={onRegFieldsDone}>
+            Looks good, continue →
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+// ─── Collapsible Section ───
+const CollapsibleSection = ({ title, icon, open, onToggle, children }: {
+  title: string; icon: React.ReactNode; open: boolean; onToggle: () => void; children: React.ReactNode;
+}) => (
+  <div className="border border-border rounded-lg overflow-hidden">
+    <button onClick={onToggle} className="w-full flex items-center justify-between px-3 py-2.5 bg-secondary/30 hover:bg-secondary/50 transition-colors">
+      <div className="flex items-center gap-2 text-xs font-medium text-foreground">{icon}{title}</div>
+      {open ? <ChevronUp className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />}
+    </button>
+    {open && <div className="px-3 py-3 border-t border-border">{children}</div>}
+  </div>
+);
 
 export default WebinarCreate;
