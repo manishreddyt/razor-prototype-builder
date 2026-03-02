@@ -6,40 +6,36 @@ import { Badge } from "@/components/ui/badge";
 import {
   Play, Clock, Users, Award, CheckCircle2, Star, BookOpen,
   Video, FileText, Download, MessageCircle, Globe, Mail, Phone,
-  ArrowLeft, Lock, CreditCard,
+  ArrowLeft, Lock, ChevronDown, ArrowRight,
 } from "lucide-react";
 import type { CourseData } from "@/pages/CourseCreate";
+import InlineEditable from "@/components/InlineEditable";
 import { toast } from "sonner";
 
 interface CourseLandingPreviewProps {
   data: CourseData;
   interactive?: boolean;
+  editable?: boolean;
+  onEdit?: (field: string, value: string) => void;
 }
 
 type View = "landing" | "checkout";
 
-const CourseLandingPreview = ({ data, interactive = false }: CourseLandingPreviewProps) => {
+const CourseLandingPreview = ({ data, interactive = false, editable = false, onEdit }: CourseLandingPreviewProps) => {
   const [currentView, setCurrentView] = useState<View>("landing");
-  const [enrollmentData, setEnrollmentData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+  const [enrollmentData, setEnrollmentData] = useState({ name: "", email: "", phone: "" });
+  const [expandedModule, setExpandedModule] = useState<string | null>(null);
 
   const handleEnroll = () => {
     if (!enrollmentData.name || !enrollmentData.email) {
       toast.error("Please fill in required fields");
       return;
     }
-
     if (data.isPaid) {
-      // Check if Razorpay is loaded
       if (typeof window.Razorpay === "undefined") {
         toast.error("Payment gateway not loaded. Please refresh the page.");
         return;
       }
-
-      // Trigger Razorpay checkout
       const options = {
         key: "rzp_live_SFFFdBjmPbTKZL",
         amount: (data.pricingModel === "one-time" ? data.amount : (data.subscriptionAmount || 999)) * 100,
@@ -47,43 +43,17 @@ const CourseLandingPreview = ({ data, interactive = false }: CourseLandingPrevie
         name: data.name,
         description: `Enroll in ${data.name}`,
         image: data.bannerImage,
-        prefill: {
-          name: enrollmentData.name,
-          email: enrollmentData.email,
-          contact: enrollmentData.phone,
-        },
-        notes: {
-          course_name: data.name,
-          pricing_model: data.pricingModel,
-          student_name: enrollmentData.name,
-        },
-        theme: {
-          color: "#0066FF",
-        },
-        handler: function (response: any) {
-          toast.success("Enrollment successful! 🎉", {
-            description: `Payment ID: ${response.razorpay_payment_id}`,
-          });
-          console.log("Payment success:", response);
+        prefill: { name: enrollmentData.name, email: enrollmentData.email, contact: enrollmentData.phone },
+        theme: { color: "#0066FF" },
+        handler: (response: any) => {
+          toast.success("Enrollment successful! 🎉", { description: `Payment ID: ${response.razorpay_payment_id}` });
           setEnrollmentData({ name: "", email: "", phone: "" });
           setCurrentView("landing");
         },
-        modal: {
-          ondismiss: function () {
-            toast.info("Enrollment cancelled");
-          },
-        },
+        modal: { ondismiss: () => toast.info("Enrollment cancelled") },
       };
-
       const rzp = new window.Razorpay(options);
-
-      rzp.on("payment.failed", function (response: any) {
-        console.error("Payment Failed:", response.error);
-        toast.error("Payment failed!", {
-          description: response.error.description || "Please try again",
-        });
-      });
-
+      rzp.on("payment.failed", (response: any) => toast.error("Payment failed!", { description: response.error.description }));
       rzp.open();
     } else {
       toast.success("Enrolled successfully! Check your email for course access.");
@@ -95,152 +65,73 @@ const CourseLandingPreview = ({ data, interactive = false }: CourseLandingPrevie
   const totalLessons = data.modules.reduce((sum, mod) => sum + (mod.lessons || 0), 0);
   const enrollmentPrice = data.pricingModel === "one-time"
     ? `₹${data.amount.toLocaleString()}`
-    : `₹${(data.subscriptionAmount || 999).toLocaleString()}/month`;
-  const enrollmentAmount = data.pricingModel === "one-time" ? data.amount : (data.subscriptionAmount || 999);
+    : `₹${(data.subscriptionAmount || 999).toLocaleString()}/mo`;
 
   // ─── Checkout View ───
   if (currentView === "checkout" && interactive) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-        {/* Header */}
-        <div className="bg-white border-b border-gray-200">
+      <div className="min-h-screen" style={{ background: "linear-gradient(135deg, #f8fafc 0%, #eef2ff 50%, #f8fafc 100%)" }}>
+        <div className="border-b" style={{ borderColor: "#e2e8f0" }}>
           <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <BookOpen className="h-6 w-6 text-blue-600" />
-              <span className="text-xl font-bold text-gray-900">LearnHub</span>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#2563eb" }}>
+                <BookOpen className="h-4 w-4 text-white" />
+              </div>
+              <span className="text-lg font-bold" style={{ color: "#0f172a" }}>LearnHub</span>
             </div>
             <Button variant="ghost" size="sm" onClick={() => setCurrentView("landing")} className="gap-2">
-              <ArrowLeft className="h-4 w-4" /> Back to Course
+              <ArrowLeft className="h-4 w-4" /> Back
             </Button>
           </div>
         </div>
-
-        {/* Checkout Content */}
         <div className="max-w-5xl mx-auto px-6 py-12">
           <div className="grid md:grid-cols-5 gap-8">
-            {/* Left: Enrollment Form */}
             <div className="md:col-span-3 space-y-6">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">Complete Your Enrollment</h1>
-                <p className="text-gray-600 mt-2">Fill in your details to enroll in {data.name}</p>
+                <h1 className="text-3xl font-bold" style={{ color: "#0f172a" }}>Complete Your Enrollment</h1>
+                <p style={{ color: "#64748b" }} className="mt-2">Fill in your details to enroll in {data.name}</p>
               </div>
-
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-8 space-y-6">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 mb-4">Student Information</h2>
-                  <div className="space-y-4">
-                    {data.enrollmentFields.map(field => (
-                      <div key={field.id}>
-                        <Label className="text-sm font-medium text-gray-700">
-                          {field.label} {field.required && <span className="text-red-500">*</span>}
-                        </Label>
-                        <Input
-                          type={field.type}
-                          placeholder={field.placeholder}
-                          required={field.required}
-                          className="mt-1.5"
-                          value={enrollmentData[field.id.replace("rf_", "") as keyof typeof enrollmentData] || ""}
-                          onChange={(e) => setEnrollmentData(prev => ({
-                            ...prev,
-                            [field.id.replace("rf_", "")]: e.target.value
-                          }))}
-                        />
-                      </div>
-                    ))}
-                  </div>
+              <div className="rounded-2xl shadow-xl p-8 space-y-6" style={{ background: "#fff", border: "1px solid #e2e8f0" }}>
+                <h2 className="text-lg font-semibold" style={{ color: "#0f172a" }}>Student Information</h2>
+                <div className="space-y-4">
+                  {data.enrollmentFields.map(field => (
+                    <div key={field.id}>
+                      <Label className="text-sm font-medium" style={{ color: "#374151" }}>
+                        {field.label} {field.required && <span style={{ color: "#ef4444" }}>*</span>}
+                      </Label>
+                      <Input type={field.type} placeholder={field.placeholder} required={field.required} className="mt-1.5"
+                        value={enrollmentData[field.id.replace("rf_", "") as keyof typeof enrollmentData] || ""}
+                        onChange={(e) => setEnrollmentData(prev => ({ ...prev, [field.id.replace("rf_", "")]: e.target.value }))} />
+                    </div>
+                  ))}
                 </div>
-
-                <div className="pt-6 border-t border-gray-200">
-                  <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-6"
-                    onClick={handleEnroll}
-                  >
+                <div className="pt-6" style={{ borderTop: "1px solid #e2e8f0" }}>
+                  <Button className="w-full text-lg py-6" style={{ background: "#2563eb" }} onClick={handleEnroll}>
                     <Lock className="h-5 w-5 mr-2" />
                     {data.isPaid ? `Pay ${enrollmentPrice} & Enroll` : "Enroll Now - Free"}
                   </Button>
-                  <div className="flex items-center justify-center gap-4 mt-4 text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Lock className="h-3 w-3" />
-                      <span>Secure payment</span>
-                    </div>
-                    <span>•</span>
-                    <span>Powered by Razorpay</span>
-                    <span>•</span>
-                    <span>30-day refund policy</span>
+                  <div className="flex items-center justify-center gap-4 mt-4 text-xs" style={{ color: "#94a3b8" }}>
+                    <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> Secure payment</span>
+                    <span>•</span><span>Powered by Razorpay</span><span>•</span><span>30-day refund policy</span>
                   </div>
                 </div>
               </div>
             </div>
-
-            {/* Right: Order Summary */}
             <div className="md:col-span-2">
-              <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 sticky top-24">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
-
-                <div className="space-y-4">
-                  {/* Course Image */}
-                  <div className="aspect-video rounded-lg overflow-hidden">
-                    <img src={data.bannerImage} alt={data.name} className="w-full h-full object-cover" />
-                  </div>
-
-                  {/* Course Details */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{data.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{data.tagline}</p>
-                  </div>
-
-                  {/* Course Info */}
-                  <div className="flex items-center gap-4 text-xs text-gray-600 border-t border-b border-gray-200 py-3">
-                    <div className="flex items-center gap-1">
-                      <Video className="h-3.5 w-3.5" />
-                      <span>{totalLessons} lessons</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      <span>{data.courseDuration}</span>
-                    </div>
-                    {data.certificateOffered && (
-                      <div className="flex items-center gap-1">
-                        <Award className="h-3.5 w-3.5" />
-                        <span>Certificate</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* What's Included */}
-                  <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-2">What's included:</h4>
-                    <div className="space-y-2">
-                      {data.courseIncludes.map((item, idx) => (
-                        <div key={idx} className="flex items-center gap-2 text-sm text-gray-700">
-                          <CheckCircle2 className="h-4 w-4 text-green-500 flex-shrink-0" />
-                          <span>{item}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Pricing */}
-                  <div className="border-t border-gray-200 pt-4 space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">Course Price</span>
-                      <span className="font-semibold text-gray-900">{enrollmentPrice}</span>
-                    </div>
-                    {data.pricingModel === "subscription" && (
-                      <p className="text-xs text-gray-500">Billed monthly. Cancel anytime.</p>
-                    )}
-                    <div className="flex items-center justify-between text-lg font-bold pt-2 border-t border-gray-200">
-                      <span>Total</span>
-                      <span className="text-blue-600">{enrollmentPrice}</span>
-                    </div>
-                  </div>
-
-                  {/* Trust Badges */}
-                  <div className="flex items-center justify-center gap-3 pt-4 border-t border-gray-200 text-xs text-gray-500">
-                    <span>🔒 SSL Secure</span>
-                    <span>💳 All cards</span>
-                    <span>↩️ 30-day refund</span>
-                  </div>
+              <div className="rounded-2xl shadow-xl p-6 sticky top-24" style={{ background: "#fff", border: "1px solid #e2e8f0" }}>
+                <h2 className="text-lg font-semibold mb-4" style={{ color: "#0f172a" }}>Order Summary</h2>
+                <div className="aspect-video rounded-xl overflow-hidden mb-4">
+                  <img src={data.bannerImage} alt={data.name} className="w-full h-full object-cover" />
+                </div>
+                <h3 className="font-semibold" style={{ color: "#0f172a" }}>{data.name}</h3>
+                <p className="text-sm mt-1" style={{ color: "#64748b" }}>{data.tagline}</p>
+                <div className="flex items-center gap-4 text-xs py-3 my-3" style={{ color: "#64748b", borderTop: "1px solid #e2e8f0", borderBottom: "1px solid #e2e8f0" }}>
+                  <span className="flex items-center gap-1"><Video className="h-3.5 w-3.5" /> {totalLessons} lessons</span>
+                  <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> {data.courseDuration}</span>
+                </div>
+                <div className="flex items-center justify-between text-lg font-bold pt-2">
+                  <span>Total</span>
+                  <span style={{ color: "#2563eb" }}>{enrollmentPrice}</span>
                 </div>
               </div>
             </div>
@@ -252,104 +143,101 @@ const CourseLandingPreview = ({ data, interactive = false }: CourseLandingPrevie
 
   // ─── Landing Page View ───
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="h-6 w-6 text-blue-600" />
-            <span className="text-xl font-bold text-gray-900">LearnHub</span>
+    <div className="min-h-screen" style={{ background: "#ffffff" }}>
+      {/* Sticky Nav */}
+      <nav className="sticky top-0 z-50 backdrop-blur-xl" style={{ background: "rgba(255,255,255,0.95)", borderBottom: "1px solid #e2e8f0" }}>
+        <div className="max-w-7xl mx-auto px-6 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#2563eb" }}>
+              <BookOpen className="h-4 w-4 text-white" />
+            </div>
+            <span className="text-lg font-bold" style={{ color: "#0f172a" }}>LearnHub</span>
           </div>
-          <div className="hidden md:flex items-center gap-6 text-sm">
-            <a href="#overview" className="text-gray-600 hover:text-blue-600">Overview</a>
-            <a href="#curriculum" className="text-gray-600 hover:text-blue-600">Curriculum</a>
-            <a href="#instructor" className="text-gray-600 hover:text-blue-600">Instructor</a>
-            <a href="#testimonials" className="text-gray-600 hover:text-blue-600">Reviews</a>
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium" style={{ color: "#64748b" }}>
+            <a href="#overview" className="hover:text-[#2563eb] transition-colors">Overview</a>
+            <a href="#curriculum" className="hover:text-[#2563eb] transition-colors">Curriculum</a>
+            <a href="#instructor" className="hover:text-[#2563eb] transition-colors">Instructor</a>
+            <a href="#reviews" className="hover:text-[#2563eb] transition-colors">Reviews</a>
           </div>
-          <Button
-            size="sm"
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => interactive && setCurrentView("checkout")}
-          >
-            Enroll Now
+          <Button size="sm" style={{ background: "#2563eb" }} onClick={() => interactive && setCurrentView("checkout")}>
+            Enroll — {enrollmentPrice}
           </Button>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-blue-600 via-blue-700 to-purple-700 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"></div>
+      {/* Hero — Split layout with asymmetric design */}
+      <section className="relative overflow-hidden" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 60%, #0f172a 100%)" }}>
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full opacity-10" style={{ background: "radial-gradient(circle, #3b82f6 0%, transparent 70%)" }} />
+        <div className="absolute bottom-0 left-1/4 w-[400px] h-[400px] rounded-full opacity-5" style={{ background: "radial-gradient(circle, #8b5cf6 0%, transparent 70%)" }} />
 
-        <div className="relative max-w-7xl mx-auto px-6 py-20">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <Badge className="bg-white/20 text-white border-white/30 hover:bg-white/30">
-                {data.courseFormat === "self-paced" ? "⏱️ Self-paced" : data.courseFormat === "cohort-based" ? "👥 Cohort-based" : "📹 Live Sessions"}
-              </Badge>
+        <div className="relative max-w-7xl mx-auto px-6 py-20 lg:py-28">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            <div className="space-y-8">
+              <div className="flex items-center gap-3">
+                <Badge className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(59,130,246,0.2)", color: "#93c5fd", border: "1px solid rgba(59,130,246,0.3)" }}>
+                  {data.courseFormat === "self-paced" ? "⏱️ Self-paced" : data.courseFormat === "cohort-based" ? "👥 Cohort" : "📹 Live"}
+                </Badge>
+                <Badge className="rounded-full px-3 py-1 text-xs font-semibold" style={{ background: "rgba(34,197,94,0.2)", color: "#86efac", border: "1px solid rgba(34,197,94,0.3)" }}>
+                  🔥 Bestseller
+                </Badge>
+              </div>
 
-              <h1 className="text-5xl font-bold leading-tight">
-                {data.name}
-              </h1>
+              <InlineEditable value={data.name} field="name" editable={editable} onEdit={onEdit} as="h1"
+                className="text-4xl lg:text-5xl xl:text-6xl font-extrabold leading-[1.1] tracking-tight text-white" />
 
-              <p className="text-xl text-blue-100 leading-relaxed">
-                {data.tagline}
-              </p>
+              <InlineEditable value={data.tagline} field="tagline" editable={editable} onEdit={onEdit} as="p"
+                className="text-xl leading-relaxed" style={{ color: "#94a3b8" }} />
 
-              <div className="flex items-center gap-6 text-sm">
+              <div className="flex items-center gap-6">
                 <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold">4.8</span>
-                  <span className="text-blue-100">(2,340 reviews)</span>
+                  <div className="flex">{[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}</div>
+                  <span className="font-semibold text-white text-sm">4.8</span>
+                  <span className="text-sm" style={{ color: "#94a3b8" }}>(2,340)</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  <span>12,456 enrolled</span>
+                <div className="flex items-center gap-2" style={{ color: "#94a3b8" }}>
+                  <Users className="h-4 w-4" /><span className="text-sm">12,456 enrolled</span>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 pt-4">
-                <Button
-                  size="lg"
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-8"
-                  onClick={() => interactive && setCurrentView("checkout")}
-                >
+              <div className="flex items-center gap-4">
+                <Button size="lg" className="px-8 py-6 text-base font-semibold rounded-xl shadow-xl"
+                  style={{ background: "#2563eb" }}
+                  onClick={() => interactive && setCurrentView("checkout")}>
                   Enroll Now — {enrollmentPrice}
+                  <ArrowRight className="h-5 w-5 ml-2" />
                 </Button>
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+                <Button size="lg" variant="outline" className="px-6 py-6 text-base rounded-xl"
+                  style={{ borderColor: "rgba(255,255,255,0.2)", color: "#fff", background: "rgba(255,255,255,0.05)" }}>
                   <Play className="h-5 w-5 mr-2" /> Preview
                 </Button>
               </div>
 
-              <div className="flex items-center gap-6 text-sm pt-4 border-t border-white/20">
-                <div className="flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  <span>{data.courseDuration}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Video className="h-4 w-4" />
-                  <span>{totalLessons} lessons</span>
-                </div>
-                {data.certificateOffered && (
-                  <div className="flex items-center gap-2">
-                    <Award className="h-4 w-4" />
-                    <span>Certificate</span>
-                  </div>
-                )}
+              <div className="flex items-center gap-8 text-sm pt-2" style={{ color: "#94a3b8" }}>
+                <span className="flex items-center gap-2"><Clock className="h-4 w-4" /> {data.courseDuration}</span>
+                <span className="flex items-center gap-2"><Video className="h-4 w-4" /> {totalLessons} lessons</span>
+                {data.certificateOffered && <span className="flex items-center gap-2"><Award className="h-4 w-4" /> Certificate</span>}
               </div>
             </div>
 
             <div className="relative">
-              <div className="aspect-video rounded-2xl overflow-hidden shadow-2xl border-4 border-white/20">
-                <img
-                  src={data.bannerImage}
-                  alt={data.name}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/20 transition-colors cursor-pointer">
-                  <div className="w-20 h-20 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                    <Play className="h-10 w-10 text-blue-600 ml-1" />
+              <div className="rounded-2xl overflow-hidden shadow-2xl" style={{ border: "1px solid rgba(255,255,255,0.1)" }}>
+                <img src={data.bannerImage} alt={data.name} className="w-full aspect-video object-cover" />
+                <div className="absolute inset-0 flex items-center justify-center bg-black/20 hover:bg-black/10 transition-colors cursor-pointer rounded-2xl">
+                  <div className="w-20 h-20 rounded-full flex items-center justify-center shadow-2xl" style={{ background: "rgba(255,255,255,0.95)" }}>
+                    <Play className="h-8 w-8 ml-1" style={{ color: "#2563eb" }} />
+                  </div>
+                </div>
+              </div>
+              {/* Floating stats card */}
+              <div className="absolute -bottom-6 -left-6 rounded-xl p-4 shadow-2xl" style={{ background: "#fff", border: "1px solid #e2e8f0" }}>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "#dbeafe" }}>
+                    <Users className="h-5 w-5" style={{ color: "#2563eb" }} />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold" style={{ color: "#0f172a" }}>12K+</p>
+                    <p className="text-xs" style={{ color: "#64748b" }}>Students enrolled</p>
                   </div>
                 </div>
               </div>
@@ -358,166 +246,162 @@ const CourseLandingPreview = ({ data, interactive = false }: CourseLandingPrevie
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="bg-white py-12 border-b border-gray-200">
+      {/* Social Proof Bar */}
+      <section className="py-6" style={{ background: "#f8fafc", borderBottom: "1px solid #e2e8f0" }}>
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600">{totalLessons}+</div>
-              <div className="text-sm text-gray-600 mt-1">Video Lessons</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600">{data.courseDuration}</div>
-              <div className="text-sm text-gray-600 mt-1">Course Duration</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600">12K+</div>
-              <div className="text-sm text-gray-600 mt-1">Students</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-blue-600">4.8★</div>
-              <div className="text-sm text-gray-600 mt-1">Course Rating</div>
-            </div>
+          <div className="flex items-center justify-center gap-12 text-sm" style={{ color: "#64748b" }}>
+            <span>Featured in</span>
+            {["Product Hunt", "YourStory", "Inc42", "TechCrunch"].map((name) => (
+              <span key={name} className="font-semibold text-base" style={{ color: "#94a3b8" }}>{name}</span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* What You'll Learn */}
-      <section id="overview" className="py-20 bg-gradient-to-b from-white to-gray-50">
+      {/* What You'll Learn — Card grid */}
+      <section id="overview" className="py-24" style={{ background: "#fff" }}>
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-start">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-6">What You'll Learn</h2>
-              <div className="space-y-4">
-                {data.whatYouWillLearn.map((item, idx) => (
-                  <div key={idx} className="flex items-start gap-3">
-                    <CheckCircle2 className="h-6 w-6 text-green-500 flex-shrink-0 mt-0.5" />
-                    <p className="text-gray-700 leading-relaxed">{item}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">This course includes:</h3>
-              <div className="space-y-4">
-                {data.courseIncludes.map((item, idx) => {
-                  const icons: Record<string, any> = {
-                    "Videos": Video,
-                    "PDFs": FileText,
-                    "Assignments": Download,
-                    "Quizzes": CheckCircle2,
-                    "Certificate": Award,
-                    "Live Q&A": MessageCircle,
-                  };
-                  const Icon = icons[item] || CheckCircle2;
-                  return (
-                    <div key={idx} className="flex items-center gap-3">
-                      <Icon className="h-5 w-5 text-blue-600" />
-                      <span className="text-gray-700">{item}</span>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="mt-8 pt-8 border-t border-gray-200">
-                <div className="text-center space-y-3">
-                  <div className="text-3xl font-bold text-gray-900">{enrollmentPrice}</div>
-                  {data.pricingModel === "subscription" && (
-                    <p className="text-sm text-gray-600">Cancel anytime</p>
-                  )}
-                  <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-6"
-                    onClick={() => interactive && setCurrentView("checkout")}
-                  >
-                    Enroll Now
-                  </Button>
-                  <p className="text-xs text-gray-500">30-day money-back guarantee</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Course Curriculum */}
-      <section id="curriculum" className="py-20 bg-white">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">Course Curriculum</h2>
-            <p className="text-gray-600">
-              {data.modules.length} modules • {totalLessons} lessons • {data.courseDuration}
+          <div className="text-center mb-16">
+            <Badge className="mb-4 rounded-full px-4 py-1.5 text-xs font-semibold" style={{ background: "#dbeafe", color: "#2563eb" }}>
+              COURSE HIGHLIGHTS
+            </Badge>
+            <h2 className="text-4xl font-bold" style={{ color: "#0f172a" }}>What You'll Learn</h2>
+            <p className="mt-4 text-lg max-w-2xl mx-auto" style={{ color: "#64748b" }}>
+              Master in-demand skills with our comprehensive curriculum
             </p>
           </div>
-
-          <div className="space-y-4">
-            {data.modules.map((module, idx) => (
-              <div key={module.id} className="border border-gray-200 rounded-xl overflow-hidden hover:border-blue-300 transition-colors">
-                <div className="bg-gray-50 px-6 py-5 flex items-center justify-between cursor-pointer hover:bg-gray-100 transition-colors">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
-                      {idx + 1}
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900">{module.title}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{module.description}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-6 text-sm text-gray-600">
-                    <div className="flex items-center gap-1.5">
-                      <Video className="h-4 w-4" />
-                      <span>{module.lessons} lessons</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4" />
-                      <span>{module.duration}</span>
-                    </div>
-                  </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {data.whatYouWillLearn.map((item, idx) => (
+              <div key={idx} className="group rounded-2xl p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
+                style={{ border: "1px solid #e2e8f0", background: "#fff" }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
+                  style={{ background: `hsl(${220 + idx * 30}, 80%, 95%)` }}>
+                  <CheckCircle2 className="h-6 w-6" style={{ color: `hsl(${220 + idx * 30}, 70%, 50%)` }} />
                 </div>
+                <p className="font-medium leading-relaxed" style={{ color: "#1e293b" }}>{item}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Instructor Section */}
-      <section id="instructor" className="py-20 bg-gradient-to-b from-gray-50 to-white">
-        <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Your Instructor</h2>
+      {/* Course Includes + Pricing Side by Side */}
+      <section className="py-24" style={{ background: "#f8fafc" }}>
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid lg:grid-cols-5 gap-12">
+            <div className="lg:col-span-3">
+              <h2 className="text-3xl font-bold mb-8" style={{ color: "#0f172a" }}>Everything You Need</h2>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {data.courseIncludes.map((item, idx) => {
+                  const icons: Record<string, any> = { "Videos": Video, "PDFs": FileText, "Assignments": Download, "Quizzes": CheckCircle2, "Certificate": Award, "Live Q&A": MessageCircle };
+                  const Icon = icons[item] || CheckCircle2;
+                  return (
+                    <div key={idx} className="flex items-center gap-4 p-4 rounded-xl" style={{ background: "#fff", border: "1px solid #e2e8f0" }}>
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: "#dbeafe" }}>
+                        <Icon className="h-5 w-5" style={{ color: "#2563eb" }} />
+                      </div>
+                      <span className="font-medium" style={{ color: "#1e293b" }}>{item}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="lg:col-span-2">
+              <div className="rounded-2xl shadow-xl p-8 sticky top-24" style={{ background: "#fff", border: "1px solid #e2e8f0" }}>
+                <div className="text-center space-y-4">
+                  <p className="text-sm font-semibold uppercase tracking-wider" style={{ color: "#64748b" }}>Course Price</p>
+                  <div className="text-5xl font-extrabold" style={{ color: "#0f172a" }}>{enrollmentPrice}</div>
+                  {data.pricingModel === "subscription" && <p className="text-sm" style={{ color: "#64748b" }}>Cancel anytime</p>}
+                  <Button className="w-full py-6 text-base font-semibold rounded-xl shadow-lg"
+                    style={{ background: "#2563eb" }}
+                    onClick={() => interactive && setCurrentView("checkout")}>
+                    Enroll Now
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </Button>
+                  <p className="text-xs" style={{ color: "#94a3b8" }}>30-day money-back guarantee</p>
+                </div>
+                <div className="mt-6 pt-6 space-y-3" style={{ borderTop: "1px solid #e2e8f0" }}>
+                  {["Lifetime access", "Mobile & desktop", "Certificate of completion", "Downloadable resources"].map((item, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm" style={{ color: "#475569" }}>
+                      <CheckCircle2 className="h-4 w-4 flex-shrink-0" style={{ color: "#22c55e" }} />
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-200">
-            <div className="flex items-start gap-6">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold flex-shrink-0">
+      {/* Curriculum */}
+      <section id="curriculum" className="py-24" style={{ background: "#fff" }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 rounded-full px-4 py-1.5 text-xs font-semibold" style={{ background: "#fef3c7", color: "#b45309" }}>
+              STRUCTURED LEARNING
+            </Badge>
+            <h2 className="text-4xl font-bold" style={{ color: "#0f172a" }}>Course Curriculum</h2>
+            <p className="mt-4 text-lg" style={{ color: "#64748b" }}>
+              {data.modules.length} modules · {totalLessons} lessons · {data.courseDuration}
+            </p>
+          </div>
+          <div className="space-y-3">
+            {data.modules.map((mod, idx) => (
+              <div key={mod.id} className="rounded-xl overflow-hidden transition-all duration-200"
+                style={{ border: expandedModule === mod.id ? "1px solid #3b82f6" : "1px solid #e2e8f0" }}>
+                <button
+                  className="w-full px-6 py-5 flex items-center justify-between text-left hover:bg-slate-50 transition-colors"
+                  onClick={() => setExpandedModule(expandedModule === mod.id ? null : mod.id)}>
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm"
+                      style={{ background: "#dbeafe", color: "#2563eb" }}>{idx + 1}</div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold" style={{ color: "#0f172a" }}>{mod.title}</h3>
+                      {expandedModule === mod.id && <p className="text-sm mt-1" style={{ color: "#64748b" }}>{mod.description}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm" style={{ color: "#64748b" }}>
+                    <span>{mod.lessons} lessons</span>
+                    <span>{mod.duration}</span>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${expandedModule === mod.id ? "rotate-180" : ""}`} />
+                  </div>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Instructor */}
+      <section id="instructor" className="py-24" style={{ background: "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)" }}>
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <Badge className="mb-4 rounded-full px-4 py-1.5 text-xs font-semibold" style={{ background: "#ede9fe", color: "#7c3aed" }}>
+              MEET YOUR INSTRUCTOR
+            </Badge>
+          </div>
+          <div className="rounded-2xl shadow-xl p-10" style={{ background: "#fff", border: "1px solid #e2e8f0" }}>
+            <div className="flex flex-col md:flex-row items-start gap-8">
+              <div className="w-28 h-28 rounded-2xl flex items-center justify-center text-3xl font-bold text-white flex-shrink-0"
+                style={{ background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)" }}>
                 {data.instructor.avatar}
               </div>
               <div className="flex-1">
-                <h3 className="text-2xl font-bold text-gray-900">{data.instructor.name}</h3>
-                <p className="text-blue-600 font-medium mt-1">{data.instructor.title}</p>
-                <p className="text-gray-700 mt-4 leading-relaxed">{data.instructor.bio}</p>
-
-                {data.instructor.credentials && data.instructor.credentials.length > 0 && (
+                <h3 className="text-2xl font-bold" style={{ color: "#0f172a" }}>{data.instructor.name}</h3>
+                <p className="font-medium mt-1" style={{ color: "#2563eb" }}>{data.instructor.title}</p>
+                <p className="mt-4 leading-relaxed" style={{ color: "#475569" }}>{data.instructor.bio}</p>
+                {data.instructor.credentials && (
                   <div className="flex flex-wrap gap-2 mt-4">
                     {data.instructor.credentials.map((cred, idx) => (
-                      <Badge key={idx} variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-                        {cred}
-                      </Badge>
+                      <Badge key={idx} variant="secondary" className="rounded-full" style={{ background: "#f1f5f9", color: "#475569" }}>{cred}</Badge>
                     ))}
                   </div>
                 )}
-
-                <div className="flex items-center gap-6 mt-6 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    <span>15,000+ students</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
-                    <span>8 courses</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                    <span>4.9 rating</span>
-                  </div>
+                <div className="flex items-center gap-8 mt-6 text-sm" style={{ color: "#64748b" }}>
+                  <span className="flex items-center gap-2"><Users className="h-4 w-4" /> 15K+ students</span>
+                  <span className="flex items-center gap-2"><BookOpen className="h-4 w-4" /> 8 courses</span>
+                  <span className="flex items-center gap-2"><Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 4.9 rating</span>
                 </div>
               </div>
             </div>
@@ -526,45 +410,31 @@ const CourseLandingPreview = ({ data, interactive = false }: CourseLandingPrevie
       </section>
 
       {/* Testimonials */}
-      <section id="testimonials" className="py-20 bg-white">
+      <section id="reviews" className="py-24" style={{ background: "#fff" }}>
         <div className="max-w-7xl mx-auto px-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12 text-center">Student Success Stories</h2>
-
+          <div className="text-center mb-16">
+            <Badge className="mb-4 rounded-full px-4 py-1.5 text-xs font-semibold" style={{ background: "#dcfce7", color: "#16a34a" }}>
+              STUDENT REVIEWS
+            </Badge>
+            <h2 className="text-4xl font-bold" style={{ color: "#0f172a" }}>Loved by Students</h2>
+          </div>
           <div className="grid md:grid-cols-3 gap-6">
             {[
-              {
-                name: "Priya Sharma",
-                role: "Software Engineer",
-                content: "This course completely transformed my understanding of the subject. The hands-on projects were invaluable!",
-                rating: 5,
-              },
-              {
-                name: "Rahul Verma",
-                role: "Product Manager",
-                content: "Excellent course structure and real-world examples. I was able to apply what I learned immediately.",
-                rating: 5,
-              },
-              {
-                name: "Ananya Patel",
-                role: "Student",
-                content: "The instructor's teaching style is outstanding. Complex topics made simple and easy to understand.",
-                rating: 5,
-              },
-            ].map((testimonial, idx) => (
-              <div key={idx} className="bg-gray-50 rounded-xl p-6 border border-gray-200 hover:border-blue-300 transition-colors">
-                <div className="flex gap-0.5 mb-3">
-                  {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  ))}
+              { name: "Priya Sharma", role: "Software Engineer", text: "This course completely transformed my understanding. The hands-on projects were invaluable!", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&crop=face" },
+              { name: "Rahul Verma", role: "Product Manager", text: "Excellent structure and real-world examples. I was able to apply what I learned immediately at work.", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" },
+              { name: "Ananya Patel", role: "Data Scientist", text: "The instructor's teaching style is outstanding. Complex topics made simple and easy to understand.", img: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" },
+            ].map((t, idx) => (
+              <div key={idx} className="rounded-2xl p-6 transition-all duration-300 hover:shadow-xl"
+                style={{ border: "1px solid #e2e8f0", background: "#fff" }}>
+                <div className="flex gap-0.5 mb-4">
+                  {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />)}
                 </div>
-                <p className="text-gray-700 leading-relaxed mb-4">"{testimonial.content}"</p>
+                <p className="leading-relaxed mb-6" style={{ color: "#475569" }}>"{t.text}"</p>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white text-sm font-bold">
-                    {testimonial.name.charAt(0)}
-                  </div>
+                  <img src={t.img} alt={t.name} className="w-10 h-10 rounded-full object-cover" />
                   <div>
-                    <div className="font-semibold text-gray-900">{testimonial.name}</div>
-                    <div className="text-sm text-gray-600">{testimonial.role}</div>
+                    <div className="font-semibold text-sm" style={{ color: "#0f172a" }}>{t.name}</div>
+                    <div className="text-xs" style={{ color: "#64748b" }}>{t.role}</div>
                   </div>
                 </div>
               </div>
@@ -573,106 +443,57 @@ const CourseLandingPreview = ({ data, interactive = false }: CourseLandingPrevie
         </div>
       </section>
 
-      {/* Enrollment Form */}
-      {interactive && (
-        <section id="enroll" className="py-20 bg-gradient-to-br from-blue-600 to-purple-700">
-          <div className="max-w-2xl mx-auto px-6">
-            <div className="bg-white rounded-2xl shadow-2xl p-8">
-              <div className="text-center mb-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-3">Ready to Start Learning?</h2>
-                <p className="text-gray-600">Enroll now and get lifetime access to the course</p>
-              </div>
-
-              <div className="space-y-4">
-                {data.enrollmentFields.map(field => (
-                  <div key={field.id}>
-                    <Label className="text-sm font-medium text-gray-700">{field.label}</Label>
-                    <Input
-                      type={field.type}
-                      placeholder={field.placeholder}
-                      required={field.required}
-                      className="mt-1"
-                      value={enrollmentData[field.id.replace("rf_", "") as keyof typeof enrollmentData] || ""}
-                      onChange={(e) => setEnrollmentData(prev => ({
-                        ...prev,
-                        [field.id.replace("rf_", "")]: e.target.value
-                      }))}
-                    />
-                  </div>
-                ))}
-
-                <div className="pt-4">
-                  <Button
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-6"
-                    onClick={() => setCurrentView("checkout")}
-                  >
-                    {data.isPaid ? `Enroll Now — ${enrollmentPrice}` : "Enroll Now — Free"}
-                  </Button>
-                  <p className="text-xs text-gray-500 text-center mt-3">
-                    {data.isPaid ? "Secure payment powered by Razorpay" : "No credit card required"}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
+      {/* Final CTA */}
+      <section className="py-24" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)" }}>
+        <div className="max-w-3xl mx-auto px-6 text-center">
+          <h2 className="text-4xl font-bold text-white mb-6">Ready to Start Learning?</h2>
+          <p className="text-lg mb-10" style={{ color: "#94a3b8" }}>
+            Join 12,000+ students already learning. Get lifetime access and start building real-world skills today.
+          </p>
+          <Button size="lg" className="px-12 py-7 text-lg font-semibold rounded-xl shadow-2xl"
+            style={{ background: "#2563eb" }}
+            onClick={() => interactive && setCurrentView("checkout")}>
+            Enroll Now — {enrollmentPrice}
+            <ArrowRight className="h-5 w-5 ml-2" />
+          </Button>
+          <p className="text-sm mt-4" style={{ color: "#64748b" }}>Secure payment powered by Razorpay · 30-day refund policy</p>
+        </div>
+      </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="py-16" style={{ background: "#0f172a" }}>
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8">
+          <div className="grid md:grid-cols-4 gap-10">
             <div>
-              <div className="flex items-center gap-2 mb-4">
-                <BookOpen className="h-6 w-6 text-blue-400" />
-                <span className="text-xl font-bold">LearnHub</span>
-              </div>
-              <p className="text-gray-400 text-sm leading-relaxed">
-                Transform your career with expert-led online courses.
-              </p>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div className="hover:text-white cursor-pointer">About Us</div>
-                <div className="hover:text-white cursor-pointer">All Courses</div>
-                <div className="hover:text-white cursor-pointer">Instructors</div>
-                <div className="hover:text-white cursor-pointer">Success Stories</div>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <div className="space-y-2 text-sm text-gray-400">
-                <div className="hover:text-white cursor-pointer">Help Center</div>
-                <div className="hover:text-white cursor-pointer">FAQs</div>
-                <div className="hover:text-white cursor-pointer">Contact Us</div>
-                <div className="hover:text-white cursor-pointer">Privacy Policy</div>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-semibold mb-4">Contact</h4>
-              <div className="space-y-3 text-sm text-gray-400">
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  <span>support@learnhub.com</span>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: "#2563eb" }}>
+                  <BookOpen className="h-4 w-4 text-white" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  <span>+91 98765 43210</span>
+                <span className="text-lg font-bold text-white">LearnHub</span>
+              </div>
+              <p className="text-sm leading-relaxed" style={{ color: "#94a3b8" }}>Transform your career with expert-led courses.</p>
+            </div>
+            {[
+              { title: "Company", links: ["About", "Careers", "Blog", "Press"] },
+              { title: "Support", links: ["Help Center", "FAQs", "Contact", "Privacy"] },
+            ].map(col => (
+              <div key={col.title}>
+                <h4 className="font-semibold text-white mb-4">{col.title}</h4>
+                <div className="space-y-2.5 text-sm" style={{ color: "#94a3b8" }}>
+                  {col.links.map(l => <div key={l} className="hover:text-white cursor-pointer transition-colors">{l}</div>)}
                 </div>
-                <div className="flex items-center gap-2">
-                  <Globe className="h-4 w-4" />
-                  <span>www.learnhub.com</span>
-                </div>
+              </div>
+            ))}
+            <div>
+              <h4 className="font-semibold text-white mb-4">Contact</h4>
+              <div className="space-y-2.5 text-sm" style={{ color: "#94a3b8" }}>
+                <div className="flex items-center gap-2"><Mail className="h-4 w-4" /> hello@learnhub.com</div>
+                <div className="flex items-center gap-2"><Phone className="h-4 w-4" /> +91 98765 43210</div>
               </div>
             </div>
           </div>
-
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center text-sm text-gray-400">
-            <p>© 2024 LearnHub. All rights reserved.</p>
+          <div className="mt-12 pt-8 text-center text-sm" style={{ borderTop: "1px solid #1e293b", color: "#64748b" }}>
+            © 2026 LearnHub. All rights reserved. · Powered by Razorpay
           </div>
         </div>
       </footer>

@@ -681,7 +681,10 @@ const WebinarCreate = () => {
           {/* RIGHT: Live Preview */}
           <div className="flex-1 bg-muted/30 overflow-auto">
             <div className="max-w-3xl mx-auto my-6 bg-background rounded-xl shadow-lg border border-border overflow-hidden">
-              <WebinarLandingPreview data={webinarData} />
+              <WebinarLandingPreview data={webinarData} editable onEdit={(field, value) => {
+                if (field === "name") setName(value);
+                else if (field === "description") setDescription(value);
+              }} />
             </div>
           </div>
         </div>
