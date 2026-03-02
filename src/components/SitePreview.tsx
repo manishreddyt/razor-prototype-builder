@@ -809,6 +809,7 @@ const ProductsSection = ({ data, editable, onUpdate, templateId, category, onPro
                 </div>
                 <div className="p-4">
                   <p className="text-sm font-semibold text-foreground">{item.title}</p>
+                  {item.desc && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.desc}</p>}
                   <p className="text-lg font-bold text-primary mt-1">{item.price}</p>
                   <Button size="sm" className="w-full mt-3 rounded-xl">{isEducation ? "View Details" : "Buy Now"}</Button>
                 </div>
