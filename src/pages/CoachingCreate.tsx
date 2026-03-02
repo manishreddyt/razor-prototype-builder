@@ -85,7 +85,7 @@ const CoachingCreate = () => {
     {
       id: "msg_welcome",
       role: "bot",
-      content: "👋 Hi! I'm your AI assistant. I've created a coaching page template for you. **Tell me what you'd like to change** — for example: \"Change the title to Career Coaching\" or \"Make it a free session\" or \"Add weekend availability\".",
+      content: "👋 Hey! I'll help you set up a **1:1 coaching page** and collect payments for your sessions.\n\n🎯 **What you'll get:**\n• A professional coaching page with your bio, services & booking\n• Per-session or package pricing with Razorpay payments\n• Availability & calendar management\n• Client booking form with custom fields\n• You can conduct sessions via Google Meet, Zoom, or any platform\n\n✅ I've created a template for you — **tell me what you'd like to change:**\n• \"Change title to Career Coaching\"\n• \"Charge ₹4999 per session\"\n• \"Add weekend availability\"\n• \"Make it a free discovery call\"",
     },
   ]);
   const [chatInput, setChatInput] = useState("");
