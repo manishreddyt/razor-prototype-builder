@@ -20,6 +20,7 @@ import { addSite, type SmartPageSite } from "./WebsiteBuilder";
 import { templates, availableSectionTypes, createDefaultSection, createCheckoutConfig, type TemplateData, type SectionData, type PageData, type CheckoutConfig, type CheckoutFormField } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
 import { SmartPageCheckout } from "@/components/SmartPageCheckout";
+import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
 
 interface PageState {
   heroTitle: string;
@@ -314,41 +315,61 @@ const SmartPageEditor = () => {
     toast.success(`"${name}" page removed`);
   };
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return;
+  const { sendPrompt, isLoading: aiLoading } = useAIPageBuilder({
+    pageType: state.template.category || "landing",
+    getCurrentData: () => ({
+      heroTitle: currentPage.heroTitle,
+      heroTagline: currentPage.heroTagline,
+      heroDescription: currentPage.heroDescription,
+      heroCta: currentPage.heroCta,
+      bannerImage: currentPage.bannerImage,
+      sections: currentPage.sections.map(s => ({ type: s.type, label: s.label, visible: s.visible })),
+    }),
+    onUpdates: (updates: AIPageUpdates) => {
+      if (updates.heroTitle) updatePageHero({ heroTitle: updates.heroTitle });
+      if (updates.heroTagline) updatePageHero({ heroTagline: updates.heroTagline });
+      if (updates.heroDescription) updatePageHero({ heroDescription: updates.heroDescription });
+      if (updates.heroCta) updatePageHero({ heroCta: updates.heroCta });
+      if (updates.bannerImage) updatePageHero({ bannerImage: updates.bannerImage });
+      if (updates.name) updatePageHero({ heroTitle: updates.name });
+      if (updates.tagline) updatePageHero({ heroTagline: updates.tagline });
+      if (updates.description) updatePageHero({ heroDescription: updates.description });
+      
+      // Handle section operations
+      if (updates.sections) {
+        updates.sections.forEach(op => {
+          const existing = currentPage.sections.find(s => s.type === op.type);
+          if (op.action === "add" && !existing) addSection(op.type);
+          else if (op.action === "remove" && existing) removeSection(existing.id);
+          else if (op.action === "toggle" && existing) toggleSection(existing.id);
+        });
+      }
+
+      // Handle section data updates
+      if (updates.testimonials) {
+        const ts = currentPage.sections.find(s => s.type === "testimonials");
+        if (ts) {
+          updateSectionData(ts.id, { items: updates.testimonials.map(t => ({ ...t, avatar: t.name.split(" ").map(n => n[0]).join("") })) });
+        }
+      }
+      if (updates.faqItems) {
+        const faq = currentPage.sections.find(s => s.type === "faq");
+        if (faq) updateSectionData(faq.id, { items: updates.faqItems });
+      }
+      if (updates.features) {
+        const feat = currentPage.sections.find(s => s.type === "features" || s.type === "services");
+        if (feat) updateSectionData(feat.id, { items: updates.features });
+      }
+    },
+  });
+
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || aiLoading) return;
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setChatInput("");
 
-    setTimeout(() => {
-      let response = "";
-      const lower = text.toLowerCase();
-      if (lower.includes("testimonial") || lower.includes("review")) {
-        const ts = currentPage.sections.find((s) => s.type === "testimonials");
-        if (ts) { toggleSection(ts.id); response = `Testimonials section is now ${ts.visible ? "hidden" : "visible"}.`; }
-        else { addSection("testimonials"); response = "Added a testimonials section!"; }
-      } else if (lower.includes("google review")) {
-        const gr = currentPage.sections.find((s) => s.type === "google-reviews");
-        if (gr) { toggleSection(gr.id); response = `Google Reviews section is now ${gr.visible ? "hidden" : "visible"}.`; }
-        else { addSection("google-reviews"); response = "Added Google Reviews section!"; }
-      } else if (lower.includes("faq")) {
-        const faq = currentPage.sections.find((s) => s.type === "faq");
-        if (faq) { toggleSection(faq.id); response = `FAQ section is now ${faq.visible ? "hidden" : "visible"}.`; }
-        else { addSection("faq"); response = "Added an FAQ section!"; }
-      } else if (lower.includes("pricing")) {
-        const p = currentPage.sections.find((s) => s.type === "pricing");
-        if (p) { toggleSection(p.id); response = `Pricing section is now ${p.visible ? "hidden" : "visible"}.`; }
-        else { addSection("pricing"); response = "Added a pricing section!"; }
-      } else if (lower.includes("banner") || lower.includes("image")) {
-        updatePageHero({ bannerImage: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=900&h=300&fit=crop" });
-        response = "Banner image updated!";
-      } else if (lower.includes("title") || lower.includes("headline")) {
-        updatePageHero({ heroTitle: "Premium " + currentPage.heroTitle });
-        response = `Title updated. You can also edit directly in the preview.`;
-      } else {
-        response = `Noted! I'll apply "${text}" to your page. Use Settings for detailed edits.`;
-      }
-      setMessages((prev) => [...prev, { role: "assistant", content: response }]);
-    }, 500);
+    const response = await sendPrompt(text);
+    setMessages((prev) => [...prev, { role: "assistant", content: response }]);
   };
 
   const handlePublish = () => {
@@ -508,12 +529,22 @@ const SmartPageEditor = () => {
                     <div className={`text-sm p-3 rounded-lg ${msg.role === "assistant" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"}`}>{msg.content}</div>
                   </div>
                 ))}
+                {aiLoading && (
+                  <div className="mr-4">
+                    <div className="text-sm p-3 rounded-lg bg-muted text-foreground">
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                        <span className="text-muted-foreground">AI is thinking...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 <div ref={chatEndRef} />
               </div>
             </ScrollArea>
             <div className="px-4 pb-2 space-y-1.5">
               {suggestedActions.slice(0, 3).map((action) => (
-                <button key={action} onClick={() => sendMessage(action)} className="w-full text-left text-xs px-3 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">{action}</button>
+                <button key={action} onClick={() => sendMessage(action)} disabled={aiLoading} className="w-full text-left text-xs px-3 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50">{action}</button>
               ))}
             </div>
             <div className="p-3 border-t border-border">

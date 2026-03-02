@@ -13,7 +13,7 @@ import {
 import {
   ArrowLeft, Send, Sparkles, Check, Copy, ExternalLink, Share2,
   Calendar, Clock, Video, Plus, Trash2, Globe, PartyPopper, Eye,
-  MessageSquare, Settings, ChevronDown, ChevronUp, Users,
+  MessageSquare, Settings, ChevronDown, ChevronUp, Users, Monitor, Smartphone, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { addSite, type SmartPageSite } from "./WebsiteBuilder";
@@ -22,6 +22,7 @@ import {
   type RegistrationField,
 } from "@/types/smartPages";
 import CoachingLandingPreview from "@/components/CoachingLandingPreview";
+import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
 
 interface ChatMsg {
   id: string;
@@ -120,6 +121,7 @@ const CoachingCreate = () => {
 
   // UI state
   const [builderTab, setBuilderTab] = useState<"chat" | "settings">("chat");
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [settingsOpen, setSettingsOpen] = useState<Record<string, boolean>>({
     details: true,
     pricing: false,
@@ -154,169 +156,47 @@ const CoachingCreate = () => {
     coach,
   });
 
-  // AI Chat handler - interprets natural language and updates coaching data
-  const handleBuilderChat = (text: string) => {
-    if (!text.trim()) return;
+  // AI Chat handler using real AI
+  const { sendPrompt, isLoading: aiLoading } = useAIPageBuilder({
+    pageType: "coaching",
+    getCurrentData: () => ({
+      name, tagline, description, bannerImage, isPaid, amount, pricingModel,
+      packageSessions, packageAmount,
+      sessionDuration: sessionConfig.duration,
+      coachName: coach.name, coachTitle: coach.title, coachBio: coach.bio,
+      availability: availability.filter(a => a.enabled).map(a => a.day),
+    }),
+    onUpdates: (updates: AIPageUpdates) => {
+      if (updates.name) setName(updates.name);
+      if (updates.tagline) setTagline(updates.tagline);
+      if (updates.description) setDescription(updates.description);
+      if (updates.bannerImage) setBannerImage(updates.bannerImage);
+      if (updates.isPaid !== undefined) setIsPaid(updates.isPaid);
+      if (updates.amount !== undefined) setAmount(updates.amount);
+      if (updates.pricingModel) setPricingModel(updates.pricingModel as any);
+      if (updates.sessionDuration) setSessionConfig(prev => ({ ...prev, duration: updates.sessionDuration! }));
+      if (updates.coachName) setCoach(prev => ({ ...prev, name: updates.coachName!, avatar: updates.coachName!.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) }));
+      if (updates.coachTitle) setCoach(prev => ({ ...prev, title: updates.coachTitle! }));
+      if (updates.coachBio) setCoach(prev => ({ ...prev, bio: updates.coachBio! }));
+      if (updates.enableWeekends !== undefined) {
+        setAvailability(prev => prev.map(slot =>
+          slot.day === "saturday" || slot.day === "sunday"
+            ? { ...slot, enabled: updates.enableWeekends! }
+            : slot
+        ));
+      }
+    },
+  });
 
+  const handleBuilderChat = async (text: string) => {
+    if (!text.trim() || aiLoading) return;
     setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "user", content: text }]);
     setChatInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      let response = "";
-      let updated = false;
-
-      // Title/Name changes
-      if (lower.includes("title") || lower.includes("name") || lower.includes("call it") || lower.includes("rename")) {
-        const match = text.match(/(?:title|name|call it|rename)(?:\s+to|\s+as|\s+is)?\s+["']?([^"'\n]+?)["']?$/i) ||
-                     text.match(/["']([^"']+)["']/);
-        if (match) {
-          setName(match[1].trim());
-          response = `✅ Updated the coaching service name to "${match[1].trim()}".`;
-          updated = true;
-        }
-      }
-
-      // Tagline changes
-      else if (lower.includes("tagline") || lower.includes("subtitle")) {
-        const match = text.match(/(?:tagline|subtitle)(?:\s+to|\s+as|\s+is)?\s+["']?([^"'\n]+?)["']?$/i) ||
-                     text.match(/["']([^"']+)["']/);
-        if (match) {
-          setTagline(match[1].trim());
-          response = `✅ Updated the tagline to "${match[1].trim()}".`;
-          updated = true;
-        }
-      }
-
-      // Description changes
-      else if (lower.includes("description") || lower.includes("about")) {
-        const match = text.match(/(?:description|about)(?:\s+to|\s+as|\s+is)?\s+["']?([^"'\n]+?)["']?$/i) ||
-                     text.match(/["']([^"']+)["']/);
-        if (match) {
-          setDescription(match[1].trim());
-          response = `✅ Updated the description.`;
-          updated = true;
-        }
-      }
-
-      // Banner/Image changes
-      else if (lower.includes("banner") || lower.includes("image") || lower.includes("photo")) {
-        if (lower.includes("education") || lower.includes("study")) {
-          setBannerImage("https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=900&h=400&fit=crop");
-          response = "✅ Changed banner to an education-themed image.";
-        } else if (lower.includes("business") || lower.includes("career")) {
-          setBannerImage("https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=900&h=400&fit=crop");
-          response = "✅ Changed banner to a business/career theme.";
-        } else if (lower.includes("coaching") || lower.includes("consultation")) {
-          setBannerImage("https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=900&h=400&fit=crop");
-          response = "✅ Changed banner to a coaching consultation theme.";
-        } else {
-          response = "📷 To change the banner, try: \"Use an education banner\" or \"Use a career coaching image\".";
-        }
-        updated = true;
-      }
-
-      // Pricing changes
-      else if (lower.includes("free") || (lower.includes("make it") && lower.includes("free"))) {
-        setIsPaid(false);
-        response = "✅ Changed to **free coaching** — removed payment requirement.";
-        updated = true;
-      }
-      else if (lower.includes("paid") || lower.includes("charge")) {
-        setIsPaid(true);
-        const priceMatch = text.match(/₹?\s*(\d+)/);
-        if (priceMatch) {
-          const price = parseInt(priceMatch[1]);
-          setAmount(price);
-          response = `✅ Changed to **paid coaching** at ₹${price.toLocaleString()} per session.`;
-        } else {
-          response = `✅ Changed to **paid coaching** — set to ₹${amount.toLocaleString()} per session.`;
-        }
-        updated = true;
-      }
-      else if (lower.includes("price") || lower.includes("amount") || lower.includes("cost")) {
-        const priceMatch = text.match(/₹?\s*(\d+)/);
-        if (priceMatch) {
-          const price = parseInt(priceMatch[1]);
-          setAmount(price);
-          response = `✅ Updated pricing to ₹${price.toLocaleString()} per session.`;
-          updated = true;
-        }
-      }
-
-      // Package pricing
-      else if (lower.includes("package") || (lower.includes("session") && lower.includes("bundle"))) {
-        setPricingModel("package");
-        const numMatch = text.match(/(\d+)\s*session/i);
-        const priceMatch = text.match(/₹?\s*(\d+)/);
-        if (numMatch) setPackageSessions(parseInt(numMatch[1]));
-        if (priceMatch) setPackageAmount(parseInt(priceMatch[1]));
-        response = `✅ Switched to package pricing — ${packageSessions} sessions for ₹${packageAmount.toLocaleString()}.`;
-        updated = true;
-      }
-      else if (lower.includes("per session") || lower.includes("per-session") || lower.includes("single session")) {
-        setPricingModel("per-session");
-        response = `✅ Switched to per-session pricing at ₹${amount.toLocaleString()}.`;
-        updated = true;
-      }
-
-      // Session duration
-      else if (lower.includes("duration") || (lower.includes("minute") && lower.includes("session"))) {
-        const durationMatch = text.match(/(\d+)\s*(?:min|minute)/i);
-        if (durationMatch) {
-          const duration = parseInt(durationMatch[1]);
-          setSessionConfig(prev => ({ ...prev, duration }));
-          response = `✅ Updated session duration to ${duration} minutes.`;
-          updated = true;
-        }
-      }
-
-      // Availability changes
-      else if (lower.includes("weekend") || lower.includes("saturday") || lower.includes("sunday")) {
-        if (lower.includes("add") || lower.includes("enable") || lower.includes("available")) {
-          setAvailability(prev => prev.map(slot =>
-            slot.day === "saturday" || slot.day === "sunday"
-              ? { ...slot, enabled: true }
-              : slot
-          ));
-          response = "✅ Added weekend availability (Saturday & Sunday).";
-          updated = true;
-        } else if (lower.includes("remove") || lower.includes("disable")) {
-          setAvailability(prev => prev.map(slot =>
-            slot.day === "saturday" || slot.day === "sunday"
-              ? { ...slot, enabled: false }
-              : slot
-          ));
-          response = "✅ Removed weekend availability.";
-          updated = true;
-        }
-      }
-
-      // Coach name
-      else if (lower.includes("coach name") || lower.includes("instructor name")) {
-        const match = text.match(/(?:coach|instructor)\s+name(?:\s+to|\s+as|\s+is)?\s+["']?([^"'\n]+?)["']?$/i) ||
-                     text.match(/["']([^"']+)["']/);
-        if (match) {
-          const coachName = match[1].trim();
-          setCoach(prev => ({
-            ...prev,
-            name: coachName,
-            avatar: coachName.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2),
-          }));
-          response = `✅ Updated coach name to "${coachName}".`;
-          updated = true;
-        }
-      }
-
-      // Default fallback
-      if (!updated) {
-        response = `Got it! **"${text}"** — I can help you with:\n\n• Title: "Change title to X"\n• Banner: "Use a career coaching banner"\n• Pricing: "Make it free" or "Charge ₹4999"\n• Duration: "60 minute sessions"\n• Availability: "Add weekend slots"\n• Coach: "Coach name is John Doe"\n\nYou can also use the **Settings** tab for detailed edits.`;
-      }
-
-      setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "bot", content: response }]);
-      setIsTyping(false);
-    }, 500 + Math.random() * 500);
+    const response = await sendPrompt(text);
+    setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "bot", content: response }]);
+    setIsTyping(false);
   };
 
   // Handle publish
@@ -365,6 +245,10 @@ const CoachingCreate = () => {
             <Badge variant="secondary" className="text-[10px]">Draft</Badge>
           </div>
           <div className="flex items-center gap-2">
+            <div className="flex items-center border border-border rounded-md overflow-hidden">
+              <button onClick={() => setViewMode("desktop")} className={`p-1.5 ${viewMode === "desktop" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><Monitor className="h-3.5 w-3.5" /></button>
+              <button onClick={() => setViewMode("mobile")} className={`p-1.5 ${viewMode === "mobile" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}><Smartphone className="h-3.5 w-3.5" /></button>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -669,8 +553,8 @@ const CoachingCreate = () => {
           </div>
 
           {/* RIGHT: Live Preview */}
-          <div className="flex-1 bg-muted/30 overflow-auto">
-            <div className="max-w-3xl mx-auto my-6 bg-background rounded-xl shadow-lg border border-border overflow-hidden">
+          <div className="flex-1 bg-muted/30 overflow-auto flex justify-center">
+            <div className={`my-6 bg-background rounded-xl shadow-lg border border-border overflow-hidden transition-all ${viewMode === "mobile" ? "max-w-sm" : "max-w-3xl w-full"}`}>
               <CoachingLandingPreview
                 data={coachingData}
                 editable

@@ -23,6 +23,7 @@ import {
   type RegistrationField, type EventConfig, type WebinarData, type ConfirmationConfig,
 } from "@/types/smartPages";
 import WebinarLandingPreview from "@/components/WebinarLandingPreview";
+import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
 
 type Phase = "chat" | "builder" | "confirmation";
 
@@ -256,28 +257,29 @@ const WebinarCreate = () => {
     setPhase("confirmation");
   };
 
-  // Builder chat handler
-  const handleBuilderChat = (text: string) => {
-    if (!text.trim()) return;
+  // Builder chat handler using real AI
+  const { sendPrompt, isLoading: aiLoading } = useAIPageBuilder({
+    pageType: "webinar",
+    getCurrentData: () => ({
+      name, description, bannerImage, isPaid, amount,
+      eventConfig, speakers: speakers.map(s => ({ name: s.name, title: s.title })),
+    }),
+    onUpdates: (updates: AIPageUpdates) => {
+      if (updates.name) setName(updates.name);
+      if (updates.description) setDescription(updates.description);
+      if (updates.bannerImage) { /* bannerImage is const in webinar */ }
+      if (updates.isPaid !== undefined) setIsPaid(updates.isPaid);
+      if (updates.amount !== undefined) setAmount(updates.amount);
+    },
+  });
+
+  const handleBuilderChat = async (text: string) => {
+    if (!text.trim() || aiLoading) return;
     setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "user", content: text }]);
     setBuilderChatInput("");
 
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      let response = "";
-      if (lower.includes("title") || lower.includes("name")) {
-        response = "You can edit the webinar name in the Details section on the left. The preview will update live.";
-      } else if (lower.includes("paid") || lower.includes("free") || lower.includes("price")) {
-        response = "Toggle paid/free in the Details section. If paid, set the amount there too.";
-      } else if (lower.includes("date") || lower.includes("time") || lower.includes("schedule")) {
-        response = "Expand the Schedule section to update date, time, and platform details.";
-      } else if (lower.includes("publish") || lower.includes("live") || lower.includes("done")) {
-        response = "Click the **Publish** button in the top bar when you're ready! 🚀";
-      } else {
-        response = `Got it! I've noted "${text}". You can make detailed edits in the Settings tab on the left.`;
-      }
-      setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "bot", content: response }]);
-    }, 500);
+    const response = await sendPrompt(text);
+    setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "bot", content: response }]);
   };
 
   const webinarData = buildWebinarData();
