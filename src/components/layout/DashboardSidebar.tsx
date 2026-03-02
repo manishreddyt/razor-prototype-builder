@@ -51,10 +51,10 @@ const navSections = [
     items: [
       { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
       { icon: Mail, label: "Workflows", path: "/email-workflows" },
+      { icon: ShoppingBag, label: "App Store", path: "/app-marketplace", badge: "new" },
+      { icon: MessageCircle, label: "Agents", path: "/agents", badge: "new" },
       { icon: Plug, label: "Connectors", path: "/connectors" },
       { icon: ClipboardList, label: "Forms", path: "/forms" },
-      { icon: MessageCircle, label: "Agents", path: "/agents", badge: "new" },
-      { icon: ShoppingBag, label: "App Store", path: "/app-marketplace", badge: "new" },
     ],
   },
   {
