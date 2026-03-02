@@ -44,8 +44,8 @@ const navSections = [
     title: "CREATOR TOOLS",
     items: [
       { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
-      { icon: Plug, label: "Connectors", path: "/connectors" },
       { icon: Mail, label: "Workflows", path: "/email-workflows" },
+      { icon: Plug, label: "Connectors", path: "/connectors" },
     ],
   },
   {
