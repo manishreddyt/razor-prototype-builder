@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { DashboardTopbar } from "./DashboardTopbar";
 import DashboardAIAssistant from "@/components/DashboardAIAssistant";
@@ -8,16 +8,18 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
+  const [isAIOpen, setIsAIOpen] = useState(true);
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <DashboardSidebar />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <DashboardTopbar />
+        <DashboardTopbar isAIOpen={isAIOpen} onToggleAI={() => setIsAIOpen(!isAIOpen)} />
         <main className="flex-1 overflow-y-auto p-6">
           {children}
         </main>
       </div>
-      <DashboardAIAssistant />
+      <DashboardAIAssistant isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
     </div>
   );
 };

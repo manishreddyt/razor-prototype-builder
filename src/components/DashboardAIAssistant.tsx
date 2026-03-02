@@ -82,8 +82,12 @@ const FLOWS: Record<string, { message: string; actions: ActionItem[] }> = {
   },
 };
 
-const DashboardAIAssistant = () => {
-  const [isOpen, setIsOpen] = useState(true);
+interface DashboardAIAssistantProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+const DashboardAIAssistant = ({ isOpen, onClose }: DashboardAIAssistantProps) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: "welcome", role: "assistant", content: FLOWS.welcome.message, actions: FLOWS.welcome.actions },
   ]);
@@ -164,17 +168,6 @@ const DashboardAIAssistant = () => {
 
   return (
     <>
-      {/* Toggle button when panel is collapsed */}
-      {!isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          className="fixed top-1/2 -translate-y-1/2 right-0 z-40 flex items-center gap-1.5 px-2 py-3 rounded-l-lg bg-primary text-primary-foreground shadow-lg hover:px-3 transition-all"
-          title="Open AI Assistant"
-        >
-          <PanelRightOpen className="h-4 w-4" />
-        </button>
-      )}
-
       {/* Full-height right sidebar panel */}
       <div
         className={cn(
@@ -197,7 +190,7 @@ const DashboardAIAssistant = () => {
             <button onClick={handleReset} className="text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-secondary">
               Reset
             </button>
-            <button onClick={() => setIsOpen(false)} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+            <button onClick={onClose} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
               <PanelRightClose className="h-4 w-4" />
             </button>
           </div>
