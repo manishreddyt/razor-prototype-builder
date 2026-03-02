@@ -212,8 +212,11 @@ const SmartPageDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/website-builder/editor?id=${site.id}`)}>
-              <Pencil className="h-3.5 w-3.5" /> Edit Site
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+              if (site.pageType === "webinar") navigate("/website-builder/webinar/create");
+              else navigate(`/website-builder/editor?id=${site.id}`);
+            }}>
+              <Pencil className="h-3.5 w-3.5" /> Edit Page
             </Button>
             <Button size="sm" className="gap-1.5" onClick={() => { if (site.url && site.url !== "—") window.open(site.url, "_blank"); }}>
               <Eye className="h-3.5 w-3.5" /> View Live
@@ -225,7 +228,6 @@ const SmartPageDetail = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="bg-secondary/50 p-1">
             <TabsTrigger value="overview" className="gap-1.5 text-xs"><BarChart3 className="h-3.5 w-3.5" /> Overview</TabsTrigger>
-            <TabsTrigger value="customers" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> Customers</TabsTrigger>
             <TabsTrigger value="transactions" className="gap-1.5 text-xs"><CreditCard className="h-3.5 w-3.5" /> Transactions</TabsTrigger>
             {isWebinar && (
               <TabsTrigger value="attendees" className="gap-1.5 text-xs"><Video className="h-3.5 w-3.5" /> Attendees</TabsTrigger>
@@ -259,17 +261,18 @@ const SmartPageDetail = () => {
               ))}
             </div>
 
-            <div className="grid grid-cols-3 gap-5">
-              <div className="col-span-2 blade-card overflow-hidden">
+            <div className="blade-card overflow-hidden">
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Site Preview</span>
-                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => navigate(`/website-builder/editor?id=${site.id}`)}>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
+                    if (site.pageType === "webinar") navigate("/website-builder/webinar/create");
+                    else navigate(`/website-builder/editor?id=${site.id}`);
+                  }}>
                     <Pencil className="h-3 w-3" /> Edit
                   </Button>
                 </div>
                 <div className="h-72 overflow-hidden relative bg-muted/30">
                   {(() => {
-                    // For webinar pages, render the actual WebinarLandingPreview
                     if (site.pageType === "webinar") {
                       try {
                         const stored = localStorage.getItem(`webinar_${site.id}`);
@@ -296,72 +299,8 @@ const SmartPageDetail = () => {
                   })()}
                 </div>
               </div>
-              <div className="blade-card">
-                <div className="px-4 py-3 border-b border-border">
-                  <span className="text-sm font-medium text-foreground">Recent Activity</span>
-                </div>
-                <div className="p-4 space-y-3">
-                  {[
-                    { text: "New signup from Aarav Sharma", time: "2 hours ago", icon: Users },
-                    { text: "Payment received ₹4,999", time: "5 hours ago", icon: IndianRupee },
-                    { text: "Welcome email sent", time: "5 hours ago", icon: Send },
-                    { text: "Page visited from Google", time: "8 hours ago", icon: Globe },
-                    { text: "New signup from Priya Patel", time: "1 day ago", icon: Users },
-                    { text: "Payment received ₹2,999", time: "1 day ago", icon: IndianRupee },
-                  ].map((a, i) => (
-                    <div key={i} className="flex items-start gap-2.5">
-                      <div className="mt-0.5 p-1.5 rounded-md bg-secondary">
-                        <a.icon className="h-3 w-3 text-muted-foreground" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs text-foreground">{a.text}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">{a.time}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
           </TabsContent>
 
-          {/* ─── Customers ─── */}
-          <TabsContent value="customers" className="space-y-4 mt-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">{mockCustomers.length} customers</p>
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search customers..." className="pl-9" />
-              </div>
-            </div>
-            <div className="blade-card overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-border bg-secondary/50">
-                    <th className="blade-table-header px-5 py-3 text-left">Customer</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Email</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Phone</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Amount Paid</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Joined</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {mockCustomers.map((c) => (
-                    <tr key={c.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                      <td className="px-5 py-3 font-medium text-foreground">{c.name}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{c.email}</td>
-                      <td className="px-5 py-3 text-muted-foreground text-xs">{c.phone}</td>
-                      <td className="px-5 py-3 text-foreground">₹{c.amount.toLocaleString()}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{c.date}</td>
-                      <td className="px-5 py-3">
-                        <span className={c.status === "Active" ? "blade-badge-paid" : "blade-badge-expired"}>{c.status}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </TabsContent>
 
           {/* ─── Transactions ─── */}
           <TabsContent value="transactions" className="space-y-4 mt-4">
