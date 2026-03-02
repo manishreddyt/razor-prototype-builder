@@ -3,10 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Video, Users, MapPin, Star, Shield, Award, ArrowLeft } from "lucide-react";
-import type { WebinarData } from "@/types/smartPages";
-import { SmartPageCheckout } from "@/components/SmartPageCheckout";
-import type { CheckoutConfig, TemplateData } from "@/data/smartPageTemplates";
+import { Calendar, Clock, Video, Users, Shield, Award, ArrowLeft, CheckCircle2, Mail, Phone } from "lucide-react";
+import type { WebinarData, ConfirmationConfig } from "@/types/smartPages";
+import { defaultConfirmationConfig } from "@/types/smartPages";
+import { toast } from "sonner";
 
 interface WebinarLandingPreviewProps {
   data: WebinarData;
@@ -14,9 +14,18 @@ interface WebinarLandingPreviewProps {
   onRegister?: (fields: Record<string, string>) => void;
 }
 
+interface FormErrors {
+  [key: string]: string;
+}
+
 const WebinarLandingPreview = ({ data, interactive = false, onRegister }: WebinarLandingPreviewProps) => {
   const { name, description, bannerImage, isPaid, amount, eventConfig, registrationFields, speakers } = data;
-  const [showCheckout, setShowCheckout] = useState(false);
+  const confirmation: ConfirmationConfig = data.confirmation || defaultConfirmationConfig;
+
+  const [formValues, setFormValues] = useState<Record<string, string>>({});
+  const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [view, setView] = useState<"landing" | "confirmation">("landing");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const eventDate = eventConfig.date
     ? new Date(eventConfig.date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
@@ -29,7 +38,6 @@ const WebinarLandingPreview = ({ data, interactive = false, onRegister }: Webina
     return `${h % 12 || 12}:${m.toString().padStart(2, "0")} ${ampm}`;
   };
 
-  // Countdown mock
   const getCountdown = () => {
     if (!eventConfig.date) return null;
     const target = new Date(`${eventConfig.date}T${eventConfig.time || "00:00"}`);
@@ -44,68 +52,154 @@ const WebinarLandingPreview = ({ data, interactive = false, onRegister }: Webina
 
   const countdown = getCountdown();
 
-  // Build checkout config for paid webinars
-  const webinarCheckout: CheckoutConfig | null = isPaid && amount ? {
-    enabled: true,
-    amount: amount,
-    amountType: "fixed" as const,
-    currency: "INR",
-    buttonText: `Pay ₹${amount.toLocaleString()}`,
-    successMessage: "Payment successful! You'll receive your webinar access link shortly.",
-    redirectUrl: "",
-    collectAddress: false,
-    sendReceipt: true,
-    gstEnabled: true,
-    formFields: registrationFields.map(f => ({
-      id: f.id,
-      label: f.label,
-      type: f.type === "select" ? "text" as const : f.type as "text" | "email" | "phone" | "textarea",
-      required: f.required,
-      placeholder: f.placeholder,
-    })),
-    highlights: [
-      "Live webinar access link",
-      "Recording available post-event",
-      "Certificate of attendance",
-      "Q&A with speakers",
-    ],
-  } : null;
+  // Validation
+  const validateForm = (): boolean => {
+    const errors: FormErrors = {};
+    registrationFields.forEach((f) => {
+      const val = (formValues[f.id] || "").trim();
+      if (f.required && !val) {
+        errors[f.id] = `${f.label} is required`;
+      } else if (f.type === "email" && val && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+        errors[f.id] = "Enter a valid email address";
+      } else if (f.type === "phone" && val && !/^\+?[\d\s-]{7,15}$/.test(val)) {
+        errors[f.id] = "Enter a valid phone number";
+      }
+    });
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
-  const webinarTemplate: TemplateData | null = webinarCheckout ? {
-    id: "webinar-checkout",
-    title: name || "Webinar",
-    desc: description || "Join this exclusive webinar",
-    icon: "Video",
-    category: "education",
-    heroTitle: name || "Webinar",
-    heroTagline: "",
-    heroDescription: description || "Join this exclusive webinar",
-    heroCta: `Pay ₹${amount?.toLocaleString()}`,
-    bannerImage: bannerImage || "",
-    pages: ["Home"],
-    sections: [],
-    style: { accentColor: "#528FF0", fontFamily: "Inter" },
-  } as TemplateData : null;
+  const handleFieldChange = (fieldId: string, value: string) => {
+    setFormValues((prev) => ({ ...prev, [fieldId]: value }));
+    if (formErrors[fieldId]) {
+      setFormErrors((prev) => { const n = { ...prev }; delete n[fieldId]; return n; });
+    }
+  };
 
-  // Show checkout view for paid webinars
-  if (showCheckout && webinarCheckout && webinarTemplate) {
+  const handleSubmit = () => {
+    if (!validateForm()) return;
+
+    if (isPaid && amount > 0) {
+      triggerPayment();
+    } else {
+      completeRegistration();
+    }
+  };
+
+  const triggerPayment = () => {
+    setIsSubmitting(true);
+
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => {
+      const options = {
+        key: "rzp_live_SFFFdBjmPbTKZL",
+        amount: (amount || 0) * 100,
+        currency: "INR",
+        name: name || "Webinar",
+        description: `Registration for ${name || "Webinar"}`,
+        image: bannerImage || "",
+        handler: () => {
+          completeRegistration();
+        },
+        prefill: {
+          name: formValues["rf_name"] || "",
+          email: formValues["rf_email"] || "",
+          contact: formValues["rf_phone"] || "",
+        },
+        theme: { color: "#528FF0" },
+        modal: {
+          ondismiss: () => {
+            setIsSubmitting(false);
+          },
+        },
+      };
+      const rzp = new (window as any).Razorpay(options);
+      rzp.open();
+    };
+    script.onerror = () => {
+      toast.error("Failed to load payment gateway. Please try again.");
+      setIsSubmitting(false);
+    };
+    document.body.appendChild(script);
+  };
+
+  const completeRegistration = () => {
+    setIsSubmitting(false);
+    onRegister?.(formValues);
+    toast.success("Registration successful!");
+    setView("confirmation");
+  };
+
+  // ─── Confirmation Screen ───
+  if (view === "confirmation") {
     return (
       <div className="min-h-full bg-background">
-        <div className="max-w-5xl mx-auto px-4 py-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-1.5 mb-4"
-            onClick={() => setShowCheckout(false)}
-          >
-            <ArrowLeft className="h-4 w-4" /> Back to webinar
-          </Button>
-          <SmartPageCheckout template={webinarTemplate} checkout={webinarCheckout} />
+        <div className="max-w-lg mx-auto px-6 py-16 text-center space-y-6">
+          <div className="w-16 h-16 rounded-full bg-green-100 text-green-600 flex items-center justify-center mx-auto">
+            <CheckCircle2 className="h-8 w-8" />
+          </div>
+          <h1 className="text-2xl font-bold text-foreground">{confirmation.title}</h1>
+          <p className="text-muted-foreground text-sm leading-relaxed">{confirmation.message}</p>
+
+          {confirmation.showEventDetails && (
+            <div className="bg-secondary/50 border border-border rounded-xl p-5 text-left space-y-3">
+              <h3 className="font-semibold text-foreground text-sm">Event Details</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center gap-2 text-foreground">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <span>{eventDate}</span>
+                </div>
+                <div className="flex items-center gap-2 text-foreground">
+                  <Clock className="h-4 w-4 text-primary" />
+                  <span>{formatTime(eventConfig.time)} · {eventConfig.duration} min</span>
+                </div>
+                <div className="flex items-center gap-2 text-foreground">
+                  <Video className="h-4 w-4 text-primary" />
+                  <span className="capitalize">{eventConfig.platform}</span>
+                  <span className="text-xs text-muted-foreground">— link sent via email</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {formValues["rf_email"] && (
+            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <Mail className="h-3.5 w-3.5" />
+              <span>Confirmation sent to <strong className="text-foreground">{formValues["rf_email"]}</strong></span>
+            </div>
+          )}
+
+          {confirmation.showCalendarLink && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => {
+                if (confirmation.ctaUrl) {
+                  window.open(confirmation.ctaUrl, "_blank");
+                } else {
+                  toast.info("Calendar link will be available soon.");
+                }
+              }}
+            >
+              <Calendar className="h-4 w-4" />
+              {confirmation.ctaText}
+            </Button>
+          )}
+
+          {isPaid && (
+            <p className="text-xs text-muted-foreground">Payment of ₹{amount?.toLocaleString()} received. Receipt sent to your email.</p>
+          )}
+
+          <div className="pt-4 border-t border-border">
+            <p className="text-xs text-muted-foreground">Powered by Razorpay Smart Pages</p>
+          </div>
         </div>
       </div>
     );
   }
 
+  // ─── Landing Page ───
   return (
     <div className="min-h-full bg-background">
       {/* Hero Section */}
@@ -250,24 +344,28 @@ const WebinarLandingPreview = ({ data, interactive = false, onRegister }: Webina
                   {f.label} {f.required && <span className="text-destructive">*</span>}
                 </Label>
                 <Input
+                  type={f.type === "email" ? "email" : f.type === "phone" ? "tel" : "text"}
                   placeholder={f.placeholder}
-                  className="mt-1"
+                  className={`mt-1 ${formErrors[f.id] ? "border-destructive" : ""}`}
+                  value={formValues[f.id] || ""}
+                  onChange={(e) => handleFieldChange(f.id, e.target.value)}
                   disabled={!interactive}
                 />
+                {formErrors[f.id] && (
+                  <p className="text-xs text-destructive mt-1">{formErrors[f.id]}</p>
+                )}
               </div>
             ))}
             <Button
               className="w-full py-5 text-base font-semibold rounded-xl shadow-lg shadow-primary/20"
-              disabled={!interactive}
-              onClick={() => {
-                if (isPaid && webinarCheckout) {
-                  setShowCheckout(true);
-                } else {
-                  onRegister?.({});
-                }
-              }}
+              disabled={!interactive || isSubmitting}
+              onClick={handleSubmit}
             >
-              {isPaid ? `Register & Pay ₹${amount?.toLocaleString()}` : "Register for Free →"}
+              {isSubmitting
+                ? "Processing..."
+                : isPaid
+                  ? `Register & Pay ₹${amount?.toLocaleString()}`
+                  : "Register for Free →"}
             </Button>
           </div>
 
