@@ -390,35 +390,52 @@ const CourseCreate = () => {
   // ─── PHASE 1: Chat Flow ───
   if (phase === "chat") {
     return (
-      <div className="h-screen flex flex-col bg-background">
-        {/* Top bar */}
-        <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-background">
+      <div className="h-screen flex flex-col bg-gradient-to-b from-background via-background to-secondary/20">
+        {/* Top bar — minimal, Razorpay style */}
+        <div className="flex items-center justify-between px-5 py-3 bg-background/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate("/website-builder/create")} className="gap-1.5">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/website-builder/create")} className="gap-1.5 text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
-            <div className="h-5 w-px bg-border" />
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Create Online Course</span>
+            <div className="h-4 w-px bg-border/50" />
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Create Online Course</span>
+            </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">{getProgress()}% complete</span>
-            <Progress value={getProgress()} className="w-32 h-1.5" />
+            <div className="flex items-center gap-2 bg-secondary/50 rounded-full px-3 py-1">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{getProgress()}%</span>
+              <Progress value={getProgress()} className="w-20 h-1" />
+            </div>
           </div>
         </div>
 
         {/* Chat area */}
-        <ScrollArea className="flex-1 px-4 py-6">
-          <div className="max-w-2xl mx-auto space-y-4">
+        <ScrollArea className="flex-1 px-4 py-8">
+          <div className="max-w-2xl mx-auto space-y-5">
             {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] ${
+              <div
+                key={msg.id}
+                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                {msg.role === "bot" && (
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5 mr-3 shadow-sm">
+                    <BookOpen className="h-4 w-4 text-primary" />
+                  </div>
+                )}
+                <div className={`max-w-[80%] ${
                   msg.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5"
-                    : "bg-secondary/70 text-foreground rounded-2xl rounded-bl-md px-4 py-2.5"
+                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-3 shadow-lg shadow-primary/10"
+                    : "bg-card text-foreground rounded-2xl rounded-bl-sm px-5 py-4 border border-border/60 shadow-sm"
                 }`}>
-                  <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{
-                    __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{
+                    __html: msg.content
+                      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                      .replace(/^• /gm, '<span class="inline-flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-primary inline-block flex-shrink-0"></span></span> ')
+                      .replace(/^(\d+)\. /gm, '<span class="text-primary font-semibold">$1.</span> ')
                   }} />
                 </div>
               </div>
@@ -426,28 +443,33 @@ const CourseCreate = () => {
 
             {/* Inline interactive elements based on current question */}
             {!isTyping && questionIndex < QUESTION_SEQUENCE.length && (
-              <ChatInlineWidget
-                questionKey={QUESTION_SEQUENCE[questionIndex]?.key}
-                type={QUESTION_SEQUENCE[questionIndex]?.type}
-                onPaidToggle={handlePaidToggle}
-                onPricingModelSelect={handlePricingModelSelect}
-                onCourseFormatSet={handleCourseFormatSet}
-                onCourseIncludesSet={handleCourseIncludesSet}
-                onCertificateSet={handleCertificateSet}
-                onModulesDone={handleModulesDone}
-                courseIncludes={courseIncludes}
-                modules={modules}
-                setModules={setModules}
-              />
+              <div className="pl-11">
+                <ChatInlineWidget
+                  questionKey={QUESTION_SEQUENCE[questionIndex]?.key}
+                  type={QUESTION_SEQUENCE[questionIndex]?.type}
+                  onPaidToggle={handlePaidToggle}
+                  onPricingModelSelect={handlePricingModelSelect}
+                  onCourseFormatSet={handleCourseFormatSet}
+                  onCourseIncludesSet={handleCourseIncludesSet}
+                  onCertificateSet={handleCertificateSet}
+                  onModulesDone={handleModulesDone}
+                  courseIncludes={courseIncludes}
+                  modules={modules}
+                  setModules={setModules}
+                />
+              </div>
             )}
 
             {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-secondary/70 rounded-2xl rounded-bl-md px-4 py-3">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+              <div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <BookOpen className="h-4 w-4 text-primary animate-pulse" />
+                </div>
+                <div className="bg-card border border-border/60 rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "0ms", animationDuration: "0.8s" }} />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "150ms", animationDuration: "0.8s" }} />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "300ms", animationDuration: "0.8s" }} />
                   </div>
                 </div>
               </div>
@@ -457,29 +479,34 @@ const CourseCreate = () => {
           </div>
         </ScrollArea>
 
-        {/* Input bar (only for text questions) */}
+        {/* Input bar — floating, modern */}
         {!isTyping && questionIndex < QUESTION_SEQUENCE.length &&
           ["name", "tagline", "description", "amount", "subscriptionAmount", "courseDuration"].includes(QUESTION_SEQUENCE[questionIndex]?.key) && (
-          <div className="border-t border-border px-4 py-3 bg-background">
-            <div className="max-w-2xl mx-auto flex gap-2">
-              <Input
-                ref={inputRef}
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder="Type your response..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleUserResponse(chatInput);
-                  }
-                }}
-                autoFocus
-              />
-              <Button
-                onClick={() => handleUserResponse(chatInput)}
-                size="icon"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+          <div className="px-4 pb-5 pt-2 bg-gradient-to-t from-background via-background to-transparent">
+            <div className="max-w-2xl mx-auto">
+              <div className="flex gap-2 items-center bg-card border border-border/80 rounded-2xl px-4 py-2 shadow-lg shadow-black/5 focus-within:border-primary/40 focus-within:shadow-primary/5 transition-all duration-200">
+                <Input
+                  ref={inputRef}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder="Type your response..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleUserResponse(chatInput);
+                    }
+                  }}
+                  className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-sm placeholder:text-muted-foreground/60"
+                  autoFocus
+                />
+                <Button
+                  onClick={() => handleUserResponse(chatInput)}
+                  size="icon"
+                  className="rounded-xl h-9 w-9 flex-shrink-0 shadow-md"
+                  disabled={!chatInput.trim()}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         )}
