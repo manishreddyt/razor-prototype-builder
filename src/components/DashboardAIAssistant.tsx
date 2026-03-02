@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { cn } from "@/lib/utils";
-import { Bot, X, Send, ChevronRight, Sparkles } from "lucide-react";
+import { Bot, X, Send, ChevronRight, Sparkles, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
@@ -84,7 +84,7 @@ const FLOWS: Record<string, { message: string; actions: ActionItem[] }> = {
 };
 
 const DashboardAIAssistant = () => {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
   const [messages, setMessages] = useState<ChatMessage[]>([
     { id: "welcome", role: "assistant", content: FLOWS.welcome.message, actions: FLOWS.welcome.actions },
   ]);
@@ -99,12 +99,10 @@ const DashboardAIAssistant = () => {
   }, [messages]);
 
   const handleAction = (action: ActionItem) => {
-    // Add user message
     const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: action.label };
     setMessages((prev) => [...prev, userMsg]);
 
     if (action.route) {
-      // Navigate + confirm
       setTimeout(() => {
         const assistantMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
@@ -136,7 +134,6 @@ const DashboardAIAssistant = () => {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    // Simple keyword matching for freeform input
     setTimeout(() => {
       const lower = text.toLowerCase();
       let flowKey = "welcome";
@@ -168,27 +165,26 @@ const DashboardAIAssistant = () => {
 
   return (
     <>
-      {/* Floating trigger button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "fixed bottom-5 right-5 z-50 flex items-center justify-center rounded-full shadow-lg transition-all duration-300",
-          "bg-primary text-primary-foreground hover:scale-105",
-          isOpen ? "h-11 w-11" : "h-14 w-14"
-        )}
-      >
-        {isOpen ? <X className="h-5 w-5" /> : <Bot className="h-6 w-6" />}
-      </button>
+      {/* Toggle button when panel is collapsed */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed top-1/2 -translate-y-1/2 right-0 z-40 flex items-center gap-1.5 px-2 py-3 rounded-l-lg bg-primary text-primary-foreground shadow-lg hover:px-3 transition-all"
+          title="Open AI Assistant"
+        >
+          <PanelRightOpen className="h-4 w-4" />
+        </button>
+      )}
 
-      {/* Chat panel */}
+      {/* Full-height right sidebar panel */}
       <div
         className={cn(
-          "fixed bottom-20 right-5 z-50 w-[380px] rounded-2xl border border-border bg-card shadow-2xl transition-all duration-300 flex flex-col",
-          isOpen ? "opacity-100 translate-y-0 pointer-events-auto h-[520px]" : "opacity-0 translate-y-4 pointer-events-none h-0"
+          "h-full border-l border-border bg-card flex flex-col transition-all duration-300 flex-shrink-0",
+          isOpen ? "w-[340px]" : "w-0 overflow-hidden"
         )}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0 rounded-t-2xl bg-primary/5">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border flex-shrink-0 bg-primary/5">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
               <Sparkles className="h-4 w-4 text-primary" />
@@ -198,9 +194,14 @@ const DashboardAIAssistant = () => {
               <p className="text-[11px] text-muted-foreground">Your business growth assistant</p>
             </div>
           </div>
-          <button onClick={handleReset} className="text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-secondary">
-            Start over
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={handleReset} className="text-[11px] text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-secondary">
+              Reset
+            </button>
+            <button onClick={() => setIsOpen(false)} className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+              <PanelRightClose className="h-4 w-4" />
+            </button>
+          </div>
         </div>
 
         {/* Messages */}
@@ -209,7 +210,7 @@ const DashboardAIAssistant = () => {
             <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
-                  "max-w-[90%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed",
+                  "max-w-[95%] rounded-xl px-3.5 py-2.5 text-[13px] leading-relaxed",
                   msg.role === "user"
                     ? "bg-primary text-primary-foreground"
                     : "bg-secondary/70 text-foreground"
