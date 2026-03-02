@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Check, Star, Download, Shield, Zap } from "lucide-react";
+import { ArrowLeft, Check, Star, Download, Shield, Zap, TrendingUp } from "lucide-react";
 import { marketplaceApps } from "./AppMarketplace";
 import { useState } from "react";
 
@@ -29,12 +29,28 @@ const appFeatures: Record<string, AppFeatureDetail> = {
       { label: "Course builder with drag-and-drop modules", image: "/images/graphy-courses.png" },
       { label: "Student management with access controls", image: "/images/graphy-students.png" },
     ],
-    pricing: "Free — included with your Razorpay dashboard",
+    pricing: "₹2,999/month or ₹29,990/year",
+  },
+  "lovable-ai": {
+    features: [
+      "Generate full-stack web apps with AI prompts",
+      "React + Tailwind + TypeScript stack",
+      "Real-time preview & editing",
+      "One-click deploy to production",
+      "Database & auth integration",
+      "Custom domain support",
+    ],
+    screenshots: [
+      { label: "AI chat interface for building apps" },
+      { label: "Live code preview with hot reload" },
+      { label: "Deploy & publish workflow" },
+    ],
+    pricing: "₹1,999/month or ₹19,990/year",
   },
   teachable: {
     features: ["Drag-and-drop course builder", "Custom landing pages", "Integrated payment processing", "Student quizzes"],
     screenshots: [{ label: "Course editor" }, { label: "Sales page builder" }],
-    pricing: "Starts at ₹2,999/month",
+    pricing: "₹3,499/month or ₹34,990/year",
   },
   thinkific: {
     features: ["White-label platform", "Community features", "Bulk student enrollment", "App integrations"],
@@ -129,25 +145,34 @@ const AppDetail = () => {
 
         {/* Hero */}
         <div className="flex flex-col sm:flex-row gap-6 items-start">
-          <div className={`h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 ${app.iconBg}`}>
-            <app.icon className="h-8 w-8" />
+          <div className="h-16 w-16 rounded-2xl overflow-hidden shrink-0 border bg-background">
+            {app.logo ? (
+              <img src={app.logo} alt={app.name} className="h-full w-full object-cover" />
+            ) : (
+              <div className={`h-full w-full flex items-center justify-center ${app.iconBg}`}>
+                <app.icon className="h-8 w-8" />
+              </div>
+            )}
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground">{app.name}</h1>
               <Badge variant="outline">{app.category}</Badge>
               {app.featured && <Badge className="bg-primary/10 text-primary border-0">Featured</Badge>}
+              {app.recommended && <Badge className="bg-primary/10 text-primary border-0">Recommended</Badge>}
             </div>
             <p className="text-sm text-muted-foreground leading-relaxed">{app.description}</p>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="flex gap-0.5">
-                {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                ))}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                <span className="font-medium text-foreground">{app.rating}</span>
               </div>
-              <span>4.8 (120 reviews)</span>
-              <span>•</span>
-              <span>500+ installs</span>
+              <span className="flex items-center gap-1"><Download className="h-3 w-3" /> {app.installs} installs</span>
+              {app.pricing ? (
+                <span className="font-medium text-primary">₹{app.pricing.monthly}/mo · ₹{app.pricing.yearly}/yr</span>
+              ) : (
+                <span className="font-medium text-primary">Free</span>
+              )}
             </div>
             <div className="flex gap-3 pt-2">
               {isInstalled ? (
