@@ -168,9 +168,13 @@ const SmartPageEditor = () => {
   const [slug, setSlug] = useState(() => (searchParams.get("title") || "my-page").toLowerCase().replace(/[^a-z0-9]+/g, "-"));
   const [status, setStatus] = useState<"draft" | "published">("draft");
 
+  const pageType = searchParams.get("type") || "";
   const [chatInput, setChatInput] = useState("");
   const [messages, setMessages] = useState<ChatMsg[]>([
-    { role: "assistant", content: `I've set up "${state.template.heroTitle}" for you. Ask me to change anything — content, sections, images, and more.` },
+    { role: "assistant", content: pageType
+      ? `I've set up your **${pageType}** page — "${state.template.heroTitle}". You can customize the content, sections, images, and more. What would you like to change?`
+      : `I've set up "${state.template.heroTitle}" for you. Ask me to change anything — content, sections, images, and more.`
+    },
   ]);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
