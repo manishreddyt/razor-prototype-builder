@@ -23,6 +23,7 @@ import {
   type RegistrationField,
 } from "@/types/smartPages";
 import CourseLandingPreview from "@/components/CourseLandingPreview";
+import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
 
 type Phase = "chat" | "builder" | "confirmation";
 
@@ -351,28 +352,36 @@ const CourseCreate = () => {
     setPhase("confirmation");
   };
 
-  // Builder chat handler
-  const handleBuilderChat = (text: string) => {
-    if (!text.trim()) return;
+  // Builder chat handler using real AI
+  const { sendPrompt, isLoading: aiLoading } = useAIPageBuilder({
+    pageType: "course",
+    getCurrentData: () => ({
+      name, tagline, description, bannerImage, isPaid, amount, pricingModel,
+      subscriptionAmount, courseDuration, courseFormat, courseIncludes,
+      certificateOffered, modules: modules.map(m => ({ title: m.title, description: m.description })),
+      whatYouWillLearn, instructor: { name: instructor.name, title: instructor.title },
+    }),
+    onUpdates: (updates: AIPageUpdates) => {
+      if (updates.name) setName(updates.name);
+      if (updates.tagline) setTagline(updates.tagline);
+      if (updates.description) setDescription(updates.description);
+      if (updates.isPaid !== undefined) setIsPaid(updates.isPaid);
+      if (updates.amount !== undefined) setAmount(updates.amount);
+      if (updates.pricingModel) setPricingModel(updates.pricingModel as any);
+      if (updates.courseDuration) setCourseDuration(updates.courseDuration);
+      if (updates.courseFormat) setCourseFormat(updates.courseFormat as any);
+      if (updates.whatYouWillLearn) setWhatYouWillLearn(updates.whatYouWillLearn);
+      if (updates.courseIncludes) setCourseIncludes(updates.courseIncludes);
+    },
+  });
+
+  const handleBuilderChat = async (text: string) => {
+    if (!text.trim() || aiLoading) return;
     setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "user", content: text }]);
     setBuilderChatInput("");
 
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      let response = "";
-      if (lower.includes("title") || lower.includes("name")) {
-        response = "You can edit the course name in the Details section on the left.";
-      } else if (lower.includes("paid") || lower.includes("free") || lower.includes("price")) {
-        response = "Toggle paid/free in the Pricing section. You can switch between one-time and subscription pricing there too.";
-      } else if (lower.includes("module") || lower.includes("curriculum") || lower.includes("lesson")) {
-        response = "Expand the Course Modules section to add, edit, or remove modules.";
-      } else if (lower.includes("publish") || lower.includes("live") || lower.includes("done")) {
-        response = "Click the **Publish** button in the top bar when you're ready! 🚀";
-      } else {
-        response = `Got it! I've noted "${text}". You can make detailed edits in the Settings tab on the left.`;
-      }
-      setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "bot", content: response }]);
-    }, 500);
+    const response = await sendPrompt(text);
+    setMessages(prev => [...prev, { id: `msg_${Date.now()}`, role: "bot", content: response }]);
   };
 
   const courseData = buildCourseData();

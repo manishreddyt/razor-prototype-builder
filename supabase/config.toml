@@ -1,1 +1,4 @@
 project_id = "vfbevqevgivjvhyjqvzj"
+
+[functions.ai-page-builder]
+verify_jwt = false
