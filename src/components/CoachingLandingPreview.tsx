@@ -99,7 +99,7 @@ const CoachingLandingPreview = ({ data, interactive = false, editable = false, o
     }
 
     const options = {
-      key: "rzp_test_1234567890",
+      key: "rzp_live_SFFFdBjmPbTKZL",
       amount: (bookingAmount || 0) * 100,
       currency: "INR",
       name: name,

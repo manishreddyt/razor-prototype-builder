@@ -41,7 +41,7 @@ const CourseLandingPreview = ({ data, interactive = false }: CourseLandingPrevie
 
       // Trigger Razorpay checkout
       const options = {
-        key: "rzp_test_1234567890",
+        key: "rzp_live_SFFFdBjmPbTKZL",
         amount: (data.pricingModel === "one-time" ? data.amount : (data.subscriptionAmount || 999)) * 100,
         currency: "INR",
         name: data.name,

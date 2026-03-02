@@ -71,7 +71,7 @@ export const SmartPageCheckout = ({
 
     // Razorpay checkout options
     const options = {
-      key: "rzp_test_1234567890", // Test key - replace with actual key in production
+      key: "rzp_live_SFFFdBjmPbTKZL",
       amount: finalAmount * 100, // Amount in paise
       currency: checkout.currency || "INR",
       name: template.heroTitle,
