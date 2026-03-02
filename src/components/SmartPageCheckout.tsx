@@ -51,69 +51,82 @@ export const SmartPageCheckout = ({
       return;
     }
 
-    setProcessing(true);
-
-    const loaded = await loadRazorpayScript();
-    if (!loaded) {
-      toast.error("Failed to load Razorpay. Please try again.");
-      setProcessing(false);
-      return;
-    }
-
-    const payAmount = checkout.amountType === "custom"
-      ? parseInt(formData._amount || "0", 10)
+    // Calculate final amount
+    const finalAmount = checkout.amountType === "custom" && formData._amount
+      ? parseInt(formData._amount)
       : checkout.amount;
 
-    if (!payAmount || payAmount <= 0) {
-      toast.error("Please enter a valid amount.");
-      setProcessing(false);
+    if (checkout.amountType === "custom" && (!formData._amount || finalAmount <= 0)) {
+      toast.error("Please enter a valid amount");
       return;
     }
 
+    // Check if Razorpay is loaded
+    if (typeof window.Razorpay === "undefined") {
+      toast.error("Payment gateway not loaded. Please refresh the page.");
+      return;
+    }
+
+    setProcessing(true);
+
+    // Razorpay checkout options
     const options = {
-      key: "rzp_test_1DP5mmOlF5G5ag", // Replace with your Razorpay key_id
-      amount: payAmount * 100, // Razorpay expects amount in paise
+      key: "rzp_test_1234567890", // Test key - replace with actual key in production
+      amount: finalAmount * 100, // Amount in paise
       currency: checkout.currency || "INR",
-      name: template.heroTitle || "Payment",
-      description: template.heroDescription?.slice(0, 255) || "Payment",
-      image: template.bannerImage || "",
-      prefill: {
-        name: formData[checkout.formFields.find(f => f.type === "text")?.id || ""] || "",
-        email: formData[checkout.formFields.find(f => f.type === "email")?.id || ""] || "",
-        contact: formData[checkout.formFields.find(f => f.type === "phone")?.id || ""] || "",
-      },
-      theme: {
-        color: "#528FF0",
-      },
+      name: template.heroTitle,
+      description: template.heroDescription?.slice(0, 100) || "Payment for " + template.heroTitle,
+      image: template.bannerImage,
       handler: function (response: any) {
-        toast.success(checkout.successMessage || "Payment successful!", {
+        console.log("Payment Success:", response);
+        toast.success(checkout.successMessage || "Payment successful! 🎉", {
           description: `Payment ID: ${response.razorpay_payment_id}`,
         });
+        setProcessing(false);
+
+        // Reset form
+        setFormData({});
+
+        // Redirect if URL provided
         if (checkout.redirectUrl) {
-          window.location.href = checkout.redirectUrl;
+          setTimeout(() => {
+            window.location.href = checkout.redirectUrl!;
+          }, 2000);
         }
+      },
+      prefill: {
+        name: formData.f_name || "",
+        email: formData.f_email || "",
+        contact: formData.f_phone || "",
+      },
+      notes: {
+        ...formData,
+        product: template.heroTitle,
+        category: template.category,
+      },
+      theme: {
+        color: "#0066FF",
       },
       modal: {
         ondismiss: function () {
+          console.log("Payment cancelled");
+          toast.info("Payment cancelled");
           setProcessing(false);
         },
       },
     };
 
-    try {
-      const rzp = new (window as any).Razorpay(options);
-      rzp.on("payment.failed", function (response: any) {
-        toast.error("Payment failed", {
-          description: response.error?.description || "Please try again.",
-        });
-        setProcessing(false);
+    const rzp = new window.Razorpay(options);
+
+    rzp.on("payment.failed", function (response: any) {
+      console.error("Payment Failed:", response.error);
+      toast.error("Payment failed!", {
+        description: response.error.description || "Please try again",
       });
-      rzp.open();
       setProcessing(false);
-    } catch (err) {
-      toast.error("Could not open Razorpay checkout.");
-      setProcessing(false);
-    }
+    });
+
+    rzp.open();
   };
 
   const isMobile = viewMode === "mobile";

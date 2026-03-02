@@ -6,18 +6,26 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import {
   ArrowLeft, ExternalLink, Eye, Settings, BarChart3, Users, CreditCard,
   Mail, TrendingUp, TrendingDown, Calendar, Search, MoreHorizontal,
   Globe, Copy, Pencil, ArrowUpRight, Clock, IndianRupee, CheckCircle2,
   XCircle, AlertCircle, Send, ChevronRight, Upload, Video,
-  Zap, Plus, Trash2, MessageCircle, Phone,
+  Zap, Plus, Trash2, MessageCircle, Phone, Check,
 } from "lucide-react";
 import { getStoredSites, type SmartPageSite } from "./WebsiteBuilder";
 import { templates } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
 import WebinarLandingPreview from "@/components/WebinarLandingPreview";
+import CoachingLandingPreview from "@/components/CoachingLandingPreview";
+import CourseLandingPreview from "@/components/CourseLandingPreview";
 import type { WebinarData } from "@/types/smartPages";
+import type { CoachingData } from "./CoachingCreate";
+import type { CourseData, CourseStudent } from "./CourseCreate";
 import { toast } from "sonner";
 import {
   type Attendee, type Workflow, type WorkflowAction,
@@ -58,6 +66,24 @@ const mockAttendees: Attendee[] = [
   { id: "att3", name: "Rahul Kumar", email: "rahul@example.com", registeredAt: "20 Feb 2026", attended: false, source: "manual" },
   { id: "att4", name: "Sneha Gupta", email: "sneha@example.com", registeredAt: "18 Feb 2026", attended: true, duration: "60 min", source: "zoom" },
   { id: "att5", name: "Vikram Singh", email: "vikram@example.com", registeredAt: "15 Feb 2026", attended: false, source: "manual" },
+];
+
+const mockBookings = [
+  { id: "bk1", clientName: "Aarav Sharma", clientEmail: "aarav@example.com", clientPhone: "+91 98765 43210", sessionDate: "2026-03-05", sessionTime: "10:00", status: "confirmed" as const, paymentStatus: "paid" as const, amount: 2999, bookedAt: "25 Feb 2026", meetingLink: "https://meet.google.com/abc-defg-hij" },
+  { id: "bk2", clientName: "Priya Patel", clientEmail: "priya@example.com", sessionDate: "2026-03-07", sessionTime: "14:00", status: "confirmed" as const, paymentStatus: "paid" as const, amount: 2999, bookedAt: "22 Feb 2026" },
+  { id: "bk3", clientName: "Rahul Kumar", clientEmail: "rahul@example.com", sessionDate: "2026-03-10", sessionTime: "11:00", status: "completed" as const, paymentStatus: "paid" as const, amount: 2999, bookedAt: "20 Feb 2026" },
+  { id: "bk4", clientName: "Sneha Gupta", clientEmail: "sneha@example.com", sessionDate: "2026-03-12", sessionTime: "16:00", status: "confirmed" as const, paymentStatus: "pending" as const, amount: 2999, bookedAt: "18 Feb 2026" },
+  { id: "bk5", clientName: "Vikram Singh", clientEmail: "vikram@example.com", sessionDate: "2026-02-28", sessionTime: "09:00", status: "cancelled" as const, paymentStatus: "paid" as const, amount: 2999, bookedAt: "15 Feb 2026" },
+];
+
+const mockStudents: CourseStudent[] = [
+  { id: "std1", name: "Aarav Sharma", email: "aarav@example.com", phone: "+91 98765 43210", enrolledAt: "25 Feb 2026", progress: 85, status: "active", paymentStatus: "paid", amount: 4999 },
+  { id: "std2", name: "Priya Patel", email: "priya@example.com", phone: "+91 87654 32109", enrolledAt: "22 Feb 2026", progress: 62, status: "active", paymentStatus: "paid", amount: 4999 },
+  { id: "std3", name: "Rahul Kumar", email: "rahul@example.com", phone: "+91 76543 21098", enrolledAt: "20 Feb 2026", progress: 100, status: "completed", paymentStatus: "paid", amount: 4999 },
+  { id: "std4", name: "Sneha Gupta", email: "sneha@example.com", phone: "+91 65432 10987", enrolledAt: "18 Feb 2026", progress: 45, status: "active", paymentStatus: "paid", amount: 4999 },
+  { id: "std5", name: "Vikram Singh", email: "vikram@example.com", phone: "+91 54321 09876", enrolledAt: "15 Feb 2026", progress: 30, status: "active", paymentStatus: "paid", amount: 4999 },
+  { id: "std6", name: "Meera Joshi", email: "meera@example.com", phone: "+91 43210 98765", enrolledAt: "12 Feb 2026", progress: 15, status: "active", paymentStatus: "pending", amount: 4999 },
+  { id: "std7", name: "Arjun Nair", email: "arjun@example.com", phone: "+91 32109 87654", enrolledAt: "10 Feb 2026", progress: 5, status: "dropped", paymentStatus: "paid", amount: 4999 },
 ];
 
 const statusIcon = (status: string) => {
@@ -113,7 +139,16 @@ const SmartPageDetail = () => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
   const [attendees, setAttendees] = useState<Attendee[]>(mockAttendees);
+  const [bookings, setBookings] = useState(mockBookings);
+  const [students, setStudents] = useState<CourseStudent[]>(mockStudents);
   const [workflows, setWorkflows] = useState<Workflow[]>(defaultWorkflows);
+  const [unavailableDates, setUnavailableDates] = useState<string[]>([]); // ISO date strings
+  const [holidays, setHolidays] = useState<{ date: string; reason: string }[]>([
+    { date: "2026-03-15", reason: "Personal day" },
+    { date: "2026-04-01", reason: "Conference" },
+  ]);
+  const [newHolidayDate, setNewHolidayDate] = useState("");
+  const [newHolidayReason, setNewHolidayReason] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const site = useMemo(() => {
@@ -122,6 +157,8 @@ const SmartPageDetail = () => {
   }, [id]);
 
   const isWebinar = site?.pageType === "webinar" || site?.type?.toLowerCase() === "webinar";
+  const isCoaching = site?.pageType === "coaching" || site?.type?.toLowerCase() === "coaching";
+  const isCourse = site?.pageType === "course" || site?.type?.toLowerCase() === "course";
 
   if (!site) {
     return (
@@ -214,6 +251,8 @@ const SmartPageDetail = () => {
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
               if (site.pageType === "webinar") navigate("/website-builder/webinar/create");
+              else if (site.pageType === "coaching") navigate("/website-builder/coaching/create");
+              else if (site.pageType === "course") navigate("/website-builder/course/create");
               else navigate(`/website-builder/editor?id=${site.id}`);
             }}>
               <Pencil className="h-3.5 w-3.5" /> Edit Page
@@ -231,6 +270,18 @@ const SmartPageDetail = () => {
             <TabsTrigger value="transactions" className="gap-1.5 text-xs"><CreditCard className="h-3.5 w-3.5" /> Transactions</TabsTrigger>
             {isWebinar && (
               <TabsTrigger value="attendees" className="gap-1.5 text-xs"><Video className="h-3.5 w-3.5" /> Attendees</TabsTrigger>
+            )}
+            {isCoaching && (
+              <>
+                <TabsTrigger value="bookings" className="gap-1.5 text-xs"><Calendar className="h-3.5 w-3.5" /> Bookings</TabsTrigger>
+                <TabsTrigger value="availability" className="gap-1.5 text-xs"><Clock className="h-3.5 w-3.5" /> Availability</TabsTrigger>
+              </>
+            )}
+            {isCourse && (
+              <>
+                <TabsTrigger value="students" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> Students</TabsTrigger>
+                <TabsTrigger value="curriculum" className="gap-1.5 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Curriculum</TabsTrigger>
+              </>
             )}
             <TabsTrigger value="workflows" className="gap-1.5 text-xs"><Zap className="h-3.5 w-3.5" /> Workflows</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1.5 text-xs"><TrendingUp className="h-3.5 w-3.5" /> Analytics</TabsTrigger>
@@ -266,6 +317,8 @@ const SmartPageDetail = () => {
                   <span className="text-sm font-medium text-foreground">Site Preview</span>
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
                     if (site.pageType === "webinar") navigate("/website-builder/webinar/create");
+                    else if (site.pageType === "coaching") navigate("/website-builder/coaching/create");
+                    else if (site.pageType === "course") navigate("/website-builder/course/create");
                     else navigate(`/website-builder/editor?id=${site.id}`);
                   }}>
                     <Pencil className="h-3 w-3" /> Edit
@@ -281,6 +334,32 @@ const SmartPageDetail = () => {
                           return (
                             <div className="origin-top-left absolute" style={{ width: 900, transform: "scale(0.73)", transformOrigin: "top left" }}>
                               <WebinarLandingPreview data={wd} />
+                            </div>
+                          );
+                        }
+                      } catch {}
+                    }
+                    if (site.pageType === "coaching") {
+                      try {
+                        const stored = localStorage.getItem(`coaching_${site.id}`);
+                        if (stored) {
+                          const cd: CoachingData = JSON.parse(stored);
+                          return (
+                            <div className="origin-top-left absolute" style={{ width: 900, transform: "scale(0.73)", transformOrigin: "top left" }}>
+                              <CoachingLandingPreview data={cd} />
+                            </div>
+                          );
+                        }
+                      } catch {}
+                    }
+                    if (site.pageType === "course") {
+                      try {
+                        const stored = localStorage.getItem(`course_${site.id}`);
+                        if (stored) {
+                          const cd: CourseData = JSON.parse(stored);
+                          return (
+                            <div className="origin-top-left absolute" style={{ width: 1000, transform: "scale(0.66)", transformOrigin: "top left" }}>
+                              <CourseLandingPreview data={cd} />
                             </div>
                           );
                         }
@@ -422,6 +501,489 @@ const SmartPageDetail = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ─── Bookings (coaching only) ─── */}
+          {isCoaching && (
+            <TabsContent value="bookings" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-muted-foreground">
+                    {bookings.length} total bookings • {bookings.filter(b => b.status === "confirmed").length} upcoming
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-xs text-muted-foreground">{bookings.filter(b => b.status === "confirmed").length} confirmed</span>
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    <span className="text-xs text-muted-foreground">{bookings.filter(b => b.status === "completed").length} completed</span>
+                    <div className="h-2 w-2 rounded-full bg-destructive" />
+                    <span className="text-xs text-muted-foreground">{bookings.filter(b => b.status === "cancelled").length} cancelled</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info("Manual booking coming soon!")}>
+                    <Plus className="h-3.5 w-3.5" /> Add Booking
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Completion Rate</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">
+                    {bookings.length > 0 ? `${((bookings.filter(b => b.status === "completed").length / bookings.length) * 100).toFixed(0)}%` : "—"}
+                  </p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Avg. Session Revenue</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">₹{bookings.length > 0 ? Math.round(bookings.reduce((sum, b) => sum + b.amount, 0) / bookings.length).toLocaleString() : "—"}</p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Total Bookings</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">{bookings.length}</p>
+                </div>
+              </div>
+
+              <div className="blade-card overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-secondary/50">
+                      <th className="blade-table-header px-5 py-3 text-left">Client</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Session Date</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Time</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Amount</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Status</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Payment</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Meeting Link</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bookings.map((b) => (
+                      <tr key={b.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                        <td className="px-5 py-3">
+                          <p className="font-medium text-foreground">{b.clientName}</p>
+                          <p className="text-xs text-muted-foreground">{b.clientEmail}</p>
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground">
+                          {new Date(b.sessionDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground">{b.sessionTime}</td>
+                        <td className="px-5 py-3 font-medium text-foreground">₹{b.amount.toLocaleString()}</td>
+                        <td className="px-5 py-3">
+                          <Badge
+                            variant={b.status === "confirmed" ? "default" : b.status === "completed" ? "secondary" : "destructive"}
+                            className="text-[10px] capitalize"
+                          >
+                            {b.status}
+                          </Badge>
+                        </td>
+                        <td className="px-5 py-3">
+                          <Badge
+                            variant={b.paymentStatus === "paid" ? "default" : "outline"}
+                            className="text-[10px] capitalize"
+                          >
+                            {b.paymentStatus}
+                          </Badge>
+                        </td>
+                        <td className="px-5 py-3">
+                          {b.meetingLink ? (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="gap-1 h-7 text-xs"
+                              onClick={() => { navigator.clipboard.writeText(b.meetingLink!); toast.success("Link copied!"); }}
+                            >
+                              <Copy className="h-3 w-3" /> Copy
+                            </Button>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ─── Availability Management (coaching only) ─── */}
+          {isCoaching && (
+            <TabsContent value="availability" className="space-y-6 mt-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Manage Your Availability</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Set your working hours, block unavailable dates, and manage holidays
+                </p>
+              </div>
+
+              {/* Weekly Schedule */}
+              <div className="blade-card p-5 space-y-4">
+                <h3 className="text-sm font-medium text-foreground">Weekly Schedule</h3>
+                <div className="space-y-2">
+                  {["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((day) => (
+                    <div key={day} className="flex items-center gap-3 p-3 rounded-lg bg-secondary/30 border border-border">
+                      <Switch defaultChecked={["monday", "tuesday", "wednesday", "thursday", "friday"].includes(day)} />
+                      <span className="flex-1 text-sm font-medium text-foreground capitalize">{day}</span>
+                      <div className="flex items-center gap-2">
+                        <Input type="time" defaultValue="09:00" className="w-28 h-8 text-xs" />
+                        <span className="text-xs text-muted-foreground">-</span>
+                        <Input type="time" defaultValue="17:00" className="w-28 h-8 text-xs" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Button size="sm" className="gap-1.5" onClick={() => toast.success("Schedule updated!")}>
+                  <Check className="h-3.5 w-3.5" /> Save Schedule
+                </Button>
+              </div>
+
+              {/* Block Specific Dates */}
+              <div className="blade-card p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-foreground">Blocked Dates</h3>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {unavailableDates.length} dates blocked
+                  </Badge>
+                </div>
+
+                <div className="flex gap-2">
+                  <Input
+                    type="date"
+                    className="flex-1 text-xs"
+                    onChange={(e) => {
+                      if (e.target.value && !unavailableDates.includes(e.target.value)) {
+                        setUnavailableDates([...unavailableDates, e.target.value]);
+                        toast.success("Date blocked");
+                        e.target.value = "";
+                      }
+                    }}
+                  />
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info("Select a date to block")}>
+                    <Plus className="h-3.5 w-3.5" /> Block Date
+                  </Button>
+                </div>
+
+                {unavailableDates.length > 0 && (
+                  <div className="space-y-2">
+                    {unavailableDates.map((date) => (
+                      <div key={date} className="flex items-center justify-between p-2.5 rounded-lg bg-destructive/5 border border-destructive/20">
+                        <span className="text-sm text-foreground">
+                          {new Date(date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1"
+                          onClick={() => {
+                            setUnavailableDates(unavailableDates.filter(d => d !== date));
+                            toast.success("Date unblocked");
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" /> Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Holidays */}
+              <div className="blade-card p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-medium text-foreground">Holidays & Time Off</h3>
+                  <Badge variant="secondary" className="text-[10px]">
+                    {holidays.length} holidays
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <Input
+                    type="date"
+                    placeholder="Holiday date"
+                    className="text-xs"
+                    value={newHolidayDate}
+                    onChange={(e) => setNewHolidayDate(e.target.value)}
+                  />
+                  <Input
+                    placeholder="Reason (optional)"
+                    className="text-xs"
+                    value={newHolidayReason}
+                    onChange={(e) => setNewHolidayReason(e.target.value)}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="col-span-2 gap-1.5"
+                    onClick={() => {
+                      if (newHolidayDate) {
+                        setHolidays([...holidays, { date: newHolidayDate, reason: newHolidayReason || "Holiday" }]);
+                        setNewHolidayDate("");
+                        setNewHolidayReason("");
+                        toast.success("Holiday added");
+                      }
+                    }}
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add Holiday
+                  </Button>
+                </div>
+
+                {holidays.length > 0 && (
+                  <div className="space-y-2">
+                    {holidays.map((holiday, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2.5 rounded-lg bg-amber-500/5 border border-amber-500/20">
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {new Date(holiday.date).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{holiday.reason}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 gap-1"
+                          onClick={() => {
+                            setHolidays(holidays.filter((_, i) => i !== idx));
+                            toast.success("Holiday removed");
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" /> Remove
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Session Settings */}
+              <div className="blade-card p-5 space-y-4">
+                <h3 className="text-sm font-medium text-foreground">Session Settings</h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-xs">Session Duration</Label>
+                    <Select defaultValue="60">
+                      <SelectTrigger className="mt-1 text-xs h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[30, 45, 60, 90, 120].map(d => (
+                          <SelectItem key={d} value={String(d)}>{d} min</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Buffer Time</Label>
+                    <Select defaultValue="15">
+                      <SelectTrigger className="mt-1 text-xs h-9">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[0, 5, 10, 15, 30].map(d => (
+                          <SelectItem key={d} value={String(d)}>{d} min</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Max Sessions/Day</Label>
+                    <Input type="number" defaultValue={5} className="mt-1 h-9 text-xs" />
+                  </div>
+                </div>
+                <Button size="sm" className="gap-1.5" onClick={() => toast.success("Settings saved!")}>
+                  <Check className="h-3.5 w-3.5" /> Save Settings
+                </Button>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ─── Students (course only) ─── */}
+          {isCourse && (
+            <TabsContent value="students" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-muted-foreground">
+                    {students.filter(s => s.status === "active").length} active students • {students.filter(s => s.status === "completed").length} completed
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                      <Upload className="h-3 w-3" /> Import
+                    </Button>
+                    <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                      <Plus className="h-3 w-3" /> Add Student
+                    </Button>
+                  </div>
+                </div>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                  <Input placeholder="Search students..." className="pl-8 h-9 text-xs w-64" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Total Revenue</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">₹{students.filter(s => s.paymentStatus === "paid").reduce((sum, s) => sum + s.amount, 0).toLocaleString()}</p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Avg. Progress</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">{Math.round(students.reduce((sum, s) => sum + s.progress, 0) / students.length)}%</p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Completion Rate</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">{Math.round((students.filter(s => s.status === "completed").length / students.length) * 100)}%</p>
+                </div>
+              </div>
+
+              <div className="blade-card overflow-hidden">
+                <table className="w-full text-xs">
+                  <thead className="bg-secondary/50 border-b border-border">
+                    <tr>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Student</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Enrolled</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Progress</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Payment</th>
+                      <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
+                      <th className="text-center p-3 font-medium text-muted-foreground">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {students.map(student => (
+                      <tr key={student.id} className="hover:bg-secondary/30 transition-colors">
+                        <td className="p-3">
+                          <div>
+                            <p className="font-medium text-foreground">{student.name}</p>
+                            <p className="text-muted-foreground text-[10px]">{student.email}</p>
+                          </div>
+                        </td>
+                        <td className="p-3 text-muted-foreground">{student.enrolledAt}</td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-blue-600 rounded-full transition-all"
+                                style={{ width: `${student.progress}%` }}
+                              />
+                            </div>
+                            <span className="text-[10px] font-medium text-foreground w-10 text-right">{student.progress}%</span>
+                          </div>
+                        </td>
+                        <td className="p-3">
+                          <Badge
+                            variant={student.status === "completed" ? "default" : student.status === "active" ? "secondary" : "outline"}
+                            className="text-[10px]"
+                          >
+                            {student.status === "completed" ? "Completed" : student.status === "active" ? "Active" : "Dropped"}
+                          </Badge>
+                        </td>
+                        <td className="p-3">
+                          <Badge
+                            variant={student.paymentStatus === "paid" ? "default" : "outline"}
+                            className={`text-[10px] ${student.paymentStatus === "paid" ? "bg-emerald-500" : ""}`}
+                          >
+                            {student.paymentStatus === "paid" ? "Paid" : "Pending"}
+                          </Badge>
+                        </td>
+                        <td className="p-3 text-right font-medium text-foreground">₹{student.amount.toLocaleString()}</td>
+                        <td className="p-3 text-center">
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ─── Curriculum (course only) ─── */}
+          {isCourse && (
+            <TabsContent value="curriculum" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  Manage your course modules and lessons
+                </p>
+                <Button size="sm" className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" /> Add Module
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Total Modules</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">5</p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Total Lessons</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">32</p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Video Hours</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">18h</p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Resources</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">24</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {[
+                  { id: 1, title: "Introduction & Fundamentals", lessons: 5, duration: "2 hours", progress: 95 },
+                  { id: 2, title: "Core Concepts", lessons: 8, duration: "4 hours", progress: 78 },
+                  { id: 3, title: "Practical Applications", lessons: 10, duration: "6 hours", progress: 62 },
+                  { id: 4, title: "Advanced Topics", lessons: 7, duration: "4 hours", progress: 45 },
+                  { id: 5, title: "Capstone Project", lessons: 2, duration: "2 hours", progress: 12 },
+                ].map(module => (
+                  <div key={module.id} className="blade-card p-5">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                          {module.id}
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-semibold text-foreground">{module.title}</h3>
+                          <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Video className="h-3 w-3" />
+                              {module.lessons} lessons
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {module.duration}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" className="gap-1 text-xs h-8">
+                          <Pencil className="h-3 w-3" /> Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Avg. student progress</span>
+                        <span className="font-medium text-foreground">{module.progress}%</span>
+                      </div>
+                      <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-blue-600 rounded-full transition-all"
+                          style={{ width: `${module.progress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </TabsContent>
           )}

@@ -46,7 +46,7 @@ const educationPageTypes = [
     desc: "Create a full course landing page with curriculum, pricing tiers, and enrollment.",
     icon: BookOpen,
     color: "bg-blue-500/10 text-blue-600",
-    templateId: "single-course",
+    route: "/website-builder/course/create",
   },
   {
     id: "webinar",
@@ -62,7 +62,7 @@ const educationPageTypes = [
     desc: "Build a coaching page with booking slots, packages, and payment collection.",
     icon: UserCheck,
     color: "bg-amber-500/10 text-amber-600",
-    templateId: "coaching",
+    route: "/website-builder/coaching/create",
   },
   {
     id: "workshop",

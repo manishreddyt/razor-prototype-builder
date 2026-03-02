@@ -7,7 +7,11 @@ import { SmartPageCheckout } from "@/components/SmartPageCheckout";
 import { getStoredSites } from "@/pages/WebsiteBuilder";
 import { ArrowLeft } from "lucide-react";
 import WebinarLandingPreview from "@/components/WebinarLandingPreview";
+import CoachingLandingPreview from "@/components/CoachingLandingPreview";
+import CourseLandingPreview from "@/components/CourseLandingPreview";
 import type { WebinarData } from "@/types/smartPages";
+import type { CoachingData } from "@/pages/CoachingCreate";
+import type { CourseData } from "@/pages/CourseCreate";
 
 type PublicView = "site" | "checkout" | "product-detail";
 
@@ -33,6 +37,24 @@ const SmartPagePublic = () => {
     if (!site || site.pageType !== "webinar") return null;
     try {
       const stored = localStorage.getItem(`webinar_${site.id}`);
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  }, [site]);
+
+  // Check if this is a coaching page and load coaching data
+  const coachingData = useMemo<CoachingData | null>(() => {
+    if (!site || site.pageType !== "coaching") return null;
+    try {
+      const stored = localStorage.getItem(`coaching_${site.id}`);
+      return stored ? JSON.parse(stored) : null;
+    } catch { return null; }
+  }, [site]);
+
+  // Check if this is a course page and load course data
+  const courseData = useMemo<CourseData | null>(() => {
+    if (!site || site.pageType !== "course") return null;
+    try {
+      const stored = localStorage.getItem(`course_${site.id}`);
       return stored ? JSON.parse(stored) : null;
     } catch { return null; }
   }, [site]);
@@ -97,6 +119,24 @@ const SmartPagePublic = () => {
     return (
       <div className="min-h-screen bg-background">
         <WebinarLandingPreview data={webinarData} interactive />
+      </div>
+    );
+  }
+
+  // ─── Coaching Page ───
+  if (site && site.pageType === "coaching" && coachingData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <CoachingLandingPreview data={coachingData} interactive />
+      </div>
+    );
+  }
+
+  // ─── Course Page ───
+  if (site && site.pageType === "course" && courseData) {
+    return (
+      <div className="min-h-screen bg-background">
+        <CourseLandingPreview data={courseData} interactive />
       </div>
     );
   }
