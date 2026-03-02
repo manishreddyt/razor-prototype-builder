@@ -215,7 +215,7 @@ export const SmartPageCheckout = ({
         {/* Right: Payment Form */}
         <div className={`${isMobile ? "w-full" : "w-full lg:w-[400px]"} flex-shrink-0`}>
           <div className="bg-card border border-border rounded-xl shadow-sm p-6 sticky top-6">
-            <h3 className="text-lg font-bold text-foreground mb-5">Payment Details</h3>
+            <h3 className="text-lg font-bold text-foreground mb-5">{checkout.amount > 0 ? "Payment Details" : "Your Details"}</h3>
 
             <div className="space-y-4">
               {/* Amount Type */}
