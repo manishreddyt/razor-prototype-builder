@@ -32,6 +32,10 @@ import AgentDetail from "./pages/AgentDetail";
 import AppMarketplace from "./pages/AppMarketplace";
 import AppDetail from "./pages/AppDetail";
 import CourseGraphyApp from "./pages/apps/CourseGraphyApp";
+import AIAppBuilder from "./pages/AIAppBuilder";
+import AIAppBuilderCreate from "./pages/AIAppBuilderCreate";
+import AIAppBuilderEditor from "./pages/AIAppBuilderEditor";
+import AIAppBuilderDetail from "./pages/AIAppBuilderDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -72,6 +76,10 @@ const App = () => (
           <Route path="/app-marketplace" element={<AppMarketplace />} />
           <Route path="/app-marketplace/:appId" element={<AppDetail />} />
           <Route path="/apps/course-graphy" element={<CourseGraphyApp />} />
+          <Route path="/ai-app-builder" element={<AIAppBuilder />} />
+          <Route path="/ai-app-builder/create" element={<AIAppBuilderCreate />} />
+          <Route path="/ai-app-builder/editor" element={<AIAppBuilderEditor />} />
+          <Route path="/ai-app-builder/:id" element={<AIAppBuilderDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
