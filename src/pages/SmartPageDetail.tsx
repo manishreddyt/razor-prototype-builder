@@ -16,6 +16,8 @@ import {
 import { getStoredSites, type SmartPageSite } from "./WebsiteBuilder";
 import { templates } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
+import WebinarLandingPreview from "@/components/WebinarLandingPreview";
+import type { WebinarData } from "@/types/smartPages";
 import { toast } from "sonner";
 import {
   type Attendee, type Workflow, type WorkflowAction,
@@ -266,16 +268,32 @@ const SmartPageDetail = () => {
                   </Button>
                 </div>
                 <div className="h-72 overflow-hidden relative bg-muted/30">
-                  <div className="origin-top-left absolute" style={{ width: 1200, transform: "scale(0.55)", transformOrigin: "top left" }}>
-                    {(() => {
-                      const t = templates.find(tpl => tpl.id === site.templateId || tpl.title.toLowerCase() === site.type.toLowerCase());
-                      return t ? <SitePreview template={t} sections={t.sections} /> : (
-                        <div className="w-full h-96 flex items-center justify-center text-muted-foreground">
-                          <Globe className="h-12 w-12" />
-                        </div>
-                      );
-                    })()}
-                  </div>
+                  {(() => {
+                    // For webinar pages, render the actual WebinarLandingPreview
+                    if (site.pageType === "webinar") {
+                      try {
+                        const stored = localStorage.getItem(`webinar_${site.id}`);
+                        if (stored) {
+                          const wd: WebinarData = JSON.parse(stored);
+                          return (
+                            <div className="origin-top-left absolute" style={{ width: 900, transform: "scale(0.73)", transformOrigin: "top left" }}>
+                              <WebinarLandingPreview data={wd} />
+                            </div>
+                          );
+                        }
+                      } catch {}
+                    }
+                    const t = templates.find(tpl => tpl.id === site.templateId || tpl.title.toLowerCase() === site.type.toLowerCase());
+                    return (
+                      <div className="origin-top-left absolute" style={{ width: 1200, transform: "scale(0.55)", transformOrigin: "top left" }}>
+                        {t ? <SitePreview template={t} sections={t.sections} /> : (
+                          <div className="w-full h-96 flex items-center justify-center text-muted-foreground">
+                            <Globe className="h-12 w-12" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
               <div className="blade-card">
