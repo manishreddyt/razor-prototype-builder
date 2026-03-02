@@ -15,7 +15,7 @@ import {
   Mail, TrendingUp, TrendingDown, Calendar, Search, MoreHorizontal,
   Globe, Copy, Pencil, ArrowUpRight, Clock, IndianRupee, CheckCircle2,
   XCircle, AlertCircle, Send, ChevronRight, Upload, Video,
-  Zap, Plus, Trash2, MessageCircle, Phone, Check,
+  Zap, Plus, Trash2, MessageCircle, Phone, Check, GraduationCap,
 } from "lucide-react";
 import { getStoredSites, type SmartPageSite } from "./WebsiteBuilder";
 import { templates } from "@/data/smartPageTemplates";

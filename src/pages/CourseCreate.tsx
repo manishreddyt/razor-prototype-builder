@@ -68,7 +68,7 @@ export interface CourseData {
   whatYouWillLearn: string[];
 }
 
-interface CourseStudent {
+export interface CourseStudent {
   id: string;
   name: string;
   email: string;

@@ -49,7 +49,7 @@ const CoachingLandingPreview = ({ data, interactive = false, editable = false, o
   // Generate available time slots for selected date
   const getAvailableSlots = (date: Date | null) => {
     if (!date) return [];
-    const dayName = date.toLocaleDateString("en-US", { weekday: "lowercase" });
+    const dayName = date.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
     const dayAvailability = availability.find(a => a.day === dayName && a.enabled);
     if (!dayAvailability) return [];
 
@@ -627,7 +627,7 @@ const CalendarPicker = ({
   today.setHours(0, 0, 0, 0);
 
   const isDateAvailable = (date: Date) => {
-    const dayName = date.toLocaleDateString("en-US", { weekday: "lowercase" });
+    const dayName = date.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
     return availability.some(a => a.day === dayName && a.enabled);
   };
 
