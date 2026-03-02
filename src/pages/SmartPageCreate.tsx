@@ -27,9 +27,9 @@ const TemplateThumb = ({ template }: { template: TemplateData }) => (
 );
 
 const educationPageTypes = [
-  { id: "course", title: "Sell an Online Course", desc: "Course landing page with curriculum, pricing & enrollment.", icon: BookOpen, route: "/website-builder/course/create" },
-  { id: "webinar", title: "Host a Webinar", desc: "Webinar with registration, integrations & attendee tracking.", icon: Video, route: "/website-builder/webinar/create" },
-  { id: "coaching", title: "Offer 1:1 Coaching", desc: "Coaching page with booking slots, packages & payments.", icon: UserCheck, route: "/website-builder/coaching/create" },
+  { id: "course", title: "Sell an Online Course", desc: "Course landing page with curriculum, pricing & enrollment.", icon: BookOpen, route: "/website-builder/editor?template=single-course&title=Online%20Course&type=Online%20Course" },
+  { id: "webinar", title: "Host a Webinar", desc: "Webinar with registration, integrations & attendee tracking.", icon: Video, route: "/website-builder/editor?template=webinar&title=Webinar&type=Webinar" },
+  { id: "coaching", title: "Offer 1:1 Coaching", desc: "Coaching page with booking slots, packages & payments.", icon: UserCheck, route: "/website-builder/editor?template=coaching&title=1:1%20Coaching&type=1:1%20Coaching" },
 ];
 
 const analyzePrompt = (prompt: string): { type: string; label: string; route: string } => {
@@ -42,9 +42,9 @@ const analyzePrompt = (prompt: string): { type: string; label: string; route: st
   const cos = coachingKw.filter(k => lower.includes(k)).length;
   const max = Math.max(cs, ws, cos);
   if (max === 0) return { type: "generic", label: "Smart Page", route: `/website-builder/editor?prompt=${encodeURIComponent(prompt)}` };
-  if (cs === max) return { type: "course", label: "Online Course", route: "/website-builder/course/create" };
-  if (ws === max) return { type: "webinar", label: "Webinar", route: "/website-builder/webinar/create" };
-  return { type: "coaching", label: "1:1 Coaching", route: "/website-builder/coaching/create" };
+  if (cs === max) return { type: "course", label: "Online Course", route: `/website-builder/editor?template=single-course&title=${encodeURIComponent(prompt)}&type=Online%20Course` };
+  if (ws === max) return { type: "webinar", label: "Webinar", route: `/website-builder/editor?template=webinar&title=${encodeURIComponent(prompt)}&type=Webinar` };
+  return { type: "coaching", label: "1:1 Coaching", route: `/website-builder/editor?template=coaching&title=${encodeURIComponent(prompt)}&type=1:1%20Coaching` };
 };
 
 const analysisSteps = [
