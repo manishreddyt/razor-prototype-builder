@@ -50,12 +50,12 @@ const navSections = [
     title: "TOOLS",
     items: [
       { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
+      { icon: Sparkles, label: "App Builder", path: "/ai-app-builder" },
       { icon: Mail, label: "Workflows", path: "/email-workflows" },
-      { icon: ShoppingBag, label: "App Store", path: "/app-marketplace", badge: "new" },
-      { icon: MessageCircle, label: "Agents", path: "/agents", badge: "new" },
+      { icon: ShoppingBag, label: "App Store", path: "/app-marketplace" },
+      { icon: MessageCircle, label: "Agents", path: "/agents" },
       { icon: Plug, label: "Connectors", path: "/connectors" },
       { icon: ClipboardList, label: "Forms", path: "/forms" },
-      { icon: Sparkles, label: "App Builder", path: "/ai-app-builder", badge: "new" },
     ],
   },
   {
