@@ -59,6 +59,43 @@ const buildPageState = (pd: PageData | undefined, fallback: TemplateData): PageS
   };
 };
 
+const generateFromPrompt = (prompt: string, tpl: TemplateData): TemplateData => {
+  // Extract a meaningful title from the prompt
+  const words = prompt.split(/\s+/).slice(0, 6).join(" ");
+  const title = words.charAt(0).toUpperCase() + words.slice(1);
+  
+  // Pick a relevant banner image based on prompt keywords
+  const lower = prompt.toLowerCase();
+  let bannerImage = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&h=400&fit=crop";
+  if (lower.includes("yoga") || lower.includes("fitness") || lower.includes("health")) {
+    bannerImage = "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=900&h=400&fit=crop";
+  } else if (lower.includes("coding") || lower.includes("tech") || lower.includes("programming") || lower.includes("bootcamp")) {
+    bannerImage = "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=900&h=400&fit=crop";
+  } else if (lower.includes("marketing") || lower.includes("business")) {
+    bannerImage = "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=900&h=400&fit=crop";
+  } else if (lower.includes("coaching") || lower.includes("mentor") || lower.includes("consult")) {
+    bannerImage = "https://images.unsplash.com/photo-1552664730-d307ca884978?w=900&h=400&fit=crop";
+  } else if (lower.includes("music") || lower.includes("art") || lower.includes("creative")) {
+    bannerImage = "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=900&h=400&fit=crop";
+  } else if (lower.includes("cook") || lower.includes("food") || lower.includes("chef")) {
+    bannerImage = "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=900&h=400&fit=crop";
+  } else if (lower.includes("study") || lower.includes("education") || lower.includes("learn")) {
+    bannerImage = "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=900&h=400&fit=crop";
+  }
+
+  // Generate a tagline from the prompt
+  const tagline = prompt.length > 60 ? prompt.slice(0, 60) + "..." : prompt;
+
+  return {
+    ...tpl,
+    heroTitle: title,
+    heroTagline: tagline,
+    heroDescription: `${prompt}. Join thousands of students who have transformed their careers with our expert-led programs.`,
+    heroCta: lower.includes("free") ? "Get Started Free" : lower.includes("coaching") || lower.includes("1:1") ? "Book a Session" : "Enroll Now",
+    bannerImage,
+  };
+};
+
 const buildInitialState = (searchParams: URLSearchParams): EditorState => {
   const templateId = searchParams.get("template") || "";
   const prompt = searchParams.get("prompt") || "";
@@ -66,11 +103,11 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
 
   const found = templates.find((t) => t.id === templateId);
   const tpl = found || templates[0];
-  const base = found ? { ...tpl } : {
+  const base = found ? { ...tpl } : prompt ? generateFromPrompt(prompt, tpl) : {
     ...tpl,
-    heroTitle: prompt ? "AI Generated Site" : title,
-    heroTagline: prompt || "Welcome to our website",
-    heroDescription: prompt || "A professional website built with Smart Pages.",
+    heroTitle: title,
+    heroTagline: "Welcome to our website",
+    heroDescription: "A professional website built with Smart Pages.",
   };
 
   // Build per-page state
