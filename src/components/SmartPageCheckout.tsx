@@ -27,7 +27,21 @@ export const SmartPageCheckout = ({
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [processing, setProcessing] = useState(false);
 
-  const handlePayment = () => {
+  const loadRazorpayScript = (): Promise<boolean> => {
+    return new Promise((resolve) => {
+      if ((window as any).Razorpay) {
+        resolve(true);
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+  };
+
+  const handlePayment = async () => {
     // Validate required fields
     const missing = checkout.formFields.filter(
       (f) => f.required && !formData[f.id]?.trim()
@@ -38,12 +52,68 @@ export const SmartPageCheckout = ({
     }
 
     setProcessing(true);
-    // Simulate Razorpay payment gateway
-    setTimeout(() => {
-      // In production, this would open Razorpay checkout
-      toast.success(checkout.successMessage || "Payment successful!");
+
+    const loaded = await loadRazorpayScript();
+    if (!loaded) {
+      toast.error("Failed to load Razorpay. Please try again.");
       setProcessing(false);
-    }, 2000);
+      return;
+    }
+
+    const payAmount = checkout.amountType === "custom"
+      ? parseInt(formData._amount || "0", 10)
+      : checkout.amount;
+
+    if (!payAmount || payAmount <= 0) {
+      toast.error("Please enter a valid amount.");
+      setProcessing(false);
+      return;
+    }
+
+    const options = {
+      key: "rzp_test_1DP5mmOlF5G5ag", // Replace with your Razorpay key_id
+      amount: payAmount * 100, // Razorpay expects amount in paise
+      currency: checkout.currency || "INR",
+      name: template.heroTitle || "Payment",
+      description: template.heroDescription?.slice(0, 255) || "Payment",
+      image: template.bannerImage || "",
+      prefill: {
+        name: formData[checkout.formFields.find(f => f.type === "text")?.id || ""] || "",
+        email: formData[checkout.formFields.find(f => f.type === "email")?.id || ""] || "",
+        contact: formData[checkout.formFields.find(f => f.type === "phone")?.id || ""] || "",
+      },
+      theme: {
+        color: "#528FF0",
+      },
+      handler: function (response: any) {
+        toast.success(checkout.successMessage || "Payment successful!", {
+          description: `Payment ID: ${response.razorpay_payment_id}`,
+        });
+        if (checkout.redirectUrl) {
+          window.location.href = checkout.redirectUrl;
+        }
+      },
+      modal: {
+        ondismiss: function () {
+          setProcessing(false);
+        },
+      },
+    };
+
+    try {
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", function (response: any) {
+        toast.error("Payment failed", {
+          description: response.error?.description || "Please try again.",
+        });
+        setProcessing(false);
+      });
+      rzp.open();
+      setProcessing(false);
+    } catch (err) {
+      toast.error("Could not open Razorpay checkout.");
+      setProcessing(false);
+    }
   };
 
   const isMobile = viewMode === "mobile";
