@@ -7,6 +7,7 @@ import {
   ToggleLeft, ChevronRight, Tag, ArrowLeft, Trash2,
   Edit3, MoreHorizontal, Play, Pause, X, Phone,
   MessageSquare, Settings, ChevronDown, GripVertical,
+  TrendingUp, TrendingDown, BarChart3, Users, IndianRupee,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -17,6 +18,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -110,6 +113,39 @@ const triggerOptions = [
   "Course Payment Success", "Course Completed", "Cart Abandoned (30 min)",
   "3 Days Before Renewal", "New Student Signup", "Manual Trigger",
 ];
+
+// ─── Campaign Performance Data ───
+interface Campaign {
+  id: string;
+  name: string;
+  type: "webinar" | "course_launch" | "drip" | "cart_recovery";
+  date: string;
+  leads: number;
+  paidCustomers: number;
+  revenue: number;
+  emailsSent: number;
+  openRate: number;
+  clickRate: number;
+  status: "completed" | "active" | "scheduled";
+}
+
+const campaignData: Campaign[] = [
+  { id: "c1", name: "AI for Business Masterclass", type: "webinar", date: "2026-02-28", leads: 1248, paidCustomers: 187, revenue: 467500, emailsSent: 3200, openRate: 42.5, clickRate: 18.3, status: "completed" },
+  { id: "c2", name: "Full-Stack Dev Bootcamp Launch", type: "course_launch", date: "2026-02-25", leads: 892, paidCustomers: 134, revenue: 938000, emailsSent: 2400, openRate: 38.7, clickRate: 15.1, status: "completed" },
+  { id: "c3", name: "Design Thinking Workshop", type: "webinar", date: "2026-02-20", leads: 567, paidCustomers: 78, revenue: 195000, emailsSent: 1800, openRate: 45.2, clickRate: 21.6, status: "completed" },
+  { id: "c4", name: "Digital Marketing Webinar", type: "webinar", date: "2026-02-15", leads: 2103, paidCustomers: 312, revenue: 780000, emailsSent: 5400, openRate: 39.8, clickRate: 16.4, status: "completed" },
+  { id: "c5", name: "Data Science Intro", type: "webinar", date: "2026-03-01", leads: 456, paidCustomers: 52, revenue: 130000, emailsSent: 1200, openRate: 41.0, clickRate: 19.2, status: "active" },
+  { id: "c6", name: "Cart Recovery - Feb Batch", type: "cart_recovery", date: "2026-02-01", leads: 340, paidCustomers: 89, revenue: 222500, emailsSent: 980, openRate: 52.1, clickRate: 28.4, status: "completed" },
+  { id: "c7", name: "Product Management Live", type: "webinar", date: "2026-03-05", leads: 128, paidCustomers: 0, revenue: 0, emailsSent: 450, openRate: 0, clickRate: 0, status: "scheduled" },
+  { id: "c8", name: "Advanced React Patterns", type: "drip", date: "2026-02-10", leads: 734, paidCustomers: 98, revenue: 490000, emailsSent: 4200, openRate: 36.5, clickRate: 14.8, status: "completed" },
+];
+
+const campaignTypeLabels: Record<Campaign["type"], { label: string; color: string }> = {
+  webinar: { label: "Webinar", color: "bg-purple-100 text-purple-700" },
+  course_launch: { label: "Course Launch", color: "bg-blue-100 text-blue-700" },
+  drip: { label: "Drip Sequence", color: "bg-emerald-100 text-emerald-700" },
+  cart_recovery: { label: "Cart Recovery", color: "bg-amber-100 text-amber-700" },
+};
 
 // ─── Chat message types ───
 interface ChatMessage {
@@ -321,6 +357,11 @@ const EmailWorkflows = () => {
 
   // ─── LIST VIEW ───
   if (viewMode === "list") {
+    const totalLeads = campaignData.reduce((s, c) => s + c.leads, 0);
+    const totalPaid = campaignData.reduce((s, c) => s + c.paidCustomers, 0);
+    const totalRevenue = campaignData.reduce((s, c) => s + c.revenue, 0);
+    const avgConversion = totalLeads > 0 ? ((totalPaid / totalLeads) * 100).toFixed(1) : "0";
+
     return (
       <DashboardLayout>
         <div className="animate-fade-in space-y-6">
@@ -334,95 +375,188 @@ const EmailWorkflows = () => {
             </Button>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
-            {[
-              { icon: Zap, label: "Total Runs (Month)", value: workflows.reduce((s, w) => s + w.runs, 0).toLocaleString() },
-              { icon: CheckCircle2, label: "Success Rate", value: "98.4%" },
-              { icon: Clock, label: "Active Workflows", value: String(workflows.filter(w => w.enabled).length) },
-            ].map(s => (
-              <div key={s.label} className="blade-stat flex items-center gap-4">
-                <s.icon className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="text-sm text-muted-foreground">{s.label}</p>
-                  <p className="text-xl font-semibold text-foreground">{s.value}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Tabs defaultValue="workflows" className="space-y-5">
+            <TabsList>
+              <TabsTrigger value="workflows" className="gap-1.5"><Zap className="h-3.5 w-3.5" /> Workflows</TabsTrigger>
+              <TabsTrigger value="campaigns" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Campaigns</TabsTrigger>
+            </TabsList>
 
-          <div className="flex items-center gap-2">
-            <ListFilter className="h-4 w-4 text-muted-foreground" />
-            {(Object.keys(categoryConfig) as WorkflowCategory[]).map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveCategory(cat)}
-                className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                  activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+            <TabsContent value="workflows" className="space-y-5">
+              <div className="grid grid-cols-3 gap-4">
+                {[
+                  { icon: Zap, label: "Total Runs (Month)", value: workflows.reduce((s, w) => s + w.runs, 0).toLocaleString() },
+                  { icon: CheckCircle2, label: "Success Rate", value: "98.4%" },
+                  { icon: Clock, label: "Active Workflows", value: String(workflows.filter(w => w.enabled).length) },
+                ].map(s => (
+                  <div key={s.label} className="blade-stat flex items-center gap-4">
+                    <s.icon className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">{s.label}</p>
+                      <p className="text-xl font-semibold text-foreground">{s.value}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <ListFilter className="h-4 w-4 text-muted-foreground" />
+                {(Object.keys(categoryConfig) as WorkflowCategory[]).map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setActiveCategory(cat)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                      activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {categoryConfig[cat].label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                {filtered.map(w => (
+                  <div
+                    key={w.id}
+                    className="blade-card p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer"
+                    onClick={() => openDetail(w)}
+                  >
+                    <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0", w.enabled ? "bg-primary/10" : "bg-muted")}>
+                      <Zap className={cn("h-5 w-5", w.enabled ? "text-primary" : "text-muted-foreground")} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground text-sm">{w.name}</span>
+                        {w.isDefault && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Default</Badge>}
+                        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", categoryConfig[w.category].color)}>
+                          {categoryConfig[w.category].label}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{w.description}</p>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-[11px] text-muted-foreground">Trigger: <span className="text-foreground">{w.trigger}</span></span>
+                        <span className="text-[11px] text-muted-foreground">·</span>
+                        <span className="text-[11px] text-muted-foreground">{w.actions.length} action{w.actions.length !== 1 ? "s" : ""}</span>
+                        <span className="text-[11px] text-muted-foreground">·</span>
+                        <span className="text-[11px] text-muted-foreground">{w.runs} runs</span>
+                        {w.lastRun && <>
+                          <span className="text-[11px] text-muted-foreground">·</span>
+                          <span className="text-[11px] text-muted-foreground">Last: {w.lastRun}</span>
+                        </>}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                      <Switch checked={w.enabled} onCheckedChange={() => toggleWorkflow(w.id)} />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(w)}>
+                            <Edit3 className="h-3.5 w-3.5 mr-2" /> Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => deleteWorkflow(w.id)}>
+                            <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))}
+                {filtered.length === 0 && (
+                  <div className="text-center py-12 text-muted-foreground text-sm">
+                    No workflows in this category. <button onClick={startCreate} className="text-primary hover:underline">Create one</button>
+                  </div>
                 )}
-              >
-                {categoryConfig[cat].label}
-              </button>
-            ))}
-          </div>
+              </div>
+            </TabsContent>
 
-          <div className="space-y-3">
-            {filtered.map(w => (
-              <div
-                key={w.id}
-                className="blade-card p-4 flex items-center gap-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => openDetail(w)}
-              >
-                <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0", w.enabled ? "bg-primary/10" : "bg-muted")}>
-                  <Zap className={cn("h-5 w-5", w.enabled ? "text-primary" : "text-muted-foreground")} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground text-sm">{w.name}</span>
-                    {w.isDefault && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Default</Badge>}
-                    <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", categoryConfig[w.category].color)}>
-                      {categoryConfig[w.category].label}
-                    </Badge>
+            <TabsContent value="campaigns" className="space-y-5">
+              {/* Campaign Stats */}
+              <div className="grid grid-cols-4 gap-4">
+                {[
+                  { icon: Users, label: "Total Leads", value: totalLeads.toLocaleString(), sub: "across all campaigns" },
+                  { icon: UserPlus, label: "Paid Customers", value: totalPaid.toLocaleString(), sub: `${avgConversion}% conversion` },
+                  { icon: IndianRupee, label: "Revenue Generated", value: `₹${(totalRevenue / 100000).toFixed(1)}L`, sub: "from workflow campaigns" },
+                  { icon: Mail, label: "Emails Sent", value: campaignData.reduce((s, c) => s + c.emailsSent, 0).toLocaleString(), sub: "total messages" },
+                ].map(s => (
+                  <div key={s.label} className="blade-stat flex items-center gap-4">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <s.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">{s.label}</p>
+                      <p className="text-lg font-semibold text-foreground">{s.value}</p>
+                      <p className="text-[11px] text-muted-foreground">{s.sub}</p>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{w.description}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-[11px] text-muted-foreground">Trigger: <span className="text-foreground">{w.trigger}</span></span>
-                    <span className="text-[11px] text-muted-foreground">·</span>
-                    <span className="text-[11px] text-muted-foreground">{w.actions.length} action{w.actions.length !== 1 ? "s" : ""}</span>
-                    <span className="text-[11px] text-muted-foreground">·</span>
-                    <span className="text-[11px] text-muted-foreground">{w.runs} runs</span>
-                    {w.lastRun && <>
-                      <span className="text-[11px] text-muted-foreground">·</span>
-                      <span className="text-[11px] text-muted-foreground">Last: {w.lastRun}</span>
-                    </>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                  <Switch checked={w.enabled} onCheckedChange={() => toggleWorkflow(w.id)} />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEdit(w)}>
-                        <Edit3 className="h-3.5 w-3.5 mr-2" /> Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive" onClick={() => deleteWorkflow(w.id)}>
-                        <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                ))}
               </div>
-            ))}
-            {filtered.length === 0 && (
-              <div className="text-center py-12 text-muted-foreground text-sm">
-                No workflows in this category. <button onClick={startCreate} className="text-primary hover:underline">Create one</button>
+
+              {/* Campaign Table */}
+              <div className="blade-card overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Campaign</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Leads</TableHead>
+                      <TableHead className="text-right">Paid</TableHead>
+                      <TableHead className="text-right">Conversion</TableHead>
+                      <TableHead className="text-right">Revenue</TableHead>
+                      <TableHead className="text-right">Open Rate</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {campaignData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(c => {
+                      const conversion = c.leads > 0 ? ((c.paidCustomers / c.leads) * 100).toFixed(1) : "—";
+                      return (
+                        <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50">
+                          <TableCell>
+                            <div className="font-medium text-sm text-foreground">{c.name}</div>
+                          </TableCell>
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                            {new Date(c.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", campaignTypeLabels[c.type].color)}>
+                              {campaignTypeLabels[c.type].label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right font-medium text-sm">{c.leads.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium text-sm">{c.paidCustomers.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">
+                            <span className={cn("text-sm font-medium", parseFloat(conversion) >= 15 ? "text-emerald-600" : parseFloat(conversion) >= 10 ? "text-amber-600" : "text-muted-foreground")}>
+                              {conversion}{conversion !== "—" ? "%" : ""}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right text-sm font-medium">
+                            {c.revenue > 0 ? `₹${(c.revenue / 1000).toFixed(0)}K` : "—"}
+                          </TableCell>
+                          <TableCell className="text-right text-sm text-muted-foreground">
+                            {c.openRate > 0 ? `${c.openRate}%` : "—"}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0",
+                              c.status === "completed" ? "bg-muted text-muted-foreground" :
+                              c.status === "active" ? "bg-emerald-100 text-emerald-700" :
+                              "bg-blue-100 text-blue-700"
+                            )}>
+                              {c.status === "completed" ? "Completed" : c.status === "active" ? "Active" : "Scheduled"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
-            )}
-          </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </DashboardLayout>
     );
