@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,52 +9,99 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import AgentConfigChat from "@/components/AgentConfigChat";
 import {
   PhoneCall,
   Megaphone,
   MessageCircle,
   Star,
   Play,
+  Pause,
   Zap,
   TrendingUp,
   Clock,
   Bot,
+  Eye,
+  Settings,
+  Users,
 } from "lucide-react";
 
-const agents = [
+type AgentStatus = "draft" | "configured" | "deployed" | "paused";
+
+interface AgentState {
+  id: string;
+  type: string;
+  icon: any;
+  title: string;
+  description: string;
+  status: AgentStatus;
+  goal: string;
+  leadsProcessed: number;
+  conversions: number;
+  lastActive: string;
+}
+
+const initialAgents: AgentState[] = [
   {
+    id: "sales",
+    type: "sales",
     icon: PhoneCall,
     title: "Sales Agent",
     description:
       "Automatically follows up with free webinar leads via calls, pitches your paid courses, handles objections, and converts them into paying students — all without manual intervention.",
-    status: "Beta" as const,
-    statusVariant: "default" as const,
+    status: "deployed",
+    goal: "Call all free webinar attendees within 1 hour, pitch Advanced Python Course, send payment link if interested.",
+    leadsProcessed: 1247,
+    conversions: 312,
+    lastActive: "2 min ago",
   },
   {
+    id: "marketing",
+    type: "marketing",
     icon: Megaphone,
     title: "Marketing Agent",
     description:
       "Runs targeted campaigns across channels and retargets students who dropped off. Optimises ad spend and messaging to maximize enrollment rates for your courses.",
-    status: "Coming Soon" as const,
-    statusVariant: "secondary" as const,
+    status: "configured",
+    goal: "Retarget all free webinar attendees who didn't purchase within 48 hours.",
+    leadsProcessed: 3420,
+    conversions: 456,
+    lastActive: "1 hr ago",
   },
   {
+    id: "support",
+    type: "support",
     icon: MessageCircle,
     title: "Customer Service Agent",
     description:
       "WhatsApp-based AI agent that handles customer queries, resolves support tickets, shares course materials, and escalates complex issues — available 24/7 for your students.",
-    status: "Beta" as const,
-    statusVariant: "default" as const,
+    status: "deployed",
+    goal: "Handle all WhatsApp queries 24/7. Answer FAQs instantly, share course materials, escalate complex issues.",
+    leadsProcessed: 2890,
+    conversions: 2601,
+    lastActive: "1 min ago",
   },
   {
+    id: "feedback",
+    type: "feedback",
     icon: Star,
     title: "Feedback Agent",
     description:
       "Automatically collects NPS scores and reviews after course completion. Identifies at-risk students early and gathers testimonials from your happiest learners.",
-    status: "Coming Soon" as const,
-    statusVariant: "secondary" as const,
+    status: "draft",
+    goal: "",
+    leadsProcessed: 890,
+    conversions: 756,
+    lastActive: "30 min ago",
   },
 ];
+
+const statusConfig: Record<AgentStatus, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
+  draft: { label: "Draft", variant: "outline" },
+  configured: { label: "Configured", variant: "secondary" },
+  deployed: { label: "Deployed", variant: "default" },
+  paused: { label: "Paused", variant: "destructive" },
+};
 
 const stats = [
   { icon: Zap, value: "60%", label: "Faster follow-ups" },
@@ -84,6 +133,35 @@ const faqs = [
 ];
 
 const Agents = () => {
+  const navigate = useNavigate();
+  const [agents, setAgents] = useState<AgentState[]>(initialAgents);
+  const [configAgent, setConfigAgent] = useState<AgentState | null>(null);
+
+  const handleDeploy = (agentId: string) => {
+    setAgents((prev) =>
+      prev.map((a) => {
+        if (a.id !== agentId) return a;
+        if (a.status === "deployed") return { ...a, status: "paused" as AgentStatus };
+        return { ...a, status: "deployed" as AgentStatus };
+      })
+    );
+  };
+
+  const handleSaveGoal = (goal: string) => {
+    if (!configAgent) return;
+    setAgents((prev) =>
+      prev.map((a) => {
+        if (a.id !== configAgent.id) return a;
+        return {
+          ...a,
+          goal,
+          status: a.status === "draft" ? ("configured" as AgentStatus) : a.status,
+        };
+      })
+    );
+    setConfigAgent(null);
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
@@ -124,10 +202,7 @@ const Agents = () => {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {stats.map((s) => (
-            <div
-              key={s.label}
-              className="blade-stat flex items-center gap-4"
-            >
+            <div key={s.label} className="blade-stat flex items-center gap-4">
               <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10">
                 <s.icon className="h-5 w-5 text-primary" />
               </div>
@@ -142,36 +217,84 @@ const Agents = () => {
         {/* Agent Cards */}
         <div>
           <h2 className="text-xl font-semibold text-foreground mb-1">
-            Proven AI Agents
+            Your AI Agents
           </h2>
           <p className="text-sm text-muted-foreground mb-4">
             Deploy AI teammates that optimize your creator business engine.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {agents.map((agent) => (
-              <div
-                key={agent.title}
-                className="blade-card p-6 flex flex-col gap-4 hover:shadow-md transition-shadow"
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center justify-center h-11 w-11 rounded-lg bg-primary/10">
-                    <agent.icon className="h-5 w-5 text-primary" />
+            {agents.map((agent) => {
+              const sInfo = statusConfig[agent.status];
+              return (
+                <div
+                  key={agent.id}
+                  className="blade-card p-6 flex flex-col gap-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center justify-center h-11 w-11 rounded-lg bg-primary/10">
+                      <agent.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <Badge variant={sInfo.variant}>{sInfo.label}</Badge>
                   </div>
-                  <Badge variant={agent.statusVariant}>{agent.status}</Badge>
+                  <div className="space-y-1">
+                    <h3 className="font-semibold text-foreground">
+                      {agent.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {agent.description}
+                    </p>
+                  </div>
+
+                  {/* Quick stats */}
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Users className="h-3.5 w-3.5" />
+                      {agent.leadsProcessed.toLocaleString()} leads
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <TrendingUp className="h-3.5 w-3.5" />
+                      {agent.conversions.toLocaleString()} converted
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="h-3.5 w-3.5" />
+                      {agent.lastActive}
+                    </span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 mt-auto">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => navigate(`/agents/${agent.id}`)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setConfigAgent(agent)}
+                    >
+                      <Settings className="h-4 w-4 mr-1" />
+                      Configure
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={agent.status === "deployed" ? "destructive" : "default"}
+                      onClick={() => handleDeploy(agent.id)}
+                      disabled={agent.status === "draft"}
+                    >
+                      {agent.status === "deployed" ? (
+                        <><Pause className="h-4 w-4 mr-1" /> Pause</>
+                      ) : (
+                        <><Play className="h-4 w-4 mr-1" /> Deploy</>
+                      )}
+                    </Button>
+                  </div>
                 </div>
-                <div className="space-y-1">
-                  <h3 className="font-semibold text-foreground">
-                    {agent.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {agent.description}
-                  </p>
-                </div>
-                <Button variant="outline" size="sm" className="self-start mt-auto">
-                  Configure
-                </Button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -190,6 +313,16 @@ const Agents = () => {
           </div>
         </div>
       </div>
+
+      {/* Config Chat Dialog */}
+      {configAgent && (
+        <AgentConfigChat
+          open={!!configAgent}
+          onOpenChange={(open) => !open && setConfigAgent(null)}
+          agentType={configAgent.type}
+          onSaveGoal={handleSaveGoal}
+        />
+      )}
     </DashboardLayout>
   );
 };
