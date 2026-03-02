@@ -29,6 +29,9 @@ import Offers from "./pages/Offers";
 import CustomerTracker from "./pages/CustomerTracker";
 import Agents from "./pages/Agents";
 import AgentDetail from "./pages/AgentDetail";
+import AppMarketplace from "./pages/AppMarketplace";
+import AppDetail from "./pages/AppDetail";
+import CourseGraphyApp from "./pages/apps/CourseGraphyApp";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +69,9 @@ const App = () => (
           <Route path="/customers" element={<CustomerTracker />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/agents/:agentId" element={<AgentDetail />} />
+          <Route path="/app-marketplace" element={<AppMarketplace />} />
+          <Route path="/app-marketplace/:appId" element={<AppDetail />} />
+          <Route path="/apps/course-graphy" element={<CourseGraphyApp />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

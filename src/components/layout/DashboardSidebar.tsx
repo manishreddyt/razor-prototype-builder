@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
   Home,
@@ -10,7 +10,6 @@ import {
   FileText,
   CreditCard,
   Globe,
-  
   Mail,
   Users,
   Tag,
@@ -20,6 +19,12 @@ import {
   Plug,
   ChevronDown,
   ChevronRight,
+  ShoppingBag,
+  GraduationCap,
+  BookOpen,
+  Layers,
+  Box,
+  Zap,
 } from "lucide-react";
 
 const navSections = [
@@ -48,6 +53,7 @@ const navSections = [
       { icon: Plug, label: "Connectors", path: "/connectors" },
       { icon: ClipboardList, label: "Forms", path: "/forms" },
       { icon: MessageCircle, label: "Agents", path: "/agents", badge: "new" },
+      { icon: ShoppingBag, label: "App Store", path: "/app-marketplace", badge: "new" },
     ],
   },
   {
@@ -60,9 +66,28 @@ const navSections = [
   },
 ];
 
+const installedAppMeta: Record<string, { icon: React.ElementType; label: string; path: string }> = {
+  "course-graphy": { icon: GraduationCap, label: "Course Graphy", path: "/apps/course-graphy" },
+  teachable: { icon: BookOpen, label: "Teachable", path: "/app-marketplace/teachable" },
+  thinkific: { icon: Layers, label: "Thinkific", path: "/app-marketplace/thinkific" },
+  podia: { icon: Box, label: "Podia", path: "/app-marketplace/podia" },
+  zapier: { icon: Zap, label: "Zapier", path: "/app-marketplace/zapier" },
+};
+
 export const DashboardSidebar = () => {
   const location = useLocation();
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
+  const [installedApps, setInstalledApps] = useState<string[]>(
+    JSON.parse(localStorage.getItem("marketplace-installed-apps") || "[]")
+  );
+
+  useEffect(() => {
+    const handler = () => {
+      setInstalledApps(JSON.parse(localStorage.getItem("marketplace-installed-apps") || "[]"));
+    };
+    window.addEventListener("storage", handler);
+    return () => window.removeEventListener("storage", handler);
+  }, []);
 
   const toggleSection = (title: string) => {
     setCollapsedSections((prev) => ({ ...prev, [title]: !prev[title] }));
@@ -124,6 +149,42 @@ export const DashboardSidebar = () => {
             </div>
           );
         })}
+        {/* Installed Apps */}
+        {installedApps.length > 0 && (
+          <div className="mb-1">
+            <button
+              onClick={() => toggleSection("INSTALLED APPS")}
+              className="flex w-full items-center justify-between px-5 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+            >
+              INSTALLED APPS
+              {collapsedSections["INSTALLED APPS"] ? (
+                <ChevronRight className="h-3 w-3" />
+              ) : (
+                <ChevronDown className="h-3 w-3" />
+              )}
+            </button>
+            {!collapsedSections["INSTALLED APPS"] &&
+              installedApps.map((appId) => {
+                const meta = installedAppMeta[appId];
+                if (!meta) return null;
+                const isActive = location.pathname === meta.path;
+                return (
+                  <NavLink
+                    key={appId}
+                    to={meta.path}
+                    className={`flex items-center gap-3 px-5 py-2 text-sm transition-colors ${
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        : "text-sidebar-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <meta.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1">{meta.label}</span>
+                  </NavLink>
+                );
+              })}
+          </div>
+        )}
       </nav>
 
       {/* Bottom */}
