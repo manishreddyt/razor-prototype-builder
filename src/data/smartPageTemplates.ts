@@ -288,12 +288,12 @@ const countdownSection = (date = "2026-04-15T10:00:00"): SectionData => ({
 // ──────────────── CATEGORIES ────────────────
 
 export const categories = [
-  { id: "all", label: "All", icon: LayoutGrid },
-  { id: "general", label: "General", icon: Globe },
   { id: "education", label: "Education", icon: GraduationCap },
   { id: "services", label: "Services", icon: Briefcase },
   { id: "nonprofit", label: "Non-Profit", icon: Heart },
   { id: "ecommerce", label: "E-commerce", icon: ShoppingBag },
+  { id: "general", label: "General", icon: Globe },
+  { id: "all", label: "All", icon: LayoutGrid },
 ];
 
 // ──────────────── Default checkout config factory ────────────────

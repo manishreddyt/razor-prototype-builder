@@ -22,6 +22,7 @@ const promptSuggestions = [
   "Online yoga classes with 3 months, 6 months, yearly plans",
   "1:1 coaching session for new parents",
   "Study in US/Canada - Education consulting services",
+  "Sell digital marketing course with video modules",
 ];
 
 // Scaled-down live preview thumbnail
@@ -83,7 +84,7 @@ const educationPageTypes = [
 
 const SmartPageCreate = () => {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState("education");
   const [searchQuery, setSearchQuery] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
   const [isFocused, setIsFocused] = useState(false);
@@ -137,25 +138,18 @@ const SmartPageCreate = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.06), hsl(280 80% 70% / 0.08), hsl(var(--primary) / 0.04), hsl(340 80% 70% / 0.06))" }}>
       <ScrollArea className="flex-1">
       <div className="animate-fade-in max-w-6xl mx-auto px-6 py-6">
         {/* Back button */}
         <div className="mb-4">
-          <Button variant="outline" size="sm" onClick={() => navigate("/website-builder")} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate("/website-builder")} className="gap-2 bg-background/80 backdrop-blur-sm">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
         </div>
 
         {/* ─── Hero AI Section ─── */}
         <div className="relative overflow-hidden rounded-2xl mb-10">
-          <div
-            className="absolute inset-0 animate-gradient-shift opacity-60"
-            style={{
-              background: "linear-gradient(135deg, hsl(var(--primary) / 0.08), hsl(280 80% 70% / 0.1), hsl(var(--primary) / 0.06), hsl(340 80% 70% / 0.08))",
-              backgroundSize: "300% 300%",
-            }}
-          />
           <FloatingOrb className="w-32 h-32 bg-primary/10 top-4 -left-8 animate-float" />
           <FloatingOrb className="w-24 h-24 bg-accent/30 bottom-8 right-12 animate-float-slow" />
           <FloatingOrb className="w-16 h-16 bg-primary/15 top-12 right-1/4 animate-pulse-soft" />
@@ -176,7 +170,7 @@ const SmartPageCreate = () => {
           <div className="relative z-10 py-14 px-6 flex flex-col items-center">
             <div className="text-center mb-8 space-y-3">
               <h1 className="text-3xl font-bold text-foreground tracking-tight">
-                What would you like to build?
+                What would you like to sell?
               </h1>
               <p className="text-muted-foreground text-sm max-w-md mx-auto">
                 Describe your website and AI will design it for you — or pick a template below.
