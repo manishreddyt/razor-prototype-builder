@@ -111,6 +111,10 @@ const AIAppBuilderCreate = () => {
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                 <Sparkles className="h-6 w-6 text-primary" />
               </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent border border-border mb-3">
+                <img src="/images/logo-lovable.png" alt="Lovable" className="h-4 w-4 rounded-sm" />
+                <span className="text-xs font-medium text-foreground">Powered by Lovable</span>
+              </div>
               <h1 className="text-[28px] font-semibold text-foreground tracking-tight text-center">
                 What app do you want to build?
               </h1>

@@ -140,6 +140,10 @@ const AIAppBuilderEditor = () => {
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-sm font-medium text-foreground truncate max-w-[200px]">{appName}</span>
           </div>
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-accent border border-border">
+            <img src="/images/logo-lovable.png" alt="Lovable" className="h-3.5 w-3.5 rounded-sm" />
+            <span className="text-[10px] font-medium text-muted-foreground">Powered by Lovable</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center rounded-lg border border-border p-0.5 bg-secondary/50">
