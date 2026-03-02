@@ -30,8 +30,6 @@ const educationPageTypes = [
   { id: "course", title: "Sell an Online Course", desc: "Course landing page with curriculum, pricing & enrollment.", icon: BookOpen, route: "/website-builder/course/create" },
   { id: "webinar", title: "Host a Webinar", desc: "Webinar with registration, integrations & attendee tracking.", icon: Video, route: "/website-builder/webinar/create" },
   { id: "coaching", title: "Offer 1:1 Coaching", desc: "Coaching page with booking slots, packages & payments.", icon: UserCheck, route: "/website-builder/coaching/create" },
-  { id: "workshop", title: "Run a Workshop Series", desc: "Workshops with schedules, batch dates & group enrollment.", icon: Calendar, templateId: "workshop" },
-  { id: "membership", title: "Build a Membership", desc: "Membership site with recurring plans & community.", icon: Users, templateId: "membership" },
 ];
 
 const analyzePrompt = (prompt: string): { type: string; label: string; route: string } => {
@@ -102,10 +100,6 @@ const SmartPageCreate = () => {
 
   const handleEducationCard = (card: typeof educationPageTypes[0]) => {
     if (card.route) navigate(card.route);
-    else if (card.templateId) {
-      const tpl = templates.find((t) => t.id === card.templateId);
-      if (tpl) handleUseTemplate(tpl);
-    }
   };
 
   return (
