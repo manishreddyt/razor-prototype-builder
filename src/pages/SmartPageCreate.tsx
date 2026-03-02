@@ -15,8 +15,6 @@ import { SitePreview } from "@/components/SitePreview";
 const promptSuggestions = [
   "Online yoga classes with 3 months, 6 months, yearly plans",
   "1:1 coaching session for new parents",
-  "Study in US/Canada - Education consulting services",
-  "Sell digital marketing course with video modules",
 ];
 
 const TemplateThumb = ({ template }: { template: TemplateData }) => (
