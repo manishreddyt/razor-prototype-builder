@@ -82,9 +82,9 @@ export interface CourseStudent {
 
 // The questions the bot asks sequentially
 const QUESTION_SEQUENCE = [
-  { key: "name", message: "👋 Hey! Let's create your online course landing page. **What's your course called?**", type: "text" as const },
-  { key: "tagline", message: "Perfect! **Write a one-line tagline** that describes what students will achieve.", type: "text" as const },
-  { key: "description", message: "Great! Now **describe your course in detail** — what will students learn?", type: "text" as const },
+  { key: "name", message: "👋 Hey! I'll help you set up a **landing page for your online course** and collect payments seamlessly.\n\n🎯 **What you'll get:**\n• A professional course page with curriculum, pricing & enrollment\n• Payment collection via Razorpay (one-time or subscription)\n• Student registration & tracking\n• You can host your course on any LMS (Teachable, Thinkific, Udemy, etc.) and share access post payment\n\n📋 **To get started, I'll need:**\n1. Course name & description\n2. Pricing (free or paid)\n3. Course format & duration\n4. Curriculum / modules\n\nLet's begin — **What's your course called?**", type: "text" as const },
+  { key: "tagline", message: "Great! **Write a one-line tagline** — what will students achieve after completing this course?", type: "text" as const },
+  { key: "description", message: "Now **describe your course briefly** — what will students learn?", type: "text" as const },
   { key: "isPaid", message: "Is this a **paid or free** course?", type: "paid-toggle" as const },
   { key: "pricingModel", message: "How would you like to charge? **One-time payment or monthly subscription?**", type: "pricing-model" as const, condition: (state: Partial<CourseData>) => state.isPaid },
   { key: "amount", message: "How much for the course? **Enter the amount in ₹**.", type: "text" as const, condition: (state: Partial<CourseData>) => state.isPaid && state.pricingModel === "one-time" },

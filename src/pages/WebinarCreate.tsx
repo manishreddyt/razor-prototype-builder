@@ -36,8 +36,8 @@ interface ChatMsg {
 
 // The questions the bot asks sequentially
 const QUESTION_SEQUENCE = [
-  { key: "name", message: "👋 Hey! Let's create your webinar landing page. **What's the name of your webinar?**", type: "text" as const },
-  { key: "description", message: "Great name! **Describe what attendees will learn** — a few sentences is perfect.", type: "text" as const },
+  { key: "name", message: "👋 Hey! I'll help you set up a **webinar landing page** with registration and payment collection.\n\n🎯 **What you'll get:**\n• A professional webinar page with countdown, speakers & agenda\n• Registration form to collect attendee details\n• Payment collection for paid webinars via Razorpay\n• Zoom / Google Meet integration for hosting\n• Post-event follow-up workflows (email, WhatsApp)\n\n📋 **I'll need a few details:**\n1. Webinar name & description\n2. Free or paid\n3. Date, time & platform\n4. Registration fields\n\nLet's start — **What's the name of your webinar?**", type: "text" as const },
+  { key: "description", message: "Nice! **Describe what attendees will learn** — a few sentences is perfect.", type: "text" as const },
   { key: "isPaid", message: "Is this a **paid or free** webinar?", type: "paid-toggle" as const },
   { key: "amount", message: "How much would you like to charge? **Enter the amount in ₹**.", type: "text" as const, condition: (state: Partial<WebinarData>) => state.isPaid },
   { key: "dateTime", message: "When is the webinar? **Pick a date and time.**", type: "date-time" as const },
