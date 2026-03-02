@@ -234,11 +234,6 @@ const SmartPageCreate = () => {
             {isEducation && (
               <div className="space-y-8">
                 {/* Purpose-driven cards */}
-                <div>
-                  <h2 className="text-lg font-semibold text-foreground">What do you want to build?</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Choose a page type to get started.</p>
-                </div>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {educationPageTypes.map((card) => (
                     <button
