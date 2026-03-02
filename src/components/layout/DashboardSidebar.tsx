@@ -76,7 +76,7 @@ export const DashboardSidebar = () => {
           <div className="h-7 w-7 rounded bg-primary flex items-center justify-center">
             <span className="text-primary-foreground font-bold text-sm">R</span>
           </div>
-          <span className="text-base font-semibold text-foreground">Creator Commerce</span>
+          <span className="text-base font-semibold text-foreground">Razorpay</span>
         </div>
       </div>
 
