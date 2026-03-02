@@ -26,7 +26,6 @@ const FLOWS: Record<string, { message: string; actions: ActionItem[] }> = {
     actions: [
       { label: "Sell online courses", icon: "🎓", nextFlow: "online_courses", description: "Set up and sell digital courses" },
       { label: "Sell 1:1 sessions", icon: "📞", nextFlow: "sessions", description: "Offer coaching or consulting" },
-      { label: "Run social commerce", icon: "🛒", nextFlow: "social_commerce", description: "Sell via WhatsApp, Instagram & more" },
     ],
   },
   online_courses: {
