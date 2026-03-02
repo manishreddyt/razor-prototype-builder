@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft, Sparkles, Search, ArrowRight, Eye, Monitor, Smartphone,
   Globe, Palette, Zap, Layout, Send,
   Video, BookOpen, UserCheck, Calendar, Users, GraduationCap,
+  Loader2, Brain, Wand2, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,6 +83,30 @@ const educationPageTypes = [
   },
 ];
 
+// Prompt analysis: detect intent from keywords
+const analyzePrompt = (prompt: string): { type: "course" | "webinar" | "coaching" | "generic"; label: string; route: string } => {
+  const lower = prompt.toLowerCase();
+  const courseKeywords = ["course", "curriculum", "module", "lesson", "bootcamp", "class", "training", "learn", "study", "tutorial", "certification"];
+  const webinarKeywords = ["webinar", "live session", "live class", "workshop", "seminar", "zoom", "meet", "broadcast", "livestream", "live stream"];
+  const coachingKeywords = ["coaching", "1:1", "one on one", "1 on 1", "mentor", "consultation", "consult", "counseling", "counselling", "session booking", "personal guidance", "advisory"];
+
+  const courseScore = courseKeywords.filter(k => lower.includes(k)).length;
+  const webinarScore = webinarKeywords.filter(k => lower.includes(k)).length;
+  const coachingScore = coachingKeywords.filter(k => lower.includes(k)).length;
+
+  const maxScore = Math.max(courseScore, webinarScore, coachingScore);
+  if (maxScore === 0) return { type: "generic", label: "Smart Page", route: `/website-builder/editor?prompt=${encodeURIComponent(prompt)}` };
+  if (courseScore === maxScore) return { type: "course", label: "Online Course", route: "/website-builder/course/create" };
+  if (webinarScore === maxScore) return { type: "webinar", label: "Webinar", route: "/website-builder/webinar/create" };
+  return { type: "coaching", label: "1:1 Coaching", route: "/website-builder/coaching/create" };
+};
+
+const analysisSteps = [
+  { icon: Brain, text: "Understanding your idea..." },
+  { icon: Wand2, text: "Detecting page type..." },
+  { icon: CheckCircle2, text: "" }, // filled dynamically
+];
+
 const SmartPageCreate = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("education");
@@ -91,6 +116,11 @@ const SmartPageCreate = () => {
   const [previewTemplate, setPreviewTemplate] = useState<TemplateData | null>(null);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [previewActivePage, setPreviewActivePage] = useState<string>("Home");
+
+  // Analysis state
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analysisStep, setAnalysisStep] = useState(0);
+  const [detectedType, setDetectedType] = useState<string>("");
 
   const isEducation = activeCategory === "education";
 
@@ -119,8 +149,20 @@ const SmartPageCreate = () => {
   });
 
   const handleGenerate = () => {
-    if (!aiPrompt.trim()) return;
-    navigate(`/website-builder/editor?prompt=${encodeURIComponent(aiPrompt)}`);
+    if (!aiPrompt.trim() || isAnalyzing) return;
+    const result = analyzePrompt(aiPrompt);
+
+    setIsAnalyzing(true);
+    setAnalysisStep(0);
+    setDetectedType(result.label);
+
+    // Step through animation phases
+    setTimeout(() => setAnalysisStep(1), 1000);
+    setTimeout(() => setAnalysisStep(2), 2200);
+    setTimeout(() => {
+      setIsAnalyzing(false);
+      navigate(result.route);
+    }, 3400);
   };
 
   const handleUseTemplate = (template: TemplateData) => {
@@ -138,7 +180,44 @@ const SmartPageCreate = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden" style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.06), hsl(280 80% 70% / 0.08), hsl(var(--primary) / 0.04), hsl(340 80% 70% / 0.06))" }}>
+    <div className="h-screen flex flex-col overflow-hidden relative" style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.06), hsl(280 80% 70% / 0.08), hsl(var(--primary) / 0.04), hsl(340 80% 70% / 0.06))" }}>
+      {/* Analysis Overlay */}
+      {isAnalyzing && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-md animate-fade-in">
+          <div className="flex flex-col items-center gap-6 max-w-sm text-center">
+            <div className="relative w-20 h-20">
+              <div className="absolute inset-0 rounded-full border-4 border-primary/20" />
+              <div className="absolute inset-0 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Sparkles className="h-8 w-8 text-primary animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-4 w-full">
+              {analysisSteps.map((step, i) => {
+                const isActive = analysisStep === i;
+                const isDone = analysisStep > i;
+                const StepIcon = step.icon;
+                const displayText = i === 2 ? `Perfect! Building your ${detectedType} page...` : step.text;
+                return (
+                  <div
+                    key={i}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-500 ${
+                      isActive ? "bg-primary/10 border border-primary/20 scale-105" :
+                      isDone ? "bg-muted/50 opacity-60" : "opacity-20"
+                    }`}
+                  >
+                    <StepIcon className={`h-5 w-5 flex-shrink-0 ${isActive ? "text-primary animate-pulse" : isDone ? "text-primary" : "text-muted-foreground"}`} />
+                    <span className={`text-sm font-medium ${isActive ? "text-foreground" : "text-muted-foreground"}`}>
+                      {displayText}
+                    </span>
+                    {isDone && <CheckCircle2 className="h-4 w-4 text-primary ml-auto" />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
       <ScrollArea className="flex-1">
       <div className="animate-fade-in max-w-6xl mx-auto px-6 py-6">
         {/* Back button */}
