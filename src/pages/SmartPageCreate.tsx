@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft, Sparkles, Search, ArrowRight, Eye, Monitor, Smartphone,
   Globe, Palette, Zap, Layout, Send,
+  Video, BookOpen, UserCheck, Calendar, Users, GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,50 @@ const TemplateThumb = ({ template }: { template: TemplateData }) => (
   </div>
 );
 
+// Education purpose-driven cards
+const educationPageTypes = [
+  {
+    id: "course",
+    title: "Sell an Online Course",
+    desc: "Create a full course landing page with curriculum, pricing tiers, and enrollment.",
+    icon: BookOpen,
+    color: "bg-blue-500/10 text-blue-600",
+    templateId: "single-course",
+  },
+  {
+    id: "webinar",
+    title: "Host a Webinar",
+    desc: "Set up a webinar with registration, Zoom/GMeet integration, and attendee tracking.",
+    icon: Video,
+    color: "bg-purple-500/10 text-purple-600",
+    route: "/website-builder/webinar/create",
+  },
+  {
+    id: "coaching",
+    title: "Offer 1:1 Coaching",
+    desc: "Build a coaching page with booking slots, packages, and payment collection.",
+    icon: UserCheck,
+    color: "bg-amber-500/10 text-amber-600",
+    templateId: "coaching",
+  },
+  {
+    id: "workshop",
+    title: "Run a Workshop Series",
+    desc: "Promote workshops with schedules, batch dates, and group enrollment.",
+    icon: Calendar,
+    color: "bg-emerald-500/10 text-emerald-600",
+    templateId: "workshop",
+  },
+  {
+    id: "membership",
+    title: "Build a Membership Community",
+    desc: "Create a membership site with recurring plans, resources, and community features.",
+    icon: Users,
+    color: "bg-rose-500/10 text-rose-600",
+    templateId: "membership",
+  },
+];
+
 const SmartPageCreate = () => {
   const navigate = useNavigate();
   const [activeCategory, setActiveCategory] = useState("all");
@@ -45,6 +90,8 @@ const SmartPageCreate = () => {
   const [previewTemplate, setPreviewTemplate] = useState<TemplateData | null>(null);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [previewActivePage, setPreviewActivePage] = useState<string>("Home");
+
+  const isEducation = activeCategory === "education";
 
   // Compute preview template/sections for the active page
   const previewPageTemplate = (() => {
@@ -80,6 +127,15 @@ const SmartPageCreate = () => {
     navigate(`/website-builder/editor?template=${encodeURIComponent(template.id)}&title=${encodeURIComponent(template.title)}&type=${encodeURIComponent(template.title)}`);
   };
 
+  const handleEducationCard = (card: typeof educationPageTypes[0]) => {
+    if (card.route) {
+      navigate(card.route);
+    } else if (card.templateId) {
+      const tpl = templates.find((t) => t.id === card.templateId);
+      if (tpl) handleUseTemplate(tpl);
+    }
+  };
+
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
       <ScrollArea className="flex-1">
@@ -93,7 +149,6 @@ const SmartPageCreate = () => {
 
         {/* ─── Hero AI Section ─── */}
         <div className="relative overflow-hidden rounded-2xl mb-10">
-          {/* Animated gradient background */}
           <div
             className="absolute inset-0 animate-gradient-shift opacity-60"
             style={{
@@ -101,13 +156,10 @@ const SmartPageCreate = () => {
               backgroundSize: "300% 300%",
             }}
           />
-
-          {/* Floating orbs */}
           <FloatingOrb className="w-32 h-32 bg-primary/10 top-4 -left-8 animate-float" />
           <FloatingOrb className="w-24 h-24 bg-accent/30 bottom-8 right-12 animate-float-slow" />
           <FloatingOrb className="w-16 h-16 bg-primary/15 top-12 right-1/4 animate-pulse-soft" />
 
-          {/* Decorative floating icons */}
           <div className="absolute top-8 left-12 animate-float opacity-20">
             <Globe className="h-6 w-6 text-primary" />
           </div>
@@ -122,7 +174,6 @@ const SmartPageCreate = () => {
           </div>
 
           <div className="relative z-10 py-14 px-6 flex flex-col items-center">
-            {/* Heading */}
             <div className="text-center mb-8 space-y-3">
               <h1 className="text-3xl font-bold text-foreground tracking-tight">
                 What would you like to build?
@@ -132,10 +183,8 @@ const SmartPageCreate = () => {
               </p>
             </div>
 
-            {/* Prompt input */}
             <div className={`w-full max-w-2xl transition-all duration-300 ${isFocused ? "scale-[1.01]" : ""}`}>
               <div className={`relative rounded-xl bg-card border shadow-sm transition-all duration-300 ${isFocused ? "border-primary/40 shadow-lg shadow-primary/5" : "border-border"}`}>
-                {/* Shimmer effect on border */}
                 {isFocused && (
                   <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
                     <div className="absolute inset-0 animate-shimmer" style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary) / 0.06), transparent)" }} />
@@ -168,7 +217,6 @@ const SmartPageCreate = () => {
               </div>
             </div>
 
-            {/* Suggestion chips */}
             <div className="flex flex-wrap items-center justify-center gap-2 mt-5 max-w-2xl">
               {promptSuggestions.map((s, i) => (
                 <button
@@ -184,7 +232,7 @@ const SmartPageCreate = () => {
           </div>
         </div>
 
-        {/* ─── Templates Section ─── */}
+        {/* ─── Templates / Education Cards Section ─── */}
         <div className="space-y-5">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-1.5 overflow-x-auto">
@@ -201,55 +249,119 @@ const SmartPageCreate = () => {
                 </button>
               ))}
             </div>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search templates..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
-            </div>
+            {!isEducation && (
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search templates..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+              </div>
+            )}
           </div>
 
-          {/* Template Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((t) => (
-              <div
-                key={t.id}
-                className="rounded-lg border border-border bg-background overflow-hidden group hover:border-primary/40 hover:shadow-lg transition-all duration-200"
-              >
-                <div className="relative cursor-pointer" onClick={() => setPreviewTemplate(t)}>
-                  <TemplateThumb template={t} />
-                  <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/60 transition-all duration-200 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
-                    <Button size="sm" variant="secondary" className="gap-1.5 shadow-lg" onClick={(e) => { e.stopPropagation(); setPreviewTemplate(t); }}>
-                      <Eye className="h-3.5 w-3.5" /> Live Preview
-                    </Button>
-                    <Button size="sm" className="gap-1.5 shadow-lg" onClick={(e) => { e.stopPropagation(); handleUseTemplate(t); }}>
-                      Use Template
-                    </Button>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold text-foreground text-sm">{t.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.desc}</p>
+          {/* ─── Education: Purpose-driven cards ─── */}
+          {isEducation && (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground">What do you want to build?</h2>
+                <p className="text-sm text-muted-foreground mt-1">Choose a page type to get started with a tailored creation flow.</p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {educationPageTypes.map((card) => (
+                  <button
+                    key={card.id}
+                    onClick={() => handleEducationCard(card)}
+                    className="text-left p-5 rounded-xl border border-border bg-background hover:border-primary/40 hover:shadow-lg transition-all duration-200 group"
+                  >
+                    <div className={`w-10 h-10 rounded-lg ${card.color} flex items-center justify-center mb-3`}>
+                      <card.icon className="h-5 w-5" />
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize whitespace-nowrap flex-shrink-0">
-                      {t.category === "nonprofit" ? "Non-Profit" : t.category}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1 mt-3">
-                    {t.pages.slice(0, 4).map((p) => (
-                      <span key={p} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{p}</span>
-                    ))}
-                    {t.pages.length > 4 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{t.pages.length - 4}</span>}
-                  </div>
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{card.title}</h3>
+                    <p className="text-xs text-muted-foreground mt-1.5 leading-relaxed">{card.desc}</p>
+                    <div className="flex items-center gap-1 mt-3 text-xs text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+                      Get started <ArrowRight className="h-3 w-3" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              {/* Also show education templates below */}
+              <div className="pt-4 border-t border-border">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Or start from a template</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {filtered.map((t) => (
+                    <div
+                      key={t.id}
+                      className="rounded-lg border border-border bg-background overflow-hidden group hover:border-primary/40 hover:shadow-lg transition-all duration-200"
+                    >
+                      <div className="relative cursor-pointer" onClick={() => setPreviewTemplate(t)}>
+                        <TemplateThumb template={t} />
+                        <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/60 transition-all duration-200 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                          <Button size="sm" variant="secondary" className="gap-1.5 shadow-lg" onClick={(e) => { e.stopPropagation(); setPreviewTemplate(t); }}>
+                            <Eye className="h-3.5 w-3.5" /> Preview
+                          </Button>
+                          <Button size="sm" className="gap-1.5 shadow-lg" onClick={(e) => { e.stopPropagation(); handleUseTemplate(t); }}>
+                            Use Template
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <p className="font-semibold text-foreground text-sm">{t.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.desc}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-          </div>
-
-          {filtered.length === 0 && (
-            <div className="text-center py-12 text-muted-foreground">
-              <p className="text-sm">No templates found.</p>
             </div>
+          )}
+
+          {/* ─── Non-education: Template Grid ─── */}
+          {!isEducation && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filtered.map((t) => (
+                  <div
+                    key={t.id}
+                    className="rounded-lg border border-border bg-background overflow-hidden group hover:border-primary/40 hover:shadow-lg transition-all duration-200"
+                  >
+                    <div className="relative cursor-pointer" onClick={() => setPreviewTemplate(t)}>
+                      <TemplateThumb template={t} />
+                      <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/60 transition-all duration-200 flex items-center justify-center gap-3 opacity-0 group-hover:opacity-100">
+                        <Button size="sm" variant="secondary" className="gap-1.5 shadow-lg" onClick={(e) => { e.stopPropagation(); setPreviewTemplate(t); }}>
+                          <Eye className="h-3.5 w-3.5" /> Live Preview
+                        </Button>
+                        <Button size="sm" className="gap-1.5 shadow-lg" onClick={(e) => { e.stopPropagation(); handleUseTemplate(t); }}>
+                          Use Template
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-foreground text-sm">{t.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.desc}</p>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground capitalize whitespace-nowrap flex-shrink-0">
+                          {t.category === "nonprofit" ? "Non-Profit" : t.category}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mt-3">
+                        {t.pages.slice(0, 4).map((p) => (
+                          <span key={p} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">{p}</span>
+                        ))}
+                        {t.pages.length > 4 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">+{t.pages.length - 4}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {filtered.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground">
+                  <p className="text-sm">No templates found.</p>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

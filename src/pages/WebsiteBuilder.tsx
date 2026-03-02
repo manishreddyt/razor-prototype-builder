@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Plus, Settings, MoreHorizontal, Trash2, Copy, Globe, ExternalLink, BarChart3 } from "lucide-react";
+import { pageTypeLabels, pageTypeColors } from "@/types/smartPages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -23,6 +24,7 @@ export interface SmartPageSite {
   status: "Published" | "Draft";
   amount?: number;
   transactions?: number;
+  pageType?: "course" | "webinar" | "coaching" | "workshop" | "membership";
 }
 
 const STORAGE_KEY = "smart-pages-sites";
@@ -52,9 +54,9 @@ export const getStoredSites = (): SmartPageSite[] => {
     }
   } catch {}
   const defaults: SmartPageSite[] = [
-    { id: "sp_1", name: "Full Stack Bootcamp", type: "Single Online Course", category: "education", slug: "full-stack-bootcamp", templateId: "single-course", url: "/s/full-stack-bootcamp", created: "10 Feb 2026", views: 1240, conversions: 342, status: "Published", amount: 12999, transactions: 342 },
+    { id: "sp_1", name: "Full Stack Bootcamp", type: "Single Online Course", category: "education", slug: "full-stack-bootcamp", templateId: "single-course", url: "/s/full-stack-bootcamp", created: "10 Feb 2026", views: 1240, conversions: 342, status: "Published", amount: 12999, transactions: 342, pageType: "course" },
     { id: "sp_2", name: "Creator Portfolio", type: "Personal Portfolio", category: "general", slug: "creator-portfolio", templateId: "portfolio", url: "/s/creator-portfolio", created: "1 Feb 2026", views: 3420, conversions: 89, status: "Published", amount: 0, transactions: 0 },
-    { id: "sp_3", name: "Weekend Workshop", type: "Webinar", category: "education", slug: "weekend-workshop", templateId: "webinar", url: "/s/weekend-workshop", created: "15 Jan 2026", views: 890, conversions: 156, status: "Published", amount: 1999, transactions: 156 },
+    { id: "sp_3", name: "Weekend Workshop", type: "Webinar", category: "education", slug: "weekend-workshop", templateId: "webinar", url: "/s/weekend-workshop", created: "15 Jan 2026", views: 890, conversions: 156, status: "Published", amount: 1999, transactions: 156, pageType: "webinar" },
   ];
   localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
   return defaults;
@@ -213,7 +215,14 @@ const WebsiteBuilder = () => {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <span className="font-medium text-foreground truncate block max-w-[180px]">{site.name}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-foreground truncate block max-w-[180px]">{site.name}</span>
+                              {site.pageType && (
+                                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${pageTypeColors[site.pageType]}`}>
+                                  {pageTypeLabels[site.pageType]}
+                                </span>
+                              )}
+                            </div>
                             <div className="flex items-center gap-3 mt-0.5">
                               <span className="text-[11px] text-muted-foreground">
                                 {site.amount ? `₹${site.amount.toLocaleString()}` : "₹0"}
