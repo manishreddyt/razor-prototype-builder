@@ -55,7 +55,7 @@ const navSections = [
       { icon: MessageCircle, label: "Agents", path: "/agents", badge: "new" },
       { icon: Plug, label: "Connectors", path: "/connectors" },
       { icon: ClipboardList, label: "Forms", path: "/forms" },
-      { icon: Sparkles, label: "AI App Builder", path: "/ai-app-builder", badge: "new" },
+      { icon: Sparkles, label: "App Builder", path: "/ai-app-builder", badge: "new" },
     ],
   },
   {
