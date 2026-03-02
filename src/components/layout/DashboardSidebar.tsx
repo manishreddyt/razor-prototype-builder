@@ -41,26 +41,21 @@ const navSections = [
     ],
   },
   {
-    title: "CREATOR TOOLS",
+    title: "TOOLS",
     items: [
       { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
       { icon: Mail, label: "Workflows", path: "/email-workflows" },
       { icon: Plug, label: "Connectors", path: "/connectors" },
-    ],
-  },
-  {
-    title: "GROWTH & SCALE",
-    items: [
       { icon: ClipboardList, label: "Forms", path: "/forms" },
-      { icon: Tag, label: "Offers", path: "/offers" },
-      { icon: Users, label: "Customer Tracker", path: "/customers" },
-      { icon: MessageCircle, label: "Chatbots", path: "/chatbots", badge: "P2" },
+      { icon: MessageCircle, label: "Agents", path: "/agents", badge: "new" },
     ],
   },
   {
-    title: "ECOSYSTEM",
+    title: "CUSTOMER PRODUCTS",
     items: [
-      { icon: LayoutGrid, label: "App Store", path: "/app-store", badge: "P2" },
+      { icon: Users, label: "Customers", path: "/customers" },
+      { icon: Tag, label: "Offers", path: "/offers" },
+      { icon: LayoutGrid, label: "Developers", path: "/developers" },
     ],
   },
 ];
