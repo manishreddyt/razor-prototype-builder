@@ -181,17 +181,17 @@ const ctaBannerSection = (heading = "Ready to Get Started?", text = "Join thousa
   data: { heading, text, buttonText },
 });
 
-const contactFormSection = (): SectionData => ({
+const contactFormSection = (overrides?: { heading?: string; submitText?: string; fields?: any[] }): SectionData => ({
   id: makeId(), type: "contact-form", label: "Contact Form", visible: true,
   data: {
-    heading: "Get in Touch",
-    fields: [
+    heading: overrides?.heading || "Get in Touch",
+    fields: overrides?.fields || [
       { label: "Full Name", type: "text", required: true },
       { label: "Email", type: "email", required: true },
       { label: "Phone", type: "tel", required: false },
       { label: "Message", type: "textarea", required: true },
     ],
-    submitText: "Send Message",
+    submitText: overrides?.submitText || "Send Message",
   },
 });
 
@@ -645,7 +645,11 @@ export const templates: TemplateData[] = [
         { q: "Will I get a recording?", a: "Yes, all registered attendees get the replay within 24 hours." },
         { q: "Do I need any prior knowledge?", a: "No, this is beginner-friendly with something for everyone." },
       ]),
-      contactFormSection(),
+      contactFormSection({ heading: "Register for Webinar", submitText: "Register", fields: [
+        { label: "Full Name", type: "text", required: true },
+        { label: "Email", type: "email", required: true },
+        { label: "Phone", type: "tel", required: false },
+      ] }),
     ],
     pagesData: {
       "Agenda": {
@@ -679,7 +683,11 @@ export const templates: TemplateData[] = [
         heroDescription: "Fill in your details below and we'll send you the joining link, calendar invite, and pre-event materials.",
         heroCta: "Complete Registration", bannerImage: "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=900&h=300&fit=crop",
         sections: [
-          contactFormSection(),
+          contactFormSection({ heading: "Register for Webinar", submitText: "Register", fields: [
+            { label: "Full Name", type: "text", required: true },
+            { label: "Email", type: "email", required: true },
+            { label: "Phone", type: "tel", required: false },
+          ] }),
           featuresSection([
             { title: "Instant Confirmation", desc: "Get your joining link immediately after registration.", icon: "✅" },
             { title: "Calendar Invite", desc: "We'll send a Google Calendar invite so you don't forget.", icon: "📅" },
