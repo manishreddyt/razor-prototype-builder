@@ -1,9 +1,12 @@
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Video, Users, MapPin, Star, Shield, Award } from "lucide-react";
+import { Calendar, Clock, Video, Users, MapPin, Star, Shield, Award, ArrowLeft } from "lucide-react";
 import type { WebinarData } from "@/types/smartPages";
+import { SmartPageCheckout } from "@/components/SmartPageCheckout";
+import type { CheckoutConfig, TemplateData } from "@/data/smartPageTemplates";
 
 interface WebinarLandingPreviewProps {
   data: WebinarData;
@@ -13,6 +16,7 @@ interface WebinarLandingPreviewProps {
 
 const WebinarLandingPreview = ({ data, interactive = false, onRegister }: WebinarLandingPreviewProps) => {
   const { name, description, bannerImage, isPaid, amount, eventConfig, registrationFields, speakers } = data;
+  const [showCheckout, setShowCheckout] = useState(false);
 
   const eventDate = eventConfig.date
     ? new Date(eventConfig.date).toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
@@ -39,6 +43,68 @@ const WebinarLandingPreview = ({ data, interactive = false, onRegister }: Webina
   };
 
   const countdown = getCountdown();
+
+  // Build checkout config for paid webinars
+  const webinarCheckout: CheckoutConfig | null = isPaid && amount ? {
+    enabled: true,
+    amount: amount,
+    amountType: "fixed" as const,
+    currency: "INR",
+    buttonText: `Pay ₹${amount.toLocaleString()}`,
+    successMessage: "Payment successful! You'll receive your webinar access link shortly.",
+    redirectUrl: "",
+    collectAddress: false,
+    sendReceipt: true,
+    gstEnabled: true,
+    formFields: registrationFields.map(f => ({
+      id: f.id,
+      label: f.label,
+      type: f.type === "select" ? "text" as const : f.type as "text" | "email" | "phone" | "textarea",
+      required: f.required,
+      placeholder: f.placeholder,
+    })),
+    highlights: [
+      "Live webinar access link",
+      "Recording available post-event",
+      "Certificate of attendance",
+      "Q&A with speakers",
+    ],
+  } : null;
+
+  const webinarTemplate: TemplateData | null = webinarCheckout ? {
+    id: "webinar-checkout",
+    title: name || "Webinar",
+    desc: description || "Join this exclusive webinar",
+    icon: "Video",
+    category: "education",
+    heroTitle: name || "Webinar",
+    heroTagline: "",
+    heroDescription: description || "Join this exclusive webinar",
+    heroCta: `Pay ₹${amount?.toLocaleString()}`,
+    bannerImage: bannerImage || "",
+    pages: ["Home"],
+    sections: [],
+    style: { accentColor: "#528FF0", fontFamily: "Inter" },
+  } as TemplateData : null;
+
+  // Show checkout view for paid webinars
+  if (showCheckout && webinarCheckout && webinarTemplate) {
+    return (
+      <div className="min-h-full bg-background">
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 mb-4"
+            onClick={() => setShowCheckout(false)}
+          >
+            <ArrowLeft className="h-4 w-4" /> Back to webinar
+          </Button>
+          <SmartPageCheckout template={webinarTemplate} checkout={webinarCheckout} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-full bg-background">
@@ -193,7 +259,13 @@ const WebinarLandingPreview = ({ data, interactive = false, onRegister }: Webina
             <Button
               className="w-full py-5 text-base font-semibold rounded-xl shadow-lg shadow-primary/20"
               disabled={!interactive}
-              onClick={() => onRegister?.({})}
+              onClick={() => {
+                if (isPaid && webinarCheckout) {
+                  setShowCheckout(true);
+                } else {
+                  onRegister?.({});
+                }
+              }}
             >
               {isPaid ? `Register & Pay ₹${amount?.toLocaleString()}` : "Register for Free →"}
             </Button>
