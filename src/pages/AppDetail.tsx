@@ -41,9 +41,9 @@ const appFeatures: Record<string, AppFeatureDetail> = {
       "Custom domain support",
     ],
     screenshots: [
-      { label: "AI chat interface for building apps" },
-      { label: "Live code preview with hot reload" },
-      { label: "Deploy & publish workflow" },
+      { label: "AI chat interface for building apps", image: "/images/lovable-chat.png" },
+      { label: "Live code preview with hot reload", image: "/images/lovable-preview.png" },
+      { label: "Deploy & publish workflow", image: "/images/lovable-deploy.png" },
     ],
     pricing: "₹1,999/month or ₹19,990/year",
   },
