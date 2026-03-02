@@ -371,7 +371,7 @@ const CoachingCreate = () => {
               className="gap-1.5"
               onClick={() => {
                 const draftSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "coaching-draft";
-                const draftSite = {
+                const draftSite: SmartPageSite = {
                   id: `draft_coaching_${Date.now()}`,
                   name: name || "Draft Coaching",
                   type: "Coaching",
@@ -382,7 +382,7 @@ const CoachingCreate = () => {
                   created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
                   views: 0,
                   conversions: 0,
-                  status: "Draft",
+                  status: "Draft" as const,
                   amount: isPaid ? amount : 0,
                   transactions: 0,
                   pageType: "coaching",
