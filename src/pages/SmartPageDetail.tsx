@@ -1,29 +1,36 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   ArrowLeft, ExternalLink, Eye, Settings, BarChart3, Users, CreditCard,
   Mail, TrendingUp, TrendingDown, Calendar, Search, MoreHorizontal,
   Globe, Copy, Pencil, ArrowUpRight, Clock, IndianRupee, CheckCircle2,
-  XCircle, AlertCircle, Send, ChevronRight,
+  XCircle, AlertCircle, Send, ChevronRight, Upload, Video,
+  Zap, Plus, Trash2, MessageCircle, Phone,
 } from "lucide-react";
 import { getStoredSites, type SmartPageSite } from "./WebsiteBuilder";
 import { templates } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
+import { toast } from "sonner";
+import {
+  type Attendee, type Workflow, type WorkflowAction,
+  defaultWorkflows, pageTypeLabels, pageTypeColors,
+} from "@/types/smartPages";
 
-// ─── Mock data generators ───
+// ─── Mock data ───
 
 const mockCustomers = [
-  { id: "c1", name: "Aarav Sharma", email: "aarav@example.com", amount: 4999, date: "25 Feb 2026", status: "Active" },
-  { id: "c2", name: "Priya Patel", email: "priya@example.com", amount: 2999, date: "22 Feb 2026", status: "Active" },
-  { id: "c3", name: "Rahul Kumar", email: "rahul@example.com", amount: 4999, date: "20 Feb 2026", status: "Churned" },
-  { id: "c4", name: "Sneha Gupta", email: "sneha@example.com", amount: 1999, date: "18 Feb 2026", status: "Active" },
-  { id: "c5", name: "Vikram Singh", email: "vikram@example.com", amount: 4999, date: "15 Feb 2026", status: "Active" },
-  { id: "c6", name: "Meera Joshi", email: "meera@example.com", amount: 2999, date: "12 Feb 2026", status: "Active" },
+  { id: "c1", name: "Aarav Sharma", email: "aarav@example.com", amount: 4999, date: "25 Feb 2026", status: "Active", phone: "+91 98765 43210", experience: "Intermediate" },
+  { id: "c2", name: "Priya Patel", email: "priya@example.com", amount: 2999, date: "22 Feb 2026", status: "Active", phone: "+91 87654 32109", experience: "Beginner" },
+  { id: "c3", name: "Rahul Kumar", email: "rahul@example.com", amount: 4999, date: "20 Feb 2026", status: "Churned", phone: "+91 76543 21098", experience: "Advanced" },
+  { id: "c4", name: "Sneha Gupta", email: "sneha@example.com", amount: 1999, date: "18 Feb 2026", status: "Active", phone: "+91 65432 10987", experience: "Beginner" },
+  { id: "c5", name: "Vikram Singh", email: "vikram@example.com", amount: 4999, date: "15 Feb 2026", status: "Active", phone: "+91 54321 09876", experience: "Intermediate" },
+  { id: "c6", name: "Meera Joshi", email: "meera@example.com", amount: 2999, date: "12 Feb 2026", status: "Active", phone: "+91 43210 98765", experience: "Advanced" },
 ];
 
 const mockTransactions = [
@@ -43,6 +50,14 @@ const mockCommunications = [
   { id: "em5", subject: "February Newsletter", type: "Campaign", sent: 3420, opened: 1890, clicked: 456, date: "10 Feb 2026" },
 ];
 
+const mockAttendees: Attendee[] = [
+  { id: "att1", name: "Aarav Sharma", email: "aarav@example.com", phone: "+91 98765 43210", registeredAt: "25 Feb 2026", attended: true, duration: "58 min", source: "zoom" },
+  { id: "att2", name: "Priya Patel", email: "priya@example.com", registeredAt: "22 Feb 2026", attended: true, duration: "45 min", source: "zoom" },
+  { id: "att3", name: "Rahul Kumar", email: "rahul@example.com", registeredAt: "20 Feb 2026", attended: false, source: "manual" },
+  { id: "att4", name: "Sneha Gupta", email: "sneha@example.com", registeredAt: "18 Feb 2026", attended: true, duration: "60 min", source: "zoom" },
+  { id: "att5", name: "Vikram Singh", email: "vikram@example.com", registeredAt: "15 Feb 2026", attended: false, source: "manual" },
+];
+
 const statusIcon = (status: string) => {
   switch (status) {
     case "Success": return <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />;
@@ -52,13 +67,27 @@ const statusIcon = (status: string) => {
   }
 };
 
+const triggerLabels: Record<string, { icon: any; color: string }> = {
+  on_registration: { icon: Users, color: "bg-blue-100 text-blue-700" },
+  post_event: { icon: Calendar, color: "bg-purple-100 text-purple-700" },
+  payment_success: { icon: CreditCard, color: "bg-emerald-100 text-emerald-700" },
+  payment_failed: { icon: XCircle, color: "bg-red-100 text-red-700" },
+};
+
+const actionIcons: Record<string, any> = {
+  send_email: Mail,
+  send_whatsapp: MessageCircle,
+  send_sms: Phone,
+  enroll_course: CheckCircle2,
+};
+
 // ─── Mini thumbnail ───
 const SiteThumbnail = ({ site }: { site: SmartPageSite }) => {
   const template = useMemo(() => {
     return templates.find(
-      (t) => t.title.toLowerCase() === site.type.toLowerCase() || t.id === site.type
+      (t) => t.title.toLowerCase() === site.type.toLowerCase() || t.id === site.type || t.id === site.templateId
     );
-  }, [site.type]);
+  }, [site.type, site.templateId]);
 
   if (!template) {
     return (
@@ -81,11 +110,16 @@ const SmartPageDetail = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState("overview");
+  const [attendees, setAttendees] = useState<Attendee[]>(mockAttendees);
+  const [workflows, setWorkflows] = useState<Workflow[]>(defaultWorkflows);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const site = useMemo(() => {
     const sites = getStoredSites();
     return sites.find((s) => s.id === id) || null;
   }, [id]);
+
+  const isWebinar = site?.pageType === "webinar" || site?.type?.toLowerCase() === "webinar";
 
   if (!site) {
     return (
@@ -100,6 +134,49 @@ const SmartPageDetail = () => {
 
   const conversionRate = site.views > 0 ? ((site.conversions / site.views) * 100).toFixed(1) : "0";
   const totalRevenue = mockTransactions.filter(t => t.status === "Success").reduce((a, t) => a + t.amount, 0);
+  const attendedCount = attendees.filter(a => a.attended).length;
+
+  const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target?.result as string;
+      const lines = text.split("\n").filter(l => l.trim());
+      if (lines.length < 2) { toast.error("Invalid CSV file"); return; }
+      const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+      const nameIdx = headers.findIndex(h => h.includes("name"));
+      const emailIdx = headers.findIndex(h => h.includes("email"));
+      const attendedIdx = headers.findIndex(h => h.includes("attended") || h.includes("present"));
+
+      const newAttendees: Attendee[] = lines.slice(1).map((line, i) => {
+        const cols = line.split(",").map(c => c.trim());
+        return {
+          id: `csv_${Date.now()}_${i}`,
+          name: cols[nameIdx] || `Attendee ${i + 1}`,
+          email: cols[emailIdx] || "",
+          registeredAt: "Imported",
+          attended: attendedIdx >= 0 ? cols[attendedIdx]?.toLowerCase() === "yes" : true,
+          source: "csv" as const,
+        };
+      });
+      setAttendees(prev => [...prev, ...newAttendees]);
+      toast.success(`${newAttendees.length} attendees imported from CSV`);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const toggleWorkflow = (wfId: string) => {
+    setWorkflows(wfs => wfs.map(w => w.id === wfId ? { ...w, enabled: !w.enabled } : w));
+  };
+
+  const toggleAction = (wfId: string, actionId: string) => {
+    setWorkflows(wfs => wfs.map(w => {
+      if (w.id !== wfId) return w;
+      return { ...w, actions: w.actions.map(a => a.id === actionId ? { ...a, enabled: !a.enabled } : a) };
+    }));
+  };
 
   return (
     <DashboardLayout>
@@ -114,6 +191,11 @@ const SmartPageDetail = () => {
             <div className="flex items-center gap-2.5">
               <h1 className="text-xl font-semibold text-foreground truncate">{site.name}</h1>
               <span className={site.status === "Published" ? "blade-badge-paid" : "blade-badge-expired"}>{site.status}</span>
+              {site.pageType && (
+                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${pageTypeColors[site.pageType]}`}>
+                  {pageTypeLabels[site.pageType]}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
               <span>{site.type}</span>
@@ -143,6 +225,10 @@ const SmartPageDetail = () => {
             <TabsTrigger value="overview" className="gap-1.5 text-xs"><BarChart3 className="h-3.5 w-3.5" /> Overview</TabsTrigger>
             <TabsTrigger value="customers" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> Customers</TabsTrigger>
             <TabsTrigger value="transactions" className="gap-1.5 text-xs"><CreditCard className="h-3.5 w-3.5" /> Transactions</TabsTrigger>
+            {isWebinar && (
+              <TabsTrigger value="attendees" className="gap-1.5 text-xs"><Video className="h-3.5 w-3.5" /> Attendees</TabsTrigger>
+            )}
+            <TabsTrigger value="workflows" className="gap-1.5 text-xs"><Zap className="h-3.5 w-3.5" /> Workflows</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1.5 text-xs"><TrendingUp className="h-3.5 w-3.5" /> Analytics</TabsTrigger>
             <TabsTrigger value="communications" className="gap-1.5 text-xs"><Mail className="h-3.5 w-3.5" /> Communications</TabsTrigger>
             <TabsTrigger value="settings" className="gap-1.5 text-xs"><Settings className="h-3.5 w-3.5" /> Settings</TabsTrigger>
@@ -150,7 +236,6 @@ const SmartPageDetail = () => {
 
           {/* ─── Overview ─── */}
           <TabsContent value="overview" className="space-y-6 mt-4">
-            {/* Stats row */}
             <div className="grid grid-cols-4 gap-4">
               {[
                 { label: "Page Views", value: site.views.toLocaleString(), icon: Eye, trend: "+12.3%", up: true },
@@ -172,7 +257,6 @@ const SmartPageDetail = () => {
               ))}
             </div>
 
-            {/* Preview + Recent Activity */}
             <div className="grid grid-cols-3 gap-5">
               <div className="col-span-2 blade-card overflow-hidden">
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
@@ -184,7 +268,7 @@ const SmartPageDetail = () => {
                 <div className="h-72 overflow-hidden relative bg-muted/30">
                   <div className="origin-top-left absolute" style={{ width: 1200, transform: "scale(0.55)", transformOrigin: "top left" }}>
                     {(() => {
-                      const t = templates.find(tpl => tpl.title.toLowerCase() === site.type.toLowerCase());
+                      const t = templates.find(tpl => tpl.id === site.templateId || tpl.title.toLowerCase() === site.type.toLowerCase());
                       return t ? <SitePreview template={t} sections={t.sections} /> : (
                         <div className="w-full h-96 flex items-center justify-center text-muted-foreground">
                           <Globe className="h-12 w-12" />
@@ -237,6 +321,7 @@ const SmartPageDetail = () => {
                   <tr className="border-b border-border bg-secondary/50">
                     <th className="blade-table-header px-5 py-3 text-left">Customer</th>
                     <th className="blade-table-header px-5 py-3 text-left">Email</th>
+                    <th className="blade-table-header px-5 py-3 text-left">Phone</th>
                     <th className="blade-table-header px-5 py-3 text-left">Amount Paid</th>
                     <th className="blade-table-header px-5 py-3 text-left">Joined</th>
                     <th className="blade-table-header px-5 py-3 text-left">Status</th>
@@ -247,6 +332,7 @@ const SmartPageDetail = () => {
                     <tr key={c.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
                       <td className="px-5 py-3 font-medium text-foreground">{c.name}</td>
                       <td className="px-5 py-3 text-muted-foreground">{c.email}</td>
+                      <td className="px-5 py-3 text-muted-foreground text-xs">{c.phone}</td>
                       <td className="px-5 py-3 text-foreground">₹{c.amount.toLocaleString()}</td>
                       <td className="px-5 py-3 text-muted-foreground">{c.date}</td>
                       <td className="px-5 py-3">
@@ -298,6 +384,158 @@ const SmartPageDetail = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </TabsContent>
+
+          {/* ─── Attendees (webinar only) ─── */}
+          {isWebinar && (
+            <TabsContent value="attendees" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-muted-foreground">{attendees.length} registrants • {attendedCount} attended</p>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-xs text-muted-foreground">{attendedCount} present</span>
+                    <div className="h-2 w-2 rounded-full bg-destructive" />
+                    <span className="text-xs text-muted-foreground">{attendees.length - attendedCount} absent</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => toast.info("Fetching from Zoom... (mock)")}>
+                    <Video className="h-3.5 w-3.5" /> Import from Zoom
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="h-3.5 w-3.5" /> Upload CSV
+                  </Button>
+                  <input ref={fileInputRef} type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Attendance Rate</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">
+                    {attendees.length > 0 ? `${((attendedCount / attendees.length) * 100).toFixed(0)}%` : "—"}
+                  </p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Avg. Duration</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">52 min</p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Data Source</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">Zoom + CSV</p>
+                </div>
+              </div>
+
+              <div className="blade-card overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border bg-secondary/50">
+                      <th className="blade-table-header px-5 py-3 text-left">Name</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Email</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Registered</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Attended</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Duration</th>
+                      <th className="blade-table-header px-5 py-3 text-left">Source</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {attendees.map((a) => (
+                      <tr key={a.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                        <td className="px-5 py-3 font-medium text-foreground">{a.name}</td>
+                        <td className="px-5 py-3 text-muted-foreground">{a.email}</td>
+                        <td className="px-5 py-3 text-muted-foreground text-xs">{a.registeredAt}</td>
+                        <td className="px-5 py-3">
+                          {a.attended ? (
+                            <span className="flex items-center gap-1.5 text-emerald-600">
+                              <CheckCircle2 className="h-3.5 w-3.5" /> Present
+                            </span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-destructive">
+                              <XCircle className="h-3.5 w-3.5" /> Absent
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-5 py-3 text-muted-foreground text-xs">{a.duration || "—"}</td>
+                        <td className="px-5 py-3">
+                          <Badge variant="secondary" className="text-[10px] capitalize">{a.source}</Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </TabsContent>
+          )}
+
+          {/* ─── Workflows ─── */}
+          <TabsContent value="workflows" className="space-y-4 mt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">Automation Workflows</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">Define triggers and actions to automate your merchant operations.</p>
+              </div>
+              <Button size="sm" className="gap-1.5" onClick={() => toast.info("Workflow builder coming soon!")}>
+                <Plus className="h-3.5 w-3.5" /> New Workflow
+              </Button>
+            </div>
+
+            <div className="space-y-4">
+              {workflows.map((wf) => {
+                const triggerMeta = triggerLabels[wf.trigger.type];
+                const TriggerIcon = triggerMeta?.icon || Zap;
+                return (
+                  <div
+                    key={wf.id}
+                    className={`blade-card p-5 transition-all ${wf.enabled ? "border-primary/20" : "opacity-60"}`}
+                  >
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${triggerMeta?.color || "bg-secondary text-foreground"}`}>
+                          <TriggerIcon className="h-4 w-4" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{wf.name}</p>
+                          <p className="text-xs text-muted-foreground">Trigger: {wf.trigger.label}</p>
+                        </div>
+                      </div>
+                      <Switch checked={wf.enabled} onCheckedChange={() => toggleWorkflow(wf.id)} />
+                    </div>
+
+                    {/* Trigger → Actions chain */}
+                    <div className="ml-5 border-l-2 border-border pl-5 space-y-3">
+                      {wf.actions.map((action) => {
+                        const ActionIcon = actionIcons[action.type] || Zap;
+                        const isComingSoon = action.type === "send_whatsapp" || action.type === "send_sms";
+                        return (
+                          <div
+                            key={action.id}
+                            className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                              action.enabled ? "border-border bg-secondary/30" : "border-border/50 bg-muted/20"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <ActionIcon className={`h-4 w-4 ${action.enabled ? "text-foreground" : "text-muted-foreground"}`} />
+                              <div>
+                                <p className={`text-sm ${action.enabled ? "text-foreground" : "text-muted-foreground"}`}>{action.label}</p>
+                                {isComingSoon && (
+                                  <span className="text-[10px] text-amber-600 font-medium">Coming Soon</span>
+                                )}
+                              </div>
+                            </div>
+                            <Switch
+                              checked={action.enabled}
+                              onCheckedChange={() => toggleAction(wf.id, action.id)}
+                              disabled={isComingSoon}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </TabsContent>
 
