@@ -52,6 +52,24 @@ export interface Attendee {
   source: "zoom" | "csv" | "manual";
 }
 
+export interface ConfirmationConfig {
+  title: string;
+  message: string;
+  showEventDetails: boolean;
+  showCalendarLink: boolean;
+  ctaText: string;
+  ctaUrl: string;
+}
+
+export const defaultConfirmationConfig: ConfirmationConfig = {
+  title: "You're Registered! 🎉",
+  message: "We've sent a confirmation email with all the details. See you at the webinar!",
+  showEventDetails: true,
+  showCalendarLink: true,
+  ctaText: "Add to Calendar",
+  ctaUrl: "",
+};
+
 export interface WebinarData {
   name: string;
   description: string;
@@ -63,6 +81,7 @@ export interface WebinarData {
   workflows: Workflow[];
   attendees: Attendee[];
   speakers: { name: string; title: string; avatar: string; bio: string }[];
+  confirmation?: ConfirmationConfig;
 }
 
 export const defaultRegistrationFields: RegistrationField[] = [

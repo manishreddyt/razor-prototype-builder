@@ -19,8 +19,8 @@ import {
 import { toast } from "sonner";
 import { addSite, type SmartPageSite } from "./WebsiteBuilder";
 import {
-  defaultRegistrationFields, defaultWorkflows,
-  type RegistrationField, type EventConfig, type WebinarData,
+  defaultRegistrationFields, defaultWorkflows, defaultConfirmationConfig,
+  type RegistrationField, type EventConfig, type WebinarData, type ConfirmationConfig,
 } from "@/types/smartPages";
 import WebinarLandingPreview from "@/components/WebinarLandingPreview";
 
@@ -79,9 +79,10 @@ const WebinarCreate = () => {
   ]);
 
   // Builder state
+  const [confirmationConfig, setConfirmationConfig] = useState<ConfirmationConfig>({ ...defaultConfirmationConfig });
   const [builderTab, setBuilderTab] = useState<"chat" | "settings">("chat");
   const [builderChatInput, setBuilderChatInput] = useState("");
-  const [settingsOpen, setSettingsOpen] = useState<Record<string, boolean>>({ details: true, schedule: false, registration: false });
+  const [settingsOpen, setSettingsOpen] = useState<Record<string, boolean>>({ details: true, schedule: false, registration: false, confirmation: false });
 
   // Confirmation state
   const [publishedSlug, setPublishedSlug] = useState("");
@@ -233,7 +234,7 @@ const WebinarCreate = () => {
     name, description, bannerImage, isPaid, amount: isPaid ? amount : 0,
     eventConfig: { ...eventConfig, eventName: eventConfig.eventName || name },
     registrationFields: regFields, workflows: defaultWorkflows,
-    attendees: [], speakers,
+    attendees: [], speakers, confirmation: confirmationConfig,
   });
 
   // Handle publish
@@ -597,6 +598,44 @@ const WebinarCreate = () => {
                       >
                         <Plus className="h-3 w-3" /> Add Field
                       </Button>
+                    </div>
+                  </CollapsibleSection>
+
+                  {/* Confirmation Section */}
+                  <CollapsibleSection
+                    title="Confirmation Screen" icon={<Check className="h-3.5 w-3.5" />}
+                    open={settingsOpen.confirmation}
+                    onToggle={() => setSettingsOpen(p => ({ ...p, confirmation: !p.confirmation }))}
+                  >
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs">Title</Label>
+                        <Input value={confirmationConfig.title} onChange={e => setConfirmationConfig(p => ({ ...p, title: e.target.value }))} className="mt-1 text-xs" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Message</Label>
+                        <Textarea value={confirmationConfig.message} onChange={e => setConfirmationConfig(p => ({ ...p, message: e.target.value }))} className="mt-1 text-xs" rows={3} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Show Event Details</Label>
+                        <Switch checked={confirmationConfig.showEventDetails} onCheckedChange={v => setConfirmationConfig(p => ({ ...p, showEventDetails: v }))} />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs">Show Calendar Link</Label>
+                        <Switch checked={confirmationConfig.showCalendarLink} onCheckedChange={v => setConfirmationConfig(p => ({ ...p, showCalendarLink: v }))} />
+                      </div>
+                      {confirmationConfig.showCalendarLink && (
+                        <>
+                          <div>
+                            <Label className="text-xs">Button Text</Label>
+                            <Input value={confirmationConfig.ctaText} onChange={e => setConfirmationConfig(p => ({ ...p, ctaText: e.target.value }))} className="mt-1 text-xs" />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Button URL</Label>
+                            <Input value={confirmationConfig.ctaUrl} onChange={e => setConfirmationConfig(p => ({ ...p, ctaUrl: e.target.value }))} placeholder="https://..." className="mt-1 text-xs" />
+                          </div>
+                        </>
+                      )}
                     </div>
                   </CollapsibleSection>
                 </div>
