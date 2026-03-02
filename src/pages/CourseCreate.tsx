@@ -732,7 +732,11 @@ const CourseCreate = () => {
           {/* RIGHT: Live Preview */}
           <div className="flex-1 bg-muted/30 overflow-auto">
             <div className="max-w-4xl mx-auto my-6 bg-background rounded-xl shadow-lg border border-border overflow-hidden">
-              <CourseLandingPreview data={courseData} />
+              <CourseLandingPreview data={courseData} editable onEdit={(field, value) => {
+                if (field === "name") setName(value);
+                else if (field === "tagline") setTagline(value);
+                else if (field === "description") setDescription(value);
+              }} />
             </div>
           </div>
         </div>
