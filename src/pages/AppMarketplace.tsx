@@ -54,7 +54,7 @@ export const marketplaceApps: MarketplaceApp[] = [
   },
   {
     id: "lovable-ai",
-    name: "Lovable AI",
+    name: "Emergent AI Builder",
     category: "AI & Builder",
     description: "Build full-stack web apps with AI. Generate landing pages, dashboards, and tools in minutes.",
     icon: Heart,
