@@ -1,67 +1,56 @@
 
 
-## Agents Tab — Full Functionality
+## Plan: App Marketplace with Full LMS App Flow
 
-Transform the current static Agents page into a fully interactive agent management system with View, Configure, Deploy, and Activity tracking.
+### Overview
+Add an "App Marketplace" nav item under TOOLS in the sidebar. Create a marketplace page inspired by Razorpay's app store (screenshot reference) with education-focused apps. Build a complete Course Graphy LMS app with create course, manage students, and give access flows. Installed apps appear in the sidebar.
 
-### Architecture
+### New Files
 
-```text
-/agents                     → Agent listing (overview + cards)
-/agents/:agentId            → Agent detail (config, activity log, deploy controls)
-```
+1. **`src/pages/AppMarketplace.tsx`** — Marketplace listing page
+   - Grid of app cards (like the Razorpay screenshot): icon, name, category, description, arrow CTA
+   - Categories filter (All, LMS, Communication, Automation, Analytics)
+   - Search bar
+   - Apps: Course Graphy (LMS), Teachable, Thinkific, LearnDash, WhatsApp Business, Mailchimp, Google Analytics
+   - Click card → app detail page
 
-Since there's no backend (Supabase not connected), all state will be managed via React `useState` with mock data. The pattern follows the existing Workflows page (chat-based AI config via Dialog).
+2. **`src/pages/AppDetail.tsx`** — App detail/overview page
+   - Hero with app icon, name, category, description
+   - Screenshots carousel (mock placeholder images)
+   - Features list, pricing info, "Install" button
+   - On install → store in localStorage, toast confirmation, add to sidebar
 
-### Page Structure
+3. **`src/pages/apps/CourseGraphyApp.tsx`** — Full LMS app (post-install)
+   - Tabs: Dashboard, Courses, Students
+   - **Dashboard**: stats (total courses, students, revenue)
+   - **Courses tab**: list of courses with create course dialog (name, description, price, modules). Each course expandable to show modules/lessons
+   - **Students tab**: list of students, "Add Student" dialog (name, email, select course to enroll). Show enrolled courses per student, toggle access
 
-**1. Agents Overview (`/agents`) — Enhance existing page**
+### Modified Files
 
-Keep the hero, stats, and FAQ sections. Enhance agent cards with:
-- Three action buttons: **View** (navigates to detail), **Configure** (opens AI chat dialog), **Deploy/Pause** toggle
-- Status indicators: `Draft` | `Configured` | `Deployed` | `Paused`
-- Quick stats on each card: leads processed, conversions, last active
+4. **`src/components/layout/DashboardSidebar.tsx`**
+   - Add "App Store" nav item under TOOLS with `ShoppingBag` icon
+   - Dynamically read installed apps from localStorage and render them below TOOLS section as a new "INSTALLED APPS" collapsible section
 
-**2. Agent Detail Page (`/agents/:agentId`) — New page**
+5. **`src/App.tsx`**
+   - Add routes: `/app-marketplace`, `/app-marketplace/:appId`, `/apps/course-graphy`
 
-Tabs layout:
-- **Overview tab**: Agent description, current goal, status, key metrics (leads contacted, converted, revenue generated)
-- **Activity Log tab**: Scrollable list of agent actions with timestamps, outcomes, and status badges. Filter by date/type. Example entries:
-  - "Called +91-98xxx — Pitched Advanced Python Course — Outcome: Interested, follow-up scheduled"
-  - "Sent WhatsApp to 45 webinar attendees — 12 opened, 3 clicked CTA"
-  - "Collected NPS from Batch #12 — Avg score: 8.4"
-- **Configuration tab**: Shows the agent's current goal/process definition with an "Edit with AI" button that opens the chat dialog
+### Data & State
+- All state in localStorage (`marketplace-installed-apps`, `course-graphy-courses`, `course-graphy-students`)
+- Installed apps list drives sidebar rendering
 
-**3. Configure Dialog (AI Chat) — New component**
+### Education Apps in Marketplace (mock data)
+| App | Category | Description |
+|-----|----------|-------------|
+| Course Graphy | LMS | Full course hosting, student management, certificates |
+| Teachable | LMS | Create and sell online courses |
+| Thinkific | LMS | Build, market, and sell courses |
+| Podia | LMS + Membership | Courses, memberships, digital downloads |
+| WhatsApp Business | Communication | Student notifications via WhatsApp |
+| Mailchimp | Email Marketing | Email campaigns for students |
 
-Reuses the pattern from `EmailWorkflows.tsx` (AI chat mode in a Dialog). The merchant describes their goal conversationally:
-- "I want this agent to call all free webinar leads within 1 hour, pitch the paid Python course, and if they say yes, send them the payment link"
-- AI responds with a structured process breakdown, asks clarifying questions
-- Merchant confirms, agent config is saved
-
-Chat includes quick-start templates per agent type (e.g., "Free webinar → Paid conversion", "Post-course NPS collection").
-
-**4. Deploy Controls**
-
-Each agent card and detail page has a Deploy/Pause button. Deploying changes status and starts showing mock activity entries. Pausing stops new entries.
-
-### Files to Create/Modify
-
-| File | Action |
-|------|--------|
-| `src/pages/Agents.tsx` | Major rewrite — add state management, configure dialog, deploy toggles, navigation to detail |
-| `src/pages/AgentDetail.tsx` | New — tabbed detail page with overview, activity log, configuration |
-| `src/components/AgentConfigChat.tsx` | New — reusable AI chat dialog for agent configuration (follows EmailWorkflows pattern) |
-| `src/App.tsx` | Add route `/agents/:agentId` |
-
-### Mock Data
-
-Activity log entries per agent type with realistic timestamps, actions, and outcomes. Agent state tracks: `id`, `title`, `status`, `goal`, `activities[]`, `metrics` (leads, conversions, revenue).
-
-### UI Patterns
-
-- Activity log uses the same `blade-card` list style as Workflows page
-- Each activity row: icon + timestamp + description + outcome badge (Success/Pending/Failed)
-- Configure chat follows the exact same AI chat UX from EmailWorkflows (message bubbles, quick actions, suggestion chips)
-- Deploy button uses primary variant when deploying, outline when pausing
+### Course Graphy LMS — Detailed Flow
+- **Create Course**: Name, description, price, thumbnail, add modules (title + lessons)
+- **Manage Students**: Table with name, email, enrolled courses, access status. Add student dialog with course selection
+- **Give Access**: Toggle switch per student-course to grant/revoke access
 
