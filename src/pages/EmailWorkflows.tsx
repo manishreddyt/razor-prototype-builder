@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Mail, Plus, CheckCircle2, Clock, Sparkles, ListFilter,
@@ -87,23 +87,20 @@ interface ChatMessage {
   role: "assistant" | "user";
   content: string;
   suggestions?: string[];
-  quickActions?: { label: string; description: string; icon: any }[];
 }
 
 const initialMessages: ChatMessage[] = [
   {
     id: "welcome",
     role: "assistant",
-    content: "👋 Hi! I'm your workflow assistant. Tell me what you'd like to automate, and I'll help you set it up.\n\nYou can describe your full requirement in one go, or pick from the suggestions below.",
-    quickActions: [
-      { label: "Post-payment onboarding", description: "Enroll students in LMS after course purchase", icon: GraduationCap },
-      { label: "Webinar follow-up", description: "Send recordings & collect feedback after webinars", icon: Video },
-      { label: "Abandoned cart recovery", description: "Re-engage students who didn't complete checkout", icon: ShoppingCart },
-      { label: "Subscription reminders", description: "Notify before renewals or after failed payments", icon: Bell },
-      { label: "Certificate on completion", description: "Auto-generate certificates when courses are finished", icon: FileText },
-      { label: "Lead nurturing sequence", description: "Drip emails to convert free webinar attendees to paid", icon: UserPlus },
-    ],
+    content: "👋 Hi! I'm your workflow assistant. Tell me what you'd like to automate, and I'll help you set it up.\n\nYou can describe your full requirement in one go, or pick a suggestion below to get started.",
   },
+];
+
+const defaultSuggestions = [
+  "Enroll students in LMS after course purchase",
+  "Send recordings & feedback form after webinar ends",
+  "Re-engage students who abandoned checkout",
 ];
 
 const EmailWorkflows = () => {
@@ -165,13 +162,18 @@ const EmailWorkflows = () => {
     }, 1500);
   };
 
-  const handleQuickAction = (label: string) => {
-    handleSendMessage(label);
-  };
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSuggestion = (text: string) => {
-    handleSendMessage(text);
-  };
+  // Auto-scroll to bottom on new messages or typing
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages, isAiTyping]);
+
+  // Get current suggestions: from last assistant message or defaults
+  const currentSuggestions = (() => {
+    const lastAssistant = [...chatMessages].reverse().find(m => m.role === "assistant");
+    return (lastAssistant?.suggestions || defaultSuggestions).slice(0, 3);
+  })();
 
   return (
     <DashboardLayout>
@@ -302,76 +304,80 @@ const EmailWorkflows = () => {
             <>
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-                {chatMessages.map((msg) => (
-                  <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
-                    <div className={cn(
-                      "max-w-[85%] rounded-xl px-4 py-3 text-sm",
-                      msg.role === "user"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary text-foreground"
-                    )}>
-                      <div className="whitespace-pre-wrap">{msg.content}</div>
-                      
-                      {/* Quick action cards */}
-                      {msg.quickActions && (
-                        <div className="grid grid-cols-2 gap-2 mt-3">
-                          {msg.quickActions.map((action) => (
-                            <button
-                              key={action.label}
-                              onClick={() => handleQuickAction(action.label)}
-                              className="flex items-start gap-2.5 p-2.5 rounded-lg bg-background/80 hover:bg-background border border-border/50 text-left transition-colors"
-                            >
-                              <action.icon className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                              <div>
-                                <p className="text-xs font-medium text-foreground">{action.label}</p>
-                                <p className="text-[11px] text-muted-foreground mt-0.5">{action.description}</p>
-                              </div>
-                            </button>
-                          ))}
-                        </div>
+                {chatMessages.map((msg, idx) => (
+                  <div
+                    key={msg.id}
+                    className={cn(
+                      "flex animate-fade-in",
+                      msg.role === "user" ? "justify-end" : "justify-start"
+                    )}
+                  >
+                    {msg.role === "assistant" && (
+                      <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 mr-2 mt-1 flex-shrink-0">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                    )}
+                    <div
+                      className={cn(
+                        "max-w-[80%] rounded-2xl px-4 py-3 text-sm",
+                        msg.role === "user"
+                          ? "bg-primary text-primary-foreground rounded-br-md"
+                          : "bg-secondary/70 text-foreground rounded-bl-md"
                       )}
-
-                      {/* Suggestion chips */}
-                      {msg.suggestions && (
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          {msg.suggestions.map((s) => (
-                            <button
-                              key={s}
-                              onClick={() => handleSuggestion(s)}
-                              className="px-2.5 py-1 rounded-full bg-background/80 hover:bg-background border border-border/50 text-xs text-foreground transition-colors"
-                            >
-                              {s}
-                            </button>
-                          ))}
-                        </div>
-                      )}
+                    >
+                      <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
                     </div>
                   </div>
                 ))}
+
                 {isAiTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-secondary rounded-xl px-4 py-3 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-pulse" />
-                        <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-pulse [animation-delay:200ms]" />
-                        <div className="h-1.5 w-1.5 rounded-full bg-muted-foreground animate-pulse [animation-delay:400ms]" />
+                  <div className="flex justify-start animate-fade-in">
+                    <div className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 mr-2 mt-1 flex-shrink-0">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                    </div>
+                    <div className="bg-secondary/70 rounded-2xl rounded-bl-md px-4 py-3.5">
+                      <div className="flex items-center gap-1">
+                        <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:0ms]" />
+                        <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                        <div className="h-2 w-2 rounded-full bg-primary/60 animate-bounce [animation-delay:300ms]" />
                       </div>
                     </div>
                   </div>
                 )}
+                <div ref={chatEndRef} />
               </div>
 
-              {/* Chat Input */}
-              <div className="border-t border-border px-5 py-3 flex-shrink-0">
+              {/* Suggestions + Input */}
+              <div className="border-t border-border px-5 py-3 flex-shrink-0 space-y-2.5">
+                {/* Suggestion chips above input */}
+                {!isAiTyping && currentSuggestions.length > 0 && (
+                  <div className="flex gap-2 overflow-x-auto pb-0.5">
+                    {currentSuggestions.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => handleSendMessage(s)}
+                        className="flex-shrink-0 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 text-xs font-medium text-primary transition-all hover:border-primary/40 hover:shadow-sm"
+                      >
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center gap-2">
                   <Input
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage(chatInput)}
-                    placeholder="Describe your workflow... e.g. 'I want to automate adding free webinar customers to a nurture sequence'"
+                    placeholder="Describe your workflow..."
                     className="flex-1"
+                    disabled={isAiTyping}
                   />
-                  <Button size="icon" onClick={() => handleSendMessage(chatInput)} disabled={!chatInput.trim() || isAiTyping}>
+                  <Button
+                    size="icon"
+                    onClick={() => handleSendMessage(chatInput)}
+                    disabled={!chatInput.trim() || isAiTyping}
+                    className="rounded-full h-9 w-9"
+                  >
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
