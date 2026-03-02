@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
 import {
   ArrowLeft, Send, Sparkles, Check, Copy, ExternalLink, Share2,
   Calendar, Clock, Video, Plus, Trash2, Globe, PartyPopper, Eye,
-  MessageSquare, Settings, ChevronDown, ChevronUp,
+  MessageSquare, Settings, ChevronDown, ChevronUp, Bot,
 } from "lucide-react";
 import { toast } from "sonner";
 import { addSite, type SmartPageSite } from "./WebsiteBuilder";
@@ -32,6 +32,7 @@ interface ChatMsg {
   content: string;
   type?: "text" | "platform-select" | "paid-toggle" | "date-time" | "duration" | "reg-fields" | "transition";
   answered?: boolean;
+  isNew?: boolean;
 }
 
 // The questions the bot asks sequentially
@@ -97,9 +98,10 @@ const WebinarCreate = () => {
         role: "bot",
         content,
         type: type || "text",
+        isNew: true,
       }]);
       setIsTyping(false);
-    }, 600 + Math.random() * 400);
+    }, 800 + Math.random() * 500);
   }, []);
 
   // Initialize first question
@@ -284,35 +286,56 @@ const WebinarCreate = () => {
   // ─── PHASE 1: Chat Flow ───
   if (phase === "chat") {
     return (
-      <div className="h-screen flex flex-col bg-background">
-        {/* Top bar */}
-        <div className="flex items-center justify-between border-b border-border px-4 py-3 bg-background">
+      <div className="h-screen flex flex-col bg-gradient-to-b from-background via-background to-secondary/20">
+        {/* Top bar — minimal, floating */}
+        <div className="flex items-center justify-between px-5 py-3 bg-background/80 backdrop-blur-xl border-b border-border/50 sticky top-0 z-10">
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => navigate("/website-builder/create")} className="gap-1.5">
+            <Button variant="ghost" size="sm" onClick={() => navigate("/website-builder/create")} className="gap-1.5 text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
-            <div className="h-5 w-px bg-border" />
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-foreground">Create Webinar</span>
+            <div className="h-4 w-px bg-border/50" />
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="text-sm font-semibold text-foreground">Create Webinar</span>
+            </div>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground">{getProgress()}% complete</span>
-            <Progress value={getProgress()} className="w-32 h-1.5" />
+            <div className="flex items-center gap-2 bg-secondary/50 rounded-full px-3 py-1">
+              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{getProgress()}%</span>
+              <Progress value={getProgress()} className="w-20 h-1" />
+            </div>
           </div>
         </div>
 
         {/* Chat area */}
-        <ScrollArea className="flex-1 px-4 py-6">
-          <div className="max-w-2xl mx-auto space-y-4">
-            {messages.map((msg) => (
-              <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-                <div className={`max-w-[85%] ${
+        <ScrollArea className="flex-1 px-4 py-8">
+          <div className="max-w-2xl mx-auto space-y-5">
+            {messages.map((msg, idx) => (
+              <div
+                key={msg.id}
+                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                style={{
+                  animation: msg.isNew ? "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)" : "none",
+                  opacity: 1,
+                }}
+              >
+                {msg.role === "bot" && (
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+                    <Bot className="h-4 w-4 text-primary" />
+                  </div>
+                )}
+                <div className={`max-w-[80%] ${
                   msg.role === "user"
-                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-2.5"
-                    : "bg-secondary/70 text-foreground rounded-2xl rounded-bl-md px-4 py-2.5"
+                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-sm px-4 py-3 shadow-lg shadow-primary/10"
+                    : "bg-card text-foreground rounded-2xl rounded-bl-sm px-5 py-4 border border-border/60 shadow-sm"
                 }`}>
-                  <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{
-                    __html: msg.content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{
+                    __html: msg.content
+                      .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
+                      .replace(/^• /gm, '<span class="inline-flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-primary inline-block flex-shrink-0"></span></span> ')
+                      .replace(/^(\d+)\. /gm, '<span class="text-primary font-semibold">$1.</span> ')
                   }} />
                 </div>
               </div>
@@ -320,27 +343,32 @@ const WebinarCreate = () => {
 
             {/* Inline interactive elements based on current question */}
             {!isTyping && questionIndex < QUESTION_SEQUENCE.length && (
-              <ChatInlineWidget
-                questionKey={QUESTION_SEQUENCE[questionIndex]?.key}
-                type={QUESTION_SEQUENCE[questionIndex]?.type}
-                eventConfig={eventConfig}
-                onPlatformSelect={handlePlatformSelect}
-                onPaidToggle={handlePaidToggle}
-                onDateTimeSet={handleDateTimeSet}
-                onDurationSet={handleDurationSet}
-                onRegFieldsDone={handleRegFieldsDone}
-                regFields={regFields}
-                setRegFields={setRegFields}
-              />
+              <div className="pl-11" style={{ animation: "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+                <ChatInlineWidget
+                  questionKey={QUESTION_SEQUENCE[questionIndex]?.key}
+                  type={QUESTION_SEQUENCE[questionIndex]?.type}
+                  eventConfig={eventConfig}
+                  onPlatformSelect={handlePlatformSelect}
+                  onPaidToggle={handlePaidToggle}
+                  onDateTimeSet={handleDateTimeSet}
+                  onDurationSet={handleDurationSet}
+                  onRegFieldsDone={handleRegFieldsDone}
+                  regFields={regFields}
+                  setRegFields={setRegFields}
+                />
+              </div>
             )}
 
             {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-secondary/70 rounded-2xl rounded-bl-md px-4 py-3">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+              <div className="flex gap-3 justify-start" style={{ animation: "slideUp 0.3s ease-out" }}>
+                <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <Bot className="h-4 w-4 text-primary animate-pulse" />
+                </div>
+                <div className="bg-card border border-border/60 rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "0ms", animationDuration: "0.8s" }} />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "150ms", animationDuration: "0.8s" }} />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "300ms", animationDuration: "0.8s" }} />
                   </div>
                 </div>
               </div>
@@ -350,43 +378,48 @@ const WebinarCreate = () => {
           </div>
         </ScrollArea>
 
-        {/* Input bar (only for text questions) */}
+        {/* Input bar — floating, modern */}
         {!isTyping && questionIndex < QUESTION_SEQUENCE.length &&
           ["name", "description", "amount", "meetingLink"].includes(QUESTION_SEQUENCE[questionIndex]?.key) && (
-          <div className="border-t border-border px-4 py-3 bg-background">
-            <div className="max-w-2xl mx-auto flex gap-2">
-              <Input
-                ref={inputRef}
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
-                placeholder={
-                  QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink"
-                    ? "Paste link or type 'skip'..."
-                    : "Type your response..."
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
+          <div className="px-4 pb-5 pt-2 bg-gradient-to-t from-background via-background to-transparent">
+            <div className="max-w-2xl mx-auto">
+              <div className="flex gap-2 items-center bg-card border border-border/80 rounded-2xl px-4 py-2 shadow-lg shadow-black/5 focus-within:border-primary/40 focus-within:shadow-primary/5 transition-all duration-200">
+                <Input
+                  ref={inputRef}
+                  value={chatInput}
+                  onChange={(e) => setChatInput(e.target.value)}
+                  placeholder={
+                    QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink"
+                      ? "Paste link or type 'skip'..."
+                      : "Type your response..."
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      if (QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink" && (!chatInput.trim() || chatInput.trim().toLowerCase() === "skip")) {
+                        handleUserResponse("Skipped for now");
+                      } else {
+                        handleUserResponse(chatInput);
+                      }
+                    }
+                  }}
+                  className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-sm placeholder:text-muted-foreground/60"
+                  autoFocus
+                />
+                <Button
+                  onClick={() => {
                     if (QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink" && (!chatInput.trim() || chatInput.trim().toLowerCase() === "skip")) {
                       handleUserResponse("Skipped for now");
                     } else {
                       handleUserResponse(chatInput);
                     }
-                  }
-                }}
-                autoFocus
-              />
-              <Button
-                onClick={() => {
-                  if (QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink" && (!chatInput.trim() || chatInput.trim().toLowerCase() === "skip")) {
-                    handleUserResponse("Skipped for now");
-                  } else {
-                    handleUserResponse(chatInput);
-                  }
-                }}
-                size="icon"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+                  }}
+                  size="icon"
+                  className="rounded-xl h-9 w-9 flex-shrink-0 shadow-md"
+                  disabled={!chatInput.trim() && QUESTION_SEQUENCE[questionIndex]?.key !== "meetingLink"}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -735,127 +768,117 @@ const ChatInlineWidget = ({ questionKey, type, eventConfig, onPlatformSelect, on
 
   if (type === "platform-select") {
     return (
-      <div className="flex justify-start">
-        <div className="flex gap-2">
-          {([
-            { id: "zoom" as const, label: "Zoom", emoji: "🎥" },
-            { id: "gmeet" as const, label: "Google Meet", emoji: "📹" },
-            { id: "custom" as const, label: "Custom Link", emoji: "🔗" },
-          ]).map(p => (
-            <button
-              key={p.id}
-              onClick={() => onPlatformSelect(p.id)}
-              className="px-4 py-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-center"
-            >
-              <span className="text-xl">{p.emoji}</span>
-              <p className="text-xs font-medium text-foreground mt-1">{p.label}</p>
-            </button>
-          ))}
-        </div>
+      <div className="flex gap-2.5">
+        {([
+          { id: "zoom" as const, label: "Zoom", emoji: "🎥" },
+          { id: "gmeet" as const, label: "Google Meet", emoji: "📹" },
+          { id: "custom" as const, label: "Custom Link", emoji: "🔗" },
+        ]).map(p => (
+          <button
+            key={p.id}
+            onClick={() => onPlatformSelect(p.id)}
+            className="px-5 py-3.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 text-center group"
+          >
+            <span className="text-2xl block mb-1.5 group-hover:scale-110 transition-transform">{p.emoji}</span>
+            <p className="text-xs font-medium text-foreground">{p.label}</p>
+          </button>
+        ))}
       </div>
     );
   }
 
   if (type === "paid-toggle") {
     return (
-      <div className="flex justify-start">
-        <div className="flex gap-2">
-          <button
-            onClick={() => onPaidToggle(false)}
-            className="px-5 py-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all"
-          >
-            <span className="text-lg">🆓</span>
-            <p className="text-xs font-medium text-foreground mt-1">Free</p>
-          </button>
-          <button
-            onClick={() => onPaidToggle(true)}
-            className="px-5 py-3 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all"
-          >
-            <span className="text-lg">💰</span>
-            <p className="text-xs font-medium text-foreground mt-1">Paid</p>
-          </button>
-        </div>
+      <div className="flex gap-2.5">
+        <button
+          onClick={() => onPaidToggle(false)}
+          className="px-6 py-3.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 group"
+        >
+          <span className="text-2xl block mb-1.5 group-hover:scale-110 transition-transform">🆓</span>
+          <p className="text-xs font-medium text-foreground">Free</p>
+        </button>
+        <button
+          onClick={() => onPaidToggle(true)}
+          className="px-6 py-3.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 group"
+        >
+          <span className="text-2xl block mb-1.5 group-hover:scale-110 transition-transform">💰</span>
+          <p className="text-xs font-medium text-foreground">Paid</p>
+        </button>
       </div>
     );
   }
 
   if (type === "date-time") {
     return (
-      <div className="flex justify-start">
-        <div className="bg-secondary/50 rounded-xl p-3 space-y-2">
-          <div className="flex gap-2">
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-xs" />
-            <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="text-xs" />
-          </div>
-          <Button size="sm" className="w-full text-xs" onClick={() => onDateTimeSet(date, time)} disabled={!date || !time}>
-            Confirm
-          </Button>
+      <div className="bg-card border border-border/60 rounded-xl p-4 space-y-3 shadow-sm max-w-xs">
+        <div className="flex gap-2">
+          <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-xs" />
+          <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="text-xs" />
         </div>
+        <Button size="sm" className="w-full text-xs rounded-lg" onClick={() => onDateTimeSet(date, time)} disabled={!date || !time}>
+          Confirm
+        </Button>
       </div>
     );
   }
 
   if (type === "duration") {
     return (
-      <div className="flex justify-start">
-        <div className="flex flex-wrap gap-2">
-          {[30, 45, 60, 90, 120].map(d => (
-            <button
-              key={d}
-              onClick={() => onDurationSet(d)}
-              className="px-4 py-2 rounded-xl border border-border hover:border-primary hover:bg-primary/5 transition-all text-xs font-medium text-foreground"
-            >
-              {d} min
-            </button>
-          ))}
-        </div>
+      <div className="flex flex-wrap gap-2">
+        {[30, 45, 60, 90, 120].map(d => (
+          <button
+            key={d}
+            onClick={() => onDurationSet(d)}
+            className="px-4 py-2.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 text-xs font-medium text-foreground"
+          >
+            {d} min
+          </button>
+        ))}
       </div>
     );
   }
 
   if (type === "reg-fields") {
     return (
-      <div className="flex justify-start">
-        <div className="bg-secondary/50 rounded-xl p-3 space-y-2 max-w-sm">
-          <div className="space-y-1.5">
-            {regFields.map(f => (
-              <div key={f.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-background border border-border">
-                <span className="flex-1 text-foreground">{f.label}</span>
-                <Badge variant="secondary" className="text-[8px]">{f.required ? "Req" : "Opt"}</Badge>
-                {!["rf_name", "rf_email"].includes(f.id) && (
-                  <button onClick={() => setRegFields(prev => prev.filter(x => x.id !== f.id))} className="text-muted-foreground hover:text-destructive">
-                    <Trash2 className="h-2.5 w-2.5" />
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-          <div className="flex gap-1.5">
-            <Input
-              value={newFieldLabel}
-              onChange={e => setNewFieldLabel(e.target.value)}
-              placeholder="Add field..."
-              className="text-xs h-8"
-              onKeyDown={e => {
-                if (e.key === "Enter" && newFieldLabel.trim()) {
-                  setRegFields(prev => [...prev, { id: `rf_${Date.now()}`, label: newFieldLabel, type: "text", required: false, placeholder: `Enter ${newFieldLabel.toLowerCase()}` }]);
-                  setNewFieldLabel("");
-                }
-              }}
-            />
-            <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => {
-              if (newFieldLabel.trim()) {
+      <div className="bg-card border border-border/60 rounded-xl p-4 space-y-3 shadow-sm max-w-sm">
+        <div className="space-y-1.5">
+          {regFields.map(f => (
+            <div key={f.id} className="flex items-center gap-2 text-xs p-2 rounded-lg bg-secondary/40 border border-border/50">
+              <span className="flex-1 text-foreground font-medium">{f.label}</span>
+              <Badge variant="secondary" className="text-[8px]">{f.required ? "Req" : "Opt"}</Badge>
+              {!["rf_name", "rf_email"].includes(f.id) && (
+                <button onClick={() => setRegFields(prev => prev.filter(x => x.id !== f.id))} className="text-muted-foreground hover:text-destructive transition-colors">
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="flex gap-1.5">
+          <Input
+            value={newFieldLabel}
+            onChange={e => setNewFieldLabel(e.target.value)}
+            placeholder="Add custom field..."
+            className="text-xs h-8"
+            onKeyDown={e => {
+              if (e.key === "Enter" && newFieldLabel.trim()) {
                 setRegFields(prev => [...prev, { id: `rf_${Date.now()}`, label: newFieldLabel, type: "text", required: false, placeholder: `Enter ${newFieldLabel.toLowerCase()}` }]);
                 setNewFieldLabel("");
               }
-            }}>
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-          <Button size="sm" className="w-full text-xs" onClick={onRegFieldsDone}>
-            Looks good, continue →
+            }}
+          />
+          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => {
+            if (newFieldLabel.trim()) {
+              setRegFields(prev => [...prev, { id: `rf_${Date.now()}`, label: newFieldLabel, type: "text", required: false, placeholder: `Enter ${newFieldLabel.toLowerCase()}` }]);
+              setNewFieldLabel("");
+            }
+          }}>
+            <Plus className="h-3 w-3" />
           </Button>
         </div>
+        <Button size="sm" className="w-full text-xs rounded-lg" onClick={onRegFieldsDone}>
+          Looks good, continue →
+        </Button>
       </div>
     );
   }
