@@ -27,6 +27,7 @@ import Connectors from "./pages/Connectors";
 import Forms from "./pages/Forms";
 import Offers from "./pages/Offers";
 import CustomerTracker from "./pages/CustomerTracker";
+import Agents from "./pages/Agents";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -62,6 +63,7 @@ const App = () => (
           <Route path="/forms" element={<Forms />} />
           <Route path="/offers" element={<Offers />} />
           <Route path="/customers" element={<CustomerTracker />} />
+          <Route path="/agents" element={<Agents />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
