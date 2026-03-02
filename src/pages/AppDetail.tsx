@@ -1,0 +1,213 @@
+import { useParams, useNavigate } from "react-router-dom";
+import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { ArrowLeft, Check, Star, Download, Shield, Zap } from "lucide-react";
+import { marketplaceApps } from "./AppMarketplace";
+import { useState } from "react";
+
+const appFeatures: Record<string, { features: string[]; screenshots: string[]; pricing: string }> = {
+  "course-graphy": {
+    features: [
+      "Create unlimited courses with modules & lessons",
+      "Student enrollment & access management",
+      "Progress tracking & completion certificates",
+      "Built-in analytics dashboard",
+      "Drip content scheduling",
+      "Quiz & assignment builder",
+    ],
+    screenshots: [
+      "Course dashboard with analytics overview",
+      "Course builder with drag-and-drop modules",
+      "Student management with access controls",
+    ],
+    pricing: "Free — included with your Razorpay dashboard",
+  },
+  teachable: {
+    features: ["Drag-and-drop course builder", "Custom landing pages", "Integrated payment processing", "Student quizzes"],
+    screenshots: ["Course editor", "Sales page builder"],
+    pricing: "Starts at ₹2,999/month",
+  },
+  thinkific: {
+    features: ["White-label platform", "Community features", "Bulk student enrollment", "App integrations"],
+    screenshots: ["Dashboard overview", "Course catalog"],
+    pricing: "Free plan available, Pro at ₹3,499/month",
+  },
+  podia: {
+    features: ["Courses + memberships + downloads", "Email marketing built-in", "Affiliate marketing", "Live chat"],
+    screenshots: ["Product overview", "Membership area"],
+    pricing: "Starts at ₹2,499/month",
+  },
+  "whatsapp-business": {
+    features: ["Automated notifications", "Bulk messaging", "Template messages", "Chat support"],
+    screenshots: ["Message templates", "Chat dashboard"],
+    pricing: "Pay per message — starts at ₹0.50/msg",
+  },
+  mailchimp: {
+    features: ["Email automation", "Audience segmentation", "A/B testing", "Landing pages"],
+    screenshots: ["Campaign builder", "Analytics"],
+    pricing: "Free up to 500 contacts",
+  },
+  "google-analytics": {
+    features: ["Real-time tracking", "Conversion funnels", "Audience insights", "Custom reports"],
+    screenshots: ["Traffic overview", "Behavior flow"],
+    pricing: "Free",
+  },
+  zapier: {
+    features: ["5,000+ app connections", "Multi-step workflows", "Filters & formatters", "Scheduled triggers"],
+    screenshots: ["Workflow builder", "App connections"],
+    pricing: "Free plan — 100 tasks/month",
+  },
+};
+
+const AppDetail = () => {
+  const { appId } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const app = marketplaceApps.find((a) => a.id === appId);
+  const details = appFeatures[appId || ""] || { features: [], screenshots: [], pricing: "Contact for pricing" };
+
+  const [installed, setInstalled] = useState<string[]>(
+    JSON.parse(localStorage.getItem("marketplace-installed-apps") || "[]")
+  );
+  const isInstalled = installed.includes(appId || "");
+
+  if (!app) {
+    return (
+      <DashboardLayout>
+        <div className="p-6 text-center text-muted-foreground">App not found.</div>
+      </DashboardLayout>
+    );
+  }
+
+  const handleInstall = () => {
+    const updated = [...installed, app.id];
+    localStorage.setItem("marketplace-installed-apps", JSON.stringify(updated));
+    setInstalled(updated);
+    toast({
+      title: `${app.name} installed!`,
+      description: "You can now access it from the sidebar.",
+    });
+    // Dispatch storage event so sidebar updates
+    window.dispatchEvent(new Event("storage"));
+  };
+
+  const handleUninstall = () => {
+    const updated = installed.filter((id) => id !== app.id);
+    localStorage.setItem("marketplace-installed-apps", JSON.stringify(updated));
+    setInstalled(updated);
+    toast({ title: `${app.name} uninstalled.` });
+    window.dispatchEvent(new Event("storage"));
+  };
+
+  const handleOpen = () => {
+    if (app.id === "course-graphy") {
+      navigate("/apps/course-graphy");
+    } else {
+      toast({ title: "Coming soon", description: `${app.name} app UI is not yet available.` });
+    }
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="p-6 max-w-4xl mx-auto space-y-6">
+        {/* Back */}
+        <button
+          onClick={() => navigate("/app-marketplace")}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Marketplace
+        </button>
+
+        {/* Hero */}
+        <div className="flex flex-col sm:flex-row gap-6 items-start">
+          <div className={`h-16 w-16 rounded-2xl flex items-center justify-center shrink-0 ${app.iconBg}`}>
+            <app.icon className="h-8 w-8" />
+          </div>
+          <div className="flex-1 space-y-2">
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-foreground">{app.name}</h1>
+              <Badge variant="outline">{app.category}</Badge>
+              {app.featured && <Badge className="bg-primary/10 text-primary border-0">Featured</Badge>}
+            </div>
+            <p className="text-sm text-muted-foreground leading-relaxed">{app.description}</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex gap-0.5">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} className="h-3 w-3 fill-yellow-400 text-yellow-400" />
+                ))}
+              </div>
+              <span>4.8 (120 reviews)</span>
+              <span>•</span>
+              <span>500+ installs</span>
+            </div>
+            <div className="flex gap-3 pt-2">
+              {isInstalled ? (
+                <>
+                  <Button onClick={handleOpen}>Open App</Button>
+                  <Button variant="outline" onClick={handleUninstall}>
+                    Uninstall
+                  </Button>
+                </>
+              ) : (
+                <Button onClick={handleInstall}>
+                  <Download className="h-4 w-4 mr-1" /> Install App
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Screenshots */}
+        <div>
+          <h2 className="text-sm font-semibold text-foreground mb-3">Screenshots</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            {details.screenshots.map((label, i) => (
+              <div
+                key={i}
+                className="aspect-video rounded-lg bg-muted border flex items-center justify-center text-xs text-muted-foreground"
+              >
+                {label}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Features + Pricing */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="sm:col-span-2">
+            <CardContent className="p-5">
+              <h2 className="text-sm font-semibold text-foreground mb-3">Features</h2>
+              <ul className="space-y-2">
+                {details.features.map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <Check className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5 space-y-4">
+              <h2 className="text-sm font-semibold text-foreground">Pricing</h2>
+              <p className="text-sm text-muted-foreground">{details.pricing}</p>
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Shield className="h-3.5 w-3.5 text-primary" /> Secure & verified
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Zap className="h-3.5 w-3.5 text-primary" /> Instant setup
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+};
+
+export default AppDetail;
