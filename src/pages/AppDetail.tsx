@@ -8,7 +8,13 @@ import { ArrowLeft, Check, Star, Download, Shield, Zap } from "lucide-react";
 import { marketplaceApps } from "./AppMarketplace";
 import { useState } from "react";
 
-const appFeatures: Record<string, { features: string[]; screenshots: string[]; pricing: string }> = {
+interface AppFeatureDetail {
+  features: string[];
+  screenshots: { label: string; image?: string }[];
+  pricing: string;
+}
+
+const appFeatures: Record<string, AppFeatureDetail> = {
   "course-graphy": {
     features: [
       "Create unlimited courses with modules & lessons",
@@ -19,45 +25,45 @@ const appFeatures: Record<string, { features: string[]; screenshots: string[]; p
       "Quiz & assignment builder",
     ],
     screenshots: [
-      "Course dashboard with analytics overview",
-      "Course builder with drag-and-drop modules",
-      "Student management with access controls",
+      { label: "Course dashboard with analytics overview", image: "/images/graphy-dashboard.png" },
+      { label: "Course builder with drag-and-drop modules", image: "/images/graphy-courses.png" },
+      { label: "Student management with access controls", image: "/images/graphy-students.png" },
     ],
     pricing: "Free — included with your Razorpay dashboard",
   },
   teachable: {
     features: ["Drag-and-drop course builder", "Custom landing pages", "Integrated payment processing", "Student quizzes"],
-    screenshots: ["Course editor", "Sales page builder"],
+    screenshots: [{ label: "Course editor" }, { label: "Sales page builder" }],
     pricing: "Starts at ₹2,999/month",
   },
   thinkific: {
     features: ["White-label platform", "Community features", "Bulk student enrollment", "App integrations"],
-    screenshots: ["Dashboard overview", "Course catalog"],
+    screenshots: [{ label: "Dashboard overview" }, { label: "Course catalog" }],
     pricing: "Free plan available, Pro at ₹3,499/month",
   },
   podia: {
     features: ["Courses + memberships + downloads", "Email marketing built-in", "Affiliate marketing", "Live chat"],
-    screenshots: ["Product overview", "Membership area"],
+    screenshots: [{ label: "Product overview" }, { label: "Membership area" }],
     pricing: "Starts at ₹2,499/month",
   },
   "whatsapp-business": {
     features: ["Automated notifications", "Bulk messaging", "Template messages", "Chat support"],
-    screenshots: ["Message templates", "Chat dashboard"],
+    screenshots: [{ label: "Message templates" }, { label: "Chat dashboard" }],
     pricing: "Pay per message — starts at ₹0.50/msg",
   },
   mailchimp: {
     features: ["Email automation", "Audience segmentation", "A/B testing", "Landing pages"],
-    screenshots: ["Campaign builder", "Analytics"],
+    screenshots: [{ label: "Campaign builder" }, { label: "Analytics" }],
     pricing: "Free up to 500 contacts",
   },
   "google-analytics": {
     features: ["Real-time tracking", "Conversion funnels", "Audience insights", "Custom reports"],
-    screenshots: ["Traffic overview", "Behavior flow"],
+    screenshots: [{ label: "Traffic overview" }, { label: "Behavior flow" }],
     pricing: "Free",
   },
   zapier: {
     features: ["5,000+ app connections", "Multi-step workflows", "Filters & formatters", "Scheduled triggers"],
-    screenshots: ["Workflow builder", "App connections"],
+    screenshots: [{ label: "Workflow builder" }, { label: "App connections" }],
     pricing: "Free plan — 100 tasks/month",
   },
 };
@@ -164,12 +170,16 @@ const AppDetail = () => {
         <div>
           <h2 className="text-sm font-semibold text-foreground mb-3">Screenshots</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {details.screenshots.map((label, i) => (
-              <div
-                key={i}
-                className="aspect-video rounded-lg bg-muted border flex items-center justify-center text-xs text-muted-foreground"
-              >
-                {label}
+            {details.screenshots.map((shot, i) => (
+              <div key={i} className="rounded-lg border overflow-hidden bg-muted">
+                {shot.image ? (
+                  <img src={shot.image} alt={shot.label} className="w-full aspect-video object-cover" />
+                ) : (
+                  <div className="aspect-video flex items-center justify-center text-xs text-muted-foreground">
+                    {shot.label}
+                  </div>
+                )}
+                <div className="px-3 py-2 text-xs text-muted-foreground border-t">{shot.label}</div>
               </div>
             ))}
           </div>

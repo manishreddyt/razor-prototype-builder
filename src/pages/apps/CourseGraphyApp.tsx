@@ -21,53 +21,159 @@ import {
   ChevronDown,
   ChevronRight,
   Trash2,
+  Rocket,
+  ArrowRight,
+  CheckCircle2,
+  TrendingUp,
+  Award,
+  X,
 } from "lucide-react";
 
-interface Lesson {
-  id: string;
-  title: string;
-}
-
-interface Module {
-  id: string;
-  title: string;
-  lessons: Lesson[];
-}
-
-interface Course {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  modules: Module[];
-  createdAt: string;
-}
-
-interface StudentEnrollment {
-  courseId: string;
-  hasAccess: boolean;
-}
-
-interface Student {
-  id: string;
-  name: string;
-  email: string;
-  enrollments: StudentEnrollment[];
-  createdAt: string;
-}
+// --- Types ---
+interface Lesson { id: string; title: string }
+interface Module { id: string; title: string; lessons: Lesson[] }
+interface Course { id: string; name: string; description: string; price: number; modules: Module[]; createdAt: string }
+interface StudentEnrollment { courseId: string; hasAccess: boolean }
+interface Student { id: string; name: string; email: string; enrollments: StudentEnrollment[]; createdAt: string }
 
 const LS_COURSES = "course-graphy-courses";
 const LS_STUDENTS = "course-graphy-students";
+const LS_ONBOARDING = "course-graphy-onboarding-done";
 
 const loadCourses = (): Course[] => JSON.parse(localStorage.getItem(LS_COURSES) || "[]");
 const saveCourses = (c: Course[]) => localStorage.setItem(LS_COURSES, JSON.stringify(c));
 const loadStudents = (): Student[] => JSON.parse(localStorage.getItem(LS_STUDENTS) || "[]");
 const saveStudents = (s: Student[]) => localStorage.setItem(LS_STUDENTS, JSON.stringify(s));
-
 const uid = () => Math.random().toString(36).slice(2, 9);
 
+// --- Demo Data ---
+const DEMO_COURSES: Course[] = [
+  {
+    id: "demo-1", name: "Digital Marketing Masterclass", description: "Learn SEO, social media, and paid advertising from scratch.", price: 2999,
+    modules: [
+      { id: "m1", title: "Introduction to Digital Marketing", lessons: [{ id: "l1", title: "What is Digital Marketing?" }, { id: "l2", title: "The Marketing Funnel" }] },
+      { id: "m2", title: "SEO Fundamentals", lessons: [{ id: "l3", title: "On-page SEO" }, { id: "l4", title: "Keyword Research" }, { id: "l5", title: "Link Building" }] },
+      { id: "m3", title: "Social Media Strategy", lessons: [{ id: "l6", title: "Instagram Growth" }, { id: "l7", title: "LinkedIn for Business" }] },
+    ],
+    createdAt: "2026-01-15T10:00:00Z",
+  },
+  {
+    id: "demo-2", name: "Full Stack Web Development", description: "HTML, CSS, JavaScript, React, Node.js — build real projects.", price: 4999,
+    modules: [
+      { id: "m4", title: "HTML & CSS Basics", lessons: [{ id: "l8", title: "HTML Structure" }, { id: "l9", title: "CSS Flexbox & Grid" }] },
+      { id: "m5", title: "JavaScript Essentials", lessons: [{ id: "l10", title: "Variables & Functions" }, { id: "l11", title: "DOM Manipulation" }] },
+      { id: "m6", title: "React Fundamentals", lessons: [{ id: "l12", title: "Components & Props" }, { id: "l13", title: "State Management" }] },
+    ],
+    createdAt: "2026-02-01T10:00:00Z",
+  },
+  {
+    id: "demo-3", name: "Personal Finance & Investing", description: "Manage money, build wealth, and invest smartly.", price: 1499,
+    modules: [
+      { id: "m7", title: "Budgeting 101", lessons: [{ id: "l14", title: "Tracking Expenses" }, { id: "l15", title: "50/30/20 Rule" }] },
+      { id: "m8", title: "Stock Market Basics", lessons: [{ id: "l16", title: "What are Stocks?" }, { id: "l17", title: "Mutual Funds vs ETFs" }] },
+    ],
+    createdAt: "2026-02-20T10:00:00Z",
+  },
+];
+
+const DEMO_STUDENTS: Student[] = [
+  { id: "s1", name: "Priya Sharma", email: "priya@example.com", enrollments: [{ courseId: "demo-1", hasAccess: true }, { courseId: "demo-3", hasAccess: true }], createdAt: "2026-01-20T10:00:00Z" },
+  { id: "s2", name: "Rahul Verma", email: "rahul@example.com", enrollments: [{ courseId: "demo-2", hasAccess: true }], createdAt: "2026-02-05T10:00:00Z" },
+  { id: "s3", name: "Ananya Patel", email: "ananya@example.com", enrollments: [{ courseId: "demo-1", hasAccess: true }, { courseId: "demo-2", hasAccess: true }], createdAt: "2026-02-10T10:00:00Z" },
+  { id: "s4", name: "Vikram Singh", email: "vikram@example.com", enrollments: [{ courseId: "demo-3", hasAccess: false }], createdAt: "2026-02-15T10:00:00Z" },
+  { id: "s5", name: "Neha Gupta", email: "neha@example.com", enrollments: [{ courseId: "demo-1", hasAccess: true }], createdAt: "2026-02-25T10:00:00Z" },
+];
+
+// --- Onboarding Component ---
+const onboardingSteps = [
+  {
+    icon: Rocket,
+    title: "Welcome to Course Graphy! 🎓",
+    description: "Your all-in-one platform to create, sell, and manage online courses — right from your Razorpay dashboard.",
+    highlights: ["Create courses with modules & lessons", "Manage student enrollments", "Track revenue & analytics"],
+  },
+  {
+    icon: BookOpen,
+    title: "Create Your First Course",
+    description: "Build rich courses with multiple modules, each containing structured lessons. Set pricing and start selling instantly.",
+    highlights: ["Drag-and-drop course builder", "Add unlimited modules & lessons", "Set course pricing in INR"],
+  },
+  {
+    icon: Users,
+    title: "Manage Your Students",
+    description: "Add students, enroll them in courses, and control access with a single toggle. Track who has access to what.",
+    highlights: ["Add students via email", "Enroll in multiple courses", "Grant/revoke access instantly"],
+  },
+  {
+    icon: TrendingUp,
+    title: "Track Your Growth",
+    description: "Monitor your business with real-time analytics. See total courses, enrolled students, and revenue at a glance.",
+    highlights: ["Revenue tracking", "Student enrollment stats", "Course performance insights"],
+  },
+];
+
+const OnboardingModal = ({ onComplete }: { onComplete: () => void }) => {
+  const [step, setStep] = useState(0);
+  const current = onboardingSteps[step];
+  const isLast = step === onboardingSteps.length - 1;
+  const Icon = current.icon;
+
+  return (
+    <Dialog open onOpenChange={() => {}}>
+      <DialogContent className="max-w-md p-0 overflow-hidden gap-0" onPointerDownOutside={(e) => e.preventDefault()}>
+        {/* Progress */}
+        <div className="flex gap-1 px-6 pt-5">
+          {onboardingSteps.map((_, i) => (
+            <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= step ? "bg-primary" : "bg-muted"}`} />
+          ))}
+        </div>
+
+        <div className="px-6 pt-6 pb-2 text-center space-y-4">
+          <div className="mx-auto h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center">
+            <Icon className="h-7 w-7 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-foreground">{current.title}</h2>
+            <p className="text-sm text-muted-foreground mt-1 leading-relaxed">{current.description}</p>
+          </div>
+          <div className="space-y-2 text-left">
+            {current.highlights.map((h, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm text-foreground">
+                <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+                {h}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between px-6 py-4 border-t mt-4">
+          <button onClick={onComplete} className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+            Skip tour
+          </button>
+          <div className="flex gap-2">
+            {step > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setStep(step - 1)}>Back</Button>
+            )}
+            {isLast ? (
+              <Button size="sm" onClick={onComplete}>
+                <Award className="h-4 w-4 mr-1" /> Get Started
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => setStep(step + 1)}>
+                Next <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// --- Main App ---
 const CourseGraphyApp = () => {
   const { toast } = useToast();
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [courses, setCourses] = useState<Course[]>(loadCourses);
   const [students, setStudents] = useState<Student[]>(loadStudents);
   const [showCourseDialog, setShowCourseDialog] = useState(false);
@@ -85,8 +191,31 @@ const CourseGraphyApp = () => {
   const [sEmail, setSEmail] = useState("");
   const [sCourseId, setSCourseId] = useState("");
 
+  // Seed demo data & show onboarding on first visit
+  useEffect(() => {
+    const onboardingDone = localStorage.getItem(LS_ONBOARDING);
+    if (!onboardingDone) {
+      // Seed demo data if empty
+      if (loadCourses().length === 0) {
+        saveCourses(DEMO_COURSES);
+        setCourses(DEMO_COURSES);
+      }
+      if (loadStudents().length === 0) {
+        saveStudents(DEMO_STUDENTS);
+        setStudents(DEMO_STUDENTS);
+      }
+      setShowOnboarding(true);
+    }
+  }, []);
+
   useEffect(() => { saveCourses(courses); }, [courses]);
   useEffect(() => { saveStudents(students); }, [students]);
+
+  const completeOnboarding = () => {
+    localStorage.setItem(LS_ONBOARDING, "true");
+    setShowOnboarding(false);
+    toast({ title: "Welcome to Course Graphy! 🎉", description: "We've added demo courses & students to get you started." });
+  };
 
   const totalRevenue = students.reduce((sum, s) => {
     return sum + s.enrollments.filter((e) => e.hasAccess).reduce((acc, e) => {
@@ -95,27 +224,14 @@ const CourseGraphyApp = () => {
     }, 0);
   }, 0);
 
-  // --- Course CRUD ---
-  const addModule = () => {
-    setCModules([...cModules, { id: uid(), title: "", lessons: [] }]);
-  };
-
+  const addModule = () => setCModules([...cModules, { id: uid(), title: "", lessons: [] }]);
   const addLesson = (moduleId: string) => {
-    setCModules(cModules.map((m) =>
-      m.id === moduleId ? { ...m, lessons: [...m.lessons, { id: uid(), title: "" }] } : m
-    ));
+    setCModules(cModules.map((m) => m.id === moduleId ? { ...m, lessons: [...m.lessons, { id: uid(), title: "" }] } : m));
   };
 
   const createCourse = () => {
     if (!cName.trim()) return;
-    const course: Course = {
-      id: uid(),
-      name: cName,
-      description: cDesc,
-      price: parseFloat(cPrice) || 0,
-      modules: cModules.filter((m) => m.title.trim()),
-      createdAt: new Date().toISOString(),
-    };
+    const course: Course = { id: uid(), name: cName, description: cDesc, price: parseFloat(cPrice) || 0, modules: cModules.filter((m) => m.title.trim()), createdAt: new Date().toISOString() };
     setCourses([course, ...courses]);
     setCName(""); setCDesc(""); setCPrice(""); setCModules([]);
     setShowCourseDialog(false);
@@ -128,16 +244,9 @@ const CourseGraphyApp = () => {
     toast({ title: "Course deleted" });
   };
 
-  // --- Student CRUD ---
   const createStudent = () => {
     if (!sName.trim() || !sEmail.trim()) return;
-    const student: Student = {
-      id: uid(),
-      name: sName,
-      email: sEmail,
-      enrollments: sCourseId ? [{ courseId: sCourseId, hasAccess: true }] : [],
-      createdAt: new Date().toISOString(),
-    };
+    const student: Student = { id: uid(), name: sName, email: sEmail, enrollments: sCourseId ? [{ courseId: sCourseId, hasAccess: true }] : [], createdAt: new Date().toISOString() };
     setStudents([student, ...students]);
     setSName(""); setSEmail(""); setSCourseId("");
     setShowStudentDialog(false);
@@ -150,9 +259,8 @@ const CourseGraphyApp = () => {
       const existing = s.enrollments.find((e) => e.courseId === courseId);
       if (existing) {
         return { ...s, enrollments: s.enrollments.map((e) => e.courseId === courseId ? { ...e, hasAccess: !e.hasAccess } : e) };
-      } else {
-        return { ...s, enrollments: [...s.enrollments, { courseId, hasAccess: true }] };
       }
+      return { ...s, enrollments: [...s.enrollments, { courseId, hasAccess: true }] };
     }));
   };
 
@@ -161,13 +269,18 @@ const CourseGraphyApp = () => {
     toast({ title: "Student removed" });
   };
 
+  // Active students = those with at least one active enrollment
+  const activeStudents = students.filter((s) => s.enrollments.some((e) => e.hasAccess)).length;
+
   return (
     <DashboardLayout>
+      {showOnboarding && <OnboardingModal onComplete={completeOnboarding} />}
+
       <div className="p-6 max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center">
-            <GraduationCap className="h-5 w-5" />
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+            <GraduationCap className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground">Course Graphy</h1>
@@ -198,19 +311,19 @@ const CourseGraphyApp = () => {
               </Card>
               <Card>
                 <CardContent className="p-5 flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-emerald-600" />
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Users className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{students.length}</p>
-                    <p className="text-xs text-muted-foreground">Total Students</p>
+                    <p className="text-2xl font-bold text-foreground">{activeStudents}<span className="text-sm font-normal text-muted-foreground"> / {students.length}</span></p>
+                    <p className="text-xs text-muted-foreground">Active Students</p>
                   </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-5 flex items-center gap-4">
-                  <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                    <IndianRupee className="h-5 w-5 text-amber-600" />
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <IndianRupee className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-foreground">₹{totalRevenue.toLocaleString()}</p>
@@ -220,9 +333,74 @@ const CourseGraphyApp = () => {
               </Card>
             </div>
 
-            {courses.length === 0 && students.length === 0 && (
-              <div className="text-center py-16 text-muted-foreground text-sm">
-                Get started by creating your first course.
+            {/* FTUX Quick Actions */}
+            <div className="mt-6">
+              <h2 className="text-sm font-semibold text-foreground mb-3">Quick Actions</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  onClick={() => setShowCourseDialog(true)}
+                  className="group flex items-center gap-3 rounded-xl border bg-card p-4 text-left hover:border-primary/30 hover:shadow-sm transition-all"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Plus className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Create a Course</p>
+                    <p className="text-xs text-muted-foreground">Add modules, lessons & pricing</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+                <button
+                  onClick={() => setShowStudentDialog(true)}
+                  className="group flex items-center gap-3 rounded-xl border bg-card p-4 text-left hover:border-primary/30 hover:shadow-sm transition-all"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Add a Student</p>
+                    <p className="text-xs text-muted-foreground">Enroll & manage access</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+                <button
+                  onClick={() => { setShowOnboarding(true); }}
+                  className="group flex items-center gap-3 rounded-xl border bg-card p-4 text-left hover:border-primary/30 hover:shadow-sm transition-all"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <Rocket className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Take the Tour</p>
+                    <p className="text-xs text-muted-foreground">Learn what you can do</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
+                </button>
+              </div>
+            </div>
+
+            {/* Recent courses */}
+            {courses.length > 0 && (
+              <div className="mt-6">
+                <h2 className="text-sm font-semibold text-foreground mb-3">Recent Courses</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {courses.slice(0, 3).map((course) => {
+                    const enrolled = students.filter((s) => s.enrollments.some((e) => e.courseId === course.id && e.hasAccess)).length;
+                    return (
+                      <Card key={course.id} className="hover:shadow-sm transition-shadow">
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold text-sm text-foreground">{course.name}</h3>
+                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{course.description}</p>
+                          <div className="flex items-center gap-2 mt-3">
+                            <Badge variant="secondary" className="text-xs">₹{course.price}</Badge>
+                            <Badge variant="outline" className="text-xs">{enrolled} students</Badge>
+                            <Badge variant="outline" className="text-xs">{course.modules.length} modules</Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </TabsContent>
@@ -230,7 +408,7 @@ const CourseGraphyApp = () => {
           {/* ===== COURSES ===== */}
           <TabsContent value="courses">
             <div className="flex items-center justify-between mt-4 mb-4">
-              <h2 className="text-sm font-semibold text-foreground">Your Courses</h2>
+              <h2 className="text-sm font-semibold text-foreground">Your Courses ({courses.length})</h2>
               <Button size="sm" onClick={() => setShowCourseDialog(true)}>
                 <Plus className="h-4 w-4 mr-1" /> Create Course
               </Button>
@@ -249,10 +427,7 @@ const CourseGraphyApp = () => {
                     <Card key={course.id}>
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
-                          <button
-                            className="flex items-center gap-3 text-left flex-1"
-                            onClick={() => setExpandedCourse(isExpanded ? null : course.id)}
-                          >
+                          <button className="flex items-center gap-3 text-left flex-1" onClick={() => setExpandedCourse(isExpanded ? null : course.id)}>
                             {isExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                             <div>
                               <h3 className="font-semibold text-sm text-foreground">{course.name}</h3>
@@ -262,6 +437,7 @@ const CourseGraphyApp = () => {
                           <div className="flex items-center gap-3">
                             <Badge variant="secondary" className="text-xs">₹{course.price}</Badge>
                             <Badge variant="outline" className="text-xs">{enrolled} students</Badge>
+                            <Badge variant="outline" className="text-xs">{course.modules.length} modules</Badge>
                             <Button variant="ghost" size="icon" onClick={() => deleteCourse(course.id)}>
                               <Trash2 className="h-4 w-4 text-muted-foreground" />
                             </Button>
@@ -296,7 +472,7 @@ const CourseGraphyApp = () => {
           {/* ===== STUDENTS ===== */}
           <TabsContent value="students">
             <div className="flex items-center justify-between mt-4 mb-4">
-              <h2 className="text-sm font-semibold text-foreground">Students</h2>
+              <h2 className="text-sm font-semibold text-foreground">Students ({students.length})</h2>
               <Button size="sm" onClick={() => setShowStudentDialog(true)}>
                 <Plus className="h-4 w-4 mr-1" /> Add Student
               </Button>
@@ -329,20 +505,12 @@ const CourseGraphyApp = () => {
                               const hasAccess = enrollment?.hasAccess || false;
                               return (
                                 <div key={course.id} className="flex items-center gap-1.5">
-                                  <Switch
-                                    checked={hasAccess}
-                                    onCheckedChange={() => toggleAccess(student.id, course.id)}
-                                    className="scale-75"
-                                  />
-                                  <span className={`text-xs ${hasAccess ? "text-foreground" : "text-muted-foreground"}`}>
-                                    {course.name}
-                                  </span>
+                                  <Switch checked={hasAccess} onCheckedChange={() => toggleAccess(student.id, course.id)} className="scale-75" />
+                                  <span className={`text-xs ${hasAccess ? "text-foreground" : "text-muted-foreground"}`}>{course.name}</span>
                                 </div>
                               );
                             })}
-                            {courses.length === 0 && (
-                              <span className="text-xs text-muted-foreground">No courses created</span>
-                            )}
+                            {courses.length === 0 && <span className="text-xs text-muted-foreground">No courses created</span>}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
@@ -368,60 +536,23 @@ const CourseGraphyApp = () => {
             <DialogDescription>Add a new course with modules and lessons.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Course Name</Label>
-              <Input value={cName} onChange={(e) => setCName(e.target.value)} placeholder="e.g. Digital Marketing Masterclass" />
-            </div>
-            <div>
-              <Label>Description</Label>
-              <Textarea value={cDesc} onChange={(e) => setCDesc(e.target.value)} placeholder="What students will learn..." rows={2} />
-            </div>
-            <div>
-              <Label>Price (₹)</Label>
-              <Input type="number" value={cPrice} onChange={(e) => setCPrice(e.target.value)} placeholder="999" />
-            </div>
+            <div><Label>Course Name</Label><Input value={cName} onChange={(e) => setCName(e.target.value)} placeholder="e.g. Digital Marketing Masterclass" /></div>
+            <div><Label>Description</Label><Textarea value={cDesc} onChange={(e) => setCDesc(e.target.value)} placeholder="What students will learn..." rows={2} /></div>
+            <div><Label>Price (₹)</Label><Input type="number" value={cPrice} onChange={(e) => setCPrice(e.target.value)} placeholder="999" /></div>
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label>Modules</Label>
-                <Button variant="outline" size="sm" onClick={addModule}>
-                  <Plus className="h-3 w-3 mr-1" /> Add Module
-                </Button>
+                <Button variant="outline" size="sm" onClick={addModule}><Plus className="h-3 w-3 mr-1" /> Add Module</Button>
               </div>
               <div className="space-y-3">
                 {cModules.map((mod, mi) => (
                   <div key={mod.id} className="border rounded-lg p-3 space-y-2">
-                    <Input
-                      placeholder={`Module ${mi + 1} title`}
-                      value={mod.title}
-                      onChange={(e) =>
-                        setCModules(cModules.map((m) => (m.id === mod.id ? { ...m, title: e.target.value } : m)))
-                      }
-                    />
+                    <Input placeholder={`Module ${mi + 1} title`} value={mod.title} onChange={(e) => setCModules(cModules.map((m) => (m.id === mod.id ? { ...m, title: e.target.value } : m)))} />
                     {mod.lessons.map((les, li) => (
-                      <Input
-                        key={les.id}
-                        placeholder={`Lesson ${li + 1} title`}
-                        value={les.title}
-                        className="ml-4 w-[calc(100%-1rem)]"
-                        onChange={(e) =>
-                          setCModules(
-                            cModules.map((m) =>
-                              m.id === mod.id
-                                ? {
-                                    ...m,
-                                    lessons: m.lessons.map((l) =>
-                                      l.id === les.id ? { ...l, title: e.target.value } : l
-                                    ),
-                                  }
-                                : m
-                            )
-                          )
-                        }
-                      />
+                      <Input key={les.id} placeholder={`Lesson ${li + 1} title`} value={les.title} className="ml-4 w-[calc(100%-1rem)]"
+                        onChange={(e) => setCModules(cModules.map((m) => m.id === mod.id ? { ...m, lessons: m.lessons.map((l) => l.id === les.id ? { ...l, title: e.target.value } : l) } : m))} />
                     ))}
-                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => addLesson(mod.id)}>
-                      <Plus className="h-3 w-3 mr-1" /> Add Lesson
-                    </Button>
+                    <Button variant="ghost" size="sm" className="text-xs" onClick={() => addLesson(mod.id)}><Plus className="h-3 w-3 mr-1" /> Add Lesson</Button>
                   </div>
                 ))}
               </div>
@@ -442,26 +573,14 @@ const CourseGraphyApp = () => {
             <DialogDescription>Add a new student and optionally enroll them in a course.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label>Name</Label>
-              <Input value={sName} onChange={(e) => setSName(e.target.value)} placeholder="Student name" />
-            </div>
-            <div>
-              <Label>Email</Label>
-              <Input type="email" value={sEmail} onChange={(e) => setSEmail(e.target.value)} placeholder="student@email.com" />
-            </div>
+            <div><Label>Name</Label><Input value={sName} onChange={(e) => setSName(e.target.value)} placeholder="Student name" /></div>
+            <div><Label>Email</Label><Input type="email" value={sEmail} onChange={(e) => setSEmail(e.target.value)} placeholder="student@email.com" /></div>
             {courses.length > 0 && (
               <div>
                 <Label>Enroll in Course (optional)</Label>
                 <Select value={sCourseId} onValueChange={setSCourseId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a course" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courses.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
+                  <SelectTrigger><SelectValue placeholder="Select a course" /></SelectTrigger>
+                  <SelectContent>{courses.map((c) => (<SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>))}</SelectContent>
                 </Select>
               </div>
             )}
