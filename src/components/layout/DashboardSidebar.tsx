@@ -50,7 +50,6 @@ const navSections = [
     title: "TOOLS",
     items: [
       { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
-      { icon: Mail, label: "Workflows", path: "/email-workflows" },
       { icon: ShoppingBag, label: "App Store", path: "/app-marketplace" },
       { icon: MessageCircle, label: "Agents", path: "/agents" },
       { icon: Plug, label: "Connectors", path: "/connectors" },
@@ -79,6 +78,7 @@ const installedAppMeta: Record<string, { icon: React.ElementType; label: string;
 const builtInApps = [
   { icon: Sparkles, label: "App Builder", path: "/ai-app-builder" },
   { icon: ClipboardList, label: "Forms", path: "/forms" },
+  { icon: Zap, label: "Zapier", path: "/email-workflows" },
 ];
 
 export const DashboardSidebar = () => {
