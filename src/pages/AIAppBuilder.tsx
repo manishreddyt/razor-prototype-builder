@@ -91,8 +91,8 @@ const AIAppBuilder = () => {
             </div>
             <div className="flex items-center gap-2 mt-1">
               <p className="text-sm text-muted-foreground">Build custom websites, full blown apps etc. Build any app that you can imagine and collect payments with Razorpay.</p>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent text-xs font-medium text-muted-foreground whitespace-nowrap">
-                <img src="/images/logo-lovable.png" alt="Lovable" className="h-3.5 w-3.5 rounded-sm" />
+              <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary whitespace-nowrap shadow-sm">
+                <img src="/images/logo-lovable.png" alt="Lovable" className="h-4 w-4 rounded-sm" />
                 Powered by Lovable
               </span>
             </div>
