@@ -50,12 +50,10 @@ const navSections = [
     title: "TOOLS",
     items: [
       { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
-      { icon: Sparkles, label: "App Builder", path: "/ai-app-builder" },
       { icon: Mail, label: "Workflows", path: "/email-workflows" },
       { icon: ShoppingBag, label: "App Store", path: "/app-marketplace" },
       { icon: MessageCircle, label: "Agents", path: "/agents" },
       { icon: Plug, label: "Connectors", path: "/connectors" },
-      { icon: ClipboardList, label: "Forms", path: "/forms" },
     ],
   },
   {
@@ -76,6 +74,12 @@ const installedAppMeta: Record<string, { icon: React.ElementType; label: string;
   podia: { icon: Box, label: "Podia", path: "/app-marketplace/podia" },
   zapier: { icon: Zap, label: "Zapier", path: "/app-marketplace/zapier" },
 };
+
+// Built-in apps that always appear under "Installed Apps"
+const builtInApps = [
+  { icon: Sparkles, label: "App Builder", path: "/ai-app-builder" },
+  { icon: ClipboardList, label: "Forms", path: "/forms" },
+];
 
 export const DashboardSidebar = () => {
   const location = useLocation();
@@ -152,22 +156,41 @@ export const DashboardSidebar = () => {
             </div>
           );
         })}
-        {/* Installed Apps */}
-        {installedApps.length > 0 && (
-          <div className="mb-1">
-            <button
-              onClick={() => toggleSection("INSTALLED APPS")}
-              className="flex w-full items-center justify-between px-5 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted hover:text-sidebar-foreground transition-colors"
-            >
-              INSTALLED APPS
-              {collapsedSections["INSTALLED APPS"] ? (
-                <ChevronRight className="h-3 w-3" />
-              ) : (
-                <ChevronDown className="h-3 w-3" />
-              )}
-            </button>
-            {!collapsedSections["INSTALLED APPS"] &&
-              installedApps.map((appId) => {
+        {/* Installed Apps — always visible */}
+        <div className="mb-1">
+          <button
+            onClick={() => toggleSection("INSTALLED APPS")}
+            className="flex w-full items-center justify-between px-5 py-2 text-[10px] font-semibold uppercase tracking-wider text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+          >
+            INSTALLED APPS
+            {collapsedSections["INSTALLED APPS"] ? (
+              <ChevronRight className="h-3 w-3" />
+            ) : (
+              <ChevronDown className="h-3 w-3" />
+            )}
+          </button>
+          {!collapsedSections["INSTALLED APPS"] && (
+            <>
+              {/* Built-in apps */}
+              {builtInApps.map((app) => {
+                const isActive = location.pathname === app.path || location.pathname.startsWith(app.path + "/");
+                return (
+                  <NavLink
+                    key={app.path}
+                    to={app.path}
+                    className={`flex items-center gap-3 px-5 py-2 text-sm transition-colors ${
+                      isActive
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                        : "text-sidebar-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    <app.icon className="h-4 w-4 flex-shrink-0" />
+                    <span className="flex-1">{app.label}</span>
+                  </NavLink>
+                );
+              })}
+              {/* Marketplace-installed apps */}
+              {installedApps.map((appId) => {
                 const meta = installedAppMeta[appId];
                 if (!meta) return null;
                 const isActive = location.pathname === meta.path;
@@ -186,8 +209,9 @@ export const DashboardSidebar = () => {
                   </NavLink>
                 );
               })}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </nav>
 
       {/* Bottom */}
