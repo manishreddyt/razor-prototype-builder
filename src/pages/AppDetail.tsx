@@ -127,8 +127,10 @@ const AppDetail = () => {
   const handleOpen = () => {
     if (app.id === "course-graphy") {
       navigate("/apps/course-graphy");
+    } else if (app.id === "lovable-ai") {
+      navigate("/ai-app-builder");
     } else {
-      toast({ title: "Coming soon", description: `${app.name} app UI is not yet available.` });
+      navigate(`/apps/${app.id}`);
     }
   };
 

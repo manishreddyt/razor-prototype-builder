@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { RazorpayAuthGate } from "@/components/RazorpayAuthGate";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -274,6 +275,7 @@ const CourseGraphyApp = () => {
 
   return (
     <DashboardLayout>
+      <RazorpayAuthGate appName="Course Graphy">
       {showOnboarding && <OnboardingModal onComplete={completeOnboarding} />}
 
       <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -591,6 +593,7 @@ const CourseGraphyApp = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </RazorpayAuthGate>
     </DashboardLayout>
   );
 };

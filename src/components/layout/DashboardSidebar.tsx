@@ -67,11 +67,11 @@ const navSections = [
 
 const installedAppMeta: Record<string, { icon: React.ElementType; label: string; path: string }> = {
   "course-graphy": { icon: GraduationCap, label: "Course Graphy", path: "/apps/course-graphy" },
-  "lovable-ai": { icon: Heart, label: "Lovable AI", path: "/app-marketplace/lovable-ai" },
-  teachable: { icon: BookOpen, label: "Teachable", path: "/app-marketplace/teachable" },
-  thinkific: { icon: Layers, label: "Thinkific", path: "/app-marketplace/thinkific" },
-  podia: { icon: Box, label: "Podia", path: "/app-marketplace/podia" },
-  zapier: { icon: Zap, label: "Zapier", path: "/app-marketplace/zapier" },
+  "lovable-ai": { icon: Heart, label: "Lovable AI", path: "/ai-app-builder" },
+  teachable: { icon: BookOpen, label: "Teachable", path: "/apps/teachable" },
+  thinkific: { icon: Layers, label: "Thinkific", path: "/apps/thinkific" },
+  podia: { icon: Box, label: "Podia", path: "/apps/podia" },
+  zapier: { icon: Zap, label: "Zapier", path: "/apps/zapier" },
 };
 
 // Built-in apps that always appear under "Installed Apps"
