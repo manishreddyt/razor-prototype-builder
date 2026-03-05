@@ -432,7 +432,7 @@ const MarketingCampaigns = () => {
     setIsAiTyping(true);
 
     setTimeout(() => {
-      const isCreateConfirmation = text.toLowerCase().includes("create") || text.toLowerCase().includes("looks good") || text.toLowerCase().includes("yes");
+      const isCreateConfirmation = text.toLowerCase().includes("create") || text.toLowerCase().includes("configure") || text.toLowerCase().includes("looks good") || text.toLowerCase().includes("yes");
       const lastAssistant = [...chatMessages].reverse().find(m => m.role === "assistant" && m.parsedWorkflow);
 
       if (isCreateConfirmation && lastAssistant?.parsedWorkflow) {
@@ -459,8 +459,8 @@ const MarketingCampaigns = () => {
       const response: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `Here's what I've designed:\n\n**${parsed.name}**\n\n📌 **Trigger:** ${parsed.trigger}\n📂 **Category:** ${categoryConfig[parsed.category].label}\n\n⚡ **Actions:**\n${actionsList}\n\nWould you like to:\n• **Create this workflow** and configure details?\n• **Modify** any steps?\n• **Add more actions** (SMS, WhatsApp, delays)?`,
-        suggestions: ["Create this workflow", "Add SMS follow-up", "Change the trigger", "Add a 2-day delay between steps"],
+        content: `Here's what I've designed:\n\n**${parsed.name}**\n\n📌 **Trigger:** ${parsed.trigger}\n📂 **Category:** ${categoryConfig[parsed.category].label}\n\n⚡ **Actions:**\n${actionsList}\n\n✨ **Next Step:** Click "Configure Campaign" below to open the builder where you can:\n• Customize email content and subjects\n• Add product references and offer codes\n• Adjust triggers and timing\n• Preview and publish your campaign`,
+        suggestions: ["Configure Campaign →", "Add SMS follow-up", "Change the trigger", "Start over"],
         parsedWorkflow: parsed,
       };
 
@@ -474,10 +474,10 @@ const MarketingCampaigns = () => {
     const existing = workflows.find(w => w.id === editingWorkflow.id);
     if (existing) {
       setWorkflows(prev => prev.map(w => w.id === editingWorkflow.id ? editingWorkflow : w));
-      toast.success("Workflow updated!");
+      toast.success("Campaign updated successfully!");
     } else {
       setWorkflows(prev => [...prev, editingWorkflow]);
-      toast.success("Workflow created!");
+      toast.success("Campaign activated! Your automated marketing is now live 🚀");
     }
     setEditingWorkflow(null);
     setEditingActionId(null);
@@ -836,11 +836,16 @@ const MarketingCampaigns = () => {
           <div className="border-t border-border px-4 py-3 space-y-2.5">
             {!isAiTyping && currentSuggestions.length > 0 && (
               <div className="max-w-2xl mx-auto flex gap-2 overflow-x-auto pb-0.5">
-                {currentSuggestions.map(s => (
+                {currentSuggestions.map((s, idx) => (
                   <button
                     key={s}
                     onClick={() => handleSendMessage(s)}
-                    className="flex-shrink-0 px-3 py-1.5 rounded-full border border-primary/20 bg-primary/5 hover:bg-primary/10 text-xs font-medium text-primary transition-all hover:border-primary/40"
+                    className={cn(
+                      "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                      idx === 0 && s.toLowerCase().includes("configure")
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
+                        : "border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary hover:border-primary/40"
+                    )}
                   >
                     {s}
                   </button>
@@ -919,7 +924,7 @@ const MarketingCampaigns = () => {
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => { setViewMode("list"); setEditingWorkflow(null); }}>Cancel</Button>
               <Button size="sm" onClick={saveWorkflow} className="gap-1.5">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Save Workflow
+                <CheckCircle2 className="h-3.5 w-3.5" /> Activate Campaign
               </Button>
             </div>
           </div>
@@ -927,6 +932,17 @@ const MarketingCampaigns = () => {
           <div className="flex-1 flex overflow-hidden mt-4 gap-4">
             {/* Left: Visual flow */}
             <div className="flex-1 overflow-y-auto pr-2">
+              {/* Info Banner */}
+              <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 mb-6 flex items-start gap-3">
+                <Sparkles className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">Configure Your Campaign</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Customize email content, add product references and offer codes, then click "Activate Campaign" to start automating your marketing.
+                  </p>
+                </div>
+              </div>
+
               {/* Workflow name & trigger */}
               <div className="space-y-4 mb-6">
                 <div>
