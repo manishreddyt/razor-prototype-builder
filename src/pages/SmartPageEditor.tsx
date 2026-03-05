@@ -4,6 +4,7 @@ import {
   ArrowLeft, Monitor, Smartphone, Eye, Settings, Sparkles, Send,
   X, Copy, Share2, Save, Loader2, CheckCircle2, Plus, Trash2, GripVertical,
   FileText, CreditCard, ShoppingCart, Star, Users, Clock, BookOpen, Shield, Award,
+  Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -288,6 +289,8 @@ const SmartPageEditor = () => {
   const [publishing, setPublishing] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [settingsTab, setSettingsTab] = useState("page");
+  const [showCampaignPrompt, setShowCampaignPrompt] = useState(false);
+  const [publishedPageData, setPublishedPageData] = useState<any>(null);
 
   const [state, setState] = useState<EditorState>(() => buildInitialState(searchParams));
   const [slug, setSlug] = useState(() => (searchParams.get("title") || "my-page").toLowerCase().replace(/[^a-z0-9]+/g, "-"));
@@ -525,14 +528,94 @@ const SmartPageEditor = () => {
         transactions: 0,
       };
       addSite(newSite);
-      toast.success("Website published!");
-      setTimeout(() => navigate("/website-builder"), 1200);
+      toast.success("Website published successfully!");
+
+      // Show campaign setup prompt
+      setPublishedPageData({
+        id: newSite.id,
+        type: pageType,
+        name: homePage.heroTitle,
+      });
+      setShowCampaignPrompt(true);
     }, 2000);
   };
 
   const copyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/s/${slug}`);
     toast.success("Link copied!");
+  };
+
+  // ─── Campaign Prompt Dialog ───
+  const CampaignPromptDialog = () => {
+    const recommendedCampaigns: Record<string, { title: string; description: string; type: string }> = {
+      webinar: {
+        title: "Webinar Registration & Nurture",
+        description: "Automatically confirm registrations and follow up with attendees",
+        type: "webinar_nurture",
+      },
+      course: {
+        title: "Course Enrollment & Upsell",
+        description: "Welcome students and promote advanced courses",
+        type: "upsell",
+      },
+      coaching: {
+        title: "Booking Confirmation & Reminders",
+        description: "Send booking confirmations and session reminders",
+        type: "generic",
+      },
+    };
+
+    const recommended = recommendedCampaigns[publishedPageData?.type] || recommendedCampaigns.course;
+
+    return (
+      <Dialog open={showCampaignPrompt} onOpenChange={setShowCampaignPrompt}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>🎉 Website Published Successfully!</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Drive traffic and convert visitors with automated marketing campaigns.
+            </p>
+
+            <div className="blade-card p-4 border-primary/20 bg-primary/5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 rounded-lg bg-primary/10">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-sm mb-1">{recommended.title}</h4>
+                  <p className="text-xs text-muted-foreground">{recommended.description}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowCampaignPrompt(false);
+                  navigate("/website-builder");
+                }}
+                className="flex-1"
+              >
+                Skip for now
+              </Button>
+              <Button
+                onClick={() => {
+                  navigate(`/marketing-campaigns?type=${recommended.type}&product=${publishedPageData.id}`);
+                  setShowCampaignPrompt(false);
+                }}
+                className="flex-1 gap-2"
+              >
+                <Megaphone className="h-4 w-4" />
+                Setup Campaign
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   // ─── Full Preview Mode ───
@@ -974,6 +1057,9 @@ const SmartPageEditor = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Campaign Prompt Dialog */}
+      {showCampaignPrompt && <CampaignPromptDialog />}
     </div>
   );
 };

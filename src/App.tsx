@@ -19,7 +19,7 @@ import SmartPageEditor from "./pages/SmartPageEditor";
 import SmartPageDetail from "./pages/SmartPageDetail";
 import SmartPageProductDetail from "./pages/SmartPageProductDetail";
 import SmartPagePublic from "./pages/SmartPagePublic";
-import EmailWorkflows from "./pages/EmailWorkflows";
+import MarketingCampaigns from "./pages/MarketingCampaigns";
 import WebinarCreate from "./pages/WebinarCreate";
 import CoachingCreate from "./pages/CoachingCreate";
 import CourseCreate from "./pages/CourseCreate";
@@ -68,7 +68,7 @@ const App = () => (
           <Route path="/website-builder/:id" element={<SmartPageDetail />} />
           <Route path="/website-builder/product" element={<SmartPageProductDetail />} />
           <Route path="/s/:slug" element={<SmartPagePublic />} />
-          <Route path="/email-workflows" element={<EmailWorkflows />} />
+          <Route path="/marketing-campaigns" element={<MarketingCampaigns />} />
           <Route path="/forms" element={<Forms />} />
           <Route path="/offers" element={<Offers />} />
           <Route path="/customers" element={<CustomerTracker />} />

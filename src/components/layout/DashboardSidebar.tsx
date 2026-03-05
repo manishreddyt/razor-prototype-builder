@@ -26,6 +26,7 @@ import {
   Layers,
   Box,
   Zap,
+  Megaphone,
 } from "lucide-react";
 
 const navSections = [
@@ -50,6 +51,7 @@ const navSections = [
     title: "TOOLS",
     items: [
       { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
+      { icon: Megaphone, label: "Marketing Campaigns", path: "/marketing-campaigns" },
       { icon: ShoppingBag, label: "App Store", path: "/app-marketplace" },
       { icon: MessageCircle, label: "Agents", path: "/agents" },
       { icon: Plug, label: "Connectors", path: "/connectors" },
@@ -67,7 +69,7 @@ const navSections = [
 
 const installedAppMeta: Record<string, { icon: React.ElementType; label: string; path: string }> = {
   "course-graphy": { icon: GraduationCap, label: "Course Graphy", path: "/apps/course-graphy" },
-  "lovable-ai": { icon: Heart, label: "Lovable AI", path: "/ai-app-builder" },
+  "emergent": { icon: Heart, label: "Emergent", path: "/ai-app-builder" },
   teachable: { icon: BookOpen, label: "Teachable", path: "/apps/teachable" },
   thinkific: { icon: Layers, label: "Thinkific", path: "/apps/thinkific" },
   podia: { icon: Box, label: "Podia", path: "/apps/podia" },
@@ -76,9 +78,8 @@ const installedAppMeta: Record<string, { icon: React.ElementType; label: string;
 
 // Built-in apps that always appear under "Installed Apps"
 const builtInApps = [
-  { icon: Sparkles, label: "App Builder", path: "/ai-app-builder" },
+  { icon: Sparkles, label: "Emergent", path: "/ai-app-builder" },
   { icon: ClipboardList, label: "Forms", path: "/forms" },
-  { icon: Zap, label: "Zapier", path: "/email-workflows" },
 ];
 
 export const DashboardSidebar = () => {

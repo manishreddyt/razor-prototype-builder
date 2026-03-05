@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Mail, Plus, CheckCircle2, Clock, Sparkles, ListFilter,
@@ -8,6 +9,7 @@ import {
   Edit3, MoreHorizontal, Play, Pause, X, Phone,
   MessageSquare, Settings, ChevronDown, GripVertical,
   TrendingUp, TrendingDown, BarChart3, Users, IndianRupee,
+  Eye, Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -22,6 +24,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import type { CampaignType, TriggerEvent, ProductReference } from "@/types/campaigns";
 
 type WorkflowCategory = "all" | "operations" | "marketing" | "engagement" | "support";
 
@@ -50,6 +53,56 @@ const makeAction = (type: WorkflowAction["type"], label: string, config: Record<
   id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
   type, label, config, enabled: true,
 });
+
+// Campaign Type Configurations
+const campaignTypeConfig: Record<CampaignType, {
+  label: string;
+  icon: React.ElementType;
+  description: string;
+  suggestedTriggers: TriggerEvent[];
+  defaultActions: WorkflowAction[];
+}> = {
+  upsell: {
+    label: "Upsell Campaign",
+    icon: TrendingUp,
+    description: "Promote premium products to existing customers",
+    suggestedTriggers: ["course_purchased", "webinar_ended"],
+    defaultActions: [
+      makeAction("email", "Send product recommendation"),
+      makeAction("wait", "Wait 2 days"),
+      makeAction("email", "Send reminder with offer code"),
+    ],
+  },
+  retarget_dropoff: {
+    label: "Payment Recovery",
+    icon: ShoppingCart,
+    description: "Re-engage users who abandoned checkout or had failed payments",
+    suggestedTriggers: ["payment_failed", "cart_abandoned"],
+    defaultActions: [
+      makeAction("email", "Send reminder email"),
+      makeAction("wait", "Wait 4 hours"),
+      makeAction("whatsapp", "Send WhatsApp nudge with discount"),
+    ],
+  },
+  webinar_nurture: {
+    label: "Webinar Nurture",
+    icon: Video,
+    description: "Automated follow-ups for webinar attendees",
+    suggestedTriggers: ["webinar_registration", "webinar_ended"],
+    defaultActions: [
+      makeAction("email", "Send confirmation with meeting link"),
+      makeAction("wait", "Wait until webinar ends"),
+      makeAction("email", "Send recording + course offer"),
+    ],
+  },
+  generic: {
+    label: "Generic Campaign",
+    icon: Zap,
+    description: "Custom automation for any trigger",
+    suggestedTriggers: ["payment_success"],
+    defaultActions: [makeAction("email", "Send custom message")],
+  },
+};
 
 const defaultWorkflows: Workflow[] = [
   {
@@ -114,6 +167,56 @@ const triggerOptions = [
   "3 Days Before Renewal", "New Student Signup", "Manual Trigger",
 ];
 
+// ─── Helper Functions ───
+const getAvailableProducts = (): ProductReference[] => {
+  const smartPages = JSON.parse(localStorage.getItem("smart-pages") || "[]");
+  return smartPages.map((page: any) => ({
+    id: page.id,
+    type: page.type,
+    name: page.name,
+    pageUrl: `/page/${page.id}`,
+  }));
+};
+
+const getActiveOffers = () => {
+  // Mock data for prototype - replace with actual API call
+  return [
+    { code: "EARLYBIRD25", discount: "25%", used: 48, limit: 100 },
+    { code: "LAUNCH500", discount: "₹500", used: 156, limit: 500 },
+    { code: "REFERRAL10", discount: "10%", used: 89, limit: null },
+  ].filter(o => !o.limit || o.used < o.limit);
+};
+
+const getTemplateVariables = (campaignType?: CampaignType): string[] => {
+  const baseVars = ["{{name}}", "{{email}}"];
+
+  const campaignVars: Record<CampaignType, string[]> = {
+    webinar_nurture: [
+      "{{webinar_name}}", "{{recording_link}}", "{{meeting_link}}",
+      "{{webinar_date}}", "{{product_name}}", "{{product_link}}",
+      "{{offer_code}}"
+    ],
+    upsell: [
+      "{{previous_course}}", "{{product_name}}", "{{product_link}}",
+      "{{offer_code}}", "{{discount_amount}}"
+    ],
+    retarget_dropoff: [
+      "{{abandoned_product}}", "{{cart_value}}", "{{checkout_link}}",
+      "{{offer_code}}"
+    ],
+    generic: ["{{product_name}}", "{{product_link}}"],
+  };
+
+  return [...baseVars, ...(campaignType ? campaignVars[campaignType] : [])];
+};
+
+const formatRevenue = (revenue: number): string => {
+  if (revenue >= 10000000) return `${(revenue / 10000000).toFixed(1)}Cr`;
+  if (revenue >= 100000) return `${(revenue / 100000).toFixed(1)}L`;
+  if (revenue >= 1000) return `${(revenue / 1000).toFixed(1)}K`;
+  return revenue.toString();
+};
+
 // ─── Campaign Performance Data ───
 interface Campaign {
   id: string;
@@ -156,10 +259,10 @@ interface ChatMessage {
   parsedWorkflow?: { name: string; trigger: string; category: WorkflowCategory; actions: WorkflowAction[]; description: string };
 }
 
-type ViewMode = "list" | "create-chat" | "builder" | "detail";
+type ViewMode = "list" | "campaign-type" | "create-chat" | "builder" | "detail";
 
 // ─── Main Component ───
-const EmailWorkflows = () => {
+const MarketingCampaigns = () => {
   const [workflows, setWorkflows] = useState<Workflow[]>(defaultWorkflows);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [activeCategory, setActiveCategory] = useState<WorkflowCategory>("all");
@@ -177,6 +280,18 @@ const EmailWorkflows = () => {
   // Detail state
   const [detailWorkflow, setDetailWorkflow] = useState<Workflow | null>(null);
 
+  // Campaign creation state
+  const [currentCampaignType, setCurrentCampaignType] = useState<CampaignType | null>(null);
+  const [selectedProducts, setSelectedProducts] = useState<ProductReference[]>([]);
+  const [campaignTypeFilter, setCampaignTypeFilter] = useState<CampaignType | "all">("all");
+  const [hasStartedCreate, setHasStartedCreate] = useState(false);
+
+  // URL parameter handling
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const prefilledType = searchParams.get("type") as CampaignType | null;
+  const prefilledProductId = searchParams.get("product");
+
   const filtered = workflows.filter(
     (w) => activeCategory === "all" || w.category === activeCategory
   );
@@ -185,12 +300,52 @@ const EmailWorkflows = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isAiTyping]);
 
-  const startCreate = () => {
+  // Handle pre-filled campaign creation from URL params
+  useEffect(() => {
+    if (prefilledType && !hasStartedCreate) {
+      const product = getAvailableProducts().find(p => p.id === prefilledProductId);
+      startCreateWithPrefill(prefilledType, product);
+      setHasStartedCreate(true);
+    }
+  }, [prefilledType, prefilledProductId, hasStartedCreate]);
+
+  const startCreateWithPrefill = (type: CampaignType, product?: ProductReference) => {
+    const config = campaignTypeConfig[type];
+
+    // Set initial state
+    setCurrentCampaignType(type);
+    setSelectedProducts(product ? [product] : []);
+
+    // Start with AI chat pre-filled
     setChatMessages([{
       id: "welcome",
       role: "assistant",
-      content: "👋 Hey! I'll help you create a workflow automation.\n\n🎯 **What I can automate:**\n• Email, SMS & WhatsApp notifications\n• LMS enrollment & access management\n• Certificate generation\n• Delayed follow-ups & sequences\n• Tag/segment management\n\n📋 **Tell me what you need**, for example:\n• \"Send payment receipt after course purchase\"\n• \"Follow up with webinar attendees\"\n• \"Recover abandoned carts with email + WhatsApp\"\n\nDescribe your workflow in detail — I'll set it all up!",
-      suggestions: ["Send receipt after payment + enroll in LMS", "Follow up after webinar with recording & course offer", "Recover abandoned carts via email & WhatsApp"],
+      content: `I'll help you set up a **${config.label}** for your ${product?.name || 'product'}.\n\n${config.description}\n\n**What I'll create:**\n${config.defaultActions.map((a, i) => `${i + 1}. ${a.label}`).join('\n')}\n\nTell me if you'd like to customize this, or I can generate it now!`,
+      suggestions: [
+        "Generate this campaign",
+        "Customize the messages",
+        "Add an offer code",
+      ],
+    }]);
+
+    setViewMode("create-chat");
+  };
+
+  const startCreate = (campaignType?: CampaignType) => {
+    if (!campaignType) {
+      setViewMode("campaign-type");
+      return;
+    }
+
+    // Pre-fill based on campaign type
+    const config = campaignTypeConfig[campaignType];
+    setCurrentCampaignType(campaignType);
+
+    setChatMessages([{
+      id: "welcome",
+      role: "assistant",
+      content: `I'll help you set up a **${config.label}**.\n\n${config.description}\n\n**What I'll create:**\n${config.defaultActions.map((a, i) => `${i + 1}. ${a.label}`).join('\n')}\n\nTell me if you'd like to customize this, or I can generate it now!`,
+      suggestions: ["Generate this campaign", "Customize the messages", "Add an offer code"],
     }]);
     setViewMode("create-chat");
   };
@@ -355,6 +510,56 @@ const EmailWorkflows = () => {
     return lastAssistant?.suggestions || [];
   })();
 
+  // ─── CAMPAIGN TYPE SELECTOR VIEW ───
+  if (viewMode === "campaign-type") {
+    return (
+      <DashboardLayout>
+        <div className="max-w-5xl mx-auto space-y-6 py-8">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => setViewMode("list")} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold">Choose Campaign Type</h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              Select the type of marketing automation you want to set up
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {Object.entries(campaignTypeConfig).map(([type, config]) => (
+              <button
+                key={type}
+                onClick={() => startCreate(type as CampaignType)}
+                className="blade-card p-6 text-left hover:border-primary transition-all hover:shadow-md"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-lg bg-primary/10">
+                    <config.icon className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base mb-1">{config.label}</h3>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {config.description}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {config.suggestedTriggers.slice(0, 2).map(trigger => (
+                        <Badge key={trigger} variant="outline" className="text-xs">
+                          {trigger.replace(/_/g, ' ')}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   // ─── LIST VIEW ───
   if (viewMode === "list") {
     const totalLeads = campaignData.reduce((s, c) => s + c.leads, 0);
@@ -367,11 +572,11 @@ const EmailWorkflows = () => {
         <div className="animate-fade-in space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">Workflows</h1>
-              <p className="text-sm text-muted-foreground mt-1">Automate your education business with smart workflows</p>
+              <h1 className="text-2xl font-semibold text-foreground">Marketing Campaigns</h1>
+              <p className="text-sm text-muted-foreground mt-1">Drive revenue with automated marketing campaigns and upsells</p>
             </div>
             <Button className="gap-2" onClick={startCreate}>
-              <Plus className="h-4 w-4" /> Create Workflow
+              <Plus className="h-4 w-4" /> Create Campaign
             </Button>
           </div>
 
@@ -382,11 +587,13 @@ const EmailWorkflows = () => {
             </TabsList>
 
             <TabsContent value="workflows" className="space-y-5">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-5 gap-4">
                 {[
-                  { icon: Zap, label: "Total Runs (Month)", value: workflows.reduce((s, w) => s + w.runs, 0).toLocaleString() },
-                  { icon: CheckCircle2, label: "Success Rate", value: "98.4%" },
-                  { icon: Clock, label: "Active Workflows", value: String(workflows.filter(w => w.enabled).length) },
+                  { icon: Zap, label: "Active Campaigns", value: workflows.filter(w => w.enabled).length },
+                  { icon: Users, label: "Total Triggers", value: workflows.reduce((s, w) => s + w.runs, 0).toLocaleString() },
+                  { icon: Mail, label: "Messages Sent", value: (workflows.reduce((s, w) => s + w.runs, 0) * 2.3).toFixed(0) },
+                  { icon: Eye, label: "Avg Open Rate", value: "42%" },
+                  { icon: IndianRupee, label: "Revenue", value: `₹${formatRevenue(totalRevenue)}` },
                 ].map(s => (
                   <div key={s.label} className="blade-stat flex items-center gap-4">
                     <s.icon className="h-5 w-5 text-primary" />
@@ -864,6 +1071,52 @@ const EmailWorkflows = () => {
                           className="mt-1 text-sm font-mono"
                         />
                       </div>
+
+                      {/* NEW: Product Reference Selector */}
+                      <div>
+                        <Label className="text-xs">Reference Product (Optional)</Label>
+                        <Select
+                          value={selectedAction.config.product_id || ""}
+                          onValueChange={(val) => updateActionConfig(selectedAction.id, "product_id", val)}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select a product to promote" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getAvailableProducts().map(product => (
+                              <SelectItem key={product.id} value={product.id}>
+                                {product.name} ({product.type})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Use {`{{product_name}}`} and {`{{product_link}}`} in your message
+                        </p>
+                      </div>
+
+                      {/* NEW: Offer Code Selector */}
+                      <div>
+                        <Label className="text-xs">Apply Offer Code (Optional)</Label>
+                        <Select
+                          value={selectedAction.config.offer_code || ""}
+                          onValueChange={(val) => updateActionConfig(selectedAction.id, "offer_code", val)}
+                        >
+                          <SelectTrigger className="mt-1">
+                            <SelectValue placeholder="Select an offer code" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {getActiveOffers().map(offer => (
+                              <SelectItem key={offer.code} value={offer.code}>
+                                {offer.code} - {offer.discount} ({offer.used}/{offer.limit || "∞"} used)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          Use {`{{offer_code}}`} to insert code in your message
+                        </p>
+                      </div>
                     </>
                   )}
 
@@ -1031,4 +1284,4 @@ const EmailWorkflows = () => {
   return null;
 };
 
-export default EmailWorkflows;
+export default MarketingCampaigns;
