@@ -4,7 +4,7 @@ import {
   ArrowLeft, Monitor, Smartphone, Eye, Settings, Sparkles, Send,
   X, Copy, Share2, Save, Loader2, CheckCircle2, Plus, Trash2, GripVertical,
   FileText, CreditCard, ShoppingCart, Star, Users, Clock, BookOpen, Shield, Award,
-  Megaphone,
+  Megaphone, Package, Mail, MessageSquare, Tag, ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,12 +16,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { addSite, type SmartPageSite } from "./WebsiteBuilder";
 import { templates, availableSectionTypes, createDefaultSection, createCheckoutConfig, type TemplateData, type SectionData, type PageData, type CheckoutConfig, type CheckoutFormField } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
 import { SmartPageCheckout } from "@/components/SmartPageCheckout";
 import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
+import { ProductManager } from "@/components/products/ProductManager";
+import { LeadsManager } from "@/components/leads/LeadsManager";
+import { ContactFormBuilder } from "@/components/leads/ContactFormBuilder";
+import { Product, ProductsConfig } from "@/types/products";
+import { Lead, ContactFormConfig } from "@/types/leads";
 
 interface PageState {
   heroTitle: string;
@@ -38,6 +44,12 @@ interface EditorState {
   pages: Record<string, PageState>;
   activePage: string;
   checkout: CheckoutConfig | null;
+  /** Products configuration */
+  productsConfig: ProductsConfig;
+  /** Contact form configuration */
+  contactForm: ContactFormConfig;
+  /** Captured leads */
+  leads: Lead[];
 }
 
 const buildPageState = (pd: PageData | undefined, fallback: TemplateData): PageState => {
@@ -134,7 +146,33 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
     pages[pageName] = buildPageState(pd, base);
   }
 
-  return { template: base, pages, activePage: homePage, checkout: base.checkout || null };
+  return {
+    template: base,
+    pages,
+    activePage: homePage,
+    checkout: base.checkout || null,
+    productsConfig: base.productsConfig || {
+      enabled: false,
+      products: [],
+      displayMode: "grid",
+      showPricing: true,
+      categoriesEnabled: false
+    },
+    contactForm: base.contactForm || {
+      enabled: false,
+      title: "Get in Touch",
+      description: "Have questions? We'd love to hear from you.",
+      fields: [
+        { id: "name", label: "Full Name", type: "text", required: true, placeholder: "Your name" },
+        { id: "email", label: "Email", type: "email", required: true, placeholder: "your.email@example.com" },
+        { id: "message", label: "Message", type: "textarea", required: true, placeholder: "How can we help?" }
+      ],
+      includeInterests: false,
+      autoReply: false,
+      successMessage: "Thank you! We'll be in touch soon."
+    },
+    leads: []
+  };
 };
 
 interface ChatMsg {
@@ -289,7 +327,6 @@ const SmartPageEditor = () => {
   const [publishing, setPublishing] = useState(false);
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [settingsTab, setSettingsTab] = useState("page");
-  const [showCampaignPrompt, setShowCampaignPrompt] = useState(false);
   const [publishedPageData, setPublishedPageData] = useState<any>(null);
 
   const [state, setState] = useState<EditorState>(() => buildInitialState(searchParams));
@@ -510,7 +547,6 @@ const SmartPageEditor = () => {
     setTimeout(() => {
       setPublishing(false);
       setStatus("published");
-      setPublishDialogOpen(false);
       setUnsavedChanges(false);
 
       const homePage = state.pages[pageNames[0]];
@@ -526,96 +562,30 @@ const SmartPageEditor = () => {
         views: 0, conversions: 0, status: "Published",
         amount: state.checkout?.amount || 0,
         transactions: 0,
+        // Add new fields
+        productsConfig: state.productsConfig,
+        contactForm: state.contactForm,
+        leads: state.leads,
       };
       addSite(newSite);
       toast.success("Website published successfully!");
 
-      // Show campaign setup prompt
+      // Store published page data for next steps
       setPublishedPageData({
         id: newSite.id,
         type: pageType,
         name: homePage.heroTitle,
+        url: `/s/${slug}`,
       });
-      setShowCampaignPrompt(true);
+
+      // Keep dialog open to show success state
+      // Don't close: setPublishDialogOpen(false);
     }, 2000);
   };
 
   const copyLink = () => {
     navigator.clipboard.writeText(`${window.location.origin}/s/${slug}`);
     toast.success("Link copied!");
-  };
-
-  // ─── Campaign Prompt Dialog ───
-  const CampaignPromptDialog = () => {
-    const recommendedCampaigns: Record<string, { title: string; description: string; type: string }> = {
-      webinar: {
-        title: "Webinar Registration & Nurture",
-        description: "Automatically confirm registrations and follow up with attendees",
-        type: "webinar_nurture",
-      },
-      course: {
-        title: "Course Enrollment & Upsell",
-        description: "Welcome students and promote advanced courses",
-        type: "upsell",
-      },
-      coaching: {
-        title: "Booking Confirmation & Reminders",
-        description: "Send booking confirmations and session reminders",
-        type: "generic",
-      },
-    };
-
-    const recommended = recommendedCampaigns[publishedPageData?.type] || recommendedCampaigns.course;
-
-    return (
-      <Dialog open={showCampaignPrompt} onOpenChange={setShowCampaignPrompt}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>🎉 Website Published Successfully!</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Drive traffic and convert visitors with automated marketing campaigns.
-            </p>
-
-            <div className="blade-card p-4 border-primary/20 bg-primary/5">
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10">
-                  <Sparkles className="h-5 w-5 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <h4 className="font-semibold text-sm mb-1">{recommended.title}</h4>
-                  <p className="text-xs text-muted-foreground">{recommended.description}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowCampaignPrompt(false);
-                  navigate("/website-builder");
-                }}
-                className="flex-1"
-              >
-                Skip for now
-              </Button>
-              <Button
-                onClick={() => {
-                  navigate(`/marketing-campaigns?type=${recommended.type}&product=${publishedPageData.id}`);
-                  setShowCampaignPrompt(false);
-                }}
-                className="flex-1 gap-2"
-              >
-                <Megaphone className="h-4 w-4" />
-                Setup Campaign
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
   };
 
   // ─── Full Preview Mode ───
@@ -813,10 +783,36 @@ const SmartPageEditor = () => {
               <button onClick={() => setRightPanel(null)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
             </div>
             <Tabs value={settingsTab} onValueChange={setSettingsTab} className="flex-1 flex flex-col">
-              <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-4">
+              <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-4 overflow-x-auto">
                 <TabsTrigger value="page" className="text-xs">Page</TabsTrigger>
                 <TabsTrigger value="pages" className="text-xs">Pages</TabsTrigger>
                 <TabsTrigger value="sections" className="text-xs">Sections</TabsTrigger>
+                {state.productsConfig?.enabled && (
+                  <TabsTrigger value="products" className="text-xs flex items-center gap-1">
+                    <Package className="h-3 w-3" />
+                    Products
+                    {state.productsConfig.products.length > 0 && (
+                      <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px]">
+                        {state.productsConfig.products.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                )}
+                {state.contactForm?.enabled && (
+                  <TabsTrigger value="contact-form" className="text-xs flex items-center gap-1">
+                    <MessageSquare className="h-3 w-3" />
+                    Contact Form
+                  </TabsTrigger>
+                )}
+                {state.leads.length > 0 && (
+                  <TabsTrigger value="leads" className="text-xs flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    Leads
+                    <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px] bg-blue-100 text-blue-700">
+                      {state.leads.filter(l => l.status === "new").length}
+                    </Badge>
+                  </TabsTrigger>
+                )}
                 {hasCheckout && <TabsTrigger value="checkout" className="text-xs">Checkout</TabsTrigger>}
                 <TabsTrigger value="seo" className="text-xs">SEO</TabsTrigger>
               </TabsList>
@@ -980,6 +976,44 @@ const SmartPageEditor = () => {
                   <div><label className="text-xs font-medium text-foreground">Meta Title</label><Input value={currentPage.heroTitle} onChange={(e) => updatePageHero({ heroTitle: e.target.value })} className="mt-1.5" /><p className="text-[10px] text-muted-foreground mt-1">{currentPage.heroTitle.length}/60</p></div>
                   <div><label className="text-xs font-medium text-foreground">Meta Description</label><Textarea value={currentPage.heroDescription} onChange={(e) => updatePageHero({ heroDescription: e.target.value })} rows={2} className="mt-1.5" /><p className="text-[10px] text-muted-foreground mt-1">{currentPage.heroDescription.length}/160</p></div>
                 </TabsContent>
+
+                {/* Products Tab */}
+                <TabsContent value="products" className="p-0 m-0">
+                  <ProductManager
+                    products={state.productsConfig.products}
+                    onUpdateProducts={(products) => {
+                      setState((prev) => ({
+                        ...prev,
+                        productsConfig: { ...prev.productsConfig, products }
+                      }));
+                      setUnsavedChanges(true);
+                    }}
+                  />
+                </TabsContent>
+
+                {/* Contact Form Tab */}
+                <TabsContent value="contact-form" className="p-0 m-0">
+                  <ContactFormBuilder
+                    contactForm={state.contactForm}
+                    products={state.productsConfig.products}
+                    onUpdate={(contactForm) => {
+                      setState((prev) => ({ ...prev, contactForm }));
+                      setUnsavedChanges(true);
+                    }}
+                  />
+                </TabsContent>
+
+                {/* Leads Tab */}
+                <TabsContent value="leads" className="p-0 m-0">
+                  <LeadsManager
+                    leads={state.leads}
+                    products={state.productsConfig.products}
+                    onUpdateLeads={(leads) => {
+                      setState((prev) => ({ ...prev, leads }));
+                      setUnsavedChanges(true);
+                    }}
+                  />
+                </TabsContent>
               </ScrollArea>
             </Tabs>
           </div>
@@ -1009,34 +1043,202 @@ const SmartPageEditor = () => {
 
       {/* Publish Dialog */}
       <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Publish Website</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-secondary/50 rounded-lg p-4">
-              <h3 className="font-semibold text-foreground text-sm mb-2">{state.pages[pageNames[0]]?.heroTitle}</h3>
-              <div className="grid grid-cols-3 gap-2 text-sm">
-                <div><span className="text-muted-foreground text-xs">Pages</span><p className="font-medium text-foreground">{pageNames.length}</p></div>
-                <div><span className="text-muted-foreground text-xs">Sections</span><p className="font-medium text-foreground">{currentPage.sections.filter((s) => s.visible).length}</p></div>
-                <div><span className="text-muted-foreground text-xs">Type</span><p className="font-medium text-foreground">{state.template.title}</p></div>
+        <DialogContent className="max-w-2xl">
+          {status !== "published" ? (
+            // Pre-publish state
+            <>
+              <DialogHeader><DialogTitle>Publish Website</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="bg-secondary/50 rounded-lg p-4">
+                  <h3 className="font-semibold text-foreground text-sm mb-2">{state.pages[pageNames[0]]?.heroTitle}</h3>
+                  <div className="grid grid-cols-3 gap-2 text-sm">
+                    <div><span className="text-muted-foreground text-xs">Pages</span><p className="font-medium text-foreground">{pageNames.length}</p></div>
+                    <div><span className="text-muted-foreground text-xs">Sections</span><p className="font-medium text-foreground">{currentPage.sections.filter((s) => s.visible).length}</p></div>
+                    <div><span className="text-muted-foreground text-xs">Type</span><p className="font-medium text-foreground">{state.template.title}</p></div>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-foreground">Site URL</label>
+                  <div className="flex items-center gap-2 mt-1.5">
+                    <Input value={`${window.location.origin}/s/${slug}`} readOnly className="flex-1 text-xs" />
+                    <Button variant="outline" size="sm" onClick={copyLink}><Copy className="h-3.5 w-3.5" /></Button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> SSL-secured</div>
+                  <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> Mobile responsive</div>
+                  <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> SEO optimized</div>
+                  <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> {pageNames.length} pages</div>
+                </div>
+                <Button className="w-full gap-2" onClick={handlePublish} disabled={publishing}>
+                  {publishing ? <><Loader2 className="h-4 w-4 animate-spin" /> Publishing...</> : "Publish Now"}
+                </Button>
               </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-foreground">Site URL</label>
-              <div className="flex items-center gap-2 mt-1.5">
-              <Input value={`${window.location.origin}/s/${slug}`} readOnly className="flex-1 text-xs" />
-                <Button variant="outline" size="sm" onClick={copyLink}><Copy className="h-3.5 w-3.5" /></Button>
+            </>
+          ) : (
+            // Post-publish success state
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  Website Published Successfully!
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6">
+                {/* URL Section */}
+                <div className="space-y-3">
+                  <div className="bg-secondary/50 rounded-lg p-4">
+                    <h3 className="font-semibold text-foreground text-sm mb-2">{publishedPageData?.name}</h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <Input
+                        value={`${window.location.origin}${publishedPageData?.url}`}
+                        readOnly
+                        className="flex-1 text-sm font-mono"
+                      />
+                      <Button variant="outline" size="sm" onClick={copyLink} className="gap-2">
+                        <Copy className="h-3.5 w-3.5" /> Copy
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      className="gap-2 justify-start"
+                      onClick={() => window.open(publishedPageData?.url, '_blank')}
+                    >
+                      <Eye className="h-4 w-4" /> View Live Site
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="gap-2 justify-start"
+                      onClick={() => {
+                        setShareDialogOpen(true);
+                        setPublishDialogOpen(false);
+                      }}
+                    >
+                      <Share2 className="h-4 w-4" /> Share
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Next Steps Section */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm text-foreground">Next Steps</h4>
+                  <div className="space-y-2">
+                    {/* Campaign Setup */}
+                    {(() => {
+                      const campaignRecommendations: Record<string, { icon: React.ElementType; title: string; description: string; type: string }> = {
+                        webinar: {
+                          icon: Megaphone,
+                          title: "Setup Webinar Nurture Campaign",
+                          description: "Convert free webinar attendees to paid course customers",
+                          type: "webinar_nurture",
+                        },
+                        course: {
+                          icon: Megaphone,
+                          title: "Setup Upsell Campaign",
+                          description: "Promote advanced courses to existing students",
+                          type: "upsell",
+                        },
+                        coaching: {
+                          icon: Megaphone,
+                          title: "Setup Booking Reminders",
+                          description: "Send confirmations and reduce no-shows",
+                          type: "generic",
+                        },
+                      };
+                      const rec = campaignRecommendations[publishedPageData?.type] || campaignRecommendations.course;
+
+                      return (
+                        <button
+                          onClick={() => {
+                            navigate(`/marketing-campaigns?type=${rec.type}&product=${publishedPageData?.id}`);
+                            setPublishDialogOpen(false);
+                          }}
+                          className="w-full text-left p-4 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <rec.icon className="h-5 w-5 text-primary" />
+                            </div>
+                            <div className="flex-1">
+                              <h5 className="font-semibold text-sm mb-1">{rec.title}</h5>
+                              <p className="text-xs text-muted-foreground">{rec.description}</p>
+                            </div>
+                            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        </button>
+                      );
+                    })()}
+
+                    {/* Additional Next Steps */}
+                    <button
+                      onClick={() => {
+                        navigate("/customers");
+                        setPublishDialogOpen(false);
+                      }}
+                      className="w-full text-left p-4 rounded-lg border border-border hover:border-primary/40 hover:bg-secondary/50 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-secondary">
+                          <Users className="h-5 w-5 text-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-semibold text-sm mb-1">Track Customer Activity</h5>
+                          <p className="text-xs text-muted-foreground">Monitor registrations, payments, and engagement</p>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        navigate("/offers");
+                        setPublishDialogOpen(false);
+                      }}
+                      className="w-full text-left p-4 rounded-lg border border-border hover:border-primary/40 hover:bg-secondary/50 transition-colors"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 rounded-lg bg-secondary">
+                          <Tag className="h-5 w-5 text-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <h5 className="font-semibold text-sm mb-1">Create Launch Offers</h5>
+                          <p className="text-xs text-muted-foreground">Setup early bird discounts and limited-time deals</p>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Bottom Actions */}
+                <div className="flex gap-2 pt-2 border-t border-border">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => {
+                      setPublishDialogOpen(false);
+                      navigate("/website-builder");
+                    }}
+                  >
+                    Back to Sites
+                  </Button>
+                  <Button
+                    className="flex-1 gap-2"
+                    onClick={() => {
+                      setPublishDialogOpen(false);
+                      setRightPanel("settings");
+                    }}
+                  >
+                    <Settings className="h-4 w-4" /> Manage Site
+                  </Button>
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> SSL-secured</div>
-              <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> Mobile responsive</div>
-              <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> SEO optimized</div>
-              <div className="flex items-center gap-2 text-sm text-foreground"><CheckCircle2 className="h-4 w-4 text-primary" /> {pageNames.length} pages</div>
-            </div>
-            <Button className="w-full gap-2" onClick={handlePublish} disabled={publishing}>
-              {publishing ? <><Loader2 className="h-4 w-4 animate-spin" /> Publishing...</> : "Publish Now"}
-            </Button>
-          </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -1057,9 +1259,6 @@ const SmartPageEditor = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Campaign Prompt Dialog */}
-      {showCampaignPrompt && <CampaignPromptDialog />}
     </div>
   );
 };
