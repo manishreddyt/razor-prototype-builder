@@ -769,106 +769,400 @@ const MarketingCampaigns = () => {
     );
   }
 
-  // ─── CREATE CHAT VIEW ───
+  // ─── CREATE CHAT VIEW (Split: AI Assistant + Campaign Form) ───
   if (viewMode === "create-chat") {
+    // Initialize workflow if not exists
+    if (!editingWorkflow) {
+      const initialWorkflow: Workflow = {
+        id: Date.now(),
+        name: currentCampaignType ? campaignTypeConfig[currentCampaignType].label : "New Campaign",
+        description: "",
+        trigger: "Payment Captured",
+        category: "marketing",
+        actions: currentCampaignType ? [...campaignTypeConfig[currentCampaignType].defaultActions] : [
+          makeAction("email", "Send welcome email", { subject: "Welcome!", body: "Hi {{name}},\n\nThank you!" })
+        ],
+        enabled: true,
+        isDefault: false,
+        runs: 0,
+      };
+      setEditingWorkflow(initialWorkflow);
+    }
+
+    const wf = editingWorkflow!;
+    const selectedAction = editingActionId ? wf.actions.find(a => a.id === editingActionId) : null;
+
+    const updateAction = (actionId: string, updates: Partial<WorkflowAction>) => {
+      setEditingWorkflow({
+        ...wf,
+        actions: wf.actions.map(a => a.id === actionId ? { ...a, ...updates } : a),
+      });
+    };
+
+    const updateActionConfig = (actionId: string, key: string, value: string) => {
+      setEditingWorkflow({
+        ...wf,
+        actions: wf.actions.map(a => a.id === actionId ? { ...a, config: { ...a.config, [key]: value } } : a),
+      });
+    };
+
+    const removeAction = (actionId: string) => {
+      setEditingWorkflow({ ...wf, actions: wf.actions.filter(a => a.id !== actionId) });
+      if (editingActionId === actionId) setEditingActionId(null);
+    };
+
+    const addAction = (type: WorkflowAction["type"]) => {
+      const newAction = makeAction(type, `New ${actionTypeConfig[type].label} action`);
+      setEditingWorkflow({ ...wf, actions: [...wf.actions, newAction] });
+      setEditingActionId(newAction.id);
+    };
+
     return (
       <DashboardLayout>
         <div className="h-[calc(100vh-80px)] flex flex-col">
-          <div className="flex items-center gap-3 pb-4 border-b border-border">
-            <Button variant="ghost" size="sm" onClick={() => setViewMode("list")} className="gap-1.5">
-              <ArrowLeft className="h-4 w-4" /> Back
-            </Button>
-            <div className="h-4 w-px bg-border" />
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
-              </div>
-              <span className="text-sm font-semibold text-foreground">Create Workflow</span>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-y-auto px-4 py-6">
-            <div className="max-w-2xl mx-auto space-y-5">
-              {chatMessages.map(msg => (
-                <div
-                  key={msg.id}
-                  className={cn("flex gap-3", msg.role === "user" ? "justify-end" : "justify-start")}
-                  style={{ animation: "slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}
-                >
-                  {msg.role === "assistant" && (
-                    <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
-                      <Bot className="h-4 w-4 text-primary" />
-                    </div>
-                  )}
-                  <div className={cn(
-                    "max-w-[80%] rounded-2xl px-5 py-4 text-sm leading-relaxed",
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground rounded-br-sm shadow-lg shadow-primary/10"
-                      : "bg-card text-foreground rounded-bl-sm border border-border/60 shadow-sm"
-                  )}>
-                    <div className="whitespace-pre-wrap" dangerouslySetInnerHTML={{
-                      __html: msg.content
-                        .replace(/\*\*(.*?)\*\*/g, '<strong class="font-semibold">$1</strong>')
-                        .replace(/^• /gm, '<span class="inline-flex items-center gap-1.5"><span class="w-1 h-1 rounded-full bg-primary inline-block"></span></span> ')
-                        .replace(/^(\d+)\. /gm, '<span class="text-primary font-semibold">$1.</span> ')
-                    }} />
-                  </div>
-                </div>
-              ))}
-              {isAiTyping && (
-                <div className="flex gap-3 justify-start" style={{ animation: "slideUp 0.3s ease-out" }}>
-                  <div className="w-8 h-8 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <Bot className="h-4 w-4 text-primary animate-pulse" />
-                  </div>
-                  <div className="bg-card border border-border/60 rounded-2xl rounded-bl-sm px-5 py-4 shadow-sm">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "0ms", animationDuration: "0.8s" }} />
-                      <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "150ms", animationDuration: "0.8s" }} />
-                      <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "300ms", animationDuration: "0.8s" }} />
-                    </div>
-                  </div>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-          </div>
-
-          <div className="border-t border-border px-4 py-3 space-y-2.5">
-            {!isAiTyping && currentSuggestions.length > 0 && (
-              <div className="max-w-2xl mx-auto flex gap-2 overflow-x-auto pb-0.5">
-                {currentSuggestions.map((s, idx) => (
-                  <button
-                    key={s}
-                    onClick={() => handleSendMessage(s)}
-                    className={cn(
-                      "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                      idx === 0 && s.toLowerCase().includes("configure")
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
-                        : "border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary hover:border-primary/40"
-                    )}
-                  >
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-            <div className="max-w-2xl mx-auto flex items-center gap-2 bg-card border border-border/80 rounded-2xl px-4 py-2 shadow-lg shadow-black/5 focus-within:border-primary/40 transition-all">
-              <Input
-                value={chatInput}
-                onChange={e => setChatInput(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSendMessage(chatInput)}
-                placeholder="Describe what you want to automate..."
-                className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-sm"
-                disabled={isAiTyping}
-              />
-              <Button
-                size="icon"
-                onClick={() => handleSendMessage(chatInput)}
-                disabled={!chatInput.trim() || isAiTyping}
-                className="rounded-xl h-9 w-9 flex-shrink-0"
-              >
-                <Send className="h-4 w-4" />
+          {/* Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" size="sm" onClick={() => setViewMode("list")} className="gap-1.5">
+                <ArrowLeft className="h-4 w-4" /> Back
               </Button>
+              <div className="h-4 w-px bg-border" />
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Sparkles className="h-3.5 w-3.5 text-primary" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">Create Campaign</span>
+              </div>
+            </div>
+            <Button size="sm" onClick={saveWorkflow} className="gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Create & Activate
+            </Button>
+          </div>
+
+          {/* Split View: AI Assistant (Left) + Campaign Form (Right) */}
+          <div className="flex-1 flex gap-4 overflow-hidden mt-4">
+            {/* LEFT: AI Assistant */}
+            <div className="w-80 flex flex-col border-r border-border pr-4">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Bot className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">AI Assistant</p>
+                  <p className="text-[10px] text-muted-foreground">Ask me anything</p>
+                </div>
+              </div>
+
+              {/* Chat Messages */}
+              <div className="flex-1 overflow-y-auto space-y-3 mb-3">
+                {chatMessages.length === 0 && (
+                  <div className="text-xs text-muted-foreground space-y-2">
+                    <p>👋 I can help you:</p>
+                    <ul className="space-y-1 ml-3">
+                      <li>• Write email subject lines</li>
+                      <li>• Suggest campaign ideas</li>
+                      <li>• Explain triggers & timing</li>
+                    </ul>
+                  </div>
+                )}
+                {chatMessages.map(msg => (
+                  <div key={msg.id} className={cn("flex gap-2", msg.role === "user" ? "justify-end" : "justify-start")}>
+                    {msg.role === "assistant" && (
+                      <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <Bot className="h-3 w-3 text-primary" />
+                      </div>
+                    )}
+                    <div className={cn(
+                      "text-xs px-3 py-2 rounded-lg max-w-[85%]",
+                      msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+                    )}>
+                      {msg.content}
+                    </div>
+                  </div>
+                ))}
+                {isAiTyping && (
+                  <div className="flex gap-2">
+                    <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Bot className="h-3 w-3 text-primary animate-pulse" />
+                    </div>
+                    <div className="bg-secondary px-3 py-2 rounded-lg flex gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    </div>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
+              </div>
+
+              {/* Chat Input */}
+              <div className="flex gap-2">
+                <Input
+                  value={chatInput}
+                  onChange={e => setChatInput(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSendMessage(chatInput)}
+                  placeholder="Ask AI..."
+                  className="text-xs h-8"
+                  disabled={isAiTyping}
+                />
+                <Button
+                  size="sm"
+                  onClick={() => handleSendMessage(chatInput)}
+                  disabled={!chatInput.trim() || isAiTyping}
+                  className="h-8 w-8 p-0"
+                >
+                  <Send className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+
+            {/* RIGHT: Campaign Creation Form */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="space-y-6 max-w-3xl">
+                {/* Campaign Name & Type */}
+                <div className="space-y-4">
+                  <div>
+                    <Label className="text-sm font-medium">Campaign Name *</Label>
+                    <Input
+                      value={wf.name}
+                      onChange={e => setEditingWorkflow({ ...wf, name: e.target.value })}
+                      placeholder="e.g., Post-Webinar Nurture Sequence"
+                      className="mt-1.5"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Campaign Type</Label>
+                    <Select
+                      value={currentCampaignType || "generic"}
+                      onValueChange={(val) => {
+                        setCurrentCampaignType(val as CampaignType);
+                        const config = campaignTypeConfig[val as CampaignType];
+                        setEditingWorkflow({ ...wf, name: config.label });
+                      }}
+                    >
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(campaignTypeConfig).map(([key, config]) => (
+                          <SelectItem key={key} value={key}>
+                            <div className="flex items-center gap-2">
+                              <config.icon className="h-4 w-4" />
+                              {config.label}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {currentCampaignType && campaignTypeConfig[currentCampaignType].description}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-medium">Description</Label>
+                    <Textarea
+                      value={wf.description}
+                      onChange={e => setEditingWorkflow({ ...wf, description: e.target.value })}
+                      placeholder="Describe what this campaign does..."
+                      rows={2}
+                      className="mt-1.5 text-sm"
+                    />
+                  </div>
+                </div>
+
+                {/* Trigger Event */}
+                <div>
+                  <Label className="text-sm font-medium">Trigger Event *</Label>
+                  <Select value={wf.trigger} onValueChange={v => setEditingWorkflow({ ...wf, trigger: v })}>
+                    <SelectTrigger className="mt-1.5">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {triggerOptions.map(t => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    When should this campaign start?
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-sm font-medium">Campaign Actions</Label>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" size="sm" className="gap-1.5">
+                          <Plus className="h-3.5 w-3.5" /> Add Action
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {(Object.keys(actionTypeConfig) as WorkflowAction["type"][]).map(type => {
+                          const cfg = actionTypeConfig[type];
+                          return (
+                            <DropdownMenuItem key={type} onClick={() => addAction(type)} className="gap-2">
+                              <cfg.icon className="h-4 w-4" />
+                              {cfg.label}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Action List */}
+                  <div className="space-y-3">
+                    {wf.actions.map((action, idx) => {
+                      const cfg = actionTypeConfig[action.type];
+                      const Icon = cfg.icon;
+                      const isSelected = editingActionId === action.id;
+
+                      return (
+                        <div key={action.id} className={cn(
+                          "border rounded-lg p-4 cursor-pointer transition-all",
+                          isSelected ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
+                        )} onClick={() => setEditingActionId(action.id)}>
+                          <div className="flex items-start gap-3">
+                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0", cfg.bgColor)}>
+                              <Icon className={cn("h-4 w-4", cfg.color)} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <p className="text-sm font-medium">{cfg.label}</p>
+                                <div className="flex items-center gap-1">
+                                  {isSelected && <CheckCircle2 className="h-3.5 w-3.5 text-primary" />}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      removeAction(action.id);
+                                    }}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              <p className="text-xs text-muted-foreground">{action.label}</p>
+
+                              {/* Expanded Config */}
+                              {isSelected && (
+                                <div className="mt-3 pt-3 border-t space-y-3">
+                                  <div>
+                                    <Label className="text-xs">Action Label</Label>
+                                    <Input
+                                      value={action.label}
+                                      onChange={e => updateAction(action.id, { label: e.target.value })}
+                                      className="mt-1 text-xs"
+                                    />
+                                  </div>
+
+                                  {/* Email Config */}
+                                  {action.type === "email" && (
+                                    <>
+                                      <div>
+                                        <Label className="text-xs">Subject</Label>
+                                        <Input
+                                          value={action.config.subject || ""}
+                                          onChange={e => updateActionConfig(action.id, "subject", e.target.value)}
+                                          placeholder="e.g., Welcome to {{course_name}}"
+                                          className="mt-1 text-xs"
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label className="text-xs">Body</Label>
+                                        <Textarea
+                                          value={action.config.body || ""}
+                                          onChange={e => updateActionConfig(action.id, "body", e.target.value)}
+                                          placeholder="Email content..."
+                                          rows={5}
+                                          className="mt-1 text-xs font-mono"
+                                        />
+                                      </div>
+
+                                      {/* Product Reference */}
+                                      <div>
+                                        <Label className="text-xs">Product Reference</Label>
+                                        <Select
+                                          value={action.config.product_id || ""}
+                                          onValueChange={(val) => updateActionConfig(action.id, "product_id", val)}
+                                        >
+                                          <SelectTrigger className="mt-1">
+                                            <SelectValue placeholder="Select product" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {getAvailableProducts().map(product => (
+                                              <SelectItem key={product.id} value={product.id}>
+                                                {product.name} ({product.type})
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* Offer Code */}
+                                      <div>
+                                        <Label className="text-xs">Offer Code</Label>
+                                        <Select
+                                          value={action.config.offer_code || ""}
+                                          onValueChange={(val) => updateActionConfig(action.id, "offer_code", val)}
+                                        >
+                                          <SelectTrigger className="mt-1">
+                                            <SelectValue placeholder="Select offer" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {getActiveOffers().map(offer => (
+                                              <SelectItem key={offer.code} value={offer.code}>
+                                                {offer.code} - {offer.discount}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    </>
+                                  )}
+
+                                  {/* Wait Config */}
+                                  {action.type === "wait" && (
+                                    <div>
+                                      <Label className="text-xs">Wait Duration</Label>
+                                      <Input
+                                        value={action.config.duration || ""}
+                                        onChange={e => updateActionConfig(action.id, "duration", e.target.value)}
+                                        placeholder="e.g., 2 days, 4 hours"
+                                        className="mt-1 text-xs"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* SMS/WhatsApp Config */}
+                                  {(action.type === "sms" || action.type === "whatsapp") && (
+                                    <div>
+                                      <Label className="text-xs">Message</Label>
+                                      <Textarea
+                                        value={action.config.message || ""}
+                                        onChange={e => updateActionConfig(action.id, "message", e.target.value)}
+                                        placeholder="Message content..."
+                                        rows={3}
+                                        className="mt-1 text-xs"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
