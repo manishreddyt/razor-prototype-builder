@@ -575,7 +575,7 @@ const MarketingCampaigns = () => {
               <h1 className="text-2xl font-semibold text-foreground">Marketing Campaigns</h1>
               <p className="text-sm text-muted-foreground mt-1">Drive revenue with automated marketing campaigns and upsells</p>
             </div>
-            <Button className="gap-2" onClick={startCreate}>
+            <Button className="gap-2" onClick={() => startCreate()}>
               <Plus className="h-4 w-4" /> Create Campaign
             </Button>
           </div>
