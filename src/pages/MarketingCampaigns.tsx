@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
-  Mail, Plus, CheckCircle2, Clock, Sparkles, ListFilter,
+  Mail, Plus, CheckCircle2, Clock, Sparkles,
   Send, Bot, ArrowRight, Zap, FileText, MessageCircle,
   ShoppingCart, UserPlus, GraduationCap, Video, Bell,
   ToggleLeft, ChevronRight, Tag, ArrowLeft, Trash2,
@@ -26,9 +26,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import type { CampaignType, TriggerEvent, ProductReference } from "@/types/campaigns";
 
-type WorkflowCategory = "all" | "operations" | "marketing" | "engagement" | "support";
-
-interface WorkflowAction {
+interface CampaignAction {
   id: string;
   type: "email" | "sms" | "whatsapp" | "lms" | "tag" | "wait" | "certificate";
   label: string;
@@ -36,20 +34,61 @@ interface WorkflowAction {
   enabled: boolean;
 }
 
-interface Workflow {
+interface CampaignRun {
+  id: string;
+  campaignId: number;
+  campaignName: string;
+  triggerName: string; // e.g., "Webinar on 25th Jun", "Python Basics Course"
+  triggerDate: string;
+  executedAt: string;
+  stats: {
+    recipients: number;
+    emailsSent: number;
+    opened: number;
+    clicked: number;
+    converted: number;
+    revenue: number;
+  };
+  status: "completed" | "in_progress" | "failed";
+}
+
+interface CampaignLead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  registeredAt: string;
+  emailOpened: boolean;
+  linkClicked: boolean;
+  status: "pending" | "engaged" | "converted";
+}
+
+interface ConvertedUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  productBought: string;
+  amountPaid: number;
+  convertedAt: string;
+  paymentMethod: string;
+}
+
+interface Campaign {
   id: number;
   name: string;
   description: string;
   trigger: string;
-  category: WorkflowCategory;
-  actions: WorkflowAction[];
+  audienceType?: string;
+  targetProductId?: string; // "all" or specific product ID
+  actions: CampaignAction[];
   enabled: boolean;
-  isDefault: boolean;
+  isDefault?: boolean;
   runs: number;
   lastRun?: string;
 }
 
-const makeAction = (type: WorkflowAction["type"], label: string, config: Record<string, string> = {}): WorkflowAction => ({
+const makeAction = (type: CampaignAction["type"], label: string, config: Record<string, string> = {}): CampaignAction => ({
   id: `act_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
   type, label, config, enabled: true,
 });
@@ -60,7 +99,7 @@ const campaignTypeConfig: Record<CampaignType, {
   icon: React.ElementType;
   description: string;
   suggestedTriggers: TriggerEvent[];
-  defaultActions: WorkflowAction[];
+  defaultActions: CampaignAction[];
 }> = {
   upsell: {
     label: "Upsell Campaign",
@@ -68,9 +107,13 @@ const campaignTypeConfig: Record<CampaignType, {
     description: "Promote premium products to existing customers",
     suggestedTriggers: ["course_purchased", "webinar_ended"],
     defaultActions: [
-      makeAction("email", "Send product recommendation"),
-      makeAction("wait", "Wait 2 days"),
-      makeAction("email", "Send reminder with offer code"),
+      makeAction("whatsapp", "Send product recommendation", {
+        message: "Hi {{name}}! 🎉\n\nCongratulations on completing {{current_product}}!\n\nReady to level up? Check out our {{new_product}} - it's perfect for you.\n\nGet 25% off with code UPGRADE25\n{{product_link}}"
+      }),
+      makeAction("wait", "Wait 2 days", { duration: "2 days" }),
+      makeAction("whatsapp", "Send reminder with offer code", {
+        message: "Hi {{name}}! 👋\n\nJust a reminder - your 25% discount on {{new_product}} expires tomorrow!\n\nUse code UPGRADE25: {{product_link}}"
+      }),
     ],
   },
   retarget_dropoff: {
@@ -79,9 +122,13 @@ const campaignTypeConfig: Record<CampaignType, {
     description: "Re-engage users who abandoned checkout or had failed payments",
     suggestedTriggers: ["payment_failed", "cart_abandoned"],
     defaultActions: [
-      makeAction("email", "Send reminder email"),
-      makeAction("wait", "Wait 4 hours"),
-      makeAction("whatsapp", "Send WhatsApp nudge with discount"),
+      makeAction("whatsapp", "Send cart reminder", {
+        message: "Hi {{name}}! 🛒\n\nYou were so close to enrolling in {{product_name}}!\n\nComplete your purchase here: {{checkout_link}}"
+      }),
+      makeAction("wait", "Wait 4 hours", { duration: "4 hours" }),
+      makeAction("whatsapp", "Send discount offer", {
+        message: "{{name}}, get 10% off if you complete your purchase in the next 2 hours! 🎁\n\nUse code SAVE10: {{checkout_link}}"
+      }),
     ],
   },
   webinar_nurture: {
@@ -90,9 +137,13 @@ const campaignTypeConfig: Record<CampaignType, {
     description: "Automated follow-ups for webinar attendees",
     suggestedTriggers: ["webinar_registration", "webinar_ended"],
     defaultActions: [
-      makeAction("email", "Send confirmation with meeting link"),
-      makeAction("wait", "Wait until webinar ends"),
-      makeAction("email", "Send recording + course offer"),
+      makeAction("whatsapp", "Send webinar confirmation", {
+        message: "Hi {{name}}! 🎉\n\nYou're registered for {{webinar_name}} on {{webinar_date}}.\n\nJoin link: {{meeting_link}}\n\nSee you there!"
+      }),
+      makeAction("wait", "Wait until webinar ends", { duration: "Until webinar ends" }),
+      makeAction("whatsapp", "Send recording + offer", {
+        message: "Thanks for attending {{webinar_name}}, {{name}}! 🙏\n\nHere's the recording: {{recording_link}}\n\nLoved it? Get our complete course with 25% off using WEBINAR25\n{{course_link}}"
+      }),
     ],
   },
   generic: {
@@ -100,58 +151,224 @@ const campaignTypeConfig: Record<CampaignType, {
     icon: Zap,
     description: "Custom automation for any trigger",
     suggestedTriggers: ["payment_success"],
-    defaultActions: [makeAction("email", "Send custom message")],
+    defaultActions: [
+      makeAction("whatsapp", "Send welcome message", {
+        message: "Hi {{name}}! 👋\n\nThank you for choosing us!\n\nWe're excited to have you onboard."
+      })
+    ],
   },
 };
 
-const defaultWorkflows: Workflow[] = [
+const defaultCampaigns: Campaign[] = [
   {
-    id: 1, name: "Send Payment Receipts", description: "Automatically send payment receipt emails after every successful payment",
-    trigger: "Payment Captured", category: "operations",
-    actions: [makeAction("email", "Send Email with receipt details", { subject: "Payment Receipt - {{amount}}", body: "Hi {{name}},\n\nYour payment of ₹{{amount}} has been received successfully.\n\nTransaction ID: {{txn_id}}\n\nThank you!" })],
-    enabled: true, isDefault: true, runs: 1248, lastRun: "2 min ago",
+    id: 1,
+    name: "Convert Free Webinar to Paid Course",
+    description: "Nurture webinar attendees with recording, testimonials, and exclusive discount to drive course enrollments",
+    trigger: "Webinar Ended",
+    audienceType: "webinar_attendees",
+    targetProductId: "all",
+    actions: [
+      makeAction("email", "Send recording + thank you", { subject: "Here's your webinar recording 🎥", body: "Hi {{name}},\n\nThanks for attending {{webinar_name}}!\n\nWatch recording: {{recording_link}}" }),
+      makeAction("wait", "Wait 2 days", { duration: "2 days" }),
+      makeAction("email", "Promote course with offer", { subject: "Ready to dive deeper? Get 25% off", body: "Hi {{name}},\n\nLoved the webinar? Take your learning to the next level with our complete course.\n\nUse code WEBINAR25 for 25% off: {{course_link}}" }),
+    ],
+    enabled: true,
+    isDefault: true,
+    runs: 342,
+    lastRun: "1 hr ago",
   },
   {
-    id: 2, name: "Onboard Student to LMS", description: "Add students to the course LMS and send access credentials after course payment",
-    trigger: "Course Payment Success", category: "operations",
-    actions: [makeAction("lms", "Create LMS account & enroll"), makeAction("email", "Send credentials email", { subject: "Your Course Access is Ready!", body: "Hi {{name}},\n\nYour account has been created. Login at {{lms_url}} with your email.\n\nHappy Learning!" })],
-    enabled: true, isDefault: true, runs: 342, lastRun: "15 min ago",
+    id: 2,
+    name: "Upsell Advanced Course to Basic Students",
+    description: "Promote premium courses to students who completed basic courses with personalized recommendations",
+    trigger: "Course Completed",
+    audienceType: "course_students",
+    targetProductId: "all",
+    actions: [
+      makeAction("email", "Send congratulations + certificate", { subject: "Congratulations on completing {{course_name}}! 🎓", body: "Hi {{name}},\n\nYou did it! Your certificate is ready.\n\nDownload: {{certificate_link}}" }),
+      makeAction("wait", "Wait 3 days", { duration: "3 days" }),
+      makeAction("email", "Recommend advanced course", { subject: "Take the next step: Advanced {{topic}}", body: "Hi {{name}},\n\nReady for more? Check out our Advanced {{topic}} course.\n\nEarly bird pricing: {{advanced_course_link}}" }),
+    ],
+    enabled: true,
+    isDefault: true,
+    runs: 156,
+    lastRun: "3 hrs ago",
   },
   {
-    id: 3, name: "Webinar Registration Confirmation", description: "Send confirmation email with meeting link when a student registers for a webinar",
-    trigger: "Webinar Registration", category: "engagement",
-    actions: [makeAction("email", "Send confirmation email", { subject: "You're Registered! 🎉", body: "Hi {{name}},\n\nYou're confirmed for {{webinar_name}} on {{date}}.\n\nMeeting link: {{meeting_link}}" }), makeAction("wait", "Wait 1 hour before webinar"), makeAction("whatsapp", "Send WhatsApp reminder")],
-    enabled: true, isDefault: false, runs: 567, lastRun: "1 hr ago",
+    id: 3,
+    name: "Recover Abandoned Checkout",
+    description: "Multi-channel recovery sequence with email and WhatsApp reminders + discount code",
+    trigger: "Cart Abandoned (30 min)",
+    audienceType: "cart_abandoners",
+    targetProductId: "all",
+    actions: [
+      makeAction("email", "Send cart reminder", { subject: "You left something behind! 🛒", body: "Hi {{name}},\n\nComplete your enrollment: {{checkout_link}}" }),
+      makeAction("wait", "Wait 4 hours", { duration: "4 hours" }),
+      makeAction("whatsapp", "WhatsApp nudge with discount", { message: "Hi {{name}}! Complete your purchase now and get 10% off with code SAVE10: {{checkout_link}}" }),
+    ],
+    enabled: true,
+    isDefault: true,
+    runs: 89,
+    lastRun: "20 min ago",
   },
   {
-    id: 4, name: "Post-Webinar Follow Up", description: "Send recording link and feedback form after webinar ends",
-    trigger: "Webinar Ended", category: "marketing",
-    actions: [makeAction("email", "Send recording email", { subject: "Webinar Recording is Ready 🎥", body: "Hi {{name}},\n\nThanks for attending! Here's the recording: {{recording_link}}\n\nPlease share your feedback: {{feedback_link}}" }), makeAction("wait", "Wait 2 days"), makeAction("email", "Send course recommendation")],
-    enabled: true, isDefault: false, runs: 89, lastRun: "2 days ago",
+    id: 4,
+    name: "Re-engage Inactive Students",
+    description: "Win-back campaign for students who haven't logged in for 30 days with special offers",
+    trigger: "Manual Trigger",
+    audienceType: "course_students",
+    targetProductId: "all",
+    actions: [
+      makeAction("email", "We miss you email", { subject: "We miss you! Come back to learning 🎓", body: "Hi {{name}},\n\nIt's been a while! Here's what's new...\n\nSpecial offer: 20% off any course" }),
+      makeAction("wait", "Wait 5 days", { duration: "5 days" }),
+      makeAction("sms", "SMS reminder", { message: "{{name}}, your 20% discount expires tomorrow! Use code COMEBACK20" }),
+    ],
+    enabled: false,
+    isDefault: true,
+    runs: 23,
+    lastRun: "5 days ago",
   },
   {
-    id: 5, name: "Abandoned Cart Recovery", description: "Send reminder emails when a student leaves the checkout without completing payment",
-    trigger: "Cart Abandoned (30 min)", category: "marketing",
-    actions: [makeAction("email", "Send reminder email"), makeAction("wait", "Wait 4 hours"), makeAction("whatsapp", "Send WhatsApp nudge")],
-    enabled: false, isDefault: false, runs: 156, lastRun: "1 day ago",
-  },
-  {
-    id: 6, name: "Subscription Renewal Reminder", description: "Remind students 3 days before their subscription is due for renewal",
-    trigger: "3 Days Before Renewal", category: "operations",
-    actions: [makeAction("email", "Send renewal reminder email", { subject: "Subscription Renewal in 3 Days", body: "Hi {{name}},\n\nYour subscription renews on {{renewal_date}}. Make sure your payment method is up to date." })],
-    enabled: true, isDefault: false, runs: 210, lastRun: "6 hrs ago",
+    id: 5,
+    name: "Payment Failed Recovery",
+    description: "Automatic retry notification for failed payments with payment link",
+    trigger: "Payment Failed",
+    audienceType: "payment_failed",
+    targetProductId: "all",
+    actions: [
+      makeAction("email", "Payment failed notification", { subject: "Payment Issue - Action Required", body: "Hi {{name}},\n\nYour payment couldn't be processed. Please update your payment method: {{payment_link}}" }),
+      makeAction("wait", "Wait 6 hours", { duration: "6 hours" }),
+      makeAction("whatsapp", "WhatsApp follow-up", { message: "Hi {{name}}, please complete your payment to continue learning: {{payment_link}}" }),
+    ],
+    enabled: true,
+    isDefault: true,
+    runs: 47,
+    lastRun: "2 hrs ago",
   },
 ];
 
-const categoryConfig: Record<WorkflowCategory, { label: string; color: string }> = {
-  all: { label: "All", color: "" },
-  operations: { label: "Operations", color: "bg-blue-100 text-blue-700" },
-  marketing: { label: "Marketing", color: "bg-purple-100 text-purple-700" },
-  engagement: { label: "Engagement", color: "bg-emerald-100 text-emerald-700" },
-  support: { label: "Support", color: "bg-amber-100 text-amber-700" },
+// Mock campaign run data
+const mockCampaignRuns: Record<number, CampaignRun[]> = {
+  1: [ // "Convert Free Webinar to Paid Course"
+    {
+      id: "run_1_1",
+      campaignId: 1,
+      campaignName: "Convert Free Webinar to Paid Course",
+      triggerName: "Webinar on 25th Jun",
+      triggerDate: "2024-06-25",
+      executedAt: "2024-06-25 18:30",
+      stats: { recipients: 156, emailsSent: 312, opened: 187, clicked: 89, converted: 23, revenue: 34500 },
+      status: "completed",
+    },
+    {
+      id: "run_1_2",
+      campaignId: 1,
+      campaignName: "Convert Free Webinar to Paid Course",
+      triggerName: "Webinar on 18th Jun",
+      triggerDate: "2024-06-18",
+      executedAt: "2024-06-18 19:00",
+      stats: { recipients: 143, emailsSent: 286, opened: 172, clicked: 76, converted: 19, revenue: 28500 },
+      status: "completed",
+    },
+    {
+      id: "run_1_3",
+      campaignId: 1,
+      campaignName: "Convert Free Webinar to Paid Course",
+      triggerName: "Webinar on 10th Jun",
+      triggerDate: "2024-06-10",
+      executedAt: "2024-06-10 18:00",
+      stats: { recipients: 178, emailsSent: 356, opened: 201, clicked: 98, converted: 31, revenue: 46500 },
+      status: "completed",
+    },
+  ],
+  2: [ // "Upsell Advanced Course"
+    {
+      id: "run_2_1",
+      campaignId: 2,
+      campaignName: "Upsell Advanced Course to Basic Students",
+      triggerName: "Python Basics Course",
+      triggerDate: "2024-06-20",
+      executedAt: "2024-06-23 10:00",
+      stats: { recipients: 89, emailsSent: 178, opened: 134, clicked: 67, converted: 12, revenue: 35940 },
+      status: "completed",
+    },
+    {
+      id: "run_2_2",
+      campaignId: 2,
+      campaignName: "Upsell Advanced Course to Basic Students",
+      triggerName: "JavaScript Fundamentals",
+      triggerDate: "2024-06-15",
+      executedAt: "2024-06-18 09:30",
+      stats: { recipients: 67, emailsSent: 134, opened: 98, clicked: 45, converted: 8, revenue: 23960 },
+      status: "completed",
+    },
+  ],
+  3: [ // "Recover Abandoned Checkout"
+    {
+      id: "run_3_1",
+      campaignId: 3,
+      campaignName: "Recover Abandoned Checkout",
+      triggerName: "Cart Abandoned - Advanced Python",
+      triggerDate: "2024-06-24",
+      executedAt: "2024-06-24 14:30",
+      stats: { recipients: 23, emailsSent: 46, opened: 34, clicked: 18, converted: 5, revenue: 7475 },
+      status: "completed",
+    },
+  ],
+  5: [ // "Payment Failed Recovery"
+    {
+      id: "run_5_1",
+      campaignId: 5,
+      campaignName: "Payment Failed Recovery",
+      triggerName: "Payment Failed - UPI Timeout",
+      triggerDate: "2024-06-26",
+      executedAt: "2024-06-26 11:15",
+      stats: { recipients: 12, emailsSent: 24, opened: 19, clicked: 11, converted: 7, revenue: 10465 },
+      status: "completed",
+    },
+    {
+      id: "run_5_2",
+      campaignId: 5,
+      campaignName: "Payment Failed Recovery",
+      triggerName: "Payment Failed - Card Declined",
+      triggerDate: "2024-06-25",
+      executedAt: "2024-06-25 16:45",
+      stats: { recipients: 8, emailsSent: 16, opened: 13, clicked: 8, converted: 4, revenue: 5980 },
+      status: "completed",
+    },
+  ],
 };
 
-const actionTypeConfig: Record<WorkflowAction["type"], { icon: any; label: string; color: string; bgColor: string }> = {
+// Mock leads data for each run
+const mockRunLeads: Record<string, CampaignLead[]> = {
+  "run_1_1": [
+    { id: "l1", name: "Rahul Sharma", email: "rahul.s@email.com", phone: "+91 98765 43210", registeredAt: "2024-06-25 15:30", emailOpened: true, linkClicked: true, status: "converted" },
+    { id: "l2", name: "Priya Patel", email: "priya.p@email.com", phone: "+91 98765 43211", registeredAt: "2024-06-25 16:00", emailOpened: true, linkClicked: true, status: "converted" },
+    { id: "l3", name: "Amit Kumar", email: "amit.k@email.com", phone: "+91 98765 43212", registeredAt: "2024-06-25 16:15", emailOpened: true, linkClicked: false, status: "engaged" },
+    { id: "l4", name: "Sneha Reddy", email: "sneha.r@email.com", phone: "+91 98765 43213", registeredAt: "2024-06-25 16:45", emailOpened: false, linkClicked: false, status: "pending" },
+    { id: "l5", name: "Vikram Singh", email: "vikram.s@email.com", phone: "+91 98765 43214", registeredAt: "2024-06-25 17:00", emailOpened: true, linkClicked: true, status: "converted" },
+  ],
+  "run_2_1": [
+    { id: "l6", name: "Anjali Verma", email: "anjali.v@email.com", phone: "+91 98765 43215", registeredAt: "2024-06-23 09:00", emailOpened: true, linkClicked: true, status: "converted" },
+    { id: "l7", name: "Rohan Gupta", email: "rohan.g@email.com", phone: "+91 98765 43216", registeredAt: "2024-06-23 09:30", emailOpened: true, linkClicked: false, status: "engaged" },
+    { id: "l8", name: "Kavya Iyer", email: "kavya.i@email.com", phone: "+91 98765 43217", registeredAt: "2024-06-23 10:00", emailOpened: false, linkClicked: false, status: "pending" },
+  ],
+};
+
+// Mock converted users data for each run
+const mockRunConversions: Record<string, ConvertedUser[]> = {
+  "run_1_1": [
+    { id: "c1", name: "Rahul Sharma", email: "rahul.s@email.com", phone: "+91 98765 43210", productBought: "Advanced Python Course", amountPaid: 1499, convertedAt: "2024-06-26 10:30", paymentMethod: "UPI" },
+    { id: "c2", name: "Priya Patel", email: "priya.p@email.com", phone: "+91 98765 43211", productBought: "Advanced Python Course", amountPaid: 1499, convertedAt: "2024-06-26 14:20", paymentMethod: "Card" },
+    { id: "c3", name: "Vikram Singh", email: "vikram.s@email.com", phone: "+91 98765 43214", productBought: "Advanced Python Course", amountPaid: 1499, convertedAt: "2024-06-27 09:15", paymentMethod: "UPI" },
+  ],
+  "run_2_1": [
+    { id: "c4", name: "Anjali Verma", email: "anjali.v@email.com", phone: "+91 98765 43215", productBought: "Python Mastery Program", amountPaid: 2995, convertedAt: "2024-06-24 11:00", paymentMethod: "UPI" },
+    { id: "c5", name: "Sanjay Mehta", email: "sanjay.m@email.com", phone: "+91 98765 43218", productBought: "Python Mastery Program", amountPaid: 2995, convertedAt: "2024-06-24 15:30", paymentMethod: "Card" },
+  ],
+};
+
+const actionTypeConfig: Record<CampaignAction["type"], { icon: any; label: string; color: string; bgColor: string }> = {
   email: { icon: Mail, label: "Email", color: "text-blue-600", bgColor: "bg-blue-50 border-blue-200" },
   sms: { icon: Phone, label: "SMS", color: "text-green-600", bgColor: "bg-green-50 border-green-200" },
   whatsapp: { icon: MessageCircle, label: "WhatsApp", color: "text-emerald-600", bgColor: "bg-emerald-50 border-emerald-200" },
@@ -256,16 +473,15 @@ interface ChatMessage {
   role: "assistant" | "user";
   content: string;
   suggestions?: string[];
-  parsedWorkflow?: { name: string; trigger: string; category: WorkflowCategory; actions: WorkflowAction[]; description: string };
+  parsedCampaign?: { name: string; trigger: string; actions: CampaignAction[]; description: string };
 }
 
-type ViewMode = "list" | "campaign-type" | "create-chat" | "builder" | "detail";
+type ViewMode = "list" | "campaign-type" | "create-chat" | "builder" | "detail" | "runs" | "run-details";
 
 // ─── Main Component ───
 const MarketingCampaigns = () => {
-  const [workflows, setWorkflows] = useState<Workflow[]>(defaultWorkflows);
+  const [campaigns, setCampaigns] = useState<Campaign[]>(defaultCampaigns);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [activeCategory, setActiveCategory] = useState<WorkflowCategory>("all");
 
   // Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -274,11 +490,15 @@ const MarketingCampaigns = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Builder state
-  const [editingWorkflow, setEditingWorkflow] = useState<Workflow | null>(null);
+  const [editingCampaign, setEditingCampaign] = useState<Campaign | null>(null);
   const [editingActionId, setEditingActionId] = useState<string | null>(null);
 
   // Detail state
-  const [detailWorkflow, setDetailWorkflow] = useState<Workflow | null>(null);
+  const [detailCampaign, setDetailCampaign] = useState<Campaign | null>(null);
+
+  // Runs view state
+  const [runsCampaign, setRunsCampaign] = useState<Campaign | null>(null);
+  const [selectedRun, setSelectedRun] = useState<CampaignRun | null>(null);
 
   // Campaign creation state
   const [currentCampaignType, setCurrentCampaignType] = useState<CampaignType | null>(null);
@@ -292,13 +512,32 @@ const MarketingCampaigns = () => {
   const prefilledType = searchParams.get("type") as CampaignType | null;
   const prefilledProductId = searchParams.get("product");
 
-  const filtered = workflows.filter(
-    (w) => activeCategory === "all" || w.category === activeCategory
-  );
+  const filtered = campaigns;
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages, isAiTyping]);
+
+  // Initialize campaign when entering create-chat view
+  useEffect(() => {
+    if (viewMode === "create-chat" && !editingCampaign) {
+      const initialCampaign: Campaign = {
+        id: Date.now(),
+        name: currentCampaignType ? campaignTypeConfig[currentCampaignType].label : "New Campaign",
+        description: "",
+        trigger: "Payment Captured",
+        audienceType: undefined,
+        targetProductId: "all",
+        actions: currentCampaignType ? [...campaignTypeConfig[currentCampaignType].defaultActions] : [
+          makeAction("email", "Send welcome email", { subject: "Welcome!", body: "Hi {{name}},\n\nThank you!" })
+        ],
+        enabled: true,
+        isDefault: false,
+        runs: 0,
+      };
+      setEditingCampaign(initialCampaign);
+    }
+  }, [viewMode, editingCampaign, currentCampaignType]);
 
   // Handle pre-filled campaign creation from URL params
   useEffect(() => {
@@ -350,13 +589,12 @@ const MarketingCampaigns = () => {
     setViewMode("create-chat");
   };
 
-  const parseWorkflowFromMessage = (text: string): ChatMessage["parsedWorkflow"] => {
+  const parseCampaignFromMessage = (text: string): ChatMessage["parsedCampaign"] => {
     const lower = text.toLowerCase();
     if (lower.includes("webinar") && (lower.includes("follow") || lower.includes("recording") || lower.includes("after"))) {
       return {
         name: "Post-Webinar Nurture Sequence",
         trigger: "Webinar Ended",
-        category: "marketing",
         description: "Follow up with attendees after webinar with recording and course offer",
         actions: [
           makeAction("email", "Send recording & thank you email", { subject: "Here's your webinar recording 🎥", body: "Hi {{name}},\n\nThanks for attending {{webinar_name}}!\n\nHere's the recording: {{recording_link}}\n\nWe hope you found it valuable!" }),
@@ -371,7 +609,6 @@ const MarketingCampaigns = () => {
       return {
         name: "Abandoned Cart Recovery",
         trigger: "Cart Abandoned (30 min)",
-        category: "marketing",
         description: "Multi-channel recovery sequence for abandoned checkouts",
         actions: [
           makeAction("email", "Send cart reminder email", { subject: "You left something behind! 🛒", body: "Hi {{name}},\n\nYou were so close to enrolling in {{course_name}}!\n\nComplete your purchase: {{checkout_link}}" }),
@@ -386,7 +623,6 @@ const MarketingCampaigns = () => {
       return {
         name: "Payment Receipt & LMS Onboarding",
         trigger: "Course Payment Success",
-        category: "operations",
         description: "Send receipt, enroll in LMS, and welcome the student",
         actions: [
           makeAction("email", "Send payment receipt", { subject: "Payment Confirmed ✅ — ₹{{amount}}", body: "Hi {{name}},\n\nPayment of ₹{{amount}} received for {{course_name}}.\n\nTransaction ID: {{txn_id}}\n\nYour course access is being set up!" }),
@@ -401,7 +637,6 @@ const MarketingCampaigns = () => {
       return {
         name: "Course Completion Certificate",
         trigger: "Course Completed",
-        category: "engagement",
         description: "Auto-generate and send certificate on course completion",
         actions: [
           makeAction("certificate", "Generate personalized certificate"),
@@ -414,9 +649,8 @@ const MarketingCampaigns = () => {
     }
     // Generic
     return {
-      name: "Custom Workflow",
+      name: "Custom Campaign",
       trigger: "Manual Trigger",
-      category: "operations",
       description: text,
       actions: [
         makeAction("email", "Send notification email", { subject: "Notification", body: "Hi {{name}},\n\n" + text }),
@@ -432,76 +666,130 @@ const MarketingCampaigns = () => {
     setIsAiTyping(true);
 
     setTimeout(() => {
-      const isCreateConfirmation = text.toLowerCase().includes("create") || text.toLowerCase().includes("configure") || text.toLowerCase().includes("looks good") || text.toLowerCase().includes("yes");
-      const lastAssistant = [...chatMessages].reverse().find(m => m.role === "assistant" && m.parsedWorkflow);
+      const lower = text.toLowerCase();
 
-      if (isCreateConfirmation && lastAssistant?.parsedWorkflow) {
-        // Move to builder
-        const pw = lastAssistant.parsedWorkflow;
-        const wf: Workflow = {
-          id: Date.now(), name: pw.name, description: pw.description,
-          trigger: pw.trigger, category: pw.category, actions: [...pw.actions],
-          enabled: true, isDefault: false, runs: 0,
+      // Handle campaign name updates
+      if (lower.includes("name") && lower.includes("change")) {
+        const nameMatch = text.match(/change.*name.*to\s+["']?([^"']+)["']?/i) || text.match(/name.*["']([^"']+)["']/i);
+        if (nameMatch && editingCampaign) {
+          const newName = nameMatch[1].trim();
+          setEditingCampaign({ ...editingCampaign, name: newName });
+          const response: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: `✅ Updated campaign name to **"${newName}"**\n\nThe form has been updated. What else would you like to change?`,
+            suggestions: ["Change description", "Update messages", "Looks good!"],
+          };
+          setChatMessages(prev => [...prev, response]);
+          setIsAiTyping(false);
+          return;
+        }
+      }
+
+      // Handle description updates
+      if (lower.includes("description") && (lower.includes("change") || lower.includes("update"))) {
+        const descMatch = text.match(/description.*to\s+["']?([^"']+)["']?/i) || text.match(/description.*["']([^"']+)["']/i);
+        if (descMatch && editingCampaign) {
+          const newDesc = descMatch[1].trim();
+          setEditingCampaign({ ...editingCampaign, description: newDesc });
+          const response: ChatMessage = {
+            id: (Date.now() + 1).toString(),
+            role: "assistant",
+            content: `✅ Updated campaign description!\n\nThe form has been updated. What else would you like to modify?`,
+            suggestions: ["Update WhatsApp message", "Change trigger", "All set!"],
+          };
+          setChatMessages(prev => [...prev, response]);
+          setIsAiTyping(false);
+          return;
+        }
+      }
+
+      // Handle message content updates
+      if ((lower.includes("message") || lower.includes("whatsapp") || lower.includes("email") || lower.includes("sms")) &&
+          (lower.includes("change") || lower.includes("update") || lower.includes("modify"))) {
+        const response: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `💬 **To update message content:**\n\n1. Click on any action in the campaign form on the right\n2. Edit the message directly in the text area\n3. You can also add emojis, variables like {{name}}, and offer codes\n\nTry clicking on one of the actions now!`,
+          suggestions: ["How do I add variables?", "Show me offer codes", "I'm done editing"],
         };
-        setEditingWorkflow(wf);
-        setChatMessages(prev => [...prev, {
-          id: (Date.now() + 1).toString(), role: "assistant",
-          content: "🚀 Opening the visual workflow builder — you can configure each action, reorder steps, and customize email/SMS content before publishing.",
-        }]);
+        setChatMessages(prev => [...prev, response]);
         setIsAiTyping(false);
-        setTimeout(() => setViewMode("builder"), 1200);
         return;
       }
 
-      const parsed = parseWorkflowFromMessage(text);
-      const actionsList = parsed.actions.map((a, i) => `${i + 1}. **${actionTypeConfig[a.type].label}:** ${a.label}`).join("\n");
+      // Handle variable questions
+      if (lower.includes("variable") || lower.includes("{{")) {
+        const response: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `📝 **Available Variables:**\n\n• {{name}} - Customer name\n• {{email}} - Customer email\n• {{phone}} - Phone number\n• {{product_name}} - Product being promoted\n• {{product_link}} - Link to product page\n• {{offer_code}} - Discount code\n• {{webinar_name}} - Webinar title\n• {{recording_link}} - Webinar recording\n\nJust type them in your messages and they'll be replaced automatically!`,
+          suggestions: ["Got it!", "Show offer codes", "Continue editing"],
+        };
+        setChatMessages(prev => [...prev, response]);
+        setIsAiTyping(false);
+        return;
+      }
 
+      // Handle offer code questions
+      if (lower.includes("offer") || lower.includes("discount") || lower.includes("code")) {
+        const response: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `🏷️ **How to add offer codes:**\n\n1. When editing an Email or WhatsApp action\n2. Scroll down to "Apply Offer Code"\n3. Select from your active offers\n4. Use {{offer_code}} in your message\n\nExample:\n"Get 25% off with code {{offer_code}}"`,
+          suggestions: ["Thanks!", "Add more actions", "Finish campaign"],
+        };
+        setChatMessages(prev => [...prev, response]);
+        setIsAiTyping(false);
+        return;
+      }
+
+      // Default helpful response
       const response: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `Here's what I've designed:\n\n**${parsed.name}**\n\n📌 **Trigger:** ${parsed.trigger}\n📂 **Category:** ${categoryConfig[parsed.category].label}\n\n⚡ **Actions:**\n${actionsList}\n\n✨ **Next Step:** Click "Configure Campaign" below to open the builder where you can:\n• Customize email content and subjects\n• Add product references and offer codes\n• Adjust triggers and timing\n• Preview and publish your campaign`,
-        suggestions: ["Configure Campaign →", "Add SMS follow-up", "Change the trigger", "Start over"],
-        parsedWorkflow: parsed,
+        content: `💡 **I can help you with:**\n\n• Updating campaign name or description\n• Explaining variables and offer codes\n• Adding or modifying actions\n• Answering questions about the campaign\n\n**To edit messages:** Click on any action in the form →\n\nWhat would you like help with?`,
+        suggestions: ["Add another WhatsApp", "Explain variables", "I'm ready to save"],
       };
 
       setChatMessages(prev => [...prev, response]);
       setIsAiTyping(false);
-    }, 1500);
+    }, 800);
   };
 
-  const saveWorkflow = () => {
-    if (!editingWorkflow) return;
-    const existing = workflows.find(w => w.id === editingWorkflow.id);
+  const saveCampaign = () => {
+    if (!editingCampaign) return;
+    const existing = campaigns.find(w => w.id === editingCampaign.id);
     if (existing) {
-      setWorkflows(prev => prev.map(w => w.id === editingWorkflow.id ? editingWorkflow : w));
+      setCampaigns(prev => prev.map(w => w.id === editingCampaign.id ? editingCampaign : w));
       toast.success("Campaign updated successfully!");
     } else {
-      setWorkflows(prev => [...prev, editingWorkflow]);
+      setCampaigns(prev => [...prev, editingCampaign]);
       toast.success("Campaign activated! Your automated marketing is now live 🚀");
     }
-    setEditingWorkflow(null);
+    setEditingCampaign(null);
     setEditingActionId(null);
     setViewMode("list");
   };
 
-  const deleteWorkflow = (id: number) => {
-    setWorkflows(prev => prev.filter(w => w.id !== id));
-    toast.success("Workflow deleted");
-    if (detailWorkflow?.id === id) setViewMode("list");
+  const deleteCampaign = (id: number) => {
+    setCampaigns(prev => prev.filter(w => w.id !== id));
+    toast.success("Campaign deleted");
+    if (detailCampaign?.id === id) setViewMode("list");
   };
 
-  const toggleWorkflow = (id: number) => {
-    setWorkflows(prev => prev.map(w => w.id === id ? { ...w, enabled: !w.enabled } : w));
+  const toggleCampaign = (id: number) => {
+    setCampaigns(prev => prev.map(w => w.id === id ? { ...w, enabled: !w.enabled } : w));
   };
 
-  const openEdit = (wf: Workflow) => {
-    setEditingWorkflow({ ...wf, actions: wf.actions.map(a => ({ ...a })) });
+  const openEdit = (wf: Campaign) => {
+    setEditingCampaign({ ...wf, actions: wf.actions.map(a => ({ ...a })) });
     setEditingActionId(null);
     setViewMode("builder");
   };
 
-  const openDetail = (wf: Workflow) => {
-    setDetailWorkflow(wf);
+  const openDetail = (wf: Campaign) => {
+    setDetailCampaign(wf);
     setViewMode("detail");
   };
 
@@ -580,18 +868,18 @@ const MarketingCampaigns = () => {
             </Button>
           </div>
 
-          <Tabs defaultValue="workflows" className="space-y-5">
+          <Tabs defaultValue="campaigns" className="space-y-5">
             <TabsList>
-              <TabsTrigger value="workflows" className="gap-1.5"><Zap className="h-3.5 w-3.5" /> Workflows</TabsTrigger>
-              <TabsTrigger value="campaigns" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Campaigns</TabsTrigger>
+              <TabsTrigger value="campaigns" className="gap-1.5"><Zap className="h-3.5 w-3.5" /> Campaigns</TabsTrigger>
+              <TabsTrigger value="performance" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Campaign Performance</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="workflows" className="space-y-5">
+            <TabsContent value="campaigns" className="space-y-5">
               <div className="grid grid-cols-5 gap-4">
                 {[
-                  { icon: Zap, label: "Active Campaigns", value: workflows.filter(w => w.enabled).length },
-                  { icon: Users, label: "Total Triggers", value: workflows.reduce((s, w) => s + w.runs, 0).toLocaleString() },
-                  { icon: Mail, label: "Messages Sent", value: (workflows.reduce((s, w) => s + w.runs, 0) * 2.3).toFixed(0) },
+                  { icon: Zap, label: "Active Campaigns", value: campaigns.filter(w => w.enabled).length },
+                  { icon: Users, label: "Total Triggers", value: campaigns.reduce((s, w) => s + w.runs, 0).toLocaleString() },
+                  { icon: Mail, label: "Messages Sent", value: (campaigns.reduce((s, w) => s + w.runs, 0) * 2.3).toFixed(0) },
                   { icon: Eye, label: "Avg Open Rate", value: "42%" },
                   { icon: IndianRupee, label: "Revenue", value: `₹${formatRevenue(totalRevenue)}` },
                 ].map(s => (
@@ -602,22 +890,6 @@ const MarketingCampaigns = () => {
                       <p className="text-xl font-semibold text-foreground">{s.value}</p>
                     </div>
                   </div>
-                ))}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <ListFilter className="h-4 w-4 text-muted-foreground" />
-                {(Object.keys(categoryConfig) as WorkflowCategory[]).map(cat => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={cn(
-                      "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                      activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    {categoryConfig[cat].label}
-                  </button>
                 ))}
               </div>
 
@@ -634,12 +906,23 @@ const MarketingCampaigns = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-foreground text-sm">{w.name}</span>
-                        {w.isDefault && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Default</Badge>}
-                        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", categoryConfig[w.category].color)}>
-                          {categoryConfig[w.category].label}
-                        </Badge>
+                        {w.isDefault && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Sample</Badge>}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{w.description}</p>
+                      {w.audienceType && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <Users className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-[11px] text-foreground">
+                            {w.audienceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                            {w.targetProductId && w.targetProductId !== "all" && (
+                              <span className="text-muted-foreground"> • Specific product</span>
+                            )}
+                            {w.targetProductId === "all" && (
+                              <span className="text-muted-foreground"> • All products</span>
+                            )}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-center gap-3 mt-1">
                         <span className="text-[11px] text-muted-foreground">Trigger: <span className="text-foreground">{w.trigger}</span></span>
                         <span className="text-[11px] text-muted-foreground">·</span>
@@ -653,7 +936,7 @@ const MarketingCampaigns = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                      <Switch checked={w.enabled} onCheckedChange={() => toggleWorkflow(w.id)} />
+                      <Switch checked={w.enabled} onCheckedChange={() => toggleCampaign(w.id)} />
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -664,7 +947,7 @@ const MarketingCampaigns = () => {
                           <DropdownMenuItem onClick={() => openEdit(w)}>
                             <Edit3 className="h-3.5 w-3.5 mr-2" /> Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive" onClick={() => deleteWorkflow(w.id)}>
+                          <DropdownMenuItem className="text-destructive" onClick={() => deleteCampaign(w.id)}>
                             <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -674,19 +957,19 @@ const MarketingCampaigns = () => {
                 ))}
                 {filtered.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground text-sm">
-                    No workflows in this category. <button onClick={startCreate} className="text-primary hover:underline">Create one</button>
+                    No campaigns created yet. <button onClick={() => startCreate()} className="text-primary hover:underline">Create one</button>
                   </div>
                 )}
               </div>
             </TabsContent>
 
-            <TabsContent value="campaigns" className="space-y-5">
+            <TabsContent value="performance" className="space-y-5">
               {/* Campaign Stats */}
               <div className="grid grid-cols-4 gap-4">
                 {[
                   { icon: Users, label: "Total Leads", value: totalLeads.toLocaleString(), sub: "across all campaigns" },
                   { icon: UserPlus, label: "Paid Customers", value: totalPaid.toLocaleString(), sub: `${avgConversion}% conversion` },
-                  { icon: IndianRupee, label: "Revenue Generated", value: `₹${(totalRevenue / 100000).toFixed(1)}L`, sub: "from workflow campaigns" },
+                  { icon: IndianRupee, label: "Revenue Generated", value: `₹${(totalRevenue / 100000).toFixed(1)}L`, sub: "from campaigns" },
                   { icon: Mail, label: "Emails Sent", value: campaignData.reduce((s, c) => s + c.emailsSent, 0).toLocaleString(), sub: "total messages" },
                 ].map(s => (
                   <div key={s.label} className="blade-stat flex items-center gap-4">
@@ -771,55 +1054,42 @@ const MarketingCampaigns = () => {
 
   // ─── CREATE CHAT VIEW (Split: AI Assistant + Campaign Form) ───
   if (viewMode === "create-chat") {
-    // Initialize workflow if not exists
-    if (!editingWorkflow) {
-      const initialWorkflow: Workflow = {
-        id: Date.now(),
-        name: currentCampaignType ? campaignTypeConfig[currentCampaignType].label : "New Campaign",
-        description: "",
-        trigger: "Payment Captured",
-        category: "marketing",
-        actions: currentCampaignType ? [...campaignTypeConfig[currentCampaignType].defaultActions] : [
-          makeAction("email", "Send welcome email", { subject: "Welcome!", body: "Hi {{name}},\n\nThank you!" })
-        ],
-        enabled: true,
-        isDefault: false,
-        runs: 0,
-      };
-      setEditingWorkflow(initialWorkflow);
+    // Wait for editingCampaign to be initialized by useEffect
+    if (!editingCampaign) {
+      return <DashboardLayout><div className="flex items-center justify-center h-full"><div className="text-muted-foreground">Loading...</div></div></DashboardLayout>;
     }
 
-    const wf = editingWorkflow!;
+    const wf = editingCampaign;
     const selectedAction = editingActionId ? wf.actions.find(a => a.id === editingActionId) : null;
 
-    const updateAction = (actionId: string, updates: Partial<WorkflowAction>) => {
-      setEditingWorkflow({
+    const updateAction = (actionId: string, updates: Partial<CampaignAction>) => {
+      setEditingCampaign({
         ...wf,
         actions: wf.actions.map(a => a.id === actionId ? { ...a, ...updates } : a),
       });
     };
 
     const updateActionConfig = (actionId: string, key: string, value: string) => {
-      setEditingWorkflow({
+      setEditingCampaign({
         ...wf,
         actions: wf.actions.map(a => a.id === actionId ? { ...a, config: { ...a.config, [key]: value } } : a),
       });
     };
 
     const removeAction = (actionId: string) => {
-      setEditingWorkflow({ ...wf, actions: wf.actions.filter(a => a.id !== actionId) });
+      setEditingCampaign({ ...wf, actions: wf.actions.filter(a => a.id !== actionId) });
       if (editingActionId === actionId) setEditingActionId(null);
     };
 
-    const addAction = (type: WorkflowAction["type"]) => {
+    const addAction = (type: CampaignAction["type"]) => {
       const newAction = makeAction(type, `New ${actionTypeConfig[type].label} action`);
-      setEditingWorkflow({ ...wf, actions: [...wf.actions, newAction] });
+      setEditingCampaign({ ...wf, actions: [...wf.actions, newAction] });
       setEditingActionId(newAction.id);
     };
 
     return (
       <DashboardLayout>
-        <div className="h-[calc(100vh-80px)] flex flex-col">
+        <div className="h-[calc(100vh-80px)] flex flex-col bg-white rounded-lg border border-border p-6 -m-6">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-border">
             <div className="flex items-center gap-3">
@@ -834,7 +1104,7 @@ const MarketingCampaigns = () => {
                 <span className="text-sm font-semibold text-foreground">Create Campaign</span>
               </div>
             </div>
-            <Button size="sm" onClick={saveWorkflow} className="gap-1.5">
+            <Button size="sm" onClick={saveCampaign} className="gap-1.5">
               <CheckCircle2 className="h-3.5 w-3.5" /> Create & Activate
             </Button>
           </div>
@@ -925,7 +1195,7 @@ const MarketingCampaigns = () => {
                     <Label className="text-sm font-medium">Campaign Name *</Label>
                     <Input
                       value={wf.name}
-                      onChange={e => setEditingWorkflow({ ...wf, name: e.target.value })}
+                      onChange={e => setEditingCampaign({ ...wf, name: e.target.value })}
                       placeholder="e.g., Post-Webinar Nurture Sequence"
                       className="mt-1.5"
                     />
@@ -938,7 +1208,7 @@ const MarketingCampaigns = () => {
                       onValueChange={(val) => {
                         setCurrentCampaignType(val as CampaignType);
                         const config = campaignTypeConfig[val as CampaignType];
-                        setEditingWorkflow({ ...wf, name: config.label });
+                        setEditingCampaign({ ...wf, name: config.label });
                       }}
                     >
                       <SelectTrigger className="mt-1.5">
@@ -964,7 +1234,7 @@ const MarketingCampaigns = () => {
                     <Label className="text-sm font-medium">Description</Label>
                     <Textarea
                       value={wf.description}
-                      onChange={e => setEditingWorkflow({ ...wf, description: e.target.value })}
+                      onChange={e => setEditingCampaign({ ...wf, description: e.target.value })}
                       placeholder="Describe what this campaign does..."
                       rows={2}
                       className="mt-1.5 text-sm"
@@ -972,10 +1242,79 @@ const MarketingCampaigns = () => {
                   </div>
                 </div>
 
+                {/* Who to Target */}
+                <div className="space-y-3">
+                  <div>
+                    <Label className="text-sm font-medium">Who to Target *</Label>
+                    <Select
+                      value={wf.audienceType || ""}
+                      onValueChange={v => setEditingCampaign({ ...wf, audienceType: v })}
+                    >
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue placeholder="Select audience type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="webinar_attendees">Webinar Attendees</SelectItem>
+                        <SelectItem value="webinar_registrants">Webinar Registrants (All)</SelectItem>
+                        <SelectItem value="free_webinar_guests">Free Webinar Guests</SelectItem>
+                        <SelectItem value="course_students">Course Students</SelectItem>
+                        <SelectItem value="paid_customers">Paid Customers</SelectItem>
+                        <SelectItem value="cart_abandoners">Cart Abandoners</SelectItem>
+                        <SelectItem value="payment_failed">Payment Failed Users</SelectItem>
+                        <SelectItem value="all_customers">All Customers</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Which audience segment should receive this campaign?
+                    </p>
+                  </div>
+
+                  {wf.audienceType && (wf.audienceType.includes("webinar") || wf.audienceType.includes("course")) && (
+                    <div>
+                      <Label className="text-sm font-medium">Select Product</Label>
+                      <Select
+                        value={wf.targetProductId || "all"}
+                        onValueChange={v => setEditingCampaign({ ...wf, targetProductId: v })}
+                      >
+                        <SelectTrigger className="mt-1.5">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">
+                            <div className="flex items-center gap-2">
+                              <Zap className="h-3.5 w-3.5" />
+                              All {wf.audienceType.includes("webinar") ? "Webinars" : "Courses"}
+                            </div>
+                          </SelectItem>
+                          <div className="h-px bg-border my-1" />
+                          {getAvailableProducts()
+                            .filter(p =>
+                              wf.audienceType?.includes("webinar") ? p.type === "webinar" :
+                              wf.audienceType?.includes("course") ? p.type === "course" :
+                              true
+                            )
+                            .map(product => (
+                              <SelectItem key={product.id} value={product.id}>
+                                <div className="flex items-center gap-2">
+                                  <GraduationCap className="h-3.5 w-3.5" />
+                                  {product.name}
+                                </div>
+                              </SelectItem>
+                            ))
+                          }
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Target specific {wf.audienceType.includes("webinar") ? "webinar" : "course"} or send to all
+                      </p>
+                    </div>
+                  )}
+                </div>
+
                 {/* Trigger Event */}
                 <div>
                   <Label className="text-sm font-medium">Trigger Event *</Label>
-                  <Select value={wf.trigger} onValueChange={v => setEditingWorkflow({ ...wf, trigger: v })}>
+                  <Select value={wf.trigger} onValueChange={v => setEditingCampaign({ ...wf, trigger: v })}>
                     <SelectTrigger className="mt-1.5">
                       <SelectValue />
                     </SelectTrigger>
@@ -1001,7 +1340,7 @@ const MarketingCampaigns = () => {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        {(Object.keys(actionTypeConfig) as WorkflowAction["type"][]).map(type => {
+                        {(Object.keys(actionTypeConfig) as CampaignAction["type"][]).map(type => {
                           const cfg = actionTypeConfig[type];
                           return (
                             <DropdownMenuItem key={type} onClick={() => addAction(type)} className="gap-2">
@@ -1171,53 +1510,50 @@ const MarketingCampaigns = () => {
   }
 
   // ─── VISUAL BUILDER VIEW ───
-  if (viewMode === "builder" && editingWorkflow) {
-    const wf = editingWorkflow;
+  if (viewMode === "builder" && editingCampaign) {
+    const wf = editingCampaign;
     const selectedAction = editingActionId ? wf.actions.find(a => a.id === editingActionId) : null;
 
-    const updateAction = (actionId: string, updates: Partial<WorkflowAction>) => {
-      setEditingWorkflow({
+    const updateAction = (actionId: string, updates: Partial<CampaignAction>) => {
+      setEditingCampaign({
         ...wf,
         actions: wf.actions.map(a => a.id === actionId ? { ...a, ...updates } : a),
       });
     };
 
     const updateActionConfig = (actionId: string, key: string, value: string) => {
-      setEditingWorkflow({
+      setEditingCampaign({
         ...wf,
         actions: wf.actions.map(a => a.id === actionId ? { ...a, config: { ...a.config, [key]: value } } : a),
       });
     };
 
     const removeAction = (actionId: string) => {
-      setEditingWorkflow({ ...wf, actions: wf.actions.filter(a => a.id !== actionId) });
+      setEditingCampaign({ ...wf, actions: wf.actions.filter(a => a.id !== actionId) });
       if (editingActionId === actionId) setEditingActionId(null);
     };
 
-    const addAction = (type: WorkflowAction["type"]) => {
+    const addAction = (type: CampaignAction["type"]) => {
       const newAction = makeAction(type, `New ${actionTypeConfig[type].label} action`);
-      setEditingWorkflow({ ...wf, actions: [...wf.actions, newAction] });
+      setEditingCampaign({ ...wf, actions: [...wf.actions, newAction] });
       setEditingActionId(newAction.id);
     };
 
     return (
       <DashboardLayout>
-        <div className="h-[calc(100vh-80px)] flex flex-col">
+        <div className="h-[calc(100vh-80px)] flex flex-col bg-white rounded-lg border border-border p-6 -m-6">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="sm" onClick={() => { setViewMode("list"); setEditingWorkflow(null); }} className="gap-1.5">
+              <Button variant="ghost" size="sm" onClick={() => { setViewMode("list"); setEditingCampaign(null); }} className="gap-1.5">
                 <ArrowLeft className="h-4 w-4" /> Back
               </Button>
               <div className="h-4 w-px bg-border" />
               <span className="text-sm font-semibold text-foreground">{wf.name}</span>
-              <Badge variant="outline" className={cn("text-[10px]", categoryConfig[wf.category].color)}>
-                {categoryConfig[wf.category].label}
-              </Badge>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => { setViewMode("list"); setEditingWorkflow(null); }}>Cancel</Button>
-              <Button size="sm" onClick={saveWorkflow} className="gap-1.5">
+              <Button variant="outline" size="sm" onClick={() => { setViewMode("list"); setEditingCampaign(null); }}>Cancel</Button>
+              <Button size="sm" onClick={saveCampaign} className="gap-1.5">
                 <CheckCircle2 className="h-3.5 w-3.5" /> Activate Campaign
               </Button>
             </div>
@@ -1237,19 +1573,19 @@ const MarketingCampaigns = () => {
                 </div>
               </div>
 
-              {/* Workflow name & trigger */}
+              {/* Campaign name & trigger */}
               <div className="space-y-4 mb-6">
                 <div>
-                  <Label className="text-xs font-medium text-muted-foreground">Workflow Name</Label>
+                  <Label className="text-xs font-medium text-muted-foreground">Campaign Name</Label>
                   <Input
                     value={wf.name}
-                    onChange={e => setEditingWorkflow({ ...wf, name: e.target.value })}
+                    onChange={e => setEditingCampaign({ ...wf, name: e.target.value })}
                     className="mt-1"
                   />
                 </div>
                 <div>
                   <Label className="text-xs font-medium text-muted-foreground">Trigger</Label>
-                  <Select value={wf.trigger} onValueChange={v => setEditingWorkflow({ ...wf, trigger: v })}>
+                  <Select value={wf.trigger} onValueChange={v => setEditingCampaign({ ...wf, trigger: v })}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       {triggerOptions.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -1324,7 +1660,7 @@ const MarketingCampaigns = () => {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center" className="w-48">
-                    {(Object.keys(actionTypeConfig) as WorkflowAction["type"][]).map(type => {
+                    {(Object.keys(actionTypeConfig) as CampaignAction["type"][]).map(type => {
                       const c = actionTypeConfig[type];
                       const I = c.icon;
                       return (
@@ -1506,8 +1842,8 @@ const MarketingCampaigns = () => {
   }
 
   // ─── DETAIL VIEW ───
-  if (viewMode === "detail" && detailWorkflow) {
-    const wf = detailWorkflow;
+  if (viewMode === "detail" && detailCampaign) {
+    const wf = detailCampaign;
     return (
       <DashboardLayout>
         <div className="animate-fade-in space-y-6">
@@ -1517,23 +1853,34 @@ const MarketingCampaigns = () => {
             </Button>
             <div className="h-4 w-px bg-border" />
             <h1 className="text-lg font-semibold text-foreground">{wf.name}</h1>
-            <Badge variant="outline" className={cn("text-[10px]", categoryConfig[wf.category].color)}>
-              {categoryConfig[wf.category].label}
-            </Badge>
-            {wf.isDefault && <Badge variant="secondary" className="text-[10px]">Default</Badge>}
+            {wf.isDefault && <Badge variant="secondary" className="text-[10px]">Sample</Badge>}
             <div className="ml-auto flex items-center gap-2">
-              <Switch checked={wf.enabled} onCheckedChange={() => { toggleWorkflow(wf.id); setDetailWorkflow({ ...wf, enabled: !wf.enabled }); }} />
+              <Switch checked={wf.enabled} onCheckedChange={() => { toggleCampaign(wf.id); setDetailCampaign({ ...wf, enabled: !wf.enabled }); }} />
               <span className="text-xs text-muted-foreground">{wf.enabled ? "Active" : "Paused"}</span>
               <Button variant="outline" size="sm" className="gap-1.5" onClick={() => openEdit(wf)}>
                 <Edit3 className="h-3.5 w-3.5" /> Edit
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive" onClick={() => { deleteWorkflow(wf.id); setViewMode("list"); }}>
+              <Button variant="outline" size="sm" className="gap-1.5 text-destructive hover:text-destructive" onClick={() => { deleteCampaign(wf.id); setViewMode("list"); }}>
                 <Trash2 className="h-3.5 w-3.5" /> Delete
               </Button>
             </div>
           </div>
 
           <p className="text-sm text-muted-foreground">{wf.description}</p>
+
+          {wf.audienceType && (
+            <div className="flex items-center gap-2 bg-secondary/30 rounded-lg px-4 py-3">
+              <Users className="h-4 w-4 text-muted-foreground" />
+              <div className="flex-1">
+                <p className="text-xs text-muted-foreground font-medium">Target Audience</p>
+                <p className="text-sm font-semibold text-foreground">
+                  {wf.audienceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  {wf.targetProductId === "all" && <span className="text-muted-foreground font-normal"> • All products</span>}
+                  {wf.targetProductId && wf.targetProductId !== "all" && <span className="text-muted-foreground font-normal"> • Specific product</span>}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-4">
             {[
@@ -1548,9 +1895,31 @@ const MarketingCampaigns = () => {
             ))}
           </div>
 
+          {/* View Runs CTA */}
+          <div className="flex items-center justify-between bg-primary/5 border border-primary/20 rounded-lg px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">View Campaign Performance</p>
+                <p className="text-xs text-muted-foreground">See individual run details and metrics</p>
+              </div>
+            </div>
+            <Button
+              onClick={() => {
+                setRunsCampaign(wf);
+                setViewMode("runs");
+              }}
+              className="gap-1.5"
+            >
+              <Eye className="h-4 w-4" /> View All Runs
+            </Button>
+          </div>
+
           {/* Visual flow (read-only) */}
           <div className="blade-card p-6">
-            <h3 className="text-sm font-semibold text-foreground mb-4">Workflow Flow</h3>
+            <h3 className="text-sm font-semibold text-foreground mb-4">Campaign Flow</h3>
             <div className="flex flex-col items-center">
               {/* Trigger */}
               <div className="w-full max-w-md bg-primary/5 border-2 border-primary/30 rounded-xl p-4 flex items-center gap-3">
@@ -1586,6 +1955,437 @@ const MarketingCampaigns = () => {
               })}
             </div>
           </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ─── CAMPAIGN RUNS VIEW ───
+  if (viewMode === "runs" && runsCampaign) {
+    const campaignRuns = mockCampaignRuns[runsCampaign.id] || [];
+
+    return (
+      <DashboardLayout>
+        <div className="animate-fade-in space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => { setViewMode("detail"); setDetailCampaign(runsCampaign); }} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back to Campaign
+            </Button>
+            <div className="h-4 w-px bg-border" />
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">{runsCampaign.name}</h1>
+              <p className="text-xs text-muted-foreground">Campaign Performance - Individual Runs</p>
+            </div>
+          </div>
+
+          {/* Overall Stats */}
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              {
+                label: "Total Runs",
+                value: campaignRuns.length.toLocaleString(),
+                icon: Zap,
+              },
+              {
+                label: "Total Recipients",
+                value: campaignRuns.reduce((sum, r) => sum + r.stats.recipients, 0).toLocaleString(),
+                icon: Users,
+              },
+              {
+                label: "Total Conversions",
+                value: campaignRuns.reduce((sum, r) => sum + r.stats.converted, 0).toLocaleString(),
+                icon: TrendingUp,
+              },
+              {
+                label: "Total Revenue",
+                value: `₹${(campaignRuns.reduce((sum, r) => sum + r.stats.revenue, 0) / 1000).toFixed(1)}K`,
+                icon: IndianRupee,
+              },
+            ].map(s => (
+              <div key={s.label} className="blade-stat flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <s.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{s.label}</p>
+                  <p className="text-xl font-semibold text-foreground">{s.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Campaign Runs Table */}
+          <div className="blade-card">
+            <div className="px-6 py-4 border-b border-border">
+              <h3 className="text-sm font-semibold text-foreground">Individual Campaign Runs</h3>
+              <p className="text-xs text-muted-foreground mt-1">Detailed performance for each campaign execution</p>
+            </div>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Trigger Event</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Recipients</TableHead>
+                    <TableHead>Emails Sent</TableHead>
+                    <TableHead>Opened</TableHead>
+                    <TableHead>Clicked</TableHead>
+                    <TableHead>Converted</TableHead>
+                    <TableHead>Revenue</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {campaignRuns.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={10} className="text-center py-12 text-muted-foreground">
+                        No runs found for this campaign yet
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    campaignRuns.map((run) => {
+                      const openRate = run.stats.emailsSent > 0 ? ((run.stats.opened / run.stats.emailsSent) * 100).toFixed(1) : "0";
+                      const clickRate = run.stats.opened > 0 ? ((run.stats.clicked / run.stats.opened) * 100).toFixed(1) : "0";
+                      const conversionRate = run.stats.recipients > 0 ? ((run.stats.converted / run.stats.recipients) * 100).toFixed(1) : "0";
+
+                      return (
+                        <TableRow key={run.id} className="cursor-pointer hover:bg-secondary/50">
+                          <TableCell>
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{run.triggerName}</p>
+                              <p className="text-xs text-muted-foreground">{run.triggerDate}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{run.executedAt}</TableCell>
+                          <TableCell className="text-sm font-medium">{run.stats.recipients}</TableCell>
+                          <TableCell className="text-sm">{run.stats.emailsSent}</TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="text-sm font-medium">{run.stats.opened}</p>
+                              <p className="text-xs text-muted-foreground">{openRate}%</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="text-sm font-medium">{run.stats.clicked}</p>
+                              <p className="text-xs text-muted-foreground">{clickRate}%</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="text-sm font-medium text-green-600">{run.stats.converted}</p>
+                              <p className="text-xs text-muted-foreground">{conversionRate}%</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm font-semibold">₹{(run.stats.revenue / 1000).toFixed(1)}K</TableCell>
+                          <TableCell>
+                            <Badge variant={run.status === "completed" ? "default" : run.status === "in_progress" ? "secondary" : "destructive"}>
+                              {run.status === "completed" ? "Completed" : run.status === "in_progress" ? "In Progress" : "Failed"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedRun(run);
+                                setViewMode("run-details");
+                              }}
+                            >
+                              <Settings className="h-3.5 w-3.5" /> Manage
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+
+          {/* Performance Insights (if we have runs) */}
+          {campaignRuns.length > 0 && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="blade-card p-6">
+                <h3 className="text-sm font-semibold text-foreground mb-4">Best Performing Run</h3>
+                {(() => {
+                  const bestRun = campaignRuns.reduce((best, run) =>
+                    run.stats.revenue > best.stats.revenue ? run : best
+                  , campaignRuns[0]);
+
+                  return (
+                    <div className="space-y-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Trigger Event</p>
+                        <p className="text-sm font-medium text-foreground">{bestRun.triggerName}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Conversions</p>
+                          <p className="text-lg font-semibold text-green-600">{bestRun.stats.converted}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Revenue</p>
+                          <p className="text-lg font-semibold text-primary">₹{(bestRun.stats.revenue / 1000).toFixed(1)}K</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div className="blade-card p-6">
+                <h3 className="text-sm font-semibold text-foreground mb-4">Average Performance</h3>
+                {(() => {
+                  const avgRecipients = (campaignRuns.reduce((sum, r) => sum + r.stats.recipients, 0) / campaignRuns.length).toFixed(0);
+                  const avgConverted = (campaignRuns.reduce((sum, r) => sum + r.stats.converted, 0) / campaignRuns.length).toFixed(0);
+                  const avgRevenue = (campaignRuns.reduce((sum, r) => sum + r.stats.revenue, 0) / campaignRuns.length / 1000).toFixed(1);
+                  const totalOpened = campaignRuns.reduce((sum, r) => sum + r.stats.opened, 0);
+                  const totalEmailsSent = campaignRuns.reduce((sum, r) => sum + r.stats.emailsSent, 0);
+                  const avgOpenRate = totalEmailsSent > 0 ? ((totalOpened / totalEmailsSent) * 100).toFixed(1) : "0";
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Avg Recipients</p>
+                          <p className="text-lg font-semibold text-foreground">{avgRecipients}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Avg Open Rate</p>
+                          <p className="text-lg font-semibold text-foreground">{avgOpenRate}%</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Avg Conversions</p>
+                          <p className="text-lg font-semibold text-green-600">{avgConverted}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Avg Revenue</p>
+                          <p className="text-lg font-semibold text-primary">₹{avgRevenue}K</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // ─── RUN DETAILS VIEW (Leads & Converted Users) ───
+  if (viewMode === "run-details" && selectedRun) {
+    const leads = mockRunLeads[selectedRun.id] || [];
+    const conversions = mockRunConversions[selectedRun.id] || [];
+
+    return (
+      <DashboardLayout>
+        <div className="animate-fade-in space-y-6">
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => setViewMode("runs")} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back to Runs
+            </Button>
+            <div className="h-4 w-px bg-border" />
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">{selectedRun.triggerName}</h1>
+              <p className="text-xs text-muted-foreground">{selectedRun.campaignName} • {selectedRun.triggerDate}</p>
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-4 gap-4">
+            {[
+              { label: "Total Leads", value: leads.length, icon: Users },
+              { label: "Converted", value: conversions.length, icon: TrendingUp },
+              { label: "Conversion Rate", value: `${leads.length > 0 ? ((conversions.length / leads.length) * 100).toFixed(1) : 0}%`, icon: BarChart3 },
+              { label: "Total Revenue", value: `₹${(conversions.reduce((sum, c) => sum + c.amountPaid, 0) / 1000).toFixed(1)}K`, icon: IndianRupee },
+            ].map(s => (
+              <div key={s.label} className="blade-stat flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <s.icon className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">{s.label}</p>
+                  <p className="text-xl font-semibold text-foreground">{s.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Tabs for Leads vs Converted */}
+          <Tabs defaultValue="leads" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="leads" className="gap-1.5">
+                <Users className="h-3.5 w-3.5" /> Leads ({leads.length})
+              </TabsTrigger>
+              <TabsTrigger value="converted" className="gap-1.5">
+                <TrendingUp className="h-3.5 w-3.5" /> Converted Users ({conversions.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Leads Tab */}
+            <TabsContent value="leads">
+              <div className="blade-card">
+                <div className="px-6 py-4 border-b border-border">
+                  <h3 className="text-sm font-semibold text-foreground">All Leads</h3>
+                  <p className="text-xs text-muted-foreground mt-1">People who received this campaign</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Registered At</TableHead>
+                        <TableHead>Email Opened</TableHead>
+                        <TableHead>Link Clicked</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {leads.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                            No leads data available
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        leads.map((lead) => (
+                          <TableRow key={lead.id}>
+                            <TableCell className="font-medium">{lead.name}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{lead.email}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{lead.phone}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{lead.registeredAt}</TableCell>
+                            <TableCell>
+                              {lead.emailOpened ? (
+                                <Badge variant="default" className="gap-1">
+                                  <CheckCircle2 className="h-3 w-3" /> Opened
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="gap-1">
+                                  <X className="h-3 w-3" /> Not Opened
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {lead.linkClicked ? (
+                                <Badge variant="default" className="gap-1">
+                                  <CheckCircle2 className="h-3 w-3" /> Clicked
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="gap-1">
+                                  <X className="h-3 w-3" /> Not Clicked
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant={
+                                  lead.status === "converted" ? "default" :
+                                  lead.status === "engaged" ? "secondary" :
+                                  "outline"
+                                }
+                              >
+                                {lead.status === "converted" ? "Converted" : lead.status === "engaged" ? "Engaged" : "Pending"}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* Converted Users Tab */}
+            <TabsContent value="converted">
+              <div className="blade-card">
+                <div className="px-6 py-4 border-b border-border">
+                  <h3 className="text-sm font-semibold text-foreground">Converted Users</h3>
+                  <p className="text-xs text-muted-foreground mt-1">Users who completed a purchase</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Product Bought</TableHead>
+                        <TableHead>Amount Paid</TableHead>
+                        <TableHead>Payment Method</TableHead>
+                        <TableHead>Converted At</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {conversions.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={7} className="text-center py-12 text-muted-foreground">
+                            No conversions yet for this campaign run
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        conversions.map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.name}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{user.email}</TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{user.phone}</TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">{user.productBought}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-sm font-semibold text-green-600">₹{user.amountPaid.toLocaleString()}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline">{user.paymentMethod}</Badge>
+                            </TableCell>
+                            <TableCell className="text-sm text-muted-foreground">{user.convertedAt}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Summary Stats for Converted Users */}
+              {conversions.length > 0 && (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="blade-stat">
+                    <p className="text-sm text-muted-foreground">Total Revenue</p>
+                    <p className="text-2xl font-semibold text-primary">
+                      ₹{conversions.reduce((sum, c) => sum + c.amountPaid, 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="blade-stat">
+                    <p className="text-sm text-muted-foreground">Average Order Value</p>
+                    <p className="text-2xl font-semibold text-foreground">
+                      ₹{(conversions.reduce((sum, c) => sum + c.amountPaid, 0) / conversions.length).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="blade-stat">
+                    <p className="text-sm text-muted-foreground">UPI vs Card</p>
+                    <p className="text-2xl font-semibold text-foreground">
+                      {conversions.filter(c => c.paymentMethod === "UPI").length} / {conversions.filter(c => c.paymentMethod === "Card").length}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </DashboardLayout>
     );

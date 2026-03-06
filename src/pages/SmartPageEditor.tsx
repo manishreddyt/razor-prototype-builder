@@ -18,15 +18,18 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { addSite, type SmartPageSite } from "./WebsiteBuilder";
-import { templates, availableSectionTypes, createDefaultSection, createCheckoutConfig, type TemplateData, type SectionData, type PageData, type CheckoutConfig, type CheckoutFormField } from "@/data/smartPageTemplates";
+import { addSite, getStoredSites, storeSites, type SmartPageSite } from "./WebsiteBuilder";
+import { templates, availableSectionTypes, createDefaultSection, createCheckoutConfig, type TemplateData, type SectionData, type PageData, type CheckoutConfig, type CheckoutFormField, type CustomPage } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
 import { SmartPageCheckout } from "@/components/SmartPageCheckout";
 import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
 import { ProductManager } from "@/components/products/ProductManager";
 import { LeadsManager } from "@/components/leads/LeadsManager";
 import { ContactFormBuilder } from "@/components/leads/ContactFormBuilder";
-import { Product, ProductsConfig } from "@/types/products";
+import { CustomPagesManager } from "@/components/CustomPagesManager";
+import { ProductDetailPage } from "@/components/ProductDetailPage";
+import { ProductCheckoutModal } from "@/components/ProductCheckoutModal";
+import { Product, ProductsConfig, PricingModel } from "@/types/products";
 import { Lead, ContactFormConfig } from "@/types/leads";
 
 interface PageState {
@@ -39,6 +42,8 @@ interface PageState {
 }
 
 interface EditorState {
+  /** Unique site ID for this draft/published site */
+  siteId: string;
   template: TemplateData;
   /** Per-page state. Key = page name. */
   pages: Record<string, PageState>;
@@ -50,6 +55,8 @@ interface EditorState {
   contactForm: ContactFormConfig;
   /** Captured leads */
   leads: Lead[];
+  /** Custom pages beyond template pages */
+  customPages: CustomPage[];
 }
 
 const buildPageState = (pd: PageData | undefined, fallback: TemplateData): PageState => {
@@ -73,14 +80,30 @@ const buildPageState = (pd: PageData | undefined, fallback: TemplateData): PageS
   };
 };
 
-const generateFromPrompt = (prompt: string, tpl: TemplateData): TemplateData => {
-  // Extract a meaningful title from the prompt
+const generateFromPrompt = (prompt: string, tpl: TemplateData, generatedData?: any): TemplateData => {
+  // If we have AI-generated content, use it
+  if (generatedData?.content) {
+    const content = generatedData.content;
+    const image = generatedData.image;
+
+    return {
+      ...tpl,
+      heroTitle: content.heroTitle,
+      heroTagline: content.heroTagline,
+      heroDescription: content.heroDescription,
+      heroCta: content.heroCta,
+      bannerImage: image || tpl.bannerImage,
+    };
+  }
+
+  // Fallback to basic generation
   const words = prompt.split(/\s+/).slice(0, 6).join(" ");
   const title = words.charAt(0).toUpperCase() + words.slice(1);
-  
-  // Pick a relevant banner image based on prompt keywords
+
   const lower = prompt.toLowerCase();
+
   let bannerImage = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&h=400&fit=crop";
+
   if (lower.includes("yoga") || lower.includes("fitness") || lower.includes("health")) {
     bannerImage = "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=900&h=400&fit=crop";
   } else if (lower.includes("coding") || lower.includes("tech") || lower.includes("programming") || lower.includes("bootcamp")) {
@@ -95,17 +118,32 @@ const generateFromPrompt = (prompt: string, tpl: TemplateData): TemplateData => 
     bannerImage = "https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=900&h=400&fit=crop";
   } else if (lower.includes("study") || lower.includes("education") || lower.includes("learn")) {
     bannerImage = "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=900&h=400&fit=crop";
+  } else if (lower.includes("webinar") || lower.includes("workshop")) {
+    bannerImage = "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=900&h=400&fit=crop";
   }
 
-  // Generate a tagline from the prompt
-  const tagline = prompt.length > 60 ? prompt.slice(0, 60) + "..." : prompt;
+  let tagline = "Professional • Expert-Led • Results-Driven";
+  if (lower.includes("webinar")) {
+    tagline = "Live Learning • Interactive • Expert Speakers";
+  } else if (lower.includes("coaching") || lower.includes("1:1")) {
+    tagline = "Personal Growth • One-on-One • Transformation";
+  } else if (lower.includes("course") || lower.includes("bootcamp")) {
+    tagline = "Comprehensive • Self-Paced • Certificate Included";
+  }
+
+  let description = `${prompt}. Join thousands who have transformed their careers with our expert-led programs.`;
+  if (lower.includes("webinar")) {
+    description = `${title}. Register now for this exclusive live webinar and learn from industry experts.`;
+  } else if (lower.includes("coaching")) {
+    description = `${title}. Get personalized guidance and accelerate your growth with one-on-one coaching.`;
+  }
 
   return {
     ...tpl,
     heroTitle: title,
     heroTagline: tagline,
-    heroDescription: `${prompt}. Join thousands of students who have transformed their careers with our expert-led programs.`,
-    heroCta: lower.includes("free") ? "Get Started Free" : lower.includes("coaching") || lower.includes("1:1") ? "Book a Session" : "Enroll Now",
+    heroDescription: description,
+    heroCta: lower.includes("free") ? "Get Started Free" : lower.includes("coaching") || lower.includes("1:1") ? "Book a Session" : lower.includes("webinar") ? "Register Now" : "Enroll Now",
     bannerImage,
   };
 };
@@ -113,16 +151,202 @@ const generateFromPrompt = (prompt: string, tpl: TemplateData): TemplateData => 
 const buildInitialState = (searchParams: URLSearchParams): EditorState => {
   const templateId = searchParams.get("template") || "";
   const prompt = searchParams.get("prompt") || "";
+  const aiPrompt = searchParams.get("aiPrompt") || "";  // AI prompt from config pages
   const title = searchParams.get("title") || "My Smart Page";
 
   const found = templates.find((t) => t.id === templateId);
   const tpl = found || templates[0];
-  const base = found ? { ...tpl } : prompt ? generateFromPrompt(prompt, tpl) : {
-    ...tpl,
-    heroTitle: title,
-    heroTagline: "Welcome to our website",
-    heroDescription: "A professional website built with Smart Pages.",
-  };
+
+  // Load AI-generated content from localStorage if available
+  let generatedData = null;
+  try {
+    const stored = localStorage.getItem("ai-generated-content");
+    if (stored) {
+      generatedData = JSON.parse(stored);
+      // Clear after use
+      localStorage.removeItem("ai-generated-content");
+    }
+  } catch (error) {
+    console.error("Error loading generated content:", error);
+  }
+
+  // If aiPrompt exists, use it to customize the template
+  let base: TemplateData;
+  if (aiPrompt) {
+    base = generateFromPrompt(aiPrompt, found || tpl, generatedData);
+  } else if (prompt) {
+    base = generateFromPrompt(prompt, tpl, generatedData);
+  } else if (found) {
+    base = { ...tpl };
+  } else {
+    base = {
+      ...tpl,
+      heroTitle: title,
+      heroTagline: "Welcome to our website",
+      heroDescription: "A professional website built with Smart Pages.",
+    };
+  }
+
+  // Check if this is a coaching template with session config in URL
+  const sessionName = searchParams.get("sessionName");
+  const isCoachingWithConfig = templateId === "coaching" && sessionName;
+
+  if (isCoachingWithConfig && base.productsConfig) {
+    // Extract session config from URL params
+    const sessionConfig = {
+      sessionName: sessionName || "1:1 Coaching Session",
+      isGMeetConnected: searchParams.get("isGMeetConnected") === "true",
+      isFree: searchParams.get("isFree") === "true",
+      price: parseInt(searchParams.get("price") || "2999"),
+      sessionDuration: parseInt(searchParams.get("sessionDuration") || "60"),
+      managementTool: (searchParams.get("managementTool") || "gmeet") as "gmeet" | "zoom" | "calendly" | "other",
+      otherToolName: searchParams.get("otherToolName") || undefined,
+      otherToolUrl: searchParams.get("otherToolUrl") || undefined,
+    };
+
+    // Update the first product (session) with the config
+    if (base.productsConfig.products && base.productsConfig.products.length > 0) {
+      const sessionProduct = base.productsConfig.products[0];
+      sessionProduct.title = sessionConfig.sessionName;
+      sessionProduct.sessionDuration = sessionConfig.sessionDuration;
+
+      // Update pricing
+      sessionProduct.pricingModels = sessionConfig.isFree
+        ? [{
+            id: "pm-free",
+            name: "Free Session",
+            price: 0,
+            currency: "INR",
+            interval: "one_time",
+            features: [
+              `${sessionConfig.sessionDuration}-minute 1:1 call`,
+              "Video session",
+              "Follow-up email"
+            ],
+            highlighted: true,
+          }]
+        : [{
+            id: "pm-paid",
+            name: "Single Session",
+            price: sessionConfig.price,
+            currency: "INR",
+            interval: "one_time",
+            features: [
+              `${sessionConfig.sessionDuration}-minute 1:1 call`,
+              "Session recording",
+              "Follow-up email",
+              "Action items document"
+            ],
+            highlighted: true,
+          }];
+
+      // Customize product description using AI-generated content or prompt
+      if (generatedData?.content?.productDescription) {
+        sessionProduct.description = generatedData.content.productDescription;
+        sessionProduct.longDescription = generatedData.content.aboutSection;
+      } else if (aiPrompt) {
+        const lower = aiPrompt.toLowerCase();
+        if (lower.includes("career")) {
+          sessionProduct.description = "Navigate your career path with expert guidance and personalized coaching strategies.";
+        } else if (lower.includes("life") || lower.includes("personal")) {
+          sessionProduct.description = "Transform your life with one-on-one coaching focused on personal growth and development.";
+        } else if (lower.includes("business") || lower.includes("entrepreneur")) {
+          sessionProduct.description = "Accelerate your business success with strategic coaching and actionable insights.";
+        } else {
+          sessionProduct.description = `${sessionConfig.sessionName} - Personalized coaching to help you achieve your goals.`;
+        }
+      }
+
+      // Store session config in product metadata for editing later
+      sessionProduct.metadata = {
+        sessionConfig,
+      };
+    }
+  }
+
+  // Check if this is a webinar template with webinar config in URL
+  const webinarTitle = searchParams.get("webinarTitle");
+  const isWebinarWithConfig = templateId === "webinar" && webinarTitle;
+
+  if (isWebinarWithConfig && base.productsConfig) {
+    // Extract webinar config from URL params
+    const webinarConfig = {
+      webinarTitle: webinarTitle || "Live Webinar",
+      webinarDate: searchParams.get("webinarDate") || "",
+      webinarTime: searchParams.get("webinarTime") || "18:00",
+      webinarDuration: parseInt(searchParams.get("webinarDuration") || "90"),
+      isFree: searchParams.get("isFree") === "true",
+      price: parseInt(searchParams.get("price") || "499"),
+      platform: (searchParams.get("platform") || "zoom") as "zoom" | "gmeet" | "custom",
+      customPlatformUrl: searchParams.get("customPlatformUrl") || undefined,
+    };
+
+    // Update the first product (webinar) with the config
+    if (base.productsConfig.products && base.productsConfig.products.length > 0) {
+      const webinarProduct = base.productsConfig.products[0];
+      webinarProduct.title = webinarConfig.webinarTitle;
+      webinarProduct.webinarDate = webinarConfig.webinarDate;
+      webinarProduct.webinarTime = webinarConfig.webinarTime;
+      webinarProduct.webinarDuration = webinarConfig.webinarDuration;
+      webinarProduct.webinarPlatform = webinarConfig.platform;
+      if (webinarConfig.customPlatformUrl) {
+        webinarProduct.webinarUrl = webinarConfig.customPlatformUrl;
+      }
+
+      // Update pricing
+      webinarProduct.pricingModels = webinarConfig.isFree
+        ? [{
+            id: "pm-free",
+            name: "Free Registration",
+            price: 0,
+            currency: "INR",
+            interval: "one_time",
+            features: [
+              "Live session access",
+              "Q&A participation",
+              "Certificate of attendance"
+            ],
+            highlighted: true,
+          }]
+        : [{
+            id: "pm-paid",
+            name: "Registration",
+            price: webinarConfig.price,
+            currency: "INR",
+            interval: "one_time",
+            features: [
+              "Live session access",
+              "Q&A participation",
+              "Recording access",
+              "Certificate of attendance",
+              "Bonus resources"
+            ],
+            highlighted: true,
+          }];
+
+      // Customize product description using AI-generated content or prompt
+      if (generatedData?.content?.productDescription) {
+        webinarProduct.description = generatedData.content.productDescription;
+        webinarProduct.longDescription = generatedData.content.aboutSection;
+      } else if (aiPrompt) {
+        const lower = aiPrompt.toLowerCase();
+        if (lower.includes("marketing") || lower.includes("digital")) {
+          webinarProduct.description = "Join industry experts for an interactive session on cutting-edge marketing strategies and digital transformation.";
+        } else if (lower.includes("tech") || lower.includes("coding") || lower.includes("programming")) {
+          webinarProduct.description = "Learn the latest technologies and best practices from experienced developers in this live interactive session.";
+        } else if (lower.includes("business") || lower.includes("entrepreneur")) {
+          webinarProduct.description = "Discover proven strategies for business growth and entrepreneurial success in this exclusive webinar.";
+        } else {
+          webinarProduct.description = `${webinarConfig.webinarTitle} - Join us for an insightful live session with industry experts.`;
+        }
+      }
+
+      // Store webinar config in product metadata for editing later
+      webinarProduct.metadata = {
+        webinarConfig,
+      };
+    }
+  }
 
   // Build per-page state
   const pages: Record<string, PageState> = {};
@@ -147,6 +371,7 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
   }
 
   return {
+    siteId: `draft_${Date.now()}`,
     template: base,
     pages,
     activePage: homePage,
@@ -171,7 +396,8 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
       autoReply: false,
       successMessage: "Thank you! We'll be in touch soon."
     },
-    leads: []
+    leads: [],
+    customPages: base.customPages || []
   };
 };
 
@@ -188,130 +414,13 @@ const suggestedActions = [
   "Add a pricing section",
 ];
 
-const getProductByIndex = (page: PageState, index: number) => {
-  for (const section of page.sections) {
-    if (section.type === "products" && section.data?.items?.[index]) {
-      return section.data.items[index];
-    }
+const getProductByIndex = (productsConfig: ProductsConfig, index: number): Product | null => {
+  if (productsConfig.products && productsConfig.products[index]) {
+    return productsConfig.products[index];
   }
   return null;
 };
 
-const ProductDetailPreview = ({ product, template, checkout, onBack, onCheckout }: {
-  product: any;
-  template: TemplateData;
-  checkout: CheckoutConfig | null;
-  onBack: () => void;
-  onCheckout: () => void;
-}) => {
-  if (!product) return <div className="p-8 text-center text-muted-foreground">Product not found</div>;
-  const priceNum = parseInt(product.price?.replace(/[^0-9]/g, "") || "0", 10);
-  const isEducation = template.category === "education";
-
-  return (
-    <div className="p-6 space-y-8">
-      <Button variant="ghost" size="sm" className="gap-1.5" onClick={onBack}>
-        <ArrowLeft className="h-4 w-4" /> Back to page
-      </Button>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="rounded-2xl overflow-hidden border border-border shadow-lg relative">
-          <img src={product.image} alt={product.title} className="w-full h-80 object-cover" />
-          {product.badge && (
-            <span className="absolute top-4 left-4 text-xs font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full">{product.badge}</span>
-          )}
-        </div>
-
-        <div className="space-y-5">
-          {product.badge && (
-            <span className="inline-block text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">{product.badge}</span>
-          )}
-          <h1 className="text-3xl font-bold text-foreground">{product.title}</h1>
-          <p className="text-muted-foreground leading-relaxed">
-            {product.desc || `Comprehensive ${product.title} program designed to take you from beginner to professional.`}
-          </p>
-
-          <div className="flex items-center gap-3">
-            <div className="flex gap-0.5">
-              {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
-            </div>
-            <span className="text-sm font-medium text-foreground">4.9</span>
-            <span className="text-xs text-muted-foreground">(2,340 ratings)</span>
-          </div>
-
-          <div className="flex items-baseline gap-3">
-            <span className="text-3xl font-bold text-foreground">{product.price}</span>
-            {priceNum > 0 && <span className="text-lg text-muted-foreground line-through">₹{Math.round(priceNum * 1.5).toLocaleString()}</span>}
-            {priceNum > 0 && <span className="text-sm font-medium text-primary bg-primary/10 px-2 py-0.5 rounded">33% off</span>}
-          </div>
-
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1.5"><Users className="h-4 w-4" /> 2,340 enrolled</span>
-            <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" /> 40+ hours</span>
-            <span className="flex items-center gap-1.5"><BookOpen className="h-4 w-4" /> 12 modules</span>
-          </div>
-
-          <Button size="lg" className="w-full text-base py-6 rounded-xl shadow-lg shadow-primary/20" onClick={onCheckout}>
-            {isEducation ? `Enroll Now — ${product.price}` : `Buy Now — ${product.price}`}
-          </Button>
-
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span className="flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> 7-day refund</span>
-            <span className="flex items-center gap-1"><Award className="h-3.5 w-3.5" /> Certificate included</span>
-            <span className="flex items-center gap-1"><CheckCircle2 className="h-3.5 w-3.5" /> Lifetime access</span>
-          </div>
-        </div>
-      </div>
-
-      {checkout?.highlights && (
-        <div className="border border-border rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">What's Included</h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {checkout.highlights.map((h, i) => (
-              <div key={i} className="flex items-start gap-2">
-                <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-sm text-foreground">{h}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {isEducation && (
-        <div className="border border-border rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Course Overview</h3>
-          <div className="space-y-3">
-            {[
-              { module: "Module 1: Getting Started", lessons: 5, duration: "3 hours" },
-              { module: "Module 2: Core Concepts", lessons: 8, duration: "5 hours" },
-              { module: "Module 3: Hands-on Projects", lessons: 6, duration: "8 hours" },
-              { module: "Module 4: Advanced Topics", lessons: 7, duration: "6 hours" },
-              { module: "Module 5: Capstone & Certification", lessons: 4, duration: "4 hours" },
-            ].map((m, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-                <div className="flex items-center gap-3">
-                  <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center text-sm font-bold">{i + 1}</span>
-                  <span className="text-sm font-medium text-foreground">{m.module}</span>
-                </div>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                  <span>{m.lessons} lessons</span>
-                  <span>{m.duration}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <div className="text-center pb-8">
-        <Button size="lg" className="text-base px-12 py-6 rounded-xl shadow-lg shadow-primary/20" onClick={onCheckout}>
-          {isEducation ? `Enroll Now — ${product.price}` : `Buy Now — ${product.price}`}
-        </Button>
-        <p className="text-xs text-muted-foreground mt-3">Secure payment powered by Razorpay</p>
-      </div>
-    </div>
-  );
-};
 
 const SmartPageEditor = () => {
   const navigate = useNavigate();
@@ -328,11 +437,16 @@ const SmartPageEditor = () => {
   const [unsavedChanges, setUnsavedChanges] = useState(false);
   const [settingsTab, setSettingsTab] = useState("page");
   const [publishedPageData, setPublishedPageData] = useState<any>(null);
+  const [editorView, setEditorView] = useState<"editor" | "products" | "leads">("editor");
 
   const [state, setState] = useState<EditorState>(() => buildInitialState(searchParams));
   const [slug, setSlug] = useState(() => (searchParams.get("title") || "my-page").toLowerCase().replace(/[^a-z0-9]+/g, "-"));
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
+  const [checkoutModal, setCheckoutModal] = useState<{
+    product: Product;
+    pricingModel: PricingModel;
+  } | null>(null);
 
   const pageType = searchParams.get("type") || "";
   const [chatInput, setChatInput] = useState("");
@@ -348,9 +462,35 @@ const SmartPageEditor = () => {
   // Current page helpers
   const activePage = state.activePage;
   const isCheckoutPage = activePage === "__checkout__";
-  const currentPage = isCheckoutPage ? state.pages[state.template.pages[0]] : state.pages[activePage];
+
+  // Check if activePage is a custom page
+  const customPage = state.customPages.find(p => p.slug === activePage);
+  const isCustomPage = !!customPage;
+
+  // Get current page data (from template pages or custom pages)
+  const currentPage = isCheckoutPage
+    ? state.pages[state.template.pages[0]]
+    : isCustomPage && customPage
+      ? {
+          heroTitle: customPage.name,
+          heroTagline: "",
+          heroDescription: "",
+          heroCta: "",
+          bannerImage: "",
+          sections: customPage.sections
+        }
+      : state.pages[activePage];
+
   const pageNames = state.template.pages;
   const hasCheckout = !!state.checkout?.enabled;
+
+  // Check if this is a coaching template with 1:1 session product
+  const isCoachingTemplate = state.productsConfig?.products?.some(p => p.type === "1-1-session");
+  const sessionProduct = state.productsConfig?.products?.find(p => p.type === "1-1-session");
+
+  // Check if this is a webinar template with webinar product
+  const isWebinarTemplate = state.productsConfig?.products?.some(p => p.type === "webinar");
+  const webinarProduct = state.productsConfig?.products?.find(p => p.type === "webinar");
 
   const setActivePage = (pageName: string) => {
     setState((prev) => ({ ...prev, activePage: pageName }));
@@ -363,6 +503,66 @@ const SmartPageEditor = () => {
     }));
     setUnsavedChanges(true);
   };
+
+  const handleBuyNow = (product: Product, pricingModel: PricingModel) => {
+    setCheckoutModal({ product, pricingModel });
+  };
+
+  const handleCloseCheckout = () => {
+    setCheckoutModal(null);
+  };
+
+  // Auto-save to localStorage when changes are made
+  const saveToLocalStorage = () => {
+    try {
+      const sites = getStoredSites();
+      const existingIndex = sites.findIndex(s => s.id === state.siteId);
+
+      const homePage = state.pages[pageNames[0]];
+      const updatedSite: SmartPageSite = {
+        id: state.siteId,
+        name: homePage.heroTitle,
+        type: state.template.title,
+        category: state.template.category,
+        slug,
+        templateId: state.template.id,
+        url: `/s/${slug}`,
+        created: existingIndex >= 0 ? sites[existingIndex].created : new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+        views: existingIndex >= 0 ? sites[existingIndex].views : 0,
+        conversions: existingIndex >= 0 ? sites[existingIndex].conversions : 0,
+        status: existingIndex >= 0 ? sites[existingIndex].status : "Draft",
+        amount: state.checkout?.amount || 0,
+        transactions: existingIndex >= 0 ? sites[existingIndex].transactions : 0,
+        productsConfig: state.productsConfig,
+        contactForm: state.contactForm,
+        leads: state.leads,
+        customPages: state.customPages
+      };
+
+      if (existingIndex >= 0) {
+        sites[existingIndex] = updatedSite;
+      } else {
+        sites.unshift(updatedSite);
+      }
+
+      storeSites(sites);
+      console.log("Auto-saved to localStorage");
+    } catch (error) {
+      console.error("Failed to auto-save:", error);
+    }
+  };
+
+  // Auto-save effect: save 2 seconds after last change
+  useEffect(() => {
+    if (unsavedChanges) {
+      const timeoutId = setTimeout(() => {
+        saveToLocalStorage();
+        setUnsavedChanges(false);
+        toast.success("Auto-saved", { duration: 1500 });
+      }, 2000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [unsavedChanges, state, slug]);
 
   const updateCheckoutField = (fieldId: string, updates: Partial<CheckoutFormField>) => {
     if (!state.checkout) return;
@@ -386,6 +586,15 @@ const SmartPageEditor = () => {
     updateCheckout({ formFields: state.checkout.formFields.filter((f) => f.id !== fieldId) });
   };
 
+  // Handle lead creation from contact form
+  const handleLeadCreated = (lead: Lead) => {
+    setState((prev) => ({
+      ...prev,
+      leads: [...prev.leads, lead]
+    }));
+    setUnsavedChanges(true);
+  };
+
   // Build a virtual TemplateData for the current page to pass to SitePreview
   const currentTemplate: TemplateData = {
     ...state.template,
@@ -397,25 +606,60 @@ const SmartPageEditor = () => {
   };
 
   const updatePageHero = (updates: Partial<Pick<TemplateData, "heroTitle" | "heroTagline" | "heroDescription" | "heroCta" | "bannerImage">>) => {
-    setState((prev) => ({
-      ...prev,
-      pages: {
-        ...prev.pages,
-        [prev.activePage]: { ...prev.pages[prev.activePage], ...updates },
-      },
-    }));
+    // Check if we're updating a custom page
+    const customPageToUpdate = state.customPages.find(p => p.slug === state.activePage);
+
+    if (customPageToUpdate) {
+      // Update custom page name from heroTitle
+      setState((prev) => ({
+        ...prev,
+        customPages: prev.customPages.map(p =>
+          p.slug === prev.activePage
+            ? { ...p, name: updates.heroTitle || p.name }
+            : p
+        ),
+      }));
+    } else {
+      // Update template page hero data
+      setState((prev) => ({
+        ...prev,
+        pages: {
+          ...prev.pages,
+          [prev.activePage]: { ...prev.pages[prev.activePage], ...updates },
+        },
+      }));
+    }
     setUnsavedChanges(true);
   };
 
   const updatePageSections = (sections: SectionData[]) => {
-    setState((prev) => ({
-      ...prev,
-      pages: {
-        ...prev.pages,
-        [prev.activePage]: { ...prev.pages[prev.activePage], sections },
-      },
-    }));
+    // Check if we're updating a custom page
+    const customPageToUpdate = state.customPages.find(p => p.slug === state.activePage);
+
+    if (customPageToUpdate) {
+      // Update custom page sections
+      setState((prev) => ({
+        ...prev,
+        customPages: prev.customPages.map(p =>
+          p.slug === prev.activePage ? { ...p, sections } : p
+        ),
+      }));
+    } else {
+      // Update template page sections
+      setState((prev) => ({
+        ...prev,
+        pages: {
+          ...prev.pages,
+          [prev.activePage]: { ...prev.pages[prev.activePage], sections },
+        },
+      }));
+    }
     setUnsavedChanges(true);
+  };
+
+  const handleOpenProductModal = () => {
+    setEditorView("products");
+    toast.info("Switched to Products. Click 'Add Product' to create a new product.");
   };
 
   const toggleSection = (id: string) => {
@@ -566,6 +810,7 @@ const SmartPageEditor = () => {
         productsConfig: state.productsConfig,
         contactForm: state.contactForm,
         leads: state.leads,
+        customPages: state.customPages,
       };
       addSite(newSite);
       toast.success("Website published successfully!");
@@ -605,17 +850,10 @@ const SmartPageEditor = () => {
         <ScrollArea className="flex-1 bg-muted/30 p-6">
           <div className={`mx-auto bg-background rounded-lg shadow-lg border border-border overflow-hidden ${viewMode === "mobile" ? "max-w-sm" : "max-w-4xl"}`}>
             {selectedProduct !== null ? (
-              <ProductDetailPreview
-                product={getProductByIndex(currentPage, selectedProduct)}
-                template={state.template}
-                checkout={state.checkout}
+              <ProductDetailPage
+                product={getProductByIndex(state.productsConfig, selectedProduct)!}
                 onBack={() => setSelectedProduct(null)}
-                onCheckout={() => {
-                  if (state.checkout?.enabled) {
-                    setSelectedProduct(null);
-                    setActivePage("__checkout__");
-                  }
-                }}
+                onBuyNow={handleBuyNow}
               />
             ) : (
               <SitePreview
@@ -627,6 +865,12 @@ const SmartPageEditor = () => {
                   if (state.checkout?.enabled) setActivePage("__checkout__");
                 }}
                 onProductClick={(i) => setSelectedProduct(i)}
+                productsConfig={state.productsConfig}
+                contactForm={state.contactForm}
+                siteId={state.siteId}
+                onLeadCreated={handleLeadCreated}
+                customPages={state.customPages}
+                onOpenProductModal={handleOpenProductModal}
               />
             )}
           </div>
@@ -641,21 +885,103 @@ const SmartPageEditor = () => {
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background z-10">
         <div className="flex items-center gap-3">
           <Button variant="outline" size="sm" onClick={() => navigate("/website-builder")} className="gap-2"><ArrowLeft className="h-4 w-4" /> Back</Button>
+          <div className="h-6 w-px bg-border" />
+          <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-0.5">
+            <Button
+              variant={editorView === "editor" ? "default" : "ghost"}
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => setEditorView("editor")}
+            >
+              <FileText className="h-3.5 w-3.5 mr-1.5" />
+              Editor
+            </Button>
+            <Button
+              variant={editorView === "products" ? "default" : "ghost"}
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => setEditorView("products")}
+            >
+              <Package className="h-3.5 w-3.5 mr-1.5" />
+              Products
+              {state.productsConfig.products.length > 0 && (
+                <Badge variant="secondary" className="ml-1.5 px-1 py-0 text-[10px] bg-green-100 text-green-700">
+                  {state.productsConfig.products.length}
+                </Badge>
+              )}
+            </Button>
+            <Button
+              variant={editorView === "leads" ? "default" : "ghost"}
+              size="sm"
+              className="text-xs h-7"
+              onClick={() => setEditorView("leads")}
+            >
+              <Mail className="h-3.5 w-3.5 mr-1.5" />
+              Leads
+              {state.leads.filter(l => l.status === "new").length > 0 && (
+                <Badge variant="secondary" className="ml-1.5 px-1 py-0 text-[10px] bg-blue-100 text-blue-700">
+                  {state.leads.filter(l => l.status === "new").length}
+                </Badge>
+              )}
+            </Button>
+          </div>
+          <div className="h-6 w-px bg-border" />
           <input type="text" value={currentPage.heroTitle} onChange={(e) => updatePageHero({ heroTitle: e.target.value })} className="font-semibold text-foreground text-sm bg-transparent border-none focus:outline-none hover:bg-secondary/50 rounded px-2 py-1" />
           {unsavedChanges && <span className="w-2 h-2 rounded-full bg-orange-400" />}
           <span className={status === "published" ? "blade-badge-paid text-[10px]" : "blade-badge-expired text-[10px]"}>{status === "published" ? "Published" : "Draft"}</span>
         </div>
         <div className="flex items-center gap-2">
           {unsavedChanges && <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={() => { setUnsavedChanges(false); toast.success("Draft saved"); }}><Save className="h-3.5 w-3.5" /> Save</Button>}
-          <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPreviewMode(true)}><Eye className="h-4 w-4" /> Preview</Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}><Settings className="h-4 w-4" /> Settings</Button>
+          {editorView === "editor" && <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />}
+          {editorView === "editor" && <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPreviewMode(true)}><Eye className="h-4 w-4" /> Preview</Button>}
+          {editorView === "editor" && <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}><Settings className="h-4 w-4" /> Settings</Button>}
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShareDialogOpen(true)}><Share2 className="h-4 w-4" /> Share</Button>
           <Button size="sm" onClick={() => setPublishDialogOpen(true)}>Publish</Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "ai" ? null : "ai")}><Sparkles className="h-4 w-4" /> AI</Button>
+          {editorView === "editor" && <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "ai" ? null : "ai")}><Sparkles className="h-4 w-4" /> AI</Button>}
         </div>
       </div>
 
+      {/* Products View */}
+      {editorView === "products" && (
+        <div className="flex-1 overflow-hidden bg-background">
+          <ScrollArea className="h-full">
+            <div className="max-w-7xl mx-auto p-8">
+              <ProductManager
+                products={state.productsConfig.products}
+                onUpdateProducts={(products) => {
+                  setState((prev) => ({
+                    ...prev,
+                    productsConfig: { ...prev.productsConfig, products },
+                  }));
+                  setUnsavedChanges(true);
+                }}
+              />
+            </div>
+          </ScrollArea>
+        </div>
+      )}
+
+      {/* Leads View */}
+      {editorView === "leads" && (
+        <div className="flex-1 overflow-hidden bg-background">
+          <ScrollArea className="h-full">
+            <div className="max-w-7xl mx-auto p-8">
+              <LeadsManager
+                leads={state.leads}
+                products={state.productsConfig.products}
+                onUpdateLeads={(leads) => {
+                  setState((prev) => ({ ...prev, leads }));
+                  setUnsavedChanges(true);
+                }}
+              />
+            </div>
+          </ScrollArea>
+        </div>
+      )}
+
+      {/* Editor View */}
+      {editorView === "editor" && (
+        <>
       {/* Page Tabs Bar */}
       <div className="flex items-center gap-1 px-4 py-1.5 border-b border-border bg-muted/30 overflow-x-auto">
         {pageNames.map((page) => (
@@ -701,17 +1027,10 @@ const SmartPageEditor = () => {
                 onUpdateCheckout={updateCheckout}
               />
             ) : selectedProduct !== null ? (
-              <ProductDetailPreview
-                product={getProductByIndex(currentPage, selectedProduct)}
-                template={state.template}
-                checkout={state.checkout}
+              <ProductDetailPage
+                product={getProductByIndex(state.productsConfig, selectedProduct)!}
                 onBack={() => setSelectedProduct(null)}
-                onCheckout={() => {
-                  if (state.checkout?.enabled) {
-                    setSelectedProduct(null);
-                    setActivePage("__checkout__");
-                  }
-                }}
+                onBuyNow={handleBuyNow}
               />
             ) : (
               <SitePreview
@@ -729,31 +1048,97 @@ const SmartPageEditor = () => {
                   if (state.checkout?.enabled) setActivePage("__checkout__");
                 }}
                 onProductClick={(i) => setSelectedProduct(i)}
+                productsConfig={state.productsConfig}
+                contactForm={state.contactForm}
+                siteId={state.siteId}
+                onLeadCreated={handleLeadCreated}
+                customPages={state.customPages}
+                onOpenProductModal={handleOpenProductModal}
               />
             )}
           </div>
         </ScrollArea>
 
-        {/* AI Panel */}
+        {/* AI Panel - Professional Redesign */}
         {rightPanel === "ai" && (
-          <div className="w-80 border-l border-border flex flex-col bg-background">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-2"><Sparkles className="h-4 w-4 text-primary" /><span className="text-sm font-semibold text-foreground">AI Builder</span></div>
-              <button onClick={() => setRightPanel(null)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+          <div className="w-96 border-l border-border flex flex-col bg-gradient-to-b from-background to-muted/20">
+            {/* Header with gradient */}
+            <div className="px-5 py-4 border-b border-border/60 bg-gradient-to-r from-primary/5 via-purple-500/5 to-primary/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-sm">
+                    <Sparkles className="h-4 w-4 text-white" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-semibold text-foreground">AI Assistant</div>
+                    <div className="text-[10px] text-muted-foreground">Powered by Claude</div>
+                  </div>
+                </div>
+                <button onClick={() => setRightPanel(null)} className="text-muted-foreground hover:text-foreground transition-colors">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
+
+            {/* Welcome message when no messages */}
+            {messages.length === 0 && !aiLoading && (
+              <div className="p-6 space-y-4">
+                <div className="text-center space-y-2">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center mx-auto">
+                    <Sparkles className="h-6 w-6 text-primary" />
+                  </div>
+                  <h3 className="font-semibold text-sm">How can I help you today?</h3>
+                  <p className="text-xs text-muted-foreground">I can help you customize your website, add sections, modify content, and more.</p>
+                </div>
+
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-muted-foreground px-1">Quick actions:</p>
+                  {suggestedActions.slice(0, 4).map((action, i) => (
+                    <button
+                      key={action}
+                      onClick={() => sendMessage(action)}
+                      className="w-full text-left text-xs px-3.5 py-3 rounded-lg border border-border/60 bg-background/50 hover:bg-accent hover:border-primary/30 transition-all group"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                          <span className="text-[10px] font-semibold text-primary">{i + 1}</span>
+                        </div>
+                        <span className="text-foreground leading-relaxed">{action}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Chat messages */}
             <ScrollArea className="flex-1 p-4">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {messages.map((msg, i) => (
-                  <div key={i} className={msg.role === "user" ? "ml-8" : "mr-4"}>
-                    <div className={`text-sm p-3 rounded-lg ${msg.role === "assistant" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"}`}>{msg.content}</div>
+                  <div key={i} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                    {msg.role === "assistant" && (
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                        <Sparkles className="h-3.5 w-3.5 text-white" />
+                      </div>
+                    )}
+                    <div className={`max-w-[75%] text-sm p-3.5 rounded-xl shadow-sm ${
+                      msg.role === "assistant"
+                        ? "bg-background border border-border/60 text-foreground"
+                        : "bg-gradient-to-br from-primary to-primary/90 text-primary-foreground"
+                    }`}>
+                      <div className="whitespace-pre-wrap leading-relaxed">{msg.content}</div>
+                    </div>
                   </div>
                 ))}
                 {aiLoading && (
-                  <div className="mr-4">
-                    <div className="text-sm p-3 rounded-lg bg-muted text-foreground">
+                  <div className="flex gap-3">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                      <Sparkles className="h-3.5 w-3.5 text-white" />
+                    </div>
+                    <div className="bg-background border border-border/60 text-sm p-3.5 rounded-xl shadow-sm">
                       <div className="flex items-center gap-2">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-                        <span className="text-muted-foreground">AI is thinking...</span>
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        <span className="text-muted-foreground">Thinking...</span>
                       </div>
                     </div>
                   </div>
@@ -761,15 +1146,52 @@ const SmartPageEditor = () => {
                 <div ref={chatEndRef} />
               </div>
             </ScrollArea>
-            <div className="px-4 pb-2 space-y-1.5">
-              {suggestedActions.slice(0, 3).map((action) => (
-                <button key={action} onClick={() => sendMessage(action)} disabled={aiLoading} className="w-full text-left text-xs px-3 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50">{action}</button>
-              ))}
-            </div>
-            <div className="p-3 border-t border-border">
-              <div className="flex items-center gap-2">
-                <input type="text" value={chatInput} onChange={(e) => setChatInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendMessage(chatInput)} placeholder="Ask AI to edit your site..." className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none" />
-                <button onClick={() => sendMessage(chatInput)} className="text-primary hover:text-primary/80 p-1"><Send className="h-4 w-4" /></button>
+
+            {/* Suggestions (only show when there are messages) */}
+            {messages.length > 0 && suggestedActions.length > 0 && (
+              <div className="px-4 pb-3 space-y-1.5">
+                <p className="text-[10px] font-medium text-muted-foreground px-1 mb-1">Suggested:</p>
+                {suggestedActions.slice(0, 2).map((action) => (
+                  <button
+                    key={action}
+                    onClick={() => sendMessage(action)}
+                    disabled={aiLoading}
+                    className="w-full text-left text-xs px-3 py-2 rounded-lg border border-dashed border-border/60 text-muted-foreground hover:text-foreground hover:border-primary/40 hover:bg-accent transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {action}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Input area */}
+            <div className="p-4 border-t border-border/60 bg-background/80 backdrop-blur-sm">
+              <div className="flex items-end gap-2">
+                <div className="flex-1 relative">
+                  <textarea
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage(chatInput);
+                      }
+                    }}
+                    placeholder="Describe what you'd like to change..."
+                    rows={2}
+                    className="w-full text-sm bg-background border border-border/60 rounded-lg px-3.5 py-2.5 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 resize-none transition-all"
+                  />
+                  <div className="absolute bottom-2 right-2 text-[10px] text-muted-foreground">
+                    ↵ Send
+                  </div>
+                </div>
+                <button
+                  onClick={() => sendMessage(chatInput)}
+                  disabled={!chatInput.trim() || aiLoading}
+                  className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-purple-600 text-white flex items-center justify-center shadow-sm hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none"
+                >
+                  <Send className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>
@@ -787,32 +1209,22 @@ const SmartPageEditor = () => {
                 <TabsTrigger value="page" className="text-xs">Page</TabsTrigger>
                 <TabsTrigger value="pages" className="text-xs">Pages</TabsTrigger>
                 <TabsTrigger value="sections" className="text-xs">Sections</TabsTrigger>
-                {state.productsConfig?.enabled && (
-                  <TabsTrigger value="products" className="text-xs flex items-center gap-1">
-                    <Package className="h-3 w-3" />
-                    Products
-                    {state.productsConfig.products.length > 0 && (
-                      <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px]">
-                        {state.productsConfig.products.length}
-                      </Badge>
-                    )}
+                {isCoachingTemplate && (
+                  <TabsTrigger value="session" className="text-xs flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    Session
                   </TabsTrigger>
                 )}
-                {state.contactForm?.enabled && (
-                  <TabsTrigger value="contact-form" className="text-xs flex items-center gap-1">
-                    <MessageSquare className="h-3 w-3" />
-                    Contact Form
+                {isWebinarTemplate && (
+                  <TabsTrigger value="webinar" className="text-xs flex items-center gap-1">
+                    <Video className="h-3 w-3" />
+                    Webinar
                   </TabsTrigger>
                 )}
-                {state.leads.length > 0 && (
-                  <TabsTrigger value="leads" className="text-xs flex items-center gap-1">
-                    <Mail className="h-3 w-3" />
-                    Leads
-                    <Badge variant="secondary" className="ml-1 px-1 py-0 text-[10px] bg-blue-100 text-blue-700">
-                      {state.leads.filter(l => l.status === "new").length}
-                    </Badge>
-                  </TabsTrigger>
-                )}
+                <TabsTrigger value="contact-form" className="text-xs flex items-center gap-1">
+                  <MessageSquare className="h-3 w-3" />
+                  Contact
+                </TabsTrigger>
                 {hasCheckout && <TabsTrigger value="checkout" className="text-xs">Checkout</TabsTrigger>}
                 <TabsTrigger value="seo" className="text-xs">SEO</TabsTrigger>
               </TabsList>
@@ -827,27 +1239,15 @@ const SmartPageEditor = () => {
                   <div><label className="text-xs font-medium text-foreground">CTA Button Text</label><Input value={currentPage.heroCta} onChange={(e) => updatePageHero({ heroCta: e.target.value })} className="mt-1.5" /></div>
                 </TabsContent>
 
-                <TabsContent value="pages" className="p-4 space-y-2">
-                  <p className="text-xs text-muted-foreground mb-3">Manage the pages in your website. Click a page to edit it.</p>
-                  {pageNames.map((page, i) => (
-                    <div
-                      key={page}
-                      onClick={() => setActivePage(page)}
-                      className={`flex items-center gap-2 p-2.5 rounded-md border cursor-pointer transition-colors ${
-                        activePage === page ? "border-primary bg-primary/5" : "border-border hover:border-primary/30"
-                      }`}
-                    >
-                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      <span className="text-sm text-foreground flex-1">{page}</span>
-                      {i === 0 && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Home</span>}
-                      {i > 0 && (
-                        <button onClick={(e) => { e.stopPropagation(); removePage(page); }} className="text-muted-foreground hover:text-destructive p-1">
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                  <AddPageButton onAdd={addPage} fullWidth />
+                <TabsContent value="pages" className="p-0 m-0">
+                  <CustomPagesManager
+                    templatePages={pageNames}
+                    customPages={state.customPages}
+                    onUpdateCustomPages={(pages) => {
+                      setState((prev) => ({ ...prev, customPages: pages }));
+                      setUnsavedChanges(true);
+                    }}
+                  />
                 </TabsContent>
 
                 <TabsContent value="sections" className="p-4 space-y-2">
@@ -977,19 +1377,378 @@ const SmartPageEditor = () => {
                   <div><label className="text-xs font-medium text-foreground">Meta Description</label><Textarea value={currentPage.heroDescription} onChange={(e) => updatePageHero({ heroDescription: e.target.value })} rows={2} className="mt-1.5" /><p className="text-[10px] text-muted-foreground mt-1">{currentPage.heroDescription.length}/160</p></div>
                 </TabsContent>
 
-                {/* Products Tab */}
-                <TabsContent value="products" className="p-0 m-0">
-                  <ProductManager
-                    products={state.productsConfig.products}
-                    onUpdateProducts={(products) => {
-                      setState((prev) => ({
-                        ...prev,
-                        productsConfig: { ...prev.productsConfig, products }
-                      }));
-                      setUnsavedChanges(true);
-                    }}
-                  />
-                </TabsContent>
+                {/* Session Configuration Tab */}
+                {isCoachingTemplate && sessionProduct && (
+                  <TabsContent value="session" className="p-0 m-0">
+                    <div className="p-6 space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Session Name</label>
+                        <Input
+                          value={sessionProduct.title}
+                          onChange={(e) => {
+                            setState((prev) => ({
+                              ...prev,
+                              productsConfig: {
+                                ...prev.productsConfig,
+                                products: prev.productsConfig.products.map(p =>
+                                  p.type === "1-1-session" ? { ...p, title: e.target.value } : p
+                                ),
+                              },
+                            }));
+                            setUnsavedChanges(true);
+                          }}
+                          placeholder="e.g. 1:1 Career Coaching"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Session Duration</label>
+                        <Select
+                          value={String(sessionProduct.sessionDuration || 60)}
+                          onValueChange={(v) => {
+                            setState((prev) => ({
+                              ...prev,
+                              productsConfig: {
+                                ...prev.productsConfig,
+                                products: prev.productsConfig.products.map(p =>
+                                  p.type === "1-1-session" ? { ...p, sessionDuration: Number(v) } : p
+                                ),
+                              },
+                            }));
+                            setUnsavedChanges(true);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="30">30 minutes</SelectItem>
+                            <SelectItem value="45">45 minutes</SelectItem>
+                            <SelectItem value="60">60 minutes</SelectItem>
+                            <SelectItem value="90">90 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">Free Session</label>
+                        <Switch
+                          checked={sessionProduct.pricingModels[0]?.price === 0}
+                          onCheckedChange={(checked) => {
+                            setState((prev) => ({
+                              ...prev,
+                              productsConfig: {
+                                ...prev.productsConfig,
+                                products: prev.productsConfig.products.map(p => {
+                                  if (p.type === "1-1-session") {
+                                    return {
+                                      ...p,
+                                      pricingModels: [{
+                                        ...p.pricingModels[0],
+                                        price: checked ? 0 : 2999,
+                                        name: checked ? "Free Session" : "Single Session",
+                                      }],
+                                    };
+                                  }
+                                  return p;
+                                }),
+                              },
+                            }));
+                            setUnsavedChanges(true);
+                          }}
+                        />
+                      </div>
+
+                      {sessionProduct.pricingModels[0]?.price > 0 && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Price (₹)</label>
+                          <Input
+                            type="number"
+                            value={sessionProduct.pricingModels[0]?.price || 0}
+                            onChange={(e) => {
+                              setState((prev) => ({
+                                ...prev,
+                                productsConfig: {
+                                  ...prev.productsConfig,
+                                  products: prev.productsConfig.products.map(p => {
+                                    if (p.type === "1-1-session") {
+                                      return {
+                                        ...p,
+                                        pricingModels: [{
+                                          ...p.pricingModels[0],
+                                          price: Number(e.target.value),
+                                        }],
+                                      };
+                                    }
+                                    return p;
+                                  }),
+                                },
+                              }));
+                              setUnsavedChanges(true);
+                            }}
+                            placeholder="2999"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Platform</label>
+                        <Select
+                          value={sessionProduct.calendarProvider || "gmeet"}
+                          onValueChange={(v) => {
+                            setState((prev) => ({
+                              ...prev,
+                              productsConfig: {
+                                ...prev.productsConfig,
+                                products: prev.productsConfig.products.map(p =>
+                                  p.type === "1-1-session" ? { ...p, calendarProvider: v as any } : p
+                                ),
+                              },
+                            }));
+                            setUnsavedChanges(true);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gmeet">Google Meet</SelectItem>
+                            <SelectItem value="zoom">Zoom</SelectItem>
+                            <SelectItem value="calendly">Calendly</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <Button
+                        onClick={() => {
+                          toast.success("Session configuration saved!");
+                        }}
+                        className="w-full"
+                      >
+                        Save Configuration
+                      </Button>
+                    </div>
+                  </TabsContent>
+                )}
+
+                {/* Webinar Configuration Tab */}
+                {isWebinarTemplate && webinarProduct && (
+                  <TabsContent value="webinar" className="p-0 m-0">
+                    <div className="p-6 space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Webinar Title</label>
+                        <Input
+                          value={webinarProduct.title}
+                          onChange={(e) => {
+                            setState((prev) => ({
+                              ...prev,
+                              productsConfig: {
+                                ...prev.productsConfig,
+                                products: prev.productsConfig.products.map(p =>
+                                  p.type === "webinar" ? { ...p, title: e.target.value } : p
+                                ),
+                              },
+                            }));
+                            setUnsavedChanges(true);
+                          }}
+                          placeholder="e.g. How to Build a Successful Business"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Date</label>
+                          <Input
+                            type="date"
+                            value={webinarProduct.webinarDate || ""}
+                            onChange={(e) => {
+                              setState((prev) => ({
+                                ...prev,
+                                productsConfig: {
+                                  ...prev.productsConfig,
+                                  products: prev.productsConfig.products.map(p =>
+                                    p.type === "webinar" ? { ...p, webinarDate: e.target.value } : p
+                                  ),
+                                },
+                              }));
+                              setUnsavedChanges(true);
+                            }}
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Time</label>
+                          <Input
+                            type="time"
+                            value={webinarProduct.webinarTime || "18:00"}
+                            onChange={(e) => {
+                              setState((prev) => ({
+                                ...prev,
+                                productsConfig: {
+                                  ...prev.productsConfig,
+                                  products: prev.productsConfig.products.map(p =>
+                                    p.type === "webinar" ? { ...p, webinarTime: e.target.value } : p
+                                  ),
+                                },
+                              }));
+                              setUnsavedChanges(true);
+                            }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Duration</label>
+                        <Select
+                          value={String(webinarProduct.webinarDuration || 90)}
+                          onValueChange={(v) => {
+                            setState((prev) => ({
+                              ...prev,
+                              productsConfig: {
+                                ...prev.productsConfig,
+                                products: prev.productsConfig.products.map(p =>
+                                  p.type === "webinar" ? { ...p, webinarDuration: Number(v) } : p
+                                ),
+                              },
+                            }));
+                            setUnsavedChanges(true);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="60">60 minutes</SelectItem>
+                            <SelectItem value="90">90 minutes</SelectItem>
+                            <SelectItem value="120">120 minutes</SelectItem>
+                            <SelectItem value="180">180 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <label className="text-sm font-medium">Free Registration</label>
+                        <Switch
+                          checked={webinarProduct.pricingModels[0]?.price === 0}
+                          onCheckedChange={(checked) => {
+                            setState((prev) => ({
+                              ...prev,
+                              productsConfig: {
+                                ...prev.productsConfig,
+                                products: prev.productsConfig.products.map(p => {
+                                  if (p.type === "webinar") {
+                                    return {
+                                      ...p,
+                                      pricingModels: [{
+                                        ...p.pricingModels[0],
+                                        price: checked ? 0 : 499,
+                                        name: checked ? "Free Registration" : "Registration",
+                                      }],
+                                    };
+                                  }
+                                  return p;
+                                }),
+                              },
+                            }));
+                            setUnsavedChanges(true);
+                          }}
+                        />
+                      </div>
+
+                      {webinarProduct.pricingModels[0]?.price > 0 && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Registration Fee (₹)</label>
+                          <Input
+                            type="number"
+                            value={webinarProduct.pricingModels[0]?.price || 0}
+                            onChange={(e) => {
+                              setState((prev) => ({
+                                ...prev,
+                                productsConfig: {
+                                  ...prev.productsConfig,
+                                  products: prev.productsConfig.products.map(p => {
+                                    if (p.type === "webinar") {
+                                      return {
+                                        ...p,
+                                        pricingModels: [{
+                                          ...p.pricingModels[0],
+                                          price: Number(e.target.value),
+                                        }],
+                                      };
+                                    }
+                                    return p;
+                                  }),
+                                },
+                              }));
+                              setUnsavedChanges(true);
+                            }}
+                            placeholder="499"
+                          />
+                        </div>
+                      )}
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Platform</label>
+                        <Select
+                          value={webinarProduct.webinarPlatform || "zoom"}
+                          onValueChange={(v) => {
+                            setState((prev) => ({
+                              ...prev,
+                              productsConfig: {
+                                ...prev.productsConfig,
+                                products: prev.productsConfig.products.map(p =>
+                                  p.type === "webinar" ? { ...p, webinarPlatform: v as any } : p
+                                ),
+                              },
+                            }));
+                            setUnsavedChanges(true);
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="zoom">Zoom</SelectItem>
+                            <SelectItem value="gmeet">Google Meet</SelectItem>
+                            <SelectItem value="custom">Custom Link</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {webinarProduct.webinarPlatform === "custom" && (
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium">Custom Platform URL</label>
+                          <Input
+                            value={webinarProduct.webinarUrl || ""}
+                            onChange={(e) => {
+                              setState((prev) => ({
+                                ...prev,
+                                productsConfig: {
+                                  ...prev.productsConfig,
+                                  products: prev.productsConfig.products.map(p =>
+                                    p.type === "webinar" ? { ...p, webinarUrl: e.target.value } : p
+                                  ),
+                                },
+                              }));
+                              setUnsavedChanges(true);
+                            }}
+                            placeholder="https://your-platform.com/webinar"
+                          />
+                        </div>
+                      )}
+
+                      <Button
+                        onClick={() => {
+                          toast.success("Webinar configuration saved!");
+                        }}
+                        className="w-full"
+                      >
+                        Save Configuration
+                      </Button>
+                    </div>
+                  </TabsContent>
+                )}
 
                 {/* Contact Form Tab */}
                 <TabsContent value="contact-form" className="p-0 m-0">
@@ -998,18 +1757,6 @@ const SmartPageEditor = () => {
                     products={state.productsConfig.products}
                     onUpdate={(contactForm) => {
                       setState((prev) => ({ ...prev, contactForm }));
-                      setUnsavedChanges(true);
-                    }}
-                  />
-                </TabsContent>
-
-                {/* Leads Tab */}
-                <TabsContent value="leads" className="p-0 m-0">
-                  <LeadsManager
-                    leads={state.leads}
-                    products={state.productsConfig.products}
-                    onUpdateLeads={(leads) => {
-                      setState((prev) => ({ ...prev, leads }));
                       setUnsavedChanges(true);
                     }}
                   />
@@ -1259,6 +2006,19 @@ const SmartPageEditor = () => {
           </div>
         </DialogContent>
       </Dialog>
+      </>
+      )}
+
+      {/* Checkout Modal */}
+      {checkoutModal && (
+        <ProductCheckoutModal
+          product={checkoutModal.product}
+          pricingModel={checkoutModal.pricingModel}
+          siteId={state.siteId}
+          siteName={state.pages[pageNames[0]].heroTitle}
+          onClose={handleCloseCheckout}
+        />
+      )}
     </div>
   );
 };

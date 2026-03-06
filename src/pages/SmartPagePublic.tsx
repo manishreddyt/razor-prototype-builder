@@ -16,13 +16,13 @@ import type { CourseData } from "@/pages/CourseCreate";
 type PublicView = "site" | "checkout" | "product-detail";
 
 const SmartPagePublic = () => {
-  const { slug } = useParams();
+  const { slug, pageSlug } = useParams<{ slug: string; pageSlug?: string }>();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialView = (searchParams.get("view") as PublicView) || "site";
   const productIdx = parseInt(searchParams.get("product") || "-1", 10);
 
-  const [activePage, setActivePage] = useState<string>("Home");
+  const [activePage, setActivePage] = useState<string>(pageSlug || "Home");
   const [currentView, setCurrentView] = useState<PublicView>(initialView);
   const [selectedProduct, setSelectedProduct] = useState<number>(productIdx);
 
@@ -70,9 +70,29 @@ const SmartPagePublic = () => {
   // Build the template for the active page — always computed
   const pageTemplate: TemplateData | null = useMemo(() => {
     if (!template) return null;
+
+    // Check if activePage is a custom page
+    const customPage = site?.customPages?.find(p => p.slug === activePage);
+    if (customPage) {
+      // Build template from custom page data
+      return {
+        ...template,
+        heroTitle: customPage.name,
+        heroTagline: "",
+        heroDescription: "",
+        heroCta: "",
+        bannerImage: "",
+        pages: [customPage.name],
+        sections: customPage.sections,
+      };
+    }
+
+    // Default to home page
     if (activePage === "Home" || activePage === template.pages[0]) {
       return template;
     }
+
+    // Check template pages data
     const pageData = template.pagesData?.[activePage];
     if (!pageData) return template;
     return {
@@ -84,7 +104,7 @@ const SmartPagePublic = () => {
       bannerImage: pageData.bannerImage || template.bannerImage,
       sections: pageData.sections,
     };
-  }, [template, activePage]);
+  }, [template, activePage, site]);
 
   // Get product if viewing product detail
   const product = useMemo(() => {
@@ -180,7 +200,7 @@ const SmartPagePublic = () => {
 
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-5xl mx-auto px-4 py-6">
+        <div className="container mx-auto px-4 py-6">
           <Button
             variant="ghost"
             size="sm"
@@ -206,7 +226,7 @@ const SmartPagePublic = () => {
     const priceNum = parseInt(product.price?.replace(/[^0-9]/g, "") || "0", 10);
     return (
       <div className="min-h-screen bg-background">
-        <div className="max-w-5xl mx-auto px-6 py-8 space-y-8">
+        <div className="container mx-auto px-6 py-8 space-y-8">
           <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setCurrentView("site"); setSelectedProduct(-1); }}>
             <ArrowLeft className="h-4 w-4" /> Back to site
           </Button>
@@ -314,6 +334,10 @@ const SmartPagePublic = () => {
         onPageChange={(page) => setActivePage(page)}
         onCtaClick={handleCtaClick}
         onProductClick={handleProductClick}
+        productsConfig={site?.productsConfig}
+        contactForm={site?.contactForm}
+        siteId={site?.id}
+        customPages={site?.customPages || []}
       />
     </div>
   );

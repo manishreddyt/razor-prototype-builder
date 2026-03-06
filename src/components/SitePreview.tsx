@@ -1,10 +1,13 @@
 import { useState, useEffect } from "react";
-import { type SectionData, type TemplateData, availableSectionTypes, createDefaultSection, type SectionType } from "@/data/smartPageTemplates";
+import { type SectionData, type TemplateData, type CustomPage, availableSectionTypes, createDefaultSection, type SectionType } from "@/data/smartPageTemplates";
+import { ProductsConfig } from "@/types/products";
+import { ContactFormConfig, Lead } from "@/types/leads";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Star, MapPin, Clock, Play, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Pencil, ArrowUp, ArrowDown, CheckCircle2, Users, Award, BookOpen } from "lucide-react";
+import { Star, MapPin, Clock, Play, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Pencil, ArrowUp, ArrowDown, CheckCircle2, Check, Users, Award, BookOpen, Home, FileText, Users as UsersIcon, Briefcase, Mail, Info, Settings as SettingsIcon, Star as StarIcon, Package as PackageIcon } from "lucide-react";
+import { ContactFormSection as ContactFormSectionComponent } from "@/components/ContactFormSection";
 
 interface SitePreviewProps {
   template: TemplateData;
@@ -19,6 +22,12 @@ interface SitePreviewProps {
   onAddSection?: (type: string) => void;
   onCtaClick?: () => void;
   onProductClick?: (index: number) => void;
+  productsConfig?: ProductsConfig;
+  contactForm?: ContactFormConfig;
+  siteId?: string;
+  onLeadCreated?: (lead: Lead) => void;
+  customPages?: CustomPage[];
+  onOpenProductModal?: () => void;
 }
 
 // Inline editable text
@@ -103,66 +112,198 @@ const AddSectionDivider = ({ onAdd }: { onAdd: (type: string) => void }) => {
   );
 };
 
-export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection, onCtaClick, onProductClick }: SitePreviewProps) => {
+export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, customPages = [], onOpenProductModal }: SitePreviewProps) => {
   const templateId = template.id;
   const category = template.category;
   const Text = editable ? EditableText : ({ value, className, tag }: any) => <ReadOnlyText value={value} className={className} tag={tag} />;
   const visibleSections = sections.filter((s) => s.visible);
 
+  // Get icon component for custom pages
+  const getIconComponent = (iconName: string) => {
+    const icons: Record<string, any> = {
+      home: Home,
+      file: FileText,
+      users: UsersIcon,
+      briefcase: Briefcase,
+      mail: Mail,
+      info: Info,
+      settings: SettingsIcon,
+      star: StarIcon,
+      package: PackageIcon,
+    };
+    return icons[iconName] || FileText;
+  };
+
   return (
     <div className="font-sans">
-      {/* ─── HERO ─── */}
-      <div className="relative overflow-hidden">
-        {/* Background image with overlay */}
-        <div className="absolute inset-0">
-          <img src={template.bannerImage} alt="Banner" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=900&h=300&fit=crop"; }} />
-          <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/80" />
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-primary/10" />
+      {/* ─── TOP NAVIGATION ─── */}
+      <nav className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
+        <div className="container mx-auto px-6 lg:px-12">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center gap-2">
+              <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-md">
+                {template.heroTitle.charAt(0)}
+              </div>
+              <span className="text-lg font-bold text-gray-900">
+                {template.heroTitle.split(' ').slice(0, 3).join(' ')}
+              </span>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center gap-1">
+              {template.pages.map((page) => (
+                <button
+                  key={page}
+                  onClick={() => onPageChange?.(page)}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activePage === page
+                      ? 'text-primary bg-primary/10'
+                      : 'text-gray-700 hover:text-primary hover:bg-gray-100'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+              {customPages?.map((page) => (
+                <button
+                  key={page.slug}
+                  onClick={() => onPageChange?.(page.slug)}
+                  className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activePage === page.slug
+                      ? 'text-primary bg-primary/10'
+                      : 'text-gray-700 hover:text-primary hover:bg-gray-100'
+                  }`}
+                >
+                  {page.name}
+                </button>
+              ))}
+            </div>
+
+            {/* Mobile Menu Button */}
+            <button className="md:hidden p-2 text-gray-700">
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         </div>
+      </nav>
+
+      {/* ─── SPLIT HERO (Razorpay Style) ─── */}
+      <div className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
         {editable && (
-          <div className="absolute top-3 right-3 z-20">
-            <span className="bg-background/90 text-foreground text-xs font-medium px-3 py-1.5 rounded-md shadow-sm border border-border cursor-pointer hover:bg-background">Change banner</span>
+          <div className="absolute top-6 right-6 z-20">
+            <span className="bg-white px-4 py-2 text-sm font-medium rounded-full shadow-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">Change Image</span>
           </div>
         )}
-        <div className="relative z-10 px-8 py-16 md:py-24 max-w-4xl mx-auto text-center">
-          {/* Badge/tagline */}
-          <div className="inline-flex items-center gap-2 bg-primary/10 border border-primary/20 rounded-full px-4 py-1.5 mb-6">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <Text value={template.heroTagline} onChange={(v: string) => onUpdateHero?.({ heroTagline: v })} className="text-xs font-medium text-primary" tag="span" />
-          </div>
-          
-          <Text value={template.heroTitle} onChange={(v: string) => onUpdateHero?.({ heroTitle: v })} className="text-4xl md:text-5xl font-extrabold text-foreground block leading-tight tracking-tight" tag="h1" />
-          
-          <Text value={template.heroDescription} onChange={(v: string) => onUpdateHero?.({ heroDescription: v })} className="text-base text-muted-foreground max-w-2xl mx-auto block mt-5 leading-relaxed" tag="p" />
-          
-          <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
-            {editable ? (
-              <Button size="lg" className="text-base px-8 py-6 rounded-xl shadow-lg shadow-primary/20">
-                <InlineInput value={template.heroCta} onChange={(v) => onUpdateHero?.({ heroCta: v })} />
-              </Button>
-            ) : (
-              <Button size="lg" className="text-base px-8 py-6 rounded-xl shadow-lg shadow-primary/20" onClick={() => onCtaClick?.()}>
-                {template.heroCta}
-              </Button>
-            )}
-            <Button variant="outline" size="lg" className="text-base px-8 py-6 rounded-xl">
-              Learn More
-            </Button>
-          </div>
 
-          {/* Trust indicators */}
-          <div className="mt-10 flex items-center justify-center gap-6 text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-              <div className="flex -space-x-2">
-                {["A", "B", "C", "D"].map((l, i) => (
-                  <div key={i} className="w-7 h-7 rounded-full bg-primary/10 border-2 border-background text-primary flex items-center justify-center text-[10px] font-bold">{l}</div>
-                ))}
+        <div className="container mx-auto px-6 lg:px-12">
+          <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[85vh] py-16">
+            {/* LEFT: Text Content */}
+            <div className="space-y-8 lg:pr-12">
+              {/* Premium badge */}
+              <div className="inline-flex items-center gap-2 bg-blue-100 px-5 py-2 rounded-full border border-blue-200">
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                <Text
+                  value={template.heroTagline}
+                  onChange={(v: string) => onUpdateHero?.({ heroTagline: v })}
+                  className="text-xs font-semibold text-blue-700 uppercase tracking-wider"
+                  tag="span"
+                />
               </div>
-              <span className="text-xs ml-1">Trusted by <span className="font-semibold text-foreground">30K+</span> students</span>
+
+              {/* Headline */}
+              <div className="space-y-6">
+                <Text
+                  value={template.heroTitle}
+                  onChange={(v: string) => onUpdateHero?.({ heroTitle: v })}
+                  className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 leading-[1.1] tracking-tight"
+                  tag="h1"
+                />
+
+                <Text
+                  value={template.heroDescription}
+                  onChange={(v: string) => onUpdateHero?.({ heroDescription: v })}
+                  className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-xl"
+                  tag="p"
+                />
+              </div>
+
+              {/* CTAs */}
+              <div className="flex items-center gap-4 flex-wrap">
+                {editable ? (
+                  <Button size="lg" className="text-base px-8 py-6 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold">
+                    <InlineInput value={template.heroCta} onChange={(v) => onUpdateHero?.({ heroCta: v })} />
+                  </Button>
+                ) : (
+                  <Button size="lg" className="text-base px-8 py-6 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all font-semibold" onClick={() => onCtaClick?.()}>
+                    {template.heroCta}
+                  </Button>
+                )}
+                <Button variant="outline" size="lg" className="text-base px-8 py-6 rounded-full border-2 border-gray-300 font-semibold hover:bg-gray-50 hover:scale-105 transition-all">
+                  Learn More
+                </Button>
+              </div>
+
+              {/* Trust indicators */}
+              <div className="flex items-center gap-8 pt-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex -space-x-2">
+                    {["https://i.pravatar.cc/150?img=1", "https://i.pravatar.cc/150?img=2", "https://i.pravatar.cc/150?img=3", "https://i.pravatar.cc/150?img=4"].map((img, i) => (
+                      <img key={i} src={img} alt="User" className="w-9 h-9 rounded-full border-2 border-white shadow-md object-cover" />
+                    ))}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-bold text-gray-900">30,000+</div>
+                    <div className="text-xs text-gray-600">Happy Students</div>
+                  </div>
+                </div>
+
+                <div className="h-12 w-px bg-gray-300" />
+
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-0.5">
+                    {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 fill-yellow-400 text-yellow-400" />)}
+                  </div>
+                  <div className="text-left">
+                    <div className="text-sm font-bold text-gray-900">4.9/5</div>
+                    <div className="text-xs text-gray-600">2,500+ reviews</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="hidden md:flex items-center gap-1">
-              <div className="flex gap-0.5">{[1,2,3,4,5].map(i => <Star key={i} className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" />)}</div>
-              <span className="text-xs"><span className="font-semibold text-foreground">4.9</span> rating</span>
+
+            {/* RIGHT: Image/Visual */}
+            <div className="relative lg:h-[600px] flex items-center justify-center">
+              <div className="relative w-full max-w-lg">
+                {/* Decorative elements */}
+                <div className="absolute -top-4 -right-4 w-72 h-72 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse" />
+                <div className="absolute -bottom-8 -left-4 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl opacity-40 animate-pulse" />
+
+                {/* Main image */}
+                <div className="relative z-10 rounded-3xl overflow-hidden shadow-premium-lg">
+                  <img
+                    src={template.bannerImage}
+                    alt="Banner"
+                    className="w-full h-full object-cover"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=600&fit=crop"; }}
+                  />
+                </div>
+
+                {/* Floating badge (optional) */}
+                <div className="absolute -bottom-6 -left-6 bg-white rounded-2xl shadow-premium p-6 z-20 hidden lg:block">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                      <Check className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div>
+                      <div className="text-2xl font-bold text-gray-900">100%</div>
+                      <div className="text-sm text-gray-600">Success Rate</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -171,6 +312,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
       {/* Nav */}
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="flex items-center justify-center gap-6 px-6 py-3 flex-wrap max-w-4xl mx-auto">
+          {/* Template Pages */}
           {template.pages.map((p) => (
             <span
               key={p}
@@ -180,6 +322,23 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
               }`}
             >{p}</span>
           ))}
+
+          {/* Custom Pages */}
+          {customPages.sort((a, b) => a.order - b.order).map((page) => {
+            const Icon = getIconComponent(page.icon || "file");
+            return (
+              <span
+                key={page.id}
+                onClick={() => onPageChange?.(page.slug)}
+                className={`text-sm font-medium cursor-pointer transition-colors flex items-center gap-1.5 ${
+                  activePage === page.slug ? "text-primary" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-3.5 w-3.5" />
+                {page.name}
+              </span>
+            );
+          })}
         </div>
       </div>
 
@@ -201,7 +360,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
                   />
                 )}
                 <div className={editable ? "ring-0 hover:ring-1 hover:ring-primary/20 rounded-lg transition-shadow" : ""}>
-                  <SectionRenderer section={section} editable={editable} onUpdate={(data) => onUpdateSection?.(section.id, data)} templateId={templateId} category={category} onCtaClick={onCtaClick} onProductClick={onProductClick} />
+                  <SectionRenderer section={section} editable={editable} onUpdate={(data) => onUpdateSection?.(section.id, data)} templateId={templateId} category={category} onCtaClick={onCtaClick} onProductClick={onProductClick} productsConfig={productsConfig} contactForm={contactForm} siteId={siteId} onLeadCreated={onLeadCreated} onOpenProductModal={onOpenProductModal} />
                 </div>
               </div>
               {editable && onAddSection && <AddSectionDivider onAdd={onAddSection} />}
@@ -222,7 +381,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
 
 // ──────────────── Section Renderer ────────────────
 
-const SectionRenderer = ({ section, editable, onUpdate, templateId, category, onCtaClick, onProductClick }: { section: SectionData; editable: boolean; onUpdate: (data: Record<string, any>) => void; templateId?: string; category?: string; onCtaClick?: () => void; onProductClick?: (index: number) => void }) => {
+const SectionRenderer = ({ section, editable, onUpdate, templateId, category, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, onOpenProductModal }: { section: SectionData; editable: boolean; onUpdate: (data: Record<string, any>) => void; templateId?: string; category?: string; onCtaClick?: () => void; onProductClick?: (index: number) => void; productsConfig?: ProductsConfig; contactForm?: ContactFormConfig; siteId?: string; onLeadCreated?: (lead: Lead) => void; onOpenProductModal?: () => void }) => {
   const { type, data } = section;
   switch (type) {
     case "about": return <AboutSection data={data} editable={editable} onUpdate={onUpdate} />;
@@ -236,7 +395,7 @@ const SectionRenderer = ({ section, editable, onUpdate, templateId, category, on
     case "gallery": return <GallerySection data={data} />;
     case "stats": return <StatsSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "cta-banner": return <CtaBannerSection data={data} editable={editable} onUpdate={onUpdate} onCtaClick={onCtaClick} />;
-    case "contact-form": return <ContactFormSection data={data} />;
+    case "contact-form": return contactForm ? <ContactFormSectionComponent config={contactForm} products={productsConfig?.products || []} siteId={siteId || ""} onLeadCreated={onLeadCreated} /> : <ContactFormSection data={data} />;
     case "curriculum": return <CurriculumSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "schedule": return <ScheduleSection data={data} editable={editable} onUpdate={onUpdate} />;
     case "speakers": return <SpeakersSection data={data} editable={editable} onUpdate={onUpdate} />;
@@ -245,7 +404,7 @@ const SectionRenderer = ({ section, editable, onUpdate, templateId, category, on
     case "portfolio": return <PortfolioSection data={data} />;
     case "impact": return <ImpactSection data={data} />;
     case "donation": return <DonationSection data={data} editable={editable} onUpdate={onUpdate} />;
-    case "products": return <ProductsSection data={data} editable={editable} onUpdate={onUpdate} templateId={templateId} category={category} onProductClick={onProductClick} />;
+    case "products": return <ProductsSection data={data} editable={editable} onUpdate={onUpdate} templateId={templateId} category={category} onProductClick={onProductClick} productsConfig={productsConfig} onOpenProductModal={onOpenProductModal} />;
     case "video-embed": return <VideoSection data={data} />;
     case "countdown": return <CountdownSection data={data} />;
     default: return null;
@@ -792,45 +951,88 @@ const DonationSection = ({ data, editable, onUpdate }: any) => {
   );
 };
 
-const ProductsSection = ({ data, editable, onUpdate, templateId, category, onProductClick }: any) => {
+const ProductsSection = ({ data, editable, onUpdate, templateId, category, onProductClick, productsConfig, onOpenProductModal }: any) => {
   const isEducation = category === "education";
+
+  // Use productsConfig.products if available, otherwise fall back to data.items
+  const products = productsConfig?.products || data.items || [];
+
+  // Helper to get price display for a product
+  const getPriceDisplay = (item: any) => {
+    if (item.price) return item.price; // Legacy format
+    if (item.pricingModels && item.pricingModels.length > 0) {
+      const prices = item.pricingModels.map((pm: any) => pm.price);
+      const min = Math.min(...prices);
+      const max = Math.max(...prices);
+      if (min === max) {
+        return `₹${min.toLocaleString()}`;
+      }
+      return `₹${min.toLocaleString()} - ₹${max.toLocaleString()}`;
+    }
+    return "Price not set";
+  };
+
   return (
     <SectionWrapper>
       <SectionHeading text={data.heading} editable={editable} onChange={(v) => onUpdate({ heading: v })} />
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-        {data.items?.map((item: any, i: number) => (
-          <div key={i} className="relative group/item rounded-2xl border border-border bg-background overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-            {editable && <ItemRemoveBtn onClick={() => onUpdate({ items: data.items.filter((_: any, j: number) => j !== i) })} />}
-            {!editable ? (
-              <div className="cursor-pointer" onClick={() => onProductClick?.(i)}>
-                <div className="relative overflow-hidden">
-                  <img src={item.image} alt={item.title} className="w-full h-44 object-cover group-hover/item:scale-110 transition-transform duration-500" />
-                  {item.badge && <span className="absolute top-3 left-3 text-[10px] font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg">{item.badge}</span>}
-                </div>
-                <div className="p-4">
-                  <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                  {item.desc && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{item.desc}</p>}
-                  <p className="text-lg font-bold text-primary mt-1">{item.price}</p>
-                  <Button size="sm" className="w-full mt-3 rounded-xl">{isEducation ? "View Details" : "Buy Now"}</Button>
+      {products.length === 0 ? (
+        <div className="text-center py-12 border-2 border-dashed border-border rounded-lg bg-muted/20">
+          <PackageIcon className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
+          <p className="text-sm text-muted-foreground mb-4">
+            {editable ? "No products yet. Add your first product to get started!" : "No products available at the moment."}
+          </p>
+          {editable && onOpenProductModal && (
+            <Button onClick={onOpenProductModal} variant="outline" className="gap-2">
+              <Plus className="h-4 w-4" /> Add Product
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          {products.map((item: any, i: number) => {
+            const description = item.description || item.desc || "";
+            return (
+              <div key={item.id || i} className="relative group/item rounded-2xl border border-border bg-background overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+                <div className="cursor-pointer" onClick={() => !editable && onProductClick?.(i)}>
+                  <div className="relative overflow-hidden">
+                    <img src={item.image} alt={item.title} className="w-full h-44 object-cover group-hover/item:scale-110 transition-transform duration-500" />
+                    {item.badge && <span className="absolute top-3 left-3 text-[10px] font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg">{item.badge}</span>}
+                  </div>
+                  <div className="p-4">
+                    <p className="text-sm font-semibold text-foreground line-clamp-1">{item.title}</p>
+                    {description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</p>}
+                    <div className="mt-3 flex items-baseline gap-2">
+                      <p className="text-lg font-bold text-primary">{getPriceDisplay(item)}</p>
+                    </div>
+                    {!editable && (
+                      <Button size="sm" className="w-full mt-3 rounded-xl font-semibold">
+                        {isEducation ? `Buy Course for ${getPriceDisplay(item)}` : `Buy Now - ${getPriceDisplay(item)}`}
+                      </Button>
+                    )}
+                    {editable && (
+                      <p className="text-xs text-muted-foreground mt-3 text-center">
+                        Edit in Products Tab →
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
-            ) : (
-              <>
-                <div className="relative overflow-hidden">
-                  <img src={item.image} alt={item.title} className="w-full h-44 object-cover group-hover/item:scale-110 transition-transform duration-500" />
-                  {item.badge && <span className="absolute top-3 left-3 text-[10px] font-bold bg-primary text-primary-foreground px-3 py-1 rounded-full shadow-lg">{item.badge}</span>}
-                </div>
-                <div className="p-4">
-                  <InlineInput value={item.title} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "title", v) })} className="text-sm font-semibold text-foreground block" />
-                  <InlineInput value={item.price} onChange={(v) => onUpdate({ items: updateItem(data.items, i, "price", v) })} className="text-lg font-bold text-primary mt-1 block" />
-                  <Button size="sm" className="w-full mt-3 rounded-xl">Add to Cart</Button>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-        {editable && <div className="flex items-center"><ItemAddButton onClick={() => onUpdate({ items: [...(data.items || []), { title: "New Product", price: "$0", image: "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop" }] })} label="Add product" /></div>}
-      </div>
+            );
+          })}
+          {editable && onOpenProductModal && (
+            <div
+              onClick={onOpenProductModal}
+              className="rounded-2xl border-2 border-dashed border-border bg-muted/20 hover:bg-muted/40 hover:border-primary/50 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[320px] group"
+            >
+              <div className="w-16 h-16 rounded-full bg-primary/10 group-hover:bg-primary/20 flex items-center justify-center mb-3 transition-colors">
+                <Plus className="h-8 w-8 text-primary" />
+              </div>
+              <p className="text-sm font-medium text-foreground">Add Product</p>
+              <p className="text-xs text-muted-foreground mt-1">Click to create</p>
+            </div>
+          )}
+        </div>
+      )}
     </SectionWrapper>
   );
 };

@@ -67,6 +67,7 @@ const App = () => (
           <Route path="/website-builder/editor" element={<SmartPageEditor />} />
           <Route path="/website-builder/:id" element={<SmartPageDetail />} />
           <Route path="/website-builder/product" element={<SmartPageProductDetail />} />
+          <Route path="/s/:slug/:pageSlug" element={<SmartPagePublic />} />
           <Route path="/s/:slug" element={<SmartPagePublic />} />
           <Route path="/marketing-campaigns" element={<MarketingCampaigns />} />
           <Route path="/forms" element={<Forms />} />

@@ -7,7 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { templates } from "@/data/smartPageTemplates";
+import { templates, CustomPage } from "@/data/smartPageTemplates";
+import { academyTemplate, coachingTemplate, webinarTemplate } from "@/data/productTemplates";
+import { ProductsConfig } from "@/types/products";
+import { ContactFormConfig, Lead, ContactFormField } from "@/types/leads";
 
 
 export interface SmartPageSite {
@@ -25,12 +28,21 @@ export interface SmartPageSite {
   amount?: number;
   transactions?: number;
   pageType?: "course" | "webinar" | "coaching" | "workshop" | "membership";
+  /** Products configuration */
+  productsConfig?: ProductsConfig;
+  /** Contact form configuration */
+  contactForm?: ContactFormConfig;
+  /** Leads captured via contact forms */
+  leads?: Lead[];
+  /** Custom pages beyond template pages */
+  customPages?: CustomPage[];
 }
 
 const STORAGE_KEY = "smart-pages-sites";
 
-// Migration: ensure old sites have slug/templateId
+// Migration: ensure old sites have all required fields
 const migrateSite = (s: any): SmartPageSite => {
+  // Legacy migration: ensure slug/templateId exist
   if (!s.slug) {
     const tpl = templates.find(t => t.title.toLowerCase() === s.type?.toLowerCase() || t.id === s.type);
     s.templateId = tpl?.id || s.type || "";
@@ -39,6 +51,42 @@ const migrateSite = (s: any): SmartPageSite => {
   }
   if (!s.amount && s.amount !== 0) s.amount = 0;
   if (!s.transactions && s.transactions !== 0) s.transactions = 0;
+
+  // Phase 8 migration: add products/leads/contactForm defaults
+  if (!s.productsConfig) {
+    s.productsConfig = {
+      enabled: false,
+      products: [],
+      displayMode: "grid",
+      showPricing: true,
+      categoriesEnabled: false
+    };
+  }
+
+  if (!s.contactForm) {
+    s.contactForm = {
+      enabled: false,
+      title: "Get in Touch",
+      description: "Have questions? We'd love to hear from you.",
+      fields: [
+        { id: "name", label: "Full Name", type: "text" as const, required: true, placeholder: "Your name" },
+        { id: "email", label: "Email", type: "email" as const, required: true, placeholder: "your.email@example.com" },
+        { id: "message", label: "Message", type: "textarea" as const, required: true, placeholder: "How can we help?" }
+      ] as ContactFormField[],
+      includeInterests: false,
+      autoReply: false,
+      successMessage: "Thank you! We'll be in touch soon."
+    };
+  }
+
+  if (!s.leads) {
+    s.leads = [];
+  }
+
+  if (!s.customPages) {
+    s.customPages = [];
+  }
+
   return s as SmartPageSite;
 };
 
@@ -53,12 +101,67 @@ export const getStoredSites = (): SmartPageSite[] => {
       return migrated;
     }
   } catch {}
+  // Create sample sites from NEW product templates
   const defaults: SmartPageSite[] = [
-    { id: "sp_1", name: "Full Stack Bootcamp", type: "Single Online Course", category: "education", slug: "full-stack-bootcamp", templateId: "single-course", url: "/s/full-stack-bootcamp", created: "10 Feb 2026", views: 1240, conversions: 342, status: "Published", amount: 12999, transactions: 342, pageType: "course" },
-    { id: "sp_2", name: "Creator Portfolio", type: "Personal Portfolio", category: "general", slug: "creator-portfolio", templateId: "portfolio", url: "/s/creator-portfolio", created: "1 Feb 2026", views: 3420, conversions: 89, status: "Published", amount: 4999, transactions: 89 },
-    { id: "sp_3", name: "Weekend Workshop", type: "Webinar", category: "education", slug: "weekend-workshop", templateId: "webinar", url: "/s/weekend-workshop", created: "15 Jan 2026", views: 890, conversions: 156, status: "Published", amount: 1999, transactions: 156, pageType: "webinar" },
-    { id: "sp_4", name: "Premium Consulting Firm", type: "Business", category: "services", slug: "premium-consulting-firm", templateId: "business", url: "/s/premium-consulting-firm", created: "27 Feb 2026", views: 560, conversions: 45, status: "Published", amount: 9999, transactions: 45 },
-    { id: "sp_5", name: "Yoga & Wellness Studio", type: "Single Online Course", category: "education", slug: "yoga-wellness", templateId: "single-course", url: "/s/yoga-wellness", created: "5 Feb 2026", views: 2100, conversions: 210, status: "Published", amount: 2499, transactions: 210, pageType: "course" },
+    {
+      id: "demo_academy",
+      name: academyTemplate.heroTitle,
+      type: academyTemplate.title,
+      category: academyTemplate.category,
+      slug: "online-academy-demo",
+      templateId: academyTemplate.id,
+      url: "/s/online-academy-demo",
+      created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+      views: 1240,
+      conversions: 142,
+      status: "Published",
+      amount: academyTemplate.productsConfig?.products[0]?.pricingModels[0]?.price || 4999,
+      transactions: 142,
+      pageType: "course",
+      productsConfig: academyTemplate.productsConfig,
+      contactForm: academyTemplate.contactForm,
+      leads: [],
+      customPages: []
+    },
+    {
+      id: "demo_coaching",
+      name: coachingTemplate.heroTitle,
+      type: coachingTemplate.title,
+      category: coachingTemplate.category,
+      slug: "coaching-demo",
+      templateId: coachingTemplate.id,
+      url: "/s/coaching-demo",
+      created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+      views: 890,
+      conversions: 78,
+      status: "Published",
+      amount: coachingTemplate.productsConfig?.products[0]?.pricingModels[0]?.price || 2999,
+      transactions: 78,
+      productsConfig: coachingTemplate.productsConfig,
+      contactForm: coachingTemplate.contactForm,
+      leads: [],
+      customPages: []
+    },
+    {
+      id: "demo_webinar",
+      name: webinarTemplate.heroTitle,
+      type: webinarTemplate.title,
+      category: webinarTemplate.category,
+      slug: "webinar-demo",
+      templateId: webinarTemplate.id,
+      url: "/s/webinar-demo",
+      created: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
+      views: 560,
+      conversions: 234,
+      status: "Published",
+      amount: webinarTemplate.productsConfig?.products[0]?.pricingModels[0]?.price || 499,
+      transactions: 234,
+      pageType: "webinar",
+      productsConfig: webinarTemplate.productsConfig,
+      contactForm: webinarTemplate.contactForm,
+      leads: [],
+      customPages: []
+    }
   ];
   localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));
   return defaults;

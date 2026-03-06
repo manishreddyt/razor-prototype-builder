@@ -92,13 +92,13 @@ const AIAppBuilder = () => {
             <div className="flex items-center gap-2 mt-1">
               <p className="text-sm text-muted-foreground">Build custom websites, full blown apps etc. Build any app that you can imagine and collect payments with Razorpay.</p>
               <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary whitespace-nowrap shadow-sm">
-                <img src="/images/logo-lovable.png" alt="Lovable" className="h-4 w-4 rounded-sm" />
-                Powered by Lovable
+                <Sparkles className="h-4 w-4 text-primary" />
+                Powered by AI
               </span>
             </div>
           </div>
           <Button className="gap-2" onClick={() => navigate("/ai-app-builder/create")}>
-            <Plus className="h-4 w-4" /> Create App
+            <Plus className="h-4 w-4" /> Build with Emergent
           </Button>
         </div>
 
@@ -211,7 +211,7 @@ const AIAppBuilder = () => {
             <p className="text-foreground font-medium">No apps yet</p>
             <p className="text-sm text-muted-foreground mt-1">Build your first app with AI — describe what you want and we'll create it.</p>
             <Button className="mt-4 gap-2" onClick={() => navigate("/ai-app-builder/create")}>
-              <Plus className="h-4 w-4" /> Create App
+              <Plus className="h-4 w-4" /> Build with Emergent
             </Button>
           </div>
         )}

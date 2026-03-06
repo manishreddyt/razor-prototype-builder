@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { DashboardSidebar } from "./DashboardSidebar";
 import { DashboardTopbar } from "./DashboardTopbar";
 import DashboardAIAssistant from "@/components/DashboardAIAssistant";
@@ -8,7 +8,14 @@ interface DashboardLayoutProps {
 }
 
 export const DashboardLayout = ({ children }: DashboardLayoutProps) => {
-  const [isAIOpen, setIsAIOpen] = useState(true);
+  const [isAIOpen, setIsAIOpen] = useState(() => {
+    const saved = localStorage.getItem("dashboard-ai-open");
+    return saved !== null ? saved === "true" : false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem("dashboard-ai-open", String(isAIOpen));
+  }, [isAIOpen]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">

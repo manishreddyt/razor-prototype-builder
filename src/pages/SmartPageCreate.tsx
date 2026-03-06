@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft, Sparkles, Search, ArrowRight, Eye, Monitor, Smartphone,
-  Send, Video, BookOpen, UserCheck, Calendar, Users,
+  Send, Video, BookOpen, UserCheck,
   Brain, Wand2, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,9 @@ const TemplateThumb = ({ template }: { template: TemplateData }) => (
 );
 
 const educationPageTypes = [
-  { id: "course", title: "Sell an Online Course", desc: "Course landing page with curriculum, pricing & enrollment.", icon: BookOpen, route: "/website-builder/editor?template=single-course&title=Online%20Course&type=Online%20Course" },
-  { id: "webinar", title: "Host a Webinar", desc: "Webinar with registration, integrations & attendee tracking.", icon: Video, route: "/website-builder/editor?template=webinar&title=Webinar&type=Webinar" },
-  { id: "coaching", title: "Offer 1:1 Coaching", desc: "Coaching page with booking slots, packages & payments.", icon: UserCheck, route: "/website-builder/editor?template=coaching&title=1:1%20Coaching&type=1:1%20Coaching" },
+  { id: "course", title: "Sell an Online Course", desc: "Course landing page with curriculum, pricing & enrollment.", icon: BookOpen, directRoute: "/website-builder/editor?template=single-course&title=Online%20Course&type=Online%20Course" },
+  { id: "webinar", title: "Host a Webinar", desc: "Webinar with registration, integrations & attendee tracking.", icon: Video, configRoute: "/website-builder/webinar/create" },
+  { id: "coaching", title: "Offer 1:1 Coaching", desc: "Coaching page with booking slots, packages & payments.", icon: UserCheck, configRoute: "/website-builder/coaching/create" },
 ];
 
 const analyzePrompt = (prompt: string): { type: string; label: string; route: string } => {
@@ -41,10 +41,12 @@ const analyzePrompt = (prompt: string): { type: string; label: string; route: st
   const ws = webinarKw.filter(k => lower.includes(k)).length;
   const cos = coachingKw.filter(k => lower.includes(k)).length;
   const max = Math.max(cs, ws, cos);
+
+  // Route to config pages with AI prompt for webinar/coaching
   if (max === 0) return { type: "generic", label: "Smart Page", route: `/website-builder/editor?prompt=${encodeURIComponent(prompt)}` };
-  if (cs === max) return { type: "course", label: "Online Course", route: `/website-builder/editor?template=single-course&title=${encodeURIComponent(prompt)}&type=Online%20Course` };
-  if (ws === max) return { type: "webinar", label: "Webinar", route: `/website-builder/editor?template=webinar&title=${encodeURIComponent(prompt)}&type=Webinar` };
-  return { type: "coaching", label: "1:1 Coaching", route: `/website-builder/editor?template=coaching&title=${encodeURIComponent(prompt)}&type=1:1%20Coaching` };
+  if (cs === max) return { type: "course", label: "Online Course", route: `/website-builder/editor?template=single-course&title=${encodeURIComponent(prompt)}&type=Online%20Course&aiPrompt=${encodeURIComponent(prompt)}` };
+  if (ws === max) return { type: "webinar", label: "Webinar", route: `/website-builder/webinar/create` };
+  return { type: "coaching", label: "1:1 Coaching", route: `/website-builder/coaching/create` };
 };
 
 const analysisSteps = [
@@ -95,11 +97,24 @@ const SmartPageCreate = () => {
 
   const handleUseTemplate = (template: TemplateData) => {
     setPreviewTemplate(null);
-    navigate(`/website-builder/editor?template=${encodeURIComponent(template.id)}&title=${encodeURIComponent(template.title)}&type=${encodeURIComponent(template.title)}`);
+
+    // Route to AI chat pages for webinar and coaching templates
+    if (template.id === "webinar") {
+      navigate("/website-builder/webinar/create");
+    } else if (template.id === "coaching") {
+      navigate("/website-builder/coaching/create");
+    } else {
+      // For other templates, go directly to editor
+      navigate(`/website-builder/editor?template=${encodeURIComponent(template.id)}&title=${encodeURIComponent(template.title)}&type=${encodeURIComponent(template.title)}`);
+    }
   };
 
   const handleEducationCard = (card: typeof educationPageTypes[0]) => {
-    if (card.route) navigate(card.route);
+    // Navigate to config page for webinar/coaching, or directly to editor for course
+    const route = ("configRoute" in card && card.configRoute) || ("directRoute" in card && card.directRoute);
+    if (route) {
+      navigate(route);
+    }
   };
 
   return (

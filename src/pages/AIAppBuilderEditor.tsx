@@ -141,8 +141,8 @@ const AIAppBuilderEditor = () => {
             <span className="text-sm font-medium text-foreground truncate max-w-[200px]">{appName}</span>
           </div>
           <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-accent border border-border">
-            <img src="/images/logo-lovable.png" alt="Lovable" className="h-3.5 w-3.5 rounded-sm" />
-            <span className="text-[10px] font-medium text-muted-foreground">Powered by Lovable</span>
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span className="text-[10px] font-medium text-muted-foreground">Powered by AI</span>
           </div>
         </div>
         <div className="flex items-center gap-2">

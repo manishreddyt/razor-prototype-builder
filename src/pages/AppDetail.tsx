@@ -31,7 +31,7 @@ const appFeatures: Record<string, AppFeatureDetail> = {
     ],
     pricing: "₹2,999/month or ₹29,990/year",
   },
-  "lovable-ai": {
+  "emergent": {
     features: [
       "Generate full-stack web apps with AI prompts",
       "React + Tailwind + TypeScript stack",
@@ -41,9 +41,9 @@ const appFeatures: Record<string, AppFeatureDetail> = {
       "Custom domain support",
     ],
     screenshots: [
-      { label: "AI chat interface for building apps", image: "/images/lovable-chat.png" },
-      { label: "Live code preview with hot reload", image: "/images/lovable-preview.png" },
-      { label: "Deploy & publish workflow", image: "/images/lovable-deploy.png" },
+      { label: "AI chat interface for building apps", image: "/images/emergent-chat.png" },
+      { label: "Live code preview with hot reload", image: "/images/emergent-preview.png" },
+      { label: "Deploy & publish workflow", image: "/images/emergent-deploy.png" },
     ],
     pricing: "₹1,999/month or ₹19,990/year",
   },
@@ -127,7 +127,7 @@ const AppDetail = () => {
   const handleOpen = () => {
     if (app.id === "course-graphy") {
       navigate("/apps/course-graphy");
-    } else if (app.id === "lovable-ai") {
+    } else if (app.id === "emergent") {
       navigate("/ai-app-builder");
     } else {
       navigate(`/apps/${app.id}`);

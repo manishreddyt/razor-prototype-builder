@@ -2,6 +2,9 @@ import {
   Globe, GraduationCap, Briefcase, Heart, ShoppingBag, LayoutGrid,
   BookOpen, Video, UserCheck, Calendar, Users, Store, Gift, FileText,
 } from "lucide-react";
+import { ProductsConfig } from "@/types/products";
+import { ContactFormConfig } from "@/types/leads";
+import { productFocusedTemplates } from "./productTemplates";
 
 export type SectionType =
   | "hero" | "about" | "services" | "features" | "pricing"
@@ -52,6 +55,15 @@ export interface CheckoutConfig {
   highlights: string[];
 }
 
+export interface CustomPage {
+  id: string;
+  name: string;
+  slug: string;
+  icon?: string;
+  sections: SectionData[];
+  order: number;
+}
+
 export interface TemplateData {
   id: string;
   title: string;
@@ -69,6 +81,12 @@ export interface TemplateData {
   pagesData?: Record<string, PageData>;
   /** Checkout/payment configuration */
   checkout?: CheckoutConfig;
+  /** Products configuration */
+  productsConfig?: ProductsConfig;
+  /** Contact form configuration */
+  contactForm?: ContactFormConfig;
+  /** Custom pages beyond template pages */
+  customPages?: CustomPage[];
 }
 
 const makeId = () => `s_${Math.random().toString(36).slice(2, 8)}`;
@@ -369,7 +387,7 @@ export const templates: TemplateData[] = [
   // 1. MULTI-COURSE PLATFORM
   {
     id: "multi-course", title: "Online Courses (Multi)", desc: "Course marketplace with catalog, categories, and student dashboard.", category: "education", icon: BookOpen,
-    pages: ["Home", "Courses", "Instructors", "Pricing"],
+    pages: ["Home", "About Us", "Contact Us"],
     heroTitle: "Learn Without Limits", heroTagline: "100+ courses by industry experts",
     heroDescription: "From programming to design, marketing to data science — master new skills with hands-on courses and expert mentors. Join 15,000+ learners already building their future.",
     heroCta: "Browse Courses", bannerImage: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&h=300&fit=crop",
@@ -491,7 +509,7 @@ export const templates: TemplateData[] = [
   // 2. SINGLE COURSE
   {
     id: "single-course", title: "Single Online Course", desc: "High-converting sales page for one course with modules, instructor bio, and enrollment.", category: "education", icon: GraduationCap,
-    pages: ["Home", "Curriculum", "Pricing", "Enroll", "FAQ"],
+    pages: ["Home", "About Us", "Contact Us"],
     heroTitle: "Master Full Stack Development", heroTagline: "12-Week Intensive Bootcamp • Next Batch: March 2026",
     heroDescription: "Go from zero to job-ready full stack developer. Learn React, Node.js, databases, and deployment with real-world projects. 2000+ alumni placed.",
     heroCta: "Enroll Now — ₹12,999", bannerImage: "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=900&h=300&fit=crop",
@@ -1124,6 +1142,9 @@ export const templates: TemplateData[] = [
     heroCta: "Browse Products", bannerImage: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=900&h=300&fit=crop",
     sections: [heroSection(), productsSection([{ title: "Notion Template Pack", price: "₹499", image: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=300&h=300&fit=crop", badge: "Best Seller" }, { title: "Instagram Template Kit", price: "₹299", image: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=300&h=300&fit=crop", badge: "" }, { title: "Business Plan Template", price: "₹999", image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=300&fit=crop", badge: "New" }, { title: "Resume Templates (5-Pack)", price: "₹399", image: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=300&h=300&fit=crop", badge: "" }]), featuresSection([{ title: "Instant Download", desc: "Get your files immediately after purchase.", icon: "⚡" }, { title: "Lifetime Updates", desc: "Free updates for all purchased products.", icon: "🔄" }, { title: "Commercial License", desc: "Use in personal and commercial projects.", icon: "📄" }]), statsSection([{ value: "5000+", label: "Downloads" }, { value: "200+", label: "Products" }, { value: "4.9★", label: "Rating" }, { value: "Instant", label: "Delivery" }]), testimonialsSection(), googleReviewsSection(), faqSection([{ q: "How do I get my files?", a: "Instant download link sent to your email after payment." }, { q: "Can I use these commercially?", a: "Yes, all products include a commercial use license." }, { q: "Do you offer refunds?", a: "Due to digital nature, refunds are case-by-case. Contact support." }]), ctaBannerSection("Bundle & Save 30%", "Get all templates in one pack at a special price.", "View Bundle"), newsletterSection()],
   },
+
+  // ─── Product-Focused Templates ───
+  ...productFocusedTemplates,
 ];
 
 // ──────────────── Available section types for Add Section ────────────────

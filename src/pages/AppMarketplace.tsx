@@ -53,8 +53,8 @@ export const marketplaceApps: MarketplaceApp[] = [
     pricing: { monthly: 2999, yearly: 29990 },
   },
   {
-    id: "lovable-ai",
-    name: "Emergent AI Builder",
+    id: "emergent",
+    name: "Emergent",
     category: "AI & Builder",
     description: "Build full-stack web apps with AI. Generate landing pages, dashboards, and tools in minutes.",
     icon: Heart,

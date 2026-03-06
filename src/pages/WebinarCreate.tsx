@@ -14,7 +14,8 @@ import {
 import {
   ArrowLeft, Send, Sparkles, Check, Copy, ExternalLink, Share2,
   Calendar, Clock, Video, Plus, Trash2, Globe, PartyPopper, Eye,
-  MessageSquare, Settings, ChevronDown, ChevronUp, Bot,
+  MessageSquare, Settings, ChevronDown, ChevronUp, Bot, FileText,
+  Users, ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { addSite, type SmartPageSite } from "./WebsiteBuilder";
@@ -25,29 +26,44 @@ import {
 import WebinarLandingPreview from "@/components/WebinarLandingPreview";
 import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
 
-type Phase = "chat" | "builder" | "confirmation";
+type Phase = "chat" | "form" | "builder" | "confirmation";
 
 interface ChatMsg {
   id: string;
   role: "bot" | "user";
   content: string;
-  type?: "text" | "platform-select" | "paid-toggle" | "date-time" | "duration" | "reg-fields" | "transition";
+  type?: "text" | "platform-select" | "paid-toggle" | "date-time" | "duration" | "reg-fields" | "zoom-setup" | "transition";
   answered?: boolean;
   isNew?: boolean;
 }
 
-// The questions the bot asks sequentially
-const QUESTION_SEQUENCE = [
-  { key: "name", message: "👋 Hey! I'll help you set up a **webinar landing page** with registration and payment collection.\n\n🎯 **What you'll get:**\n• A professional webinar page with countdown, speakers & agenda\n• Registration form to collect attendee details\n• Payment collection for paid webinars via Razorpay\n• Zoom / Google Meet integration for hosting\n• Post-event follow-up workflows (email, WhatsApp)\n\n📋 **I'll need a few details:**\n1. Webinar name & description\n2. Free or paid\n3. Date, time & platform\n4. Registration fields\n\nLet's start — **What's the name of your webinar?**", type: "text" as const },
-  { key: "description", message: "Nice! **Describe what attendees will learn** — a few sentences is perfect.", type: "text" as const },
-  { key: "isPaid", message: "Is this a **paid or free** webinar?", type: "paid-toggle" as const },
-  { key: "amount", message: "How much would you like to charge? **Enter the amount in ₹**.", type: "text" as const, condition: (state: Partial<WebinarData>) => state.isPaid },
-  { key: "dateTime", message: "When is the webinar? **Pick a date and time.**", type: "date-time" as const },
-  { key: "duration", message: "How long will it be? **Select the duration.**", type: "duration" as const },
-  { key: "platform", message: "Which platform are you hosting on?", type: "platform-select" as const },
-  { key: "meetingLink", message: "Got it! **Paste your meeting link** (or skip for now).", type: "text" as const },
-  { key: "regFields", message: "I've set up default registration fields (Name, Email, Phone). Want to **add any custom fields**?", type: "reg-fields" as const },
-];
+// Initial welcome message that asks multiple questions at once
+const INITIAL_MESSAGE = `👋 Hey! I'll help you set up a **webinar landing page** with registration and payment collection.
+
+🎯 **What you'll get:**
+• Professional webinar page with countdown & speakers
+• Registration form to collect attendee details
+• Payment collection via Razorpay (for paid webinars)
+• Zoom / Google Meet integration
+• Post-event follow-up workflows
+
+📋 **Let's get started! Please answer these questions:**
+
+1️⃣ **What's your webinar about?**
+   (Name and brief description)
+
+2️⃣ **Is it free or paid?**
+   (If paid, what's the price in ₹?)
+
+3️⃣ **When is it happening?**
+   (Date, time, and duration)
+
+4️⃣ **Which platform?**
+   (Zoom, Google Meet, or custom link)
+
+💡 **Tip:** Answer all at once, or one by one - I'll figure it out!
+
+Example: "AI Web Development Workshop, Learn to build with AI tools, Paid ₹1999, March 15 at 6 PM for 60 minutes, Zoom"`;
 
 const timezones = [
   "Asia/Kolkata (IST)", "America/New_York (EST)", "America/Los_Angeles (PST)",
@@ -60,21 +76,23 @@ const WebinarCreate = () => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [phase, setPhase] = useState<Phase>("chat");
-  const [questionIndex, setQuestionIndex] = useState(0);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [hasBasicInfo, setHasBasicInfo] = useState(false);
 
-  // Webinar state
+  // Webinar state - Start empty, populate from user input
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [bannerImage] = useState("https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&h=400&fit=crop");
   const [isPaid, setIsPaid] = useState(false);
-  const [amount, setAmount] = useState(999);
+  const [amount, setAmount] = useState(0);
   const [eventConfig, setEventConfig] = useState<EventConfig>({
     date: "", time: "", duration: 60, timezone: "Asia/Kolkata (IST)",
     platform: "zoom", meetingLink: "", eventName: "",
   });
+  const [zoomConnected, setZoomConnected] = useState(false);
+  const [meetingLinkOption, setMeetingLinkOption] = useState<"auto" | "manual">("manual"); // "auto" = connect Zoom, "manual" = enter link
   const [regFields, setRegFields] = useState<RegistrationField[]>([...defaultRegistrationFields]);
   const [speakers] = useState([
     { name: "Dr. Arun Kumar", title: "AI Researcher", avatar: "AK", bio: "Leading expert in machine learning." },
@@ -105,10 +123,10 @@ const WebinarCreate = () => {
     }, 800 + Math.random() * 500);
   }, []);
 
-  // Initialize first question
+  // Initialize with welcome message
   useEffect(() => {
     if (messages.length === 0) {
-      addBotMessage(QUESTION_SEQUENCE[0].message, QUESTION_SEQUENCE[0].type);
+      addBotMessage(INITIAL_MESSAGE, "text");
     }
   }, []); // eslint-disable-line
 
@@ -116,35 +134,110 @@ const WebinarCreate = () => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  const getProgress = () => {
-    const total = QUESTION_SEQUENCE.filter(q => !q.condition || q.condition({ isPaid })).length;
-    return Math.round((questionIndex / total) * 100);
-  };
+  // Smart parser to extract webinar details from user input
+  const parseUserInput = useCallback((text: string) => {
+    const lower = text.toLowerCase();
+    let updates: any = {};
+    let extractedInfo: string[] = [];
 
-  const advanceQuestion = useCallback((currentIdx: number) => {
-    let nextIdx = currentIdx + 1;
-    // Skip conditional questions
-    while (nextIdx < QUESTION_SEQUENCE.length) {
-      const q = QUESTION_SEQUENCE[nextIdx];
-      if (q.condition && !q.condition({ isPaid, name, description })) {
-        nextIdx++;
-        continue;
+    // Extract name (first substantial part or after keywords)
+    const namePatterns = [
+      /(?:webinar|workshop|session|class|training|course|event)\s+(?:on|about|for|:|-)?\s*([^,\.]+)/i,
+      /(?:name|title|called|it's)\s+(?:is|:|-)?\s*["']?([^"',.]+)["']?/i,
+    ];
+
+    for (const pattern of namePatterns) {
+      const nameMatch = text.match(pattern);
+      if (nameMatch && nameMatch[1].trim()) {
+        const extractedName = nameMatch[1].trim();
+        if (extractedName.length > 3 && extractedName.length < 100) {
+          updates.name = extractedName;
+          extractedInfo.push(`✓ Name: ${extractedName}`);
+          break;
+        }
       }
-      break;
     }
-    if (nextIdx >= QUESTION_SEQUENCE.length) {
-      // All questions answered → transition
-      addBotMessage("✨ Perfect! I have everything I need. **Let me build your landing page...**", "transition");
-      setTimeout(() => setPhase("builder"), 2000);
-    } else {
-      setQuestionIndex(nextIdx);
-      const q = QUESTION_SEQUENCE[nextIdx];
-      addBotMessage(q.message, q.type);
+
+    // If no name pattern found, try to get first meaningful sentence
+    if (!updates.name) {
+      const firstSentence = text.split(/[,\.\n]/)[0].trim();
+      if (firstSentence.length > 5 && firstSentence.length < 80 && !firstSentence.match(/^(yes|no|paid|free|₹)/i)) {
+        updates.name = firstSentence;
+        extractedInfo.push(`✓ Name: ${firstSentence}`);
+      }
     }
-  }, [isPaid, name, description, addBotMessage]);
+
+    // Extract description
+    const sentences = text.split(/[,\.\n]/).filter(s => s.trim().length > 10);
+    if (sentences.length > 1) {
+      const desc = sentences.slice(1, 3).join('. ').trim();
+      if (desc.length > 10) {
+        updates.description = desc;
+        extractedInfo.push(`✓ Description: ${desc.substring(0, 50)}...`);
+      }
+    }
+
+    // Extract price
+    if (lower.includes('paid') || lower.match(/₹\s*\d+/)) {
+      updates.isPaid = true;
+      const priceMatch = text.match(/₹\s*(\d+)/);
+      if (priceMatch) {
+        updates.amount = parseInt(priceMatch[1]);
+        extractedInfo.push(`✓ Price: ₹${priceMatch[1]}`);
+      } else {
+        extractedInfo.push(`✓ Paid webinar (please specify amount)`);
+      }
+    } else if (lower.includes('free')) {
+      updates.isPaid = false;
+      extractedInfo.push(`✓ Free webinar`);
+    }
+
+    // Extract date
+    const datePatterns = [
+      /(\d{1,2})\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{4})?/i,
+      /(\d{4})-(\d{2})-(\d{2})/,
+      /(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+(\d{1,2})/i,
+    ];
+
+    for (const pattern of datePatterns) {
+      const dateMatch = text.match(pattern);
+      if (dateMatch) {
+        // Simple date extraction - in production, use proper date parsing
+        extractedInfo.push(`✓ Date detected (please confirm in form)`);
+        break;
+      }
+    }
+
+    // Extract time
+    const timeMatch = text.match(/(\d{1,2})\s*(?::(\d{2}))?\s*(am|pm|AM|PM)/);
+    if (timeMatch) {
+      extractedInfo.push(`✓ Time: ${timeMatch[0]}`);
+    }
+
+    // Extract duration
+    const durationMatch = text.match(/(\d+)\s*(?:min|minutes|hour|hours|hrs?)/i);
+    if (durationMatch) {
+      const dur = parseInt(durationMatch[1]);
+      updates.duration = dur > 10 ? dur : dur * 60; // Convert hours to minutes
+      extractedInfo.push(`✓ Duration: ${updates.duration} min`);
+    }
+
+    // Extract platform
+    if (lower.includes('zoom')) {
+      updates.platform = 'zoom';
+      extractedInfo.push(`✓ Platform: Zoom`);
+    } else if (lower.includes('google meet') || lower.includes('gmeet') || lower.includes('meet')) {
+      updates.platform = 'gmeet';
+      extractedInfo.push(`✓ Platform: Google Meet`);
+    }
+
+    return { updates, extractedInfo };
+  }, []);
 
   const handleUserResponse = (text: string) => {
     if (!text.trim()) return;
+
+    // Add user message
     setMessages((prev) => [...prev, {
       id: `msg_${Date.now()}`,
       role: "user",
@@ -152,85 +245,51 @@ const WebinarCreate = () => {
     }]);
     setChatInput("");
 
-    const currentQ = QUESTION_SEQUENCE[questionIndex];
-    switch (currentQ.key) {
-      case "name":
-        setName(text);
-        setEventConfig(prev => ({ ...prev, eventName: text }));
-        break;
-      case "description":
-        setDescription(text);
-        break;
-      case "amount":
-        setAmount(parseInt(text.replace(/[^0-9]/g, "")) || 999);
-        break;
-      case "meetingLink":
-        setEventConfig(prev => ({ ...prev, meetingLink: text }));
-        break;
-    }
+    // Parse the input
+    const { updates, extractedInfo } = parseUserInput(text);
 
-    advanceQuestion(questionIndex);
-  };
+    // Apply updates
+    if (updates.name) setName(updates.name);
+    if (updates.description) setDescription(updates.description);
+    if (updates.isPaid !== undefined) setIsPaid(updates.isPaid);
+    if (updates.amount) setAmount(updates.amount);
+    if (updates.platform) setEventConfig(prev => ({ ...prev, platform: updates.platform }));
+    if (updates.duration) setEventConfig(prev => ({ ...prev, duration: updates.duration }));
 
-  const handlePlatformSelect = (platform: "zoom" | "gmeet" | "custom") => {
-    setEventConfig(prev => ({ ...prev, platform }));
-    setMessages(prev => [...prev, {
-      id: `msg_${Date.now()}`, role: "user",
-      content: platform === "zoom" ? "Zoom" : platform === "gmeet" ? "Google Meet" : "Custom Link",
-    }]);
-    advanceQuestion(questionIndex);
-  };
-
-  const handlePaidToggle = (paid: boolean) => {
-    setIsPaid(paid);
-    setMessages(prev => [...prev, {
-      id: `msg_${Date.now()}`, role: "user",
-      content: paid ? "Paid webinar" : "Free webinar",
-    }]);
-    // Need to advance, but we have to handle the condition check for amount
-    // advanceQuestion will skip amount if free
+    // Generate response
+    setIsTyping(true);
     setTimeout(() => {
-      let nextIdx = questionIndex + 1;
-      while (nextIdx < QUESTION_SEQUENCE.length) {
-        const q = QUESTION_SEQUENCE[nextIdx];
-        if (q.condition && !q.condition({ isPaid: paid })) { nextIdx++; continue; }
-        break;
-      }
-      if (nextIdx >= QUESTION_SEQUENCE.length) {
-        addBotMessage("✨ Perfect! Let me build your landing page...", "transition");
-        setTimeout(() => setPhase("builder"), 2000);
+      let response = "";
+      let needsMore = [];
+
+      if (extractedInfo.length > 0) {
+        response = "Great! I've captured:\n\n" + extractedInfo.join('\n');
+
+        // Check what's missing
+        if (!name && !updates.name) needsMore.push("webinar name");
+        if (!isPaid && updates.isPaid === undefined) needsMore.push("pricing (free/paid)");
+        if (!eventConfig.platform && !updates.platform) needsMore.push("platform (Zoom/Google Meet)");
+
+        if (needsMore.length > 0) {
+          response += "\n\n📝 **Still need:**\n• " + needsMore.join('\n• ');
+          response += "\n\nJust reply with the missing info, or click **Switch to Form** to fill it manually!";
+        } else {
+          response += "\n\n✨ **Perfect! I have enough to create your webinar page.**\n\nClick **Continue to Builder** below, or provide more details (description, date/time, etc.)";
+          setHasBasicInfo(true);
+        }
       } else {
-        setQuestionIndex(nextIdx);
-        addBotMessage(QUESTION_SEQUENCE[nextIdx].message, QUESTION_SEQUENCE[nextIdx].type);
+        response = "I didn't catch that. Could you share:\n• **Webinar name**\n• **Free or Paid** (with price if paid)\n• **Platform** (Zoom or Google Meet)\n\nExample: \"AI Workshop, Paid ₹1999, Zoom\"";
       }
-    }, 100);
+
+      setMessages((prev) => [...prev, {
+        id: `msg_${Date.now()}`,
+        role: "bot",
+        content: response,
+      }]);
+      setIsTyping(false);
+    }, 800);
   };
 
-  const handleDateTimeSet = (date: string, time: string) => {
-    setEventConfig(prev => ({ ...prev, date, time }));
-    const dateStr = date ? new Date(date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "TBD";
-    setMessages(prev => [...prev, {
-      id: `msg_${Date.now()}`, role: "user",
-      content: `${dateStr} at ${time || "TBD"}`,
-    }]);
-    advanceQuestion(questionIndex);
-  };
-
-  const handleDurationSet = (d: number) => {
-    setEventConfig(prev => ({ ...prev, duration: d }));
-    setMessages(prev => [...prev, {
-      id: `msg_${Date.now()}`, role: "user", content: `${d} minutes`,
-    }]);
-    advanceQuestion(questionIndex);
-  };
-
-  const handleRegFieldsDone = () => {
-    setMessages(prev => [...prev, {
-      id: `msg_${Date.now()}`, role: "user",
-      content: `${regFields.length} fields configured`,
-    }]);
-    advanceQuestion(questionIndex);
-  };
 
   // Build webinar data object
   const buildWebinarData = (): WebinarData => ({
@@ -243,6 +302,17 @@ const WebinarCreate = () => {
   // Handle publish
   const handlePublish = () => {
     const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "webinar";
+
+    // Generate Zoom link if Zoom is connected
+    let finalEventConfig = { ...eventConfig };
+    if (zoomConnected && eventConfig.platform === "zoom" && !eventConfig.meetingLink) {
+      const meetingId = Math.floor(100000000000 + Math.random() * 900000000000);
+      const passcode = Math.random().toString(36).substring(2, 8).toUpperCase();
+      finalEventConfig.meetingLink = `https://zoom.us/j/${meetingId}?pwd=${passcode}`;
+      setEventConfig(finalEventConfig);
+      toast.success("Zoom meeting link created automatically!");
+    }
+
     const site: SmartPageSite = {
       id: `sp_${Date.now()}`, name, type: "Webinar", category: "education",
       slug, templateId: "webinar", url: `/s/${slug}`,
@@ -250,7 +320,15 @@ const WebinarCreate = () => {
       views: 0, conversions: 0, status: "Published",
       amount: isPaid ? amount : 0, transactions: 0, pageType: "webinar",
     };
-    localStorage.setItem(`webinar_${site.id}`, JSON.stringify(buildWebinarData()));
+
+    const webinarDataToSave: WebinarData = {
+      name, description, bannerImage, isPaid, amount: isPaid ? amount : 0,
+      eventConfig: { ...finalEventConfig, eventName: finalEventConfig.eventName || name },
+      registrationFields: regFields, workflows: defaultWorkflows,
+      attendees: [], speakers, confirmation: confirmationConfig,
+    };
+
+    localStorage.setItem(`webinar_${site.id}`, JSON.stringify(webinarDataToSave));
     addSite(site);
     setPublishedSlug(slug);
     setPublishedSiteId(site.id);
@@ -285,7 +363,299 @@ const WebinarCreate = () => {
   const webinarData = buildWebinarData();
   const fullUrl = `${window.location.origin}/s/${publishedSlug}`;
 
-  // ─── PHASE 1: Chat Flow ───
+  // ─── PHASE 1: Form View ───
+  if (phase === "form") {
+    return (
+      <div className="h-screen flex flex-col bg-background">
+        {/* Top bar */}
+        <div className="flex items-center justify-between px-5 py-3 bg-background border-b border-border">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" onClick={() => setPhase("chat")} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back to Chat
+            </Button>
+            <div className="h-4 w-px bg-border/50" />
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                <FileText className="h-3.5 w-3.5 text-primary" />
+              </div>
+              <span className="text-sm font-semibold">Webinar Details</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={() => {
+              if (!name.trim()) {
+                toast.error("Please enter webinar name");
+                return;
+              }
+              setEventConfig(prev => ({ ...prev, eventName: name }));
+              setPhase("builder");
+            }} className="gap-1.5">
+              Continue to Builder <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Form */}
+        <ScrollArea className="flex-1">
+          <div className="max-w-3xl mx-auto p-8">
+            <div className="space-y-6">
+              {/* Basic Details */}
+              <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold">Basic Details</h3>
+                </div>
+
+                <div>
+                  <Label>Webinar Name *</Label>
+                  <Input
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    placeholder="e.g., Master AI-Powered Web Development"
+                    className="mt-1.5"
+                  />
+                </div>
+
+                <div>
+                  <Label>Description *</Label>
+                  <Textarea
+                    value={description}
+                    onChange={e => setDescription(e.target.value)}
+                    placeholder="What will attendees learn in this webinar?"
+                    className="mt-1.5"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Type</Label>
+                    <div className="flex gap-2 mt-1.5">
+                      <Button
+                        variant={isPaid ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => setIsPaid(false)}
+                        className="flex-1"
+                      >
+                        Free
+                      </Button>
+                      <Button
+                        variant={isPaid ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setIsPaid(true)}
+                        className="flex-1"
+                      >
+                        Paid
+                      </Button>
+                    </div>
+                  </div>
+
+                  {isPaid && (
+                    <div>
+                      <Label>Amount (₹) *</Label>
+                      <Input
+                        type="number"
+                        value={amount}
+                        onChange={e => setAmount(Number(e.target.value))}
+                        placeholder="999"
+                        className="mt-1.5"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Schedule */}
+              <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Calendar className="h-4 w-4 text-primary" />
+                  <h3 className="font-semibold">Schedule & Platform</h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Date *</Label>
+                    <Input
+                      type="date"
+                      value={eventConfig.date}
+                      onChange={e => setEventConfig(p => ({ ...p, date: e.target.value }))}
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label>Time *</Label>
+                    <Input
+                      type="time"
+                      value={eventConfig.time}
+                      onChange={e => setEventConfig(p => ({ ...p, time: e.target.value }))}
+                      className="mt-1.5"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Duration</Label>
+                    <Select value={String(eventConfig.duration)} onValueChange={v => setEventConfig(p => ({ ...p, duration: Number(v) }))}>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {[30, 45, 60, 90, 120, 180].map(d => (
+                          <SelectItem key={d} value={String(d)}>{d} min</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Timezone</Label>
+                    <Select value={eventConfig.timezone} onValueChange={v => setEventConfig(p => ({ ...p, timezone: v }))}>
+                      <SelectTrigger className="mt-1.5">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {timezones.map(tz => (
+                          <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label>Platform *</Label>
+                  <div className="grid grid-cols-3 gap-2 mt-1.5">
+                    {(["zoom", "gmeet", "custom"] as const).map(p => (
+                      <button
+                        key={p}
+                        onClick={() => setEventConfig(prev => ({ ...prev, platform: p }))}
+                        className={`p-3 rounded-lg border text-center text-sm font-medium transition-all ${
+                          eventConfig.platform === p
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border text-muted-foreground hover:border-primary/30"
+                        }`}
+                      >
+                        {p === "zoom" ? "Zoom" : p === "gmeet" ? "Google Meet" : "Custom Link"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {eventConfig.platform === "zoom" && (
+                  <div className="p-4 rounded-lg bg-secondary/30 border border-border/60 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label className="text-sm font-medium">Zoom Integration</Label>
+                        <p className="text-xs text-muted-foreground mt-0.5">Auto-create meeting links</p>
+                      </div>
+                      <Switch checked={zoomConnected} onCheckedChange={checked => {
+                        setZoomConnected(checked);
+                        setMeetingLinkOption(checked ? "auto" : "manual");
+                      }} />
+                    </div>
+
+                    {!zoomConnected && (
+                      <div>
+                        <Label className="text-sm">Zoom Meeting Link</Label>
+                        <Input
+                          value={eventConfig.meetingLink}
+                          onChange={e => setEventConfig(p => ({ ...p, meetingLink: e.target.value }))}
+                          placeholder="https://zoom.us/j/..."
+                          className="mt-1.5"
+                        />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {eventConfig.platform === "gmeet" && (
+                  <div>
+                    <Label>Google Meet Link</Label>
+                    <Input
+                      value={eventConfig.meetingLink}
+                      onChange={e => setEventConfig(p => ({ ...p, meetingLink: e.target.value }))}
+                      placeholder="https://meet.google.com/..."
+                      className="mt-1.5"
+                    />
+                  </div>
+                )}
+
+                {eventConfig.platform === "custom" && (
+                  <div>
+                    <Label>Meeting Link</Label>
+                    <Input
+                      value={eventConfig.meetingLink}
+                      onChange={e => setEventConfig(p => ({ ...p, meetingLink: e.target.value }))}
+                      placeholder="https://..."
+                      className="mt-1.5"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Registration Fields */}
+              <div className="bg-card border border-border rounded-xl p-6 space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-primary" />
+                    <h3 className="font-semibold">Registration Fields</h3>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setRegFields(prev => [...prev, {
+                      id: `rf_${Date.now()}`, label: "Custom Field", type: "text", required: false, placeholder: "Enter value",
+                    }])}
+                  >
+                    <Plus className="h-3.5 w-3.5" /> Add Field
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {regFields.map(f => (
+                    <div key={f.id} className="flex items-center gap-2 p-3 rounded-lg border border-border bg-background">
+                      <span className="flex-1 text-sm font-medium">{f.label}</span>
+                      <Badge variant="secondary" className="text-xs">{f.required ? "Required" : "Optional"}</Badge>
+                      {!["rf_name", "rf_email"].includes(f.id) && (
+                        <button onClick={() => setRegFields(prev => prev.filter(x => x.id !== f.id))} className="text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-between pt-4">
+                <Button variant="ghost" onClick={() => setPhase("method-select")}>
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Change Method
+                </Button>
+                <Button onClick={() => {
+                  if (!name.trim()) {
+                    toast.error("Please enter webinar name");
+                    return;
+                  }
+                  if (!description.trim()) {
+                    toast.error("Please enter description");
+                    return;
+                  }
+                  setEventConfig(prev => ({ ...prev, eventName: name }));
+                  setPhase("builder");
+                }} className="gap-2">
+                  Continue to Builder <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
+
+  // ─── PHASE 2: Chat Flow ───
   if (phase === "chat") {
     return (
       <div className="h-screen flex flex-col bg-gradient-to-b from-background via-background to-secondary/20">
@@ -298,16 +668,27 @@ const WebinarCreate = () => {
             <div className="h-4 w-px bg-border/50" />
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Sparkles className="h-3.5 w-3.5 text-primary" />
+                <Bot className="h-3.5 w-3.5 text-primary" />
               </div>
-              <span className="text-sm font-semibold text-foreground">Create Webinar</span>
+              <span className="text-sm font-semibold text-foreground">AI Webinar Setup</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 bg-secondary/50 rounded-full px-3 py-1">
-              <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{getProgress()}%</span>
-              <Progress value={getProgress()} className="w-20 h-1" />
-            </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPhase("form")} className="gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Switch to Form
+            </Button>
+            {hasBasicInfo && (
+              <Button size="sm" onClick={() => {
+                if (!name.trim()) {
+                  toast.error("Please provide webinar name first");
+                  return;
+                }
+                setEventConfig(prev => ({ ...prev, eventName: name }));
+                setPhase("builder");
+              }} className="gap-1.5">
+                Continue to Builder <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -343,23 +724,6 @@ const WebinarCreate = () => {
               </div>
             ))}
 
-            {/* Inline interactive elements based on current question */}
-            {!isTyping && questionIndex < QUESTION_SEQUENCE.length && (
-              <div className="pl-11" style={{ animation: "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
-                <ChatInlineWidget
-                  questionKey={QUESTION_SEQUENCE[questionIndex]?.key}
-                  type={QUESTION_SEQUENCE[questionIndex]?.type}
-                  eventConfig={eventConfig}
-                  onPlatformSelect={handlePlatformSelect}
-                  onPaidToggle={handlePaidToggle}
-                  onDateTimeSet={handleDateTimeSet}
-                  onDurationSet={handleDurationSet}
-                  onRegFieldsDone={handleRegFieldsDone}
-                  regFields={regFields}
-                  setRegFields={setRegFields}
-                />
-              </div>
-            )}
 
             {isTyping && (
               <div className="flex gap-3 justify-start" style={{ animation: "slideUp 0.3s ease-out" }}>
@@ -380,64 +744,48 @@ const WebinarCreate = () => {
           </div>
         </ScrollArea>
 
-        {/* Input bar — floating, modern */}
-        {!isTyping && questionIndex < QUESTION_SEQUENCE.length &&
-          ["name", "description", "amount", "meetingLink"].includes(QUESTION_SEQUENCE[questionIndex]?.key) && (
-          <div className="px-4 pb-5 pt-2 bg-gradient-to-t from-background via-background to-transparent">
-            <div className="max-w-2xl mx-auto">
-              <div className="flex gap-2 items-center bg-card border border-border/80 rounded-2xl px-4 py-2 shadow-lg shadow-black/5 focus-within:border-primary/40 focus-within:shadow-primary/5 transition-all duration-200">
-                <Input
-                  ref={inputRef}
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  placeholder={
-                    QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink"
-                      ? "Paste link or type 'skip'..."
-                      : "Type your response..."
+        {/* Input bar — always visible */}
+        <div className="px-4 pb-5 pt-2 bg-gradient-to-t from-background via-background to-transparent">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex gap-2 items-center bg-card border border-border/80 rounded-2xl px-4 py-2 shadow-lg shadow-black/5 focus-within:border-primary/40 focus-within:shadow-primary/5 transition-all duration-200">
+              <Input
+                ref={inputRef}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Answer the questions above, or ask me anything..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && chatInput.trim()) {
+                    handleUserResponse(chatInput);
                   }
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      if (QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink" && (!chatInput.trim() || chatInput.trim().toLowerCase() === "skip")) {
-                        handleUserResponse("Skipped for now");
-                      } else {
-                        handleUserResponse(chatInput);
-                      }
-                    }
-                  }}
-                  className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-sm placeholder:text-muted-foreground/60"
-                  autoFocus
-                />
-                <Button
-                  onClick={() => {
-                    if (QUESTION_SEQUENCE[questionIndex]?.key === "meetingLink" && (!chatInput.trim() || chatInput.trim().toLowerCase() === "skip")) {
-                      handleUserResponse("Skipped for now");
-                    } else {
-                      handleUserResponse(chatInput);
-                    }
-                  }}
-                  size="icon"
-                  className="rounded-xl h-9 w-9 flex-shrink-0 shadow-md"
-                  disabled={!chatInput.trim() && QUESTION_SEQUENCE[questionIndex]?.key !== "meetingLink"}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+                }}
+                className="border-0 bg-transparent shadow-none focus-visible:ring-0 text-sm placeholder:text-muted-foreground/60"
+                autoFocus
+                disabled={isTyping}
+              />
+              <Button
+                onClick={() => handleUserResponse(chatInput)}
+                size="icon"
+                className="rounded-xl h-9 w-9 flex-shrink-0 shadow-md"
+                disabled={!chatInput.trim() || isTyping}
+              >
+                <Send className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-        )}
+        </div>
       </div>
     );
   }
 
-  // ─── PHASE 2: Builder ───
+  // ─── PHASE 3: Builder ───
   if (phase === "builder") {
     return (
       <div className="h-screen flex flex-col bg-background">
         {/* Top bar */}
         <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background z-10">
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" onClick={() => setPhase("chat")} className="gap-1.5">
-              <ArrowLeft className="h-4 w-4" /> Chat
+            <Button variant="outline" size="sm" onClick={() => setPhase("method-select")} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back
             </Button>
             <div className="h-5 w-px bg-border" />
             <span className="font-medium text-sm text-foreground">{name || "Untitled Webinar"}</span>
@@ -578,6 +926,17 @@ const WebinarCreate = () => {
                         </Select>
                       </div>
                       <div>
+                        <Label className="text-xs">Timezone</Label>
+                        <Select value={eventConfig.timezone} onValueChange={v => setEventConfig(p => ({ ...p, timezone: v }))}>
+                          <SelectTrigger className="mt-1 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            {timezones.map(tz => (
+                              <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
                         <Label className="text-xs">Platform</Label>
                         <div className="grid grid-cols-3 gap-2 mt-1">
                           {(["zoom", "gmeet", "custom"] as const).map(p => (
@@ -595,15 +954,68 @@ const WebinarCreate = () => {
                           ))}
                         </div>
                       </div>
-                      <div>
-                        <Label className="text-xs">Meeting Link</Label>
-                        <Input
-                          value={eventConfig.meetingLink}
-                          onChange={e => setEventConfig(p => ({ ...p, meetingLink: e.target.value }))}
-                          placeholder="https://..."
-                          className="mt-1 text-xs"
-                        />
-                      </div>
+
+                      {/* Zoom-specific options */}
+                      {eventConfig.platform === "zoom" && (
+                        <div className="space-y-3 p-3 rounded-lg bg-secondary/30 border border-border/60">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <Label className="text-xs font-medium">Zoom Integration</Label>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">Auto-create meeting links</p>
+                            </div>
+                            <Switch checked={zoomConnected} onCheckedChange={(checked) => {
+                              setZoomConnected(checked);
+                              setMeetingLinkOption(checked ? "auto" : "manual");
+                            }} />
+                          </div>
+
+                          {zoomConnected ? (
+                            <div className="p-2 rounded-md bg-primary/10 border border-primary/20">
+                              <div className="flex items-center gap-2 text-xs">
+                                <Check className="h-3 w-3 text-primary" />
+                                <span className="text-primary font-medium">Zoom Connected</span>
+                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-1">Meeting link will be auto-generated on publish</p>
+                            </div>
+                          ) : (
+                            <div>
+                              <Label className="text-xs">Zoom Meeting Link</Label>
+                              <Input
+                                value={eventConfig.meetingLink}
+                                onChange={e => setEventConfig(p => ({ ...p, meetingLink: e.target.value }))}
+                                placeholder="https://zoom.us/j/..."
+                                className="mt-1 text-xs"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Google Meet options */}
+                      {eventConfig.platform === "gmeet" && (
+                        <div>
+                          <Label className="text-xs">Google Meet Link</Label>
+                          <Input
+                            value={eventConfig.meetingLink}
+                            onChange={e => setEventConfig(p => ({ ...p, meetingLink: e.target.value }))}
+                            placeholder="https://meet.google.com/..."
+                            className="mt-1 text-xs"
+                          />
+                        </div>
+                      )}
+
+                      {/* Custom platform */}
+                      {eventConfig.platform === "custom" && (
+                        <div>
+                          <Label className="text-xs">Meeting Link</Label>
+                          <Input
+                            value={eventConfig.meetingLink}
+                            onChange={e => setEventConfig(p => ({ ...p, meetingLink: e.target.value }))}
+                            placeholder="https://..."
+                            className="mt-1 text-xs"
+                          />
+                        </div>
+                      )}
                     </div>
                   </CollapsibleSection>
 
@@ -692,7 +1104,7 @@ const WebinarCreate = () => {
     );
   }
 
-  // ─── PHASE 3: Confirmation ───
+  // ─── PHASE 4: Confirmation ───
   return (
     <div className="h-screen flex items-center justify-center bg-background">
       <div className="max-w-lg w-full mx-auto px-6 text-center space-y-6 animate-fade-in">
@@ -704,6 +1116,12 @@ const WebinarCreate = () => {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Webinar Published! 🎉</h1>
           <p className="text-muted-foreground mt-1">{name} is now live and ready for registrations.</p>
+          {zoomConnected && (
+            <Badge variant="secondary" className="mt-2 gap-1.5">
+              <Video className="h-3 w-3" />
+              Zoom Meeting Auto-Created
+            </Badge>
+          )}
         </div>
 
         {/* URL Card */}
@@ -752,144 +1170,6 @@ const WebinarCreate = () => {
   );
 };
 
-// ─── Inline Chat Widgets ───
-interface ChatInlineWidgetProps {
-  questionKey: string;
-  type: string;
-  eventConfig: EventConfig;
-  onPlatformSelect: (p: "zoom" | "gmeet" | "custom") => void;
-  onPaidToggle: (paid: boolean) => void;
-  onDateTimeSet: (date: string, time: string) => void;
-  onDurationSet: (d: number) => void;
-  onRegFieldsDone: () => void;
-  regFields: RegistrationField[];
-  setRegFields: (fn: (prev: RegistrationField[]) => RegistrationField[]) => void;
-}
-
-const ChatInlineWidget = ({ questionKey, type, eventConfig, onPlatformSelect, onPaidToggle, onDateTimeSet, onDurationSet, onRegFieldsDone, regFields, setRegFields }: ChatInlineWidgetProps) => {
-  const [date, setDate] = useState(eventConfig.date);
-  const [time, setTime] = useState(eventConfig.time);
-  const [newFieldLabel, setNewFieldLabel] = useState("");
-
-  if (type === "platform-select") {
-    return (
-      <div className="flex gap-2.5">
-        {([
-          { id: "zoom" as const, label: "Zoom", emoji: "🎥" },
-          { id: "gmeet" as const, label: "Google Meet", emoji: "📹" },
-          { id: "custom" as const, label: "Custom Link", emoji: "🔗" },
-        ]).map(p => (
-          <button
-            key={p.id}
-            onClick={() => onPlatformSelect(p.id)}
-            className="px-5 py-3.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 text-center group"
-          >
-            <span className="text-2xl block mb-1.5 group-hover:scale-110 transition-transform">{p.emoji}</span>
-            <p className="text-xs font-medium text-foreground">{p.label}</p>
-          </button>
-        ))}
-      </div>
-    );
-  }
-
-  if (type === "paid-toggle") {
-    return (
-      <div className="flex gap-2.5">
-        <button
-          onClick={() => onPaidToggle(false)}
-          className="px-6 py-3.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 group"
-        >
-          <span className="text-2xl block mb-1.5 group-hover:scale-110 transition-transform">🆓</span>
-          <p className="text-xs font-medium text-foreground">Free</p>
-        </button>
-        <button
-          onClick={() => onPaidToggle(true)}
-          className="px-6 py-3.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 group"
-        >
-          <span className="text-2xl block mb-1.5 group-hover:scale-110 transition-transform">💰</span>
-          <p className="text-xs font-medium text-foreground">Paid</p>
-        </button>
-      </div>
-    );
-  }
-
-  if (type === "date-time") {
-    return (
-      <div className="bg-card border border-border/60 rounded-xl p-4 space-y-3 shadow-sm max-w-xs">
-        <div className="flex gap-2">
-          <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-xs" />
-          <Input type="time" value={time} onChange={e => setTime(e.target.value)} className="text-xs" />
-        </div>
-        <Button size="sm" className="w-full text-xs rounded-lg" onClick={() => onDateTimeSet(date, time)} disabled={!date || !time}>
-          Confirm
-        </Button>
-      </div>
-    );
-  }
-
-  if (type === "duration") {
-    return (
-      <div className="flex flex-wrap gap-2">
-        {[30, 45, 60, 90, 120].map(d => (
-          <button
-            key={d}
-            onClick={() => onDurationSet(d)}
-            className="px-4 py-2.5 rounded-xl border border-border/80 bg-card hover:border-primary hover:bg-primary/5 hover:shadow-md hover:shadow-primary/5 transition-all duration-200 text-xs font-medium text-foreground"
-          >
-            {d} min
-          </button>
-        ))}
-      </div>
-    );
-  }
-
-  if (type === "reg-fields") {
-    return (
-      <div className="bg-card border border-border/60 rounded-xl p-4 space-y-3 shadow-sm max-w-sm">
-        <div className="space-y-1.5">
-          {regFields.map(f => (
-            <div key={f.id} className="flex items-center gap-2 text-xs p-2 rounded-lg bg-secondary/40 border border-border/50">
-              <span className="flex-1 text-foreground font-medium">{f.label}</span>
-              <Badge variant="secondary" className="text-[8px]">{f.required ? "Req" : "Opt"}</Badge>
-              {!["rf_name", "rf_email"].includes(f.id) && (
-                <button onClick={() => setRegFields(prev => prev.filter(x => x.id !== f.id))} className="text-muted-foreground hover:text-destructive transition-colors">
-                  <Trash2 className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-        <div className="flex gap-1.5">
-          <Input
-            value={newFieldLabel}
-            onChange={e => setNewFieldLabel(e.target.value)}
-            placeholder="Add custom field..."
-            className="text-xs h-8"
-            onKeyDown={e => {
-              if (e.key === "Enter" && newFieldLabel.trim()) {
-                setRegFields(prev => [...prev, { id: `rf_${Date.now()}`, label: newFieldLabel, type: "text", required: false, placeholder: `Enter ${newFieldLabel.toLowerCase()}` }]);
-                setNewFieldLabel("");
-              }
-            }}
-          />
-          <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => {
-            if (newFieldLabel.trim()) {
-              setRegFields(prev => [...prev, { id: `rf_${Date.now()}`, label: newFieldLabel, type: "text", required: false, placeholder: `Enter ${newFieldLabel.toLowerCase()}` }]);
-              setNewFieldLabel("");
-            }
-          }}>
-            <Plus className="h-3 w-3" />
-          </Button>
-        </div>
-        <Button size="sm" className="w-full text-xs rounded-lg" onClick={onRegFieldsDone}>
-          Looks good, continue →
-        </Button>
-      </div>
-    );
-  }
-
-  return null;
-};
 
 // ─── Collapsible Section ───
 const CollapsibleSection = ({ title, icon, open, onToggle, children }: {

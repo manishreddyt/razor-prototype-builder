@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,6 +7,8 @@
 @layer base {
   :root {
     --font-family-base: 'Inter', system-ui, sans-serif;
+    --font-family-display: 'Playfair Display', Georgia, serif;
+    --font-family-sans: 'DM Sans', system-ui, sans-serif;
 
     /* Razorpay Blade-inspired tokens */
     --background: 210 20% 98%;
@@ -170,6 +172,63 @@
 
   .blade-filter-chip-active {
     @apply blade-filter-chip border-primary bg-accent text-accent-foreground;
+  }
+
+  /* Premium Typography */
+  .font-display {
+    font-family: var(--font-family-display);
+  }
+
+  .font-sans-alt {
+    font-family: var(--font-family-sans);
+  }
+
+  /* Premium Hero Styles */
+  .premium-hero {
+    @apply relative min-h-[90vh] flex items-center justify-center overflow-hidden;
+  }
+
+  .premium-hero-bg {
+    @apply absolute inset-0 w-full h-full object-cover;
+  }
+
+  .premium-hero-content {
+    @apply relative z-10 text-center max-w-5xl mx-auto px-6 py-20;
+  }
+
+  .premium-heading {
+    @apply font-display font-bold;
+  }
+
+  .premium-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-purple-500 to-pink-500;
+  }
+
+  /* Glass morphism */
+  .glass {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  /* Premium Shadows */
+  .shadow-premium {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .shadow-premium-lg {
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Section spacing */
+  .section-premium {
+    @apply py-24 px-6;
   }
 }
 

@@ -14,6 +14,7 @@ import {
   ArrowLeft, Send, Sparkles, Check, Copy, ExternalLink, Share2,
   Calendar, Clock, Video, Plus, Trash2, Globe, PartyPopper, Eye,
   MessageSquare, Settings, ChevronDown, ChevronUp, Users, Monitor, Smartphone, Loader2,
+  FileText, ArrowRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { addSite, type SmartPageSite } from "./WebsiteBuilder";
@@ -78,30 +79,61 @@ const defaultAvailability: AvailabilitySlot[] = [
   { id: "av_7", day: "sunday", startTime: "09:00", endTime: "17:00", enabled: false },
 ];
 
+const INITIAL_MESSAGE = `👋 Hey! I'll help you set up a **1:1 coaching/session booking page** with payments.
+
+🎯 **What you'll get:**
+• Professional booking page with your profile & services
+• Calendar integration for session scheduling
+• Payment collection via Razorpay (for paid sessions)
+• Custom booking form for client details
+• Google Meet integration (or custom platform)
+
+📋 **Let's get started! Please answer these questions:**
+
+1️⃣ **What coaching/service do you offer?**
+   (Name and brief description)
+
+2️⃣ **Is it free or paid?**
+   (If paid, what's the price per session in ₹? Or package pricing?)
+
+3️⃣ **How long is each session?**
+   (Duration in minutes, e.g., 30, 60, 90)
+
+4️⃣ **Your name and title?**
+   (e.g., "John Doe, Career Coach")
+
+5️⃣ **When are you available?**
+   (Weekdays only, or weekends too?)
+
+💡 **Tip:** Answer all at once, or one by one - I'll figure it out!
+
+Example: "Career Coaching, Help professionals transition careers, Paid ₹4999 per session, 60 minutes, Sarah Smith - Career Transition Coach, Weekdays only"`;
+
 const CoachingCreate = () => {
   const navigate = useNavigate();
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const [messages, setMessages] = useState<ChatMsg[]>([
     {
       id: "msg_welcome",
       role: "bot",
-      content: "👋 Hey! I'll help you set up a **1:1 coaching page** and collect payments for your sessions.\n\n🎯 **What you'll get:**\n• A professional coaching page with your bio, services & booking\n• Per-session or package pricing with Razorpay payments\n• Availability & calendar management\n• Client booking form with custom fields\n• You can conduct sessions via Google Meet, Zoom, or any platform\n\n✅ I've created a template for you — **tell me what you'd like to change:**\n• \"Change title to Career Coaching\"\n• \"Charge ₹4999 per session\"\n• \"Add weekend availability\"\n• \"Make it a free discovery call\"",
+      content: INITIAL_MESSAGE,
     },
   ]);
   const [chatInput, setChatInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
-  // Coaching state with sensible defaults
-  const [name, setName] = useState("Education Consultant - Study Abroad Guidance");
-  const [tagline, setTagline] = useState("Overcome admission challenges and find your dream university");
-  const [description, setDescription] = useState("Expert guidance to help you navigate the complex world of international education. From university selection to visa assistance, we're with you every step of the way.");
+  // Coaching state - start with empty values
+  const [name, setName] = useState("");
+  const [tagline, setTagline] = useState("");
+  const [description, setDescription] = useState("");
   const [bannerImage, setBannerImage] = useState("https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=900&h=400&fit=crop");
-  const [isPaid, setIsPaid] = useState(true);
-  const [amount, setAmount] = useState(2999);
+  const [isPaid, setIsPaid] = useState(false);
+  const [amount, setAmount] = useState(0);
   const [pricingModel, setPricingModel] = useState<"per-session" | "package">("per-session");
   const [packageSessions, setPackageSessions] = useState(5);
-  const [packageAmount, setPackageAmount] = useState(12999);
+  const [packageAmount, setPackageAmount] = useState(0);
   const [sessionConfig, setSessionConfig] = useState<SessionConfig>({
     duration: 60,
     buffer: 15,
@@ -112,14 +144,15 @@ const CoachingCreate = () => {
   const [availability, setAvailability] = useState<AvailabilitySlot[]>(defaultAvailability);
   const [bookingFields, setBookingFields] = useState<RegistrationField[]>([...defaultRegistrationFields]);
   const [coach, setCoach] = useState({
-    name: "Your Name",
-    title: "Education Consultant",
-    avatar: "YN",
-    bio: "Helping professionals achieve their goals through personalized coaching.",
-    credentials: ["ICF Certified", "10+ years experience"],
+    name: "",
+    title: "",
+    avatar: "",
+    bio: "",
+    credentials: [] as string[],
   });
 
   // UI state
+  const [hasBasicInfo, setHasBasicInfo] = useState(false);
   const [builderTab, setBuilderTab] = useState<"chat" | "settings">("chat");
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
   const [settingsOpen, setSettingsOpen] = useState<Record<string, boolean>>({
@@ -130,14 +163,163 @@ const CoachingCreate = () => {
     booking: false,
   });
 
-  // Confirmation state
-  const [phase, setPhase] = useState<"builder" | "confirmation">("builder");
+  // Phase state - start with chat
+  const [phase, setPhase] = useState<"chat" | "form" | "builder" | "confirmation">("chat");
   const [publishedSlug, setPublishedSlug] = useState("");
   const [publishedSiteId, setPublishedSiteId] = useState("");
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
+
+  // Parse user input to extract coaching details
+  const parseUserInput = useCallback((text: string) => {
+    const lower = text.toLowerCase();
+    let updates: any = {};
+    let extractedInfo: string[] = [];
+
+    // Extract service name
+    const namePatterns = [
+      /(?:coaching|service|session|consulting|mentoring|training)\s+(?:on|for|in|about|:|-)?\s*([^,\.]+)/i,
+      /(?:name|title|called|it's|i offer)\s+(?:is|:|-)?\s*["']?([^"',.]+)["']?/i,
+    ];
+
+    for (const pattern of namePatterns) {
+      const nameMatch = text.match(pattern);
+      if (nameMatch && nameMatch[1].trim()) {
+        const extractedName = nameMatch[1].trim();
+        if (extractedName.length > 3 && extractedName.length < 100) {
+          updates.name = extractedName;
+          extractedInfo.push(`✓ Service: ${extractedName}`);
+          break;
+        }
+      }
+    }
+
+    // Extract description
+    const sentences = text.split(/[,\.\n]/).filter(s => s.trim().length > 10);
+    if (sentences.length > 1) {
+      const desc = sentences.slice(1, 3).join('. ').trim();
+      if (desc.length > 10) {
+        updates.description = desc;
+        extractedInfo.push(`✓ Description captured`);
+      }
+    }
+
+    // Extract price
+    if (lower.includes('paid') || lower.match(/₹\s*\d+/)) {
+      updates.isPaid = true;
+      const priceMatch = text.match(/₹\s*(\d+)/);
+      if (priceMatch) {
+        const price = parseInt(priceMatch[1]);
+
+        // Check if it's package pricing
+        if (lower.includes('package') || lower.includes('sessions')) {
+          updates.pricingModel = 'package';
+          updates.packageAmount = price;
+          extractedInfo.push(`✓ Package price: ₹${price}`);
+        } else {
+          updates.pricingModel = 'per-session';
+          updates.amount = price;
+          extractedInfo.push(`✓ Price: ₹${price} per session`);
+        }
+      }
+    } else if (lower.includes('free')) {
+      updates.isPaid = false;
+      extractedInfo.push(`✓ Free sessions`);
+    }
+
+    // Extract duration
+    const durationMatch = text.match(/(\d+)\s*(?:min|minute|minutes|mins)/i);
+    if (durationMatch) {
+      updates.duration = parseInt(durationMatch[1]);
+      extractedInfo.push(`✓ Duration: ${durationMatch[1]} minutes`);
+    }
+
+    // Extract coach name and title
+    const coachMatch = text.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s*[-–—,]\s*([^,\.\n]+(?:coach|consultant|mentor|trainer|expert|specialist))/i);
+    if (coachMatch) {
+      updates.coachName = coachMatch[1].trim();
+      updates.coachTitle = coachMatch[2].trim();
+      extractedInfo.push(`✓ Coach: ${coachMatch[1]} - ${coachMatch[2]}`);
+    }
+
+    // Extract availability
+    if (lower.includes('weekend')) {
+      updates.enableWeekends = true;
+      extractedInfo.push(`✓ Weekends enabled`);
+    } else if (lower.includes('weekday')) {
+      updates.enableWeekends = false;
+      extractedInfo.push(`✓ Weekdays only`);
+    }
+
+    return { updates, extractedInfo };
+  }, []);
+
+  // Handle user response in chat phase
+  const handleUserResponse = useCallback((text: string) => {
+    if (!text.trim()) return;
+
+    setMessages((prev) => [...prev, {
+      id: `msg_${Date.now()}`,
+      role: "user",
+      content: text,
+    }]);
+    setChatInput("");
+
+    const { updates, extractedInfo } = parseUserInput(text);
+
+    // Apply updates
+    if (updates.name) setName(updates.name);
+    if (updates.description) setDescription(updates.description);
+    if (updates.isPaid !== undefined) setIsPaid(updates.isPaid);
+    if (updates.amount) setAmount(updates.amount);
+    if (updates.pricingModel) setPricingModel(updates.pricingModel);
+    if (updates.packageAmount) setPackageAmount(updates.packageAmount);
+    if (updates.duration) setSessionConfig(prev => ({ ...prev, duration: updates.duration }));
+    if (updates.coachName) {
+      const initials = updates.coachName.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
+      setCoach(prev => ({ ...prev, name: updates.coachName, avatar: initials }));
+    }
+    if (updates.coachTitle) setCoach(prev => ({ ...prev, title: updates.coachTitle }));
+    if (updates.enableWeekends !== undefined) {
+      setAvailability(prev => prev.map(slot =>
+        slot.day === "saturday" || slot.day === "sunday"
+          ? { ...slot, enabled: updates.enableWeekends }
+          : slot
+      ));
+    }
+
+    // Generate response
+    setIsTyping(true);
+    setTimeout(() => {
+      let response = "";
+      let needsMore = [];
+
+      if (extractedInfo.length > 0) {
+        response = "Great! I've captured:\n\n" + extractedInfo.join('\n');
+
+        // Check what's missing
+        if (!name && !updates.name) needsMore.push("service/coaching name");
+        if (!isPaid && updates.isPaid === undefined) needsMore.push("pricing (free/paid)");
+        if (!coach.name && !updates.coachName) needsMore.push("your name");
+        if (!coach.title && !updates.coachTitle) needsMore.push("your title/role");
+
+        if (needsMore.length > 0) {
+          response += "\n\n📝 **Still need:**\n• " + needsMore.join('\n• ');
+          response += "\n\nJust reply with the missing info, or click **Switch to Form** to fill it manually!";
+        } else {
+          response += "\n\n✨ **Perfect! I have enough to create your coaching page.**\n\nClick **Continue to Builder** below, or provide more details!";
+          setHasBasicInfo(true);
+        }
+      } else {
+        response = "I didn't catch that. Could you tell me:\n\n• What coaching/service you offer?\n• Is it free or paid (and the price)?\n• Your name and title?\n\nOr click **Switch to Form** to fill in the details!";
+      }
+
+      setMessages((prev) => [...prev, { id: `msg_${Date.now()}`, role: "bot", content: response }]);
+      setIsTyping(false);
+    }, 800);
+  }, [parseUserInput, name, isPaid, coach.name, coach.title]);
 
   // Build coaching data object
   const buildCoachingData = (): CoachingData => ({
@@ -228,6 +410,300 @@ const CoachingCreate = () => {
 
   const coachingData = buildCoachingData();
   const fullUrl = `${window.location.origin}/s/${publishedSlug}`;
+
+  // ─── CHAT PHASE ───
+  if (phase === "chat") {
+    return (
+      <div className="h-screen flex flex-col bg-background">
+        {/* Top bar */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background z-10">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => navigate("/website-builder/create")} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back
+            </Button>
+            <div className="h-5 w-px bg-border" />
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="font-medium text-sm text-foreground">Create 1:1 Coaching Page</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setPhase("form")} className="gap-1.5">
+              <FileText className="h-3.5 w-3.5" /> Switch to Form
+            </Button>
+            {hasBasicInfo && (
+              <Button size="sm" onClick={() => {
+                if (!name.trim()) {
+                  toast.error("Please provide service name first");
+                  return;
+                }
+                setPhase("builder");
+              }} className="gap-1.5">
+                Continue to Builder <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Chat area */}
+        <ScrollArea className="flex-1">
+          <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
+            {messages.map(msg => (
+              <div key={msg.id} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                <div className={`max-w-[85%] ${
+                  msg.role === "user"
+                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md px-4 py-3"
+                    : "bg-secondary/70 text-foreground rounded-2xl rounded-bl-md px-4 py-3"
+                }`}>
+                  <p className="text-sm whitespace-pre-wrap" dangerouslySetInnerHTML={{
+                    __html: msg.content
+                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                      .replace(/^(#{1,6})\s+(.*)$/gm, (_, h, text) => `<h${h.length} class="font-bold mt-2 mb-1">${text}</h${h.length}>`)
+                      .replace(/^(\d+)️⃣\s+(.*)$/gm, '<div class="font-medium text-primary mt-3">$1️⃣ $2</div>')
+                      .replace(/^•\s+(.*)$/gm, '<div class="ml-4 my-1">• $1</div>')
+                  }} />
+                </div>
+              </div>
+            ))}
+            {isTyping && (
+              <div className="flex justify-start">
+                <div className="bg-secondary/70 rounded-2xl rounded-bl-md px-4 py-3">
+                  <div className="flex gap-1">
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "0ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "150ms" }} />
+                    <span className="w-2 h-2 rounded-full bg-muted-foreground/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Input area */}
+        <div className="px-4 pb-5 pt-2 bg-gradient-to-t from-background via-background to-transparent">
+          <div className="max-w-2xl mx-auto">
+            <div className="flex gap-2 items-center bg-card border border-border/80 rounded-2xl px-4 py-2">
+              <Input
+                ref={inputRef}
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                placeholder="Answer the questions above, or ask me anything..."
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && chatInput.trim()) {
+                    handleUserResponse(chatInput);
+                  }
+                }}
+                disabled={isTyping}
+                className="border-0 focus-visible:ring-0 shadow-none bg-transparent"
+                autoFocus
+              />
+              <Button
+                onClick={() => handleUserResponse(chatInput)}
+                size="icon"
+                disabled={!chatInput.trim() || isTyping}
+                className="rounded-xl flex-shrink-0"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ─── FORM PHASE ───
+  if (phase === "form") {
+    return (
+      <div className="h-screen flex flex-col bg-background">
+        {/* Top bar */}
+        <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background z-10">
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={() => setPhase("chat")} className="gap-1.5">
+              <ArrowLeft className="h-4 w-4" /> Back to Chat
+            </Button>
+            <div className="h-5 w-px bg-border" />
+            <Sparkles className="h-4 w-4 text-primary" />
+            <span className="font-medium text-sm text-foreground">Coaching Details Form</span>
+          </div>
+          <Button size="sm" onClick={() => {
+            if (!name.trim()) {
+              toast.error("Please provide service name");
+              return;
+            }
+            setPhase("builder");
+          }} className="gap-1.5">
+            Continue to Builder <ArrowRight className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+
+        {/* Form */}
+        <ScrollArea className="flex-1">
+          <div className="max-w-2xl mx-auto px-6 py-6 space-y-6">
+            {/* Basic Details */}
+            <div className="blade-card p-5 space-y-4">
+              <h3 className="font-semibold text-base flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" />
+                Basic Details
+              </h3>
+              <div>
+                <Label>Service/Coaching Name *</Label>
+                <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Career Coaching" className="mt-1" />
+              </div>
+              <div>
+                <Label>Tagline</Label>
+                <Input value={tagline} onChange={e => setTagline(e.target.value)} placeholder="One-line description" className="mt-1" />
+              </div>
+              <div>
+                <Label>Description</Label>
+                <Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Detailed description of your coaching service" className="mt-1" rows={3} />
+              </div>
+            </div>
+
+            {/* Coach Info */}
+            <div className="blade-card p-5 space-y-4">
+              <h3 className="font-semibold text-base flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                Your Profile
+              </h3>
+              <div>
+                <Label>Your Name *</Label>
+                <Input value={coach.name} onChange={e => {
+                  const initials = e.target.value.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2);
+                  setCoach(prev => ({ ...prev, name: e.target.value, avatar: initials }));
+                }} placeholder="e.g., John Doe" className="mt-1" />
+              </div>
+              <div>
+                <Label>Your Title/Role *</Label>
+                <Input value={coach.title} onChange={e => setCoach(prev => ({ ...prev, title: e.target.value }))} placeholder="e.g., Career Coach" className="mt-1" />
+              </div>
+              <div>
+                <Label>Bio</Label>
+                <Textarea value={coach.bio} onChange={e => setCoach(prev => ({ ...prev, bio: e.target.value }))} placeholder="Tell clients about yourself" className="mt-1" rows={2} />
+              </div>
+            </div>
+
+            {/* Pricing */}
+            <div className="blade-card p-5 space-y-4">
+              <h3 className="font-semibold text-base flex items-center gap-2">
+                <Globe className="h-4 w-4 text-primary" />
+                Pricing
+              </h3>
+              <div className="flex items-center justify-between">
+                <Label>Paid Coaching</Label>
+                <Switch checked={isPaid} onCheckedChange={setIsPaid} />
+              </div>
+              {isPaid && (
+                <>
+                  <div>
+                    <Label>Pricing Model</Label>
+                    <div className="grid grid-cols-2 gap-3 mt-2">
+                      {(["per-session", "package"] as const).map(p => (
+                        <button
+                          key={p}
+                          onClick={() => setPricingModel(p)}
+                          className={`p-3 rounded-lg border text-center text-sm font-medium transition-all ${
+                            pricingModel === p
+                              ? "border-primary bg-primary/5 text-primary"
+                              : "border-border text-muted-foreground hover:border-primary/30"
+                          }`}
+                        >
+                          {p === "per-session" ? "Per Session" : "Package"}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  {pricingModel === "per-session" && (
+                    <div>
+                      <Label>Amount per Session (₹)</Label>
+                      <Input type="number" value={amount} onChange={e => setAmount(Number(e.target.value))} placeholder="e.g., 2999" className="mt-1" />
+                    </div>
+                  )}
+                  {pricingModel === "package" && (
+                    <>
+                      <div>
+                        <Label>Number of Sessions</Label>
+                        <Input type="number" value={packageSessions} onChange={e => setPackageSessions(Number(e.target.value))} placeholder="e.g., 5" className="mt-1" />
+                      </div>
+                      <div>
+                        <Label>Package Amount (₹)</Label>
+                        <Input type="number" value={packageAmount} onChange={e => setPackageAmount(Number(e.target.value))} placeholder="e.g., 12999" className="mt-1" />
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+
+            {/* Session Settings */}
+            <div className="blade-card p-5 space-y-4">
+              <h3 className="font-semibold text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                Session Settings
+              </h3>
+              <div>
+                <Label>Session Duration</Label>
+                <Select value={String(sessionConfig.duration)} onValueChange={v => setSessionConfig(p => ({ ...p, duration: Number(v) }))}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[30, 45, 60, 90, 120].map(d => (
+                      <SelectItem key={d} value={String(d)}>{d} min</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Buffer Between Sessions</Label>
+                <Select value={String(sessionConfig.buffer)} onValueChange={v => setSessionConfig(p => ({ ...p, buffer: Number(v) }))}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {[0, 5, 10, 15, 30].map(d => (
+                      <SelectItem key={d} value={String(d)}>{d} min</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Availability */}
+            <div className="blade-card p-5 space-y-4">
+              <h3 className="font-semibold text-base flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-primary" />
+                Availability
+              </h3>
+              <div className="space-y-2">
+                {availability.map(slot => (
+                  <div key={slot.id} className="flex items-center gap-2 p-2 rounded-md border border-border">
+                    <Switch
+                      checked={slot.enabled}
+                      onCheckedChange={(checked) => setAvailability(prev => prev.map(s => s.id === slot.id ? { ...s, enabled: checked } : s))}
+                    />
+                    <span className="flex-1 text-sm font-medium capitalize">{slot.day}</span>
+                    {slot.enabled && (
+                      <>
+                        <Input
+                          type="time"
+                          value={slot.startTime}
+                          onChange={e => setAvailability(prev => prev.map(s => s.id === slot.id ? { ...s, startTime: e.target.value } : s))}
+                          className="w-28 text-sm"
+                        />
+                        <span className="text-sm text-muted-foreground">-</span>
+                        <Input
+                          type="time"
+                          value={slot.endTime}
+                          onChange={e => setAvailability(prev => prev.map(s => s.id === slot.id ? { ...s, endTime: e.target.value } : s))}
+                          className="w-28 text-sm"
+                        />
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+      </div>
+    );
+  }
 
   // ─── BUILDER PHASE ───
   if (phase === "builder") {
