@@ -435,7 +435,7 @@ const formatRevenue = (revenue: number): string => {
 };
 
 // ─── Campaign Performance Data ───
-interface Campaign {
+interface CampaignPerformance {
   id: string;
   name: string;
   type: "webinar" | "course_launch" | "drip" | "cart_recovery";

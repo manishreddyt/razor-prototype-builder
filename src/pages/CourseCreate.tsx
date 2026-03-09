@@ -40,7 +40,16 @@ export interface CourseData {
   pricingModel: "one-time" | "subscription" | "free";
   whatYouWillLearn: string[];
   courseIncludes: string[];
-  enrollmentFields?: string[];
+  enrollmentFields?: EnrollmentField[];
+  certificateOffered?: boolean;
+}
+
+export interface EnrollmentField {
+  id: string;
+  label: string;
+  type: string;
+  placeholder: string;
+  required: boolean;
   certificateOffered?: boolean;
 }
 
