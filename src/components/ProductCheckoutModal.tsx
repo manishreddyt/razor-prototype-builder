@@ -8,11 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ArrowLeft, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+// Razorpay type is declared in src/types/razorpay.d.ts
 
 interface ProductCheckoutModalProps {
   product: Product;

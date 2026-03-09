@@ -435,7 +435,7 @@ const formatRevenue = (revenue: number): string => {
 };
 
 // ─── Campaign Performance Data ───
-interface Campaign {
+interface CampaignPerformance {
   id: string;
   name: string;
   type: "webinar" | "course_launch" | "drip" | "cart_recovery";
@@ -449,7 +449,7 @@ interface Campaign {
   status: "completed" | "active" | "scheduled";
 }
 
-const campaignData: Campaign[] = [
+const campaignData: CampaignPerformance[] = [
   { id: "c1", name: "AI for Business Masterclass", type: "webinar", date: "2026-02-28", leads: 1248, paidCustomers: 187, revenue: 467500, emailsSent: 3200, openRate: 42.5, clickRate: 18.3, status: "completed" },
   { id: "c2", name: "Full-Stack Dev Bootcamp Launch", type: "course_launch", date: "2026-02-25", leads: 892, paidCustomers: 134, revenue: 938000, emailsSent: 2400, openRate: 38.7, clickRate: 15.1, status: "completed" },
   { id: "c3", name: "Design Thinking Workshop", type: "webinar", date: "2026-02-20", leads: 567, paidCustomers: 78, revenue: 195000, emailsSent: 1800, openRate: 45.2, clickRate: 21.6, status: "completed" },
@@ -460,7 +460,7 @@ const campaignData: Campaign[] = [
   { id: "c8", name: "Advanced React Patterns", type: "drip", date: "2026-02-10", leads: 734, paidCustomers: 98, revenue: 490000, emailsSent: 4200, openRate: 36.5, clickRate: 14.8, status: "completed" },
 ];
 
-const campaignTypeLabels: Record<Campaign["type"], { label: string; color: string }> = {
+const campaignTypeLabels: Record<CampaignPerformance["type"], { label: string; color: string }> = {
   webinar: { label: "Webinar", color: "bg-purple-100 text-purple-700" },
   course_launch: { label: "Course Launch", color: "bg-blue-100 text-blue-700" },
   drip: { label: "Drip Sequence", color: "bg-emerald-100 text-emerald-700" },
