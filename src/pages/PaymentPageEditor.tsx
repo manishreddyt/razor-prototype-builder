@@ -4,7 +4,7 @@ import {
   ArrowLeft, Monitor, Smartphone, Eye, Settings, Sparkles, Camera, Send,
   X, Copy, ExternalLink, Globe, Palette, Type, Image, Layout, Plus,
   Trash2, GripVertical, Check, Undo2, Redo2, Code, Share2, ChevronDown,
-  Save, Loader2, CheckCircle2, Link2, QrCode, Download, BarChart3
+  Save, Loader2, CheckCircle2, Link2, QrCode, Download, BarChart3, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -111,7 +111,7 @@ const PaymentPageEditor = () => {
 
   // Page data
   const [pageData, setPageData] = useState<PageData>({
-    title: searchParams.get("title") || "Event Booking — My Page",
+    title: searchParams.get("title") || searchParams.get("template") || "Event Booking — My Page",
     subtitle: "EVENT BOOKING",
     description: "A professional event registration page for conferences, workshops, seminars, meetups, concerts, and community gatherings.",
     bannerImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&h=300&fit=crop",
@@ -604,7 +604,7 @@ const PaymentPageEditor = () => {
 
       {/* Post-Publish Success Dialog */}
       <Dialog open={postPublishDialogOpen} onOpenChange={setPostPublishDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center gap-3 mb-2">
               <div className="h-12 w-12 rounded-full bg-[hsl(152,69%,91%)] flex items-center justify-center">
@@ -649,40 +649,36 @@ const PaymentPageEditor = () => {
             </div>
 
             {/* QR Code */}
-            <div className="flex items-center gap-4 blade-card p-4">
-              <div className="h-24 w-24 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 border border-border">
-                <div className="text-center">
-                  <QrCode className="h-12 w-12 text-muted-foreground mx-auto mb-1" />
-                  <span className="text-[9px] text-muted-foreground">QR Code</span>
-                </div>
+            <div className="flex items-center gap-3 blade-card p-3">
+              <div className="h-16 w-16 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 border border-border">
+                <QrCode className="h-8 w-8 text-muted-foreground" />
               </div>
               <div className="flex-1">
                 <h4 className="text-sm font-semibold text-foreground mb-1">Share via QR Code</h4>
-                <p className="text-xs text-muted-foreground mb-2">Customers can scan this QR code to access your payment page on mobile</p>
-                <Button variant="outline" size="sm" className="gap-1.5">
-                  <Download className="h-3.5 w-3.5" /> Download QR Code
-                </Button>
+                <p className="text-xs text-muted-foreground">Scan to access on mobile</p>
               </div>
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <Download className="h-3.5 w-3.5" /> Download
+              </Button>
             </div>
 
             {/* Suggested Next Actions */}
             <div>
-              <h4 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" /> Suggested Next Steps
+              <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-primary" /> Next Steps
               </h4>
-              <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
                 {[
-                  { icon: Share2, label: "Share the link on WhatsApp, Email, or Social Media", action: () => setShareDialogOpen(true) },
-                  { icon: Code, label: "Embed the payment page on your website", action: () => { setPostPublishDialogOpen(false); setShareDialogOpen(true); } },
-                  { icon: BarChart3, label: "View page analytics and track conversions", action: () => navigate("/payment-pages") },
-                  { icon: Sparkles, label: "Create another payment page for a different product", action: () => navigate("/payment-pages/create") },
+                  { icon: Share2, label: "Share Link", action: () => setShareDialogOpen(true) },
+                  { icon: Code, label: "Embed on Website", action: () => { setPostPublishDialogOpen(false); setShareDialogOpen(true); } },
+                  { icon: BarChart3, label: "View Analytics", action: () => navigate("/payment-pages") },
+                  { icon: Sparkles, label: "Create New Page", action: () => navigate("/payment-pages/create") },
                 ].map((step, i) => (
-                  <button key={i} onClick={step.action} className="w-full flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-secondary/30 transition-colors text-left group">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
-                      <step.icon className="h-4 w-4 text-primary" />
+                  <button key={i} onClick={step.action} className="flex items-center gap-2 p-2.5 rounded-lg border border-border hover:bg-secondary/30 transition-colors text-left group">
+                    <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 group-hover:bg-primary/20 transition-colors">
+                      <step.icon className="h-3.5 w-3.5 text-primary" />
                     </div>
-                    <span className="text-sm text-foreground flex-1">{step.label}</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <span className="text-xs text-foreground flex-1">{step.label}</span>
                   </button>
                 ))}
               </div>

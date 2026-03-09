@@ -90,8 +90,6 @@ const PaymentPages = () => {
   const [countFilter, setCountFilter] = useState("25");
   const [showBanner, setShowBanner] = useState(true);
   const [selectedPage, setSelectedPage] = useState<typeof existingPages[0] | null>(null);
-  const [manageDialogOpen, setManageDialogOpen] = useState(false);
-  const [managePage, setManagePage] = useState<typeof existingPages[0] | null>(null);
 
   const filtered = existingPages.filter((p) => {
     const matchTitle = p.title.toLowerCase().includes(searchTitle.toLowerCase());
@@ -204,7 +202,7 @@ const PaymentPages = () => {
               {filtered.map((p) => (
                 <tr key={p.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
                   <td className="px-5 py-3">
-                    <span className="font-medium text-primary cursor-pointer hover:underline" onClick={() => navigate(`/payment-pages/editor?title=${encodeURIComponent(p.title)}`)}>
+                    <span className="font-medium text-primary cursor-pointer hover:underline" onClick={() => navigate(`/payment-pages/manage?id=${p.id}`)}>
                       {p.title}
                     </span>
                   </td>
@@ -234,14 +232,11 @@ const PaymentPages = () => {
                         <button className="text-muted-foreground hover:text-foreground"><MoreHorizontal className="h-4 w-4" /></button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => { setManagePage(p); setManageDialogOpen(true); }}>
-                          <BarChart3 className="h-4 w-4 mr-2" /> Manage Page
+                        <DropdownMenuItem onClick={() => navigate(`/payment-pages/manage?id=${p.id}`)}>
+                          <BarChart3 className="h-4 w-4 mr-2" /> Manage & Analytics
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => navigate(`/payment-pages/editor?title=${encodeURIComponent(p.title)}`)}>
                           <Eye className="h-4 w-4 mr-2" /> Edit Page
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setSelectedPage(p)}>
-                          <TrendingUp className="h-4 w-4 mr-2" /> Quick Analytics
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => copyLink(p.pageUrl)}>
                           <Copy className="h-4 w-4 mr-2" /> Copy Link
@@ -265,203 +260,6 @@ const PaymentPages = () => {
         </div>
       </div>
 
-      {/* Quick Analytics Dialog */}
-      <Dialog open={!!selectedPage} onOpenChange={() => setSelectedPage(null)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{selectedPage?.title} — Quick Analytics</DialogTitle></DialogHeader>
-          {selectedPage && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: "Total Sales", value: selectedPage.totalSales },
-                  { label: "Units Sold", value: selectedPage.unitsSold.toString() },
-                  { label: "Page Views", value: selectedPage.views.toLocaleString() },
-                  { label: "Conversion Rate", value: selectedPage.conversion },
-                ].map((s) => (
-                  <div key={s.label} className="blade-stat">
-                    <p className="text-xs text-muted-foreground">{s.label}</p>
-                    <p className="text-lg font-semibold text-foreground mt-0.5">{s.value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="blade-card p-4">
-                <h4 className="text-sm font-semibold text-foreground mb-3">Sales Trend (Last 7 Days)</h4>
-                <div className="flex items-end gap-1 h-24">
-                  {[35, 52, 48, 72, 68, 85, 92].map((val, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <div className="w-full bg-primary/20 rounded-t" style={{ height: `${val}%` }}>
-                        <div className="w-full bg-primary rounded-t" style={{ height: `${Math.min(val + 10, 100)}%` }} />
-                      </div>
-                      <span className="text-[9px] text-muted-foreground">{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][i]}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => copyLink(selectedPage.pageUrl)}>Copy Link</Button>
-                <Button className="flex-1" onClick={() => { setSelectedPage(null); navigate(`/payment-pages/editor?title=${encodeURIComponent(selectedPage.title)}`); }}>Edit Page</Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Manage Page Dialog - Comprehensive Overview */}
-      <Dialog open={manageDialogOpen} onOpenChange={setManageDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-xl">{managePage?.title} — Manage</DialogTitle>
-            <p className="text-sm text-muted-foreground">Overview, transactions, and analytics for this payment page</p>
-          </DialogHeader>
-
-          {managePage && (
-            <div className="space-y-6">
-              {/* Overview Stats */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4 text-primary" /> Overview
-                </h3>
-                <div className="grid grid-cols-4 gap-3">
-                  {[
-                    { label: "Total Revenue", value: managePage.totalSales, icon: IndianRupee, color: "text-emerald-600" },
-                    { label: "Units Sold", value: managePage.unitsSold.toString(), icon: CheckCircle2, color: "text-blue-600" },
-                    { label: "Page Views", value: managePage.views.toLocaleString(), icon: Eye, color: "text-purple-600" },
-                    { label: "Conversion", value: managePage.conversion, icon: TrendingUp, color: "text-orange-600" },
-                  ].map((stat) => (
-                    <div key={stat.label} className="blade-stat">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="text-xs text-muted-foreground">{stat.label}</p>
-                        <stat.icon className={`h-3.5 w-3.5 ${stat.color}`} />
-                      </div>
-                      <p className="text-xl font-bold text-foreground">{stat.value}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Revenue Trend */}
-              <div className="blade-card p-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-foreground">Revenue Trend</h3>
-                  <Select defaultValue="7days">
-                    <SelectTrigger className="w-32 h-8 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="7days">Last 7 Days</SelectItem>
-                      <SelectItem value="30days">Last 30 Days</SelectItem>
-                      <SelectItem value="90days">Last 90 Days</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="flex items-end gap-2 h-32">
-                  {[35, 52, 48, 72, 68, 85, 92, 78, 95, 88, 102, 115, 98, 120].map((val, i) => (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                      <div className="w-full bg-muted rounded-t relative" style={{ height: "100%" }}>
-                        <div
-                          className="w-full bg-gradient-to-t from-primary to-primary/70 rounded-t absolute bottom-0"
-                          style={{ height: `${(val / 120) * 100}%` }}
-                        />
-                      </div>
-                      <span className="text-[8px] text-muted-foreground">{i + 1}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Recent Transactions */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                    <Users className="h-4 w-4 text-primary" /> Recent Transactions
-                  </h3>
-                  <Button variant="outline" size="sm" className="gap-1.5">
-                    <Download className="h-3.5 w-3.5" /> Export
-                  </Button>
-                </div>
-                <div className="blade-card">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border">
-                        <th className="blade-table-header px-4 py-2.5 text-left">Customer</th>
-                        <th className="blade-table-header px-4 py-2.5 text-left">Email</th>
-                        <th className="blade-table-header px-4 py-2.5 text-left">Amount</th>
-                        <th className="blade-table-header px-4 py-2.5 text-left">Date</th>
-                        <th className="blade-table-header px-4 py-2.5 text-left">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {[
-                        { name: "Priya Sharma", email: "priya.s@email.com", amount: managePage.itemPrice, date: "9 Mar 2026, 2:45 PM", status: "Paid" },
-                        { name: "Rahul Mehta", email: "rahul.m@email.com", amount: managePage.itemPrice, date: "8 Mar 2026, 11:30 AM", status: "Paid" },
-                        { name: "Ananya Gupta", email: "ananya.g@email.com", amount: managePage.itemPrice, date: "7 Mar 2026, 4:15 PM", status: "Paid" },
-                        { name: "Vikram Singh", email: "vikram.s@email.com", amount: managePage.itemPrice, date: "6 Mar 2026, 9:20 AM", status: "Pending" },
-                        { name: "Sneha Patel", email: "sneha.p@email.com", amount: managePage.itemPrice, date: "5 Mar 2026, 3:50 PM", status: "Paid" },
-                      ].map((txn, i) => (
-                        <tr key={i} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                          <td className="px-4 py-2.5">
-                            <div className="flex items-center gap-2">
-                              <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                <span className="text-[10px] font-semibold text-primary">
-                                  {txn.name.split(" ").map(n => n[0]).join("")}
-                                </span>
-                              </div>
-                              <span className="font-medium text-foreground text-xs">{txn.name}</span>
-                            </div>
-                          </td>
-                          <td className="px-4 py-2.5 text-muted-foreground text-xs">{txn.email}</td>
-                          <td className="px-4 py-2.5 text-foreground font-medium text-xs">{txn.amount}</td>
-                          <td className="px-4 py-2.5 text-muted-foreground text-xs">{txn.date}</td>
-                          <td className="px-4 py-2.5">
-                            <span className={txn.status === "Paid" ? "blade-badge-paid" : "blade-badge-pending"}>
-                              {txn.status}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="px-4 py-2.5 text-xs text-muted-foreground border-t border-border">
-                    Showing 5 most recent transactions
-                  </div>
-                </div>
-              </div>
-
-              {/* Performance Indicators */}
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: "Avg. Order Value", value: managePage.itemPrice, change: "+8.2%", up: true },
-                  { label: "Repeat Customers", value: "23%", change: "+4.1%", up: true },
-                  { label: "Cart Abandonment", value: "12.4%", change: "-2.3%", up: false },
-                ].map((metric) => (
-                  <div key={metric.label} className="blade-card p-3">
-                    <p className="text-xs text-muted-foreground mb-1">{metric.label}</p>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-base font-semibold text-foreground">{metric.value}</p>
-                      <span className={`text-[10px] font-medium ${metric.up ? "text-[hsl(152,69%,41%)]" : "text-destructive"}`}>
-                        {metric.change}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-2 border-t border-border">
-                <Button variant="outline" className="flex-1" onClick={() => copyLink(managePage.pageUrl)}>
-                  <Copy className="h-4 w-4 mr-1" /> Copy Link
-                </Button>
-                <Button variant="outline" className="flex-1" onClick={() => window.open(`/payment/${managePage.id.replace("pp_00", "")}`, "_blank")}>
-                  <ExternalLink className="h-4 w-4 mr-1" /> Open Page
-                </Button>
-                <Button className="flex-1" onClick={() => { setManageDialogOpen(false); navigate(`/payment-pages/editor?title=${encodeURIComponent(managePage.title)}`); }}>
-                  <Eye className="h-4 w-4 mr-1" /> Edit Page
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </DashboardLayout>
   );
 };

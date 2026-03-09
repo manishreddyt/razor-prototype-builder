@@ -1,11 +1,18 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Sparkles, ChevronDown, ArrowLeft } from "lucide-react";
+import { Sparkles, ChevronDown, ArrowLeft, Lock } from "lucide-react";
 import { toast } from "sonner";
+
+// Extend window type for Razorpay
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
 // Mock function to get published page data
 const getPublishedPage = (slug: string) => {
@@ -91,6 +98,25 @@ const PaymentPagePublic = () => {
 
   const pageData = getPublishedPage(slug || "");
 
+  // Load Razorpay script on component mount
+  useEffect(() => {
+    const loadRazorpayScript = () => {
+      return new Promise<boolean>((resolve) => {
+        if (window.Razorpay) {
+          resolve(true);
+          return;
+        }
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
+        document.body.appendChild(script);
+      });
+    };
+
+    loadRazorpayScript();
+  }, []);
+
   if (!pageData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -103,16 +129,97 @@ const PaymentPagePublic = () => {
     );
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate required fields
+    const missingFields = pageData.formFields.filter(
+      (field) => field.required && !formData[field.id]?.trim()
+    );
+
+    if (missingFields.length > 0) {
+      toast.error(`Please fill in: ${missingFields.map((f) => f.label).join(", ")}`);
+      return;
+    }
+
+    // Calculate final amount
+    const finalAmount = pageData.amountType === "custom" && customAmount
+      ? Number(customAmount)
+      : pageData.amount;
+
+    if (pageData.amountType === "custom" && (!customAmount || finalAmount <= 0)) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+
+    // Check if Razorpay is loaded
+    if (typeof window.Razorpay === "undefined") {
+      toast.error("Payment gateway not loaded. Please refresh the page.");
+      return;
+    }
+
     setProcessing(true);
 
-    // Simulate payment processing
-    setTimeout(() => {
+    // Razorpay checkout options
+    const options = {
+      key: "rzp_live_SFFFdBjmPbTKZL", // Razorpay key
+      amount: finalAmount * 100, // Amount in paise
+      currency: pageData.currency || "INR",
+      name: pageData.title,
+      description: pageData.description?.slice(0, 100) || "Payment for " + pageData.title,
+      image: pageData.bannerImage,
+      handler: function (response: any) {
+        console.log("Payment Success:", response);
+        toast.success(pageData.successMessage || "Payment successful! 🎉", {
+          description: `Payment ID: ${response.razorpay_payment_id}`,
+        });
+        setProcessing(false);
+
+        // Reset form
+        setFormData({});
+        setCustomAmount("");
+
+        // Redirect if URL provided
+        if (pageData.redirectUrl) {
+          setTimeout(() => {
+            window.location.href = pageData.redirectUrl;
+          }, 2000);
+        }
+      },
+      prefill: {
+        name: formData.f1 || "", // Full Name field
+        email: formData.f2 || "", // Email field
+        contact: formData.f3 || "", // Phone field
+      },
+      notes: {
+        ...formData,
+        page_title: pageData.title,
+        page_slug: pageData.slug,
+        amount: finalAmount,
+      },
+      theme: {
+        color: pageData.brandColor || "#0066FF",
+      },
+      modal: {
+        ondismiss: function () {
+          console.log("Payment cancelled");
+          toast.info("Payment cancelled");
+          setProcessing(false);
+        },
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+
+    rzp.on("payment.failed", function (response: any) {
+      console.error("Payment Failed:", response.error);
+      toast.error("Payment failed!", {
+        description: response.error.description || "Please try again",
+      });
       setProcessing(false);
-      toast.success("Payment initiated! (Demo mode)");
-      // In real app, this would redirect to Razorpay checkout
-    }, 1500);
+    });
+
+    rzp.open();
   };
 
   const finalAmount = pageData.amountType === "custom" && customAmount ? Number(customAmount) : pageData.amount;
@@ -281,14 +388,21 @@ const PaymentPagePublic = () => {
                   </div>
                 )}
 
-                <Button type="submit" className="w-full" disabled={processing}>
-                  {processing ? "Processing..." : pageData.buttonText || `Pay ₹${finalAmount.toLocaleString("en-IN")}`}
+                <Button type="submit" className="w-full gap-2 h-11" disabled={processing}>
+                  {processing ? (
+                    <>Processing...</>
+                  ) : (
+                    <>
+                      <Lock className="h-4 w-4" />
+                      {pageData.buttonText || `Pay ₹${finalAmount.toLocaleString("en-IN")}`}
+                    </>
+                  )}
                 </Button>
 
-                <div className="text-center">
-                  <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                    <span>🔒 Secured by Razorpay</span>
-                  </div>
+                <div className="text-center pt-2">
+                  <span className="text-[10px] text-muted-foreground">
+                    Powered by <span className="font-semibold text-primary">Razorpay</span>
+                  </span>
                 </div>
               </form>
             </div>
