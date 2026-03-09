@@ -78,8 +78,19 @@ const appFeatures: Record<string, AppFeatureDetail> = {
     pricing: "Free",
   },
   zapier: {
-    features: ["5,000+ app connections", "Multi-step workflows", "Filters & formatters", "Scheduled triggers"],
-    screenshots: [{ label: "Workflow builder" }, { label: "App connections" }],
+    features: [
+      "Connect Razorpay with 6,000+ apps",
+      "Visual workflow builder — no code required",
+      "Trigger workflows from payment events (captured, failed, refunds)",
+      "Multi-step automations with filters & formatters",
+      "Real-time activity monitoring & logs",
+      "Pre-built templates for common workflows",
+    ],
+    screenshots: [
+      { label: "Create workflow with step-by-step wizard" },
+      { label: "Map payment fields to Google Sheets" },
+      { label: "Monitor workflow activity & success rates" },
+    ],
     pricing: "Free plan — 100 tasks/month",
   },
 };
@@ -129,6 +140,8 @@ const AppDetail = () => {
       navigate("/apps/course-graphy");
     } else if (app.id === "emergent") {
       navigate("/ai-app-builder");
+    } else if (app.id === "zapier") {
+      navigate("/apps/zapier");
     } else {
       navigate(`/apps/${app.id}`);
     }

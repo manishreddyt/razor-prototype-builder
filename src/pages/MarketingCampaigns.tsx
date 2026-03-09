@@ -478,6 +478,60 @@ interface ChatMessage {
 
 type ViewMode = "list" | "campaign-type" | "create-chat" | "builder" | "detail" | "runs" | "run-details";
 
+// ─── Formatted Message Component ───
+const FormattedMessage = ({ content }: { content: string }) => {
+  // Parse markdown-like formatting
+  const formatText = (text: string) => {
+    const parts: React.ReactNode[] = [];
+    const lines = text.split('\n');
+
+    lines.forEach((line, lineIndex) => {
+      let formattedLine: React.ReactNode[] = [];
+      let currentText = line;
+      let key = 0;
+
+      // Handle bold **text**
+      const boldRegex = /\*\*(.+?)\*\*/g;
+      let lastIndex = 0;
+      let match;
+
+      while ((match = boldRegex.exec(line)) !== null) {
+        if (match.index > lastIndex) {
+          formattedLine.push(
+            <span key={`text-${lineIndex}-${key++}`}>{line.slice(lastIndex, match.index)}</span>
+          );
+        }
+        formattedLine.push(
+          <strong key={`bold-${lineIndex}-${key++}`} className="font-semibold text-foreground">
+            {match[1]}
+          </strong>
+        );
+        lastIndex = match.index + match[0].length;
+      }
+
+      if (lastIndex < line.length) {
+        formattedLine.push(
+          <span key={`text-${lineIndex}-${key++}`}>{line.slice(lastIndex)}</span>
+        );
+      }
+
+      if (formattedLine.length === 0) {
+        formattedLine.push(<span key={`empty-${lineIndex}`}>{line}</span>);
+      }
+
+      parts.push(
+        <div key={`line-${lineIndex}`} className={lineIndex > 0 ? "mt-1.5" : ""}>
+          {formattedLine}
+        </div>
+      );
+    });
+
+    return parts;
+  };
+
+  return <div className="leading-relaxed">{formatText(content)}</div>;
+};
+
 // ─── Main Component ───
 const MarketingCampaigns = () => {
   const [campaigns, setCampaigns] = useState<Campaign[]>(defaultCampaigns);
@@ -1056,7 +1110,7 @@ const MarketingCampaigns = () => {
   if (viewMode === "create-chat") {
     // Wait for editingCampaign to be initialized by useEffect
     if (!editingCampaign) {
-      return <DashboardLayout><div className="flex items-center justify-center h-full"><div className="text-muted-foreground">Loading...</div></div></DashboardLayout>;
+      return <div className="h-screen flex items-center justify-center"><div className="text-muted-foreground">Loading...</div></div>;
     }
 
     const wf = editingCampaign;
@@ -1088,8 +1142,7 @@ const MarketingCampaigns = () => {
     };
 
     return (
-      <DashboardLayout>
-        <div className="h-[calc(100vh-80px)] flex flex-col bg-white rounded-lg border border-border p-6 -m-6">
+        <div className="h-screen flex flex-col bg-white p-6">
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-border">
             <div className="flex items-center gap-3">
@@ -1126,39 +1179,70 @@ const MarketingCampaigns = () => {
               {/* Chat Messages */}
               <div className="flex-1 overflow-y-auto space-y-3 mb-3">
                 {chatMessages.length === 0 && (
-                  <div className="text-xs text-muted-foreground space-y-2">
-                    <p>👋 I can help you:</p>
-                    <ul className="space-y-1 ml-3">
-                      <li>• Write email subject lines</li>
-                      <li>• Suggest campaign ideas</li>
-                      <li>• Explain triggers & timing</li>
+                  <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-4 space-y-3">
+                    <p className="font-medium flex items-center gap-2">
+                      <span className="text-base">👋</span>
+                      <span>Hi! I can help you:</span>
+                    </p>
+                    <ul className="space-y-2 ml-1">
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">✓</span>
+                        <span>Write compelling email subject lines</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">✓</span>
+                        <span>Suggest campaign ideas & strategies</span>
+                      </li>
+                      <li className="flex items-start gap-2">
+                        <span className="text-primary mt-0.5">✓</span>
+                        <span>Explain triggers, timing & best practices</span>
+                      </li>
                     </ul>
+                    <p className="text-[10px] opacity-70 mt-2">Just type your question below</p>
                   </div>
                 )}
                 {chatMessages.map(msg => (
                   <div key={msg.id} className={cn("flex gap-2", msg.role === "user" ? "justify-end" : "justify-start")}>
                     {msg.role === "assistant" && (
-                      <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <Bot className="h-3 w-3 text-primary" />
+                      <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <Bot className="h-3.5 w-3.5 text-primary" />
                       </div>
                     )}
                     <div className={cn(
-                      "text-xs px-3 py-2 rounded-lg max-w-[85%]",
-                      msg.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-foreground"
+                      "text-xs px-4 py-2.5 rounded-xl max-w-[85%] shadow-sm",
+                      msg.role === "user"
+                        ? "bg-primary text-primary-foreground font-medium"
+                        : "bg-white border border-border/50 text-foreground"
                     )}>
-                      {msg.content}
+                      <FormattedMessage content={msg.content} />
+                      {msg.suggestions && msg.suggestions.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-3 pt-2 border-t border-border/30">
+                          {msg.suggestions.map((sug, i) => (
+                            <button
+                              key={i}
+                              onClick={() => handleSendMessage(sug)}
+                              className="text-[10px] px-2 py-1 rounded-md bg-primary/5 hover:bg-primary/10 text-primary font-medium transition-colors"
+                            >
+                              {sug}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
                 {isAiTyping && (
-                  <div className="flex gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <Bot className="h-3 w-3 text-primary animate-pulse" />
+                  <div className="flex gap-2 items-start">
+                    <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Bot className="h-3.5 w-3.5 text-primary animate-pulse" />
                     </div>
-                    <div className="bg-secondary px-3 py-2 rounded-lg flex gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" />
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "150ms" }} />
-                      <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce" style={{ animationDelay: "300ms" }} />
+                    <div className="bg-white border border-border/50 px-4 py-3 rounded-xl shadow-sm flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Thinking</span>
+                      <div className="flex gap-1">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "150ms" }} />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-bounce" style={{ animationDelay: "300ms" }} />
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1166,22 +1250,22 @@ const MarketingCampaigns = () => {
               </div>
 
               {/* Chat Input */}
-              <div className="flex gap-2">
+              <div className="relative">
                 <Input
                   value={chatInput}
                   onChange={e => setChatInput(e.target.value)}
                   onKeyDown={e => e.key === "Enter" && !e.shiftKey && handleSendMessage(chatInput)}
-                  placeholder="Ask AI..."
-                  className="text-xs h-8"
+                  placeholder={isAiTyping ? "AI is thinking..." : "Ask me anything..."}
+                  className="text-xs h-10 pr-10 bg-muted/30 border-border/50 focus-visible:ring-primary/20 placeholder:text-muted-foreground/50"
                   disabled={isAiTyping}
                 />
                 <Button
                   size="sm"
                   onClick={() => handleSendMessage(chatInput)}
                   disabled={!chatInput.trim() || isAiTyping}
-                  className="h-8 w-8 p-0"
+                  className="absolute right-1 top-1 h-8 w-8 p-0 rounded-lg"
                 >
-                  <Send className="h-3 w-3" />
+                  <Send className="h-3.5 w-3.5" />
                 </Button>
               </div>
             </div>
@@ -1505,7 +1589,6 @@ const MarketingCampaigns = () => {
             </div>
           </div>
         </div>
-      </DashboardLayout>
     );
   }
 

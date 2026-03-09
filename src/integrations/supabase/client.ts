@@ -8,10 +8,23 @@ const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    storage: localStorage,
-    persistSession: true,
-    autoRefreshToken: true,
+// Only create client if valid Supabase credentials are provided
+const isValidUrl = (url: string) => {
+  if (!url || url === 'your_supabase_url' || url.includes('your_')) return false;
+  try {
+    new URL(url);
+    return true;
+  } catch {
+    return false;
   }
-});
+};
+
+export const supabase = isValidUrl(SUPABASE_URL) && SUPABASE_PUBLISHABLE_KEY && !SUPABASE_PUBLISHABLE_KEY.includes('your_')
+  ? createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+      auth: {
+        storage: localStorage,
+        persistSession: true,
+        autoRefreshToken: true,
+      }
+    })
+  : null as any; // Return null if no valid credentials - app doesn't require Supabase
