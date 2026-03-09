@@ -28,7 +28,7 @@ const TemplateThumb = ({ template }: { template: TemplateData }) => (
 
 const educationPageTypes = [
   { id: "course", title: "Sell an Online Course", desc: "Course landing page with curriculum, pricing & enrollment.", icon: BookOpen, directRoute: "/website-builder/editor?template=single-course&title=Online%20Course&type=Online%20Course" },
-  { id: "webinar", title: "Host a Webinar", desc: "Webinar with registration, integrations & attendee tracking.", icon: Video, configRoute: "/website-builder/webinar/create" },
+  { id: "webinar", title: "Host a Webinar", desc: "Webinar with registration, integrations & attendee tracking.", icon: Video, directRoute: "/website-builder/editor?template=webinar&title=Webinar&type=Webinar" },
   { id: "coaching", title: "Offer 1:1 Coaching", desc: "Coaching page with booking slots, packages & payments.", icon: UserCheck, configRoute: "/website-builder/coaching/create" },
 ];
 
@@ -42,10 +42,10 @@ const analyzePrompt = (prompt: string): { type: string; label: string; route: st
   const cos = coachingKw.filter(k => lower.includes(k)).length;
   const max = Math.max(cs, ws, cos);
 
-  // Route to config pages with AI prompt for webinar/coaching
+  // Route courses to editor, webinar/coaching to chat UI
   if (max === 0) return { type: "generic", label: "Smart Page", route: `/website-builder/editor?prompt=${encodeURIComponent(prompt)}` };
   if (cs === max) return { type: "course", label: "Online Course", route: `/website-builder/editor?template=single-course&title=${encodeURIComponent(prompt)}&type=Online%20Course&aiPrompt=${encodeURIComponent(prompt)}` };
-  if (ws === max) return { type: "webinar", label: "Webinar", route: `/website-builder/webinar/create` };
+  if (ws === max) return { type: "webinar", label: "Webinar", route: `/website-builder/editor?template=webinar&title=${encodeURIComponent(prompt)}&type=Webinar&aiPrompt=${encodeURIComponent(prompt)}` };
   return { type: "coaching", label: "1:1 Coaching", route: `/website-builder/coaching/create` };
 };
 
@@ -97,21 +97,17 @@ const SmartPageCreate = () => {
 
   const handleUseTemplate = (template: TemplateData) => {
     setPreviewTemplate(null);
-
-    // Route to AI chat pages for webinar and coaching templates
-    if (template.id === "webinar") {
-      navigate("/website-builder/webinar/create");
-    } else if (template.id === "coaching") {
+    // Coaching templates go to chat UI, others go to editor
+    if (template.id === "coaching") {
       navigate("/website-builder/coaching/create");
     } else {
-      // For other templates, go directly to editor
       navigate(`/website-builder/editor?template=${encodeURIComponent(template.id)}&title=${encodeURIComponent(template.title)}&type=${encodeURIComponent(template.title)}`);
     }
   };
 
   const handleEducationCard = (card: typeof educationPageTypes[0]) => {
-    // Navigate to config page for webinar/coaching, or directly to editor for course
-    const route = ("configRoute" in card && card.configRoute) || ("directRoute" in card && card.directRoute);
+    // Course goes directly to editor, webinar/coaching go to chat UI first
+    const route = ("directRoute" in card && card.directRoute) || ("configRoute" in card && card.configRoute);
     if (route) {
       navigate(route);
     }

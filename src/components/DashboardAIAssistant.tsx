@@ -66,7 +66,7 @@ const FLOWS: Record<string, { message: string; actions: ActionItem[] }> = {
   run_webinar: {
     message: "Free webinars are a great lead magnet! 📹 Here's the plan:",
     actions: [
-      { label: "Create webinar landing page", icon: "📄", route: "/website-builder/webinar/create", description: "Capture registrations with a beautiful page" },
+      { label: "Create webinar landing page", icon: "📄", route: "/website-builder/editor?template=webinar&title=Webinar&type=Webinar", description: "Capture registrations with a beautiful page" },
       { label: "Set up email reminders", icon: "📧", route: "/email-workflows", description: "Automate reminder emails before the event" },
       { label: "Deploy Sales Agent", icon: "🤖", route: "/agents", description: "AI agent to follow up with attendees" },
     ],

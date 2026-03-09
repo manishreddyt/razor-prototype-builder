@@ -1158,7 +1158,7 @@ const WebinarCreate = () => {
           <Button variant="outline" className="gap-1.5" onClick={() => navigate(`/website-builder/${publishedSiteId}`)}>
             <Settings className="h-4 w-4" /> Manage Webinar
           </Button>
-          <Button variant="outline" className="gap-1.5" onClick={() => navigate("/website-builder/webinar/create")}>
+          <Button variant="outline" className="gap-1.5" onClick={() => navigate("/website-builder/editor?template=webinar&title=Webinar&type=Webinar")}>
             <Plus className="h-4 w-4" /> Create Another
           </Button>
           <Button variant="ghost" className="gap-1.5" onClick={() => navigate("/website-builder")}>

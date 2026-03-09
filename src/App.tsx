@@ -20,9 +20,7 @@ import SmartPageDetail from "./pages/SmartPageDetail";
 import SmartPageProductDetail from "./pages/SmartPageProductDetail";
 import SmartPagePublic from "./pages/SmartPagePublic";
 import MarketingCampaigns from "./pages/MarketingCampaigns";
-import WebinarCreate from "./pages/WebinarCreate";
 import CoachingCreate from "./pages/CoachingCreate";
-import CourseCreate from "./pages/CourseCreate";
 import Connectors from "./pages/Connectors";
 import Forms from "./pages/Forms";
 import Offers from "./pages/Offers";
@@ -32,6 +30,7 @@ import AgentDetail from "./pages/AgentDetail";
 import AppMarketplace from "./pages/AppMarketplace";
 import AppDetail from "./pages/AppDetail";
 import CourseGraphyApp from "./pages/apps/CourseGraphyApp";
+import ZapierApp from "./pages/apps/ZapierApp";
 import InstalledApp from "./pages/apps/InstalledApp";
 import AIAppBuilder from "./pages/AIAppBuilder";
 import AIAppBuilderCreate from "./pages/AIAppBuilderCreate";
@@ -60,9 +59,7 @@ const App = () => (
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/website-builder" element={<WebsiteBuilder />} />
           <Route path="/website-builder/create" element={<SmartPageCreate />} />
-          <Route path="/website-builder/webinar/create" element={<WebinarCreate />} />
           <Route path="/website-builder/coaching/create" element={<CoachingCreate />} />
-          <Route path="/website-builder/course/create" element={<CourseCreate />} />
           <Route path="/connectors" element={<Connectors />} />
           <Route path="/website-builder/editor" element={<SmartPageEditor />} />
           <Route path="/website-builder/:id" element={<SmartPageDetail />} />
@@ -78,6 +75,7 @@ const App = () => (
           <Route path="/app-marketplace" element={<AppMarketplace />} />
           <Route path="/app-marketplace/:appId" element={<AppDetail />} />
           <Route path="/apps/course-graphy" element={<CourseGraphyApp />} />
+          <Route path="/apps/zapier" element={<ZapierApp />} />
           <Route path="/apps/:appId" element={<InstalledApp />} />
           <Route path="/ai-app-builder" element={<AIAppBuilder />} />
           <Route path="/ai-app-builder/create" element={<AIAppBuilderCreate />} />
