@@ -12,6 +12,7 @@ import PaymentLinks from "./pages/PaymentLinks";
 import PaymentPages from "./pages/PaymentPages";
 import CreatePaymentPage from "./pages/CreatePaymentPage";
 import PaymentPageEditor from "./pages/PaymentPageEditor";
+import PaymentPagePublic from "./pages/PaymentPagePublic";
 import Subscriptions from "./pages/Subscriptions";
 import WebsiteBuilder from "./pages/WebsiteBuilder";
 import SmartPageCreate from "./pages/SmartPageCreate";
@@ -57,6 +58,7 @@ const App = () => (
           <Route path="/payment-pages" element={<PaymentPages />} />
           <Route path="/payment-pages/create" element={<CreatePaymentPage />} />
           <Route path="/payment-pages/editor" element={<PaymentPageEditor />} />
+          <Route path="/payment/:slug" element={<PaymentPagePublic />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/website-builder" element={<WebsiteBuilder />} />
           <Route path="/website-builder/create" element={<SmartPageCreate />} />
