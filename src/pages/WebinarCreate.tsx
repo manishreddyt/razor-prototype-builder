@@ -26,7 +26,7 @@ import {
 import WebinarLandingPreview from "@/components/WebinarLandingPreview";
 import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
 
-type Phase = "chat" | "form" | "builder" | "confirmation";
+type Phase = "chat" | "form" | "builder" | "confirmation" | "method-select";
 
 interface ChatMsg {
   id: string;

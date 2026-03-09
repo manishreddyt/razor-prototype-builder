@@ -5,6 +5,7 @@ import {
   X, Copy, Share2, Save, Loader2, CheckCircle2, Plus, Trash2, GripVertical,
   FileText, CreditCard, ShoppingCart, Star, Users, Clock, BookOpen, Shield, Award,
   Megaphone, Package, Mail, MessageSquare, Tag, ArrowRight,
+  Calendar, Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
