@@ -460,7 +460,7 @@ const campaignData: CampaignPerformance[] = [
   { id: "c8", name: "Advanced React Patterns", type: "drip", date: "2026-02-10", leads: 734, paidCustomers: 98, revenue: 490000, emailsSent: 4200, openRate: 36.5, clickRate: 14.8, status: "completed" },
 ];
 
-const campaignTypeLabels: Record<Campaign["type"], { label: string; color: string }> = {
+const campaignTypeLabels: Record<CampaignPerformance["type"], { label: string; color: string }> = {
   webinar: { label: "Webinar", color: "bg-purple-100 text-purple-700" },
   course_launch: { label: "Course Launch", color: "bg-blue-100 text-blue-700" },
   drip: { label: "Drip Sequence", color: "bg-emerald-100 text-emerald-700" },
