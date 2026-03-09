@@ -4,36 +4,56 @@ import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
-export interface CourseData {
+export interface CourseInstructor {
+  name: string;
   title: string;
-  description: string;
-  modules: CourseModule[];
-  instructor: string;
-  duration: string;
-  level: string;
-  image?: string;
-  price?: number;
+  bio: string;
+  avatar: string;
+  credentials?: string[];
 }
 
 export interface CourseModule {
   id: string;
   title: string;
-  lessons: CourseLesson[];
+  description?: string;
+  lessons: number;
+  duration: string;
 }
 
-export interface CourseLesson {
-  id: string;
-  title: string;
+export interface CourseData {
+  name: string;
+  title?: string;
+  description: string;
+  tagline?: string;
+  modules: CourseModule[];
+  instructor: CourseInstructor;
   duration: string;
-  type: "video" | "text" | "quiz";
+  courseDuration?: string;
+  courseFormat?: string;
+  level: string;
+  image?: string;
+  bannerImage?: string;
+  price?: number;
+  amount: number;
+  subscriptionAmount?: number;
+  isPaid: boolean;
+  pricingModel: "one-time" | "subscription" | "free";
+  whatYouWillLearn: string[];
+  courseIncludes: string[];
+  enrollmentFields?: string[];
+  certificateOffered?: boolean;
 }
 
 export interface CourseStudent {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   enrolledAt: string;
   progress: number;
+  status?: string;
+  paymentStatus?: string;
+  amount?: number;
 }
 
 const CourseCreate = () => {
