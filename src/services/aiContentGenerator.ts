@@ -1,6 +1,6 @@
 /**
  * AI Content Generator Service
- * Generates page content, images, and styling using Google Gemini API
+ * Generates page content, images, and styling using Claude API (Anthropic)
  */
 
 interface GeneratedContent {
@@ -32,22 +32,30 @@ export async function generatePageContent(
   pageType: "webinar" | "coaching" | "course"
 ): Promise<GeneratedContent> {
   try {
-    // Call Google Gemini API to generate structured content
-    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || "";
+    // Call Claude API to generate structured content
+    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY || "";
+
+    if (!apiKey || apiKey.includes('your_')) {
+      throw new Error("Claude API key not configured. Please add VITE_ANTHROPIC_API_KEY to your .env file.");
+    }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
+      "https://api.anthropic.com/v1/messages",
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          contents: [
+          model: "claude-3-5-sonnet-20241022",
+          max_tokens: 2048,
+          temperature: 0.7,
+          messages: [
             {
-              parts: [
-                {
-                  text: `Generate professional website content for: "${prompt}"
+              role: "user",
+              content: `Generate professional website content for: "${prompt}"
 
 Page type: ${pageType}
 
@@ -71,24 +79,20 @@ Return a JSON object with this exact structure:
 }
 
 Make it professional, persuasive, and specific to the prompt. Return ONLY the JSON, no markdown formatting.`,
-                },
-              ],
             },
           ],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 2048,
-          },
         }),
       }
     );
 
     if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      const errorData = await response.json();
+      console.error("Claude API error:", errorData);
+      throw new Error(`API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
     }
 
     const data = await response.json();
-    const content = data.candidates[0].content.parts[0].text;
+    const content = data.content[0].text;
 
     // Clean markdown formatting if present
     let cleanContent = content.trim();
