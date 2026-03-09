@@ -28,7 +28,7 @@ const TemplateThumb = ({ template }: { template: TemplateData }) => (
 
 const educationPageTypes = [
   { id: "course", title: "Sell an Online Course", desc: "Course landing page with curriculum, pricing & enrollment.", icon: BookOpen, directRoute: "/website-builder/editor?template=single-course&title=Online%20Course&type=Online%20Course" },
-  { id: "webinar", title: "Host a Webinar", desc: "Webinar with registration, integrations & attendee tracking.", icon: Video, directRoute: "/website-builder/editor?template=webinar&title=Webinar&type=Webinar" },
+  { id: "webinar", title: "Host a Webinar", desc: "Webinar with registration, integrations & attendee tracking.", icon: Video, configRoute: "/website-builder/webinar/chat" },
   { id: "coaching", title: "Offer 1:1 Coaching", desc: "Coaching page with booking slots, packages & payments.", icon: UserCheck, configRoute: "/website-builder/coaching/create" },
 ];
 
@@ -45,7 +45,7 @@ const analyzePrompt = (prompt: string): { type: string; label: string; route: st
   // Route courses to editor, webinar/coaching to chat UI
   if (max === 0) return { type: "generic", label: "Smart Page", route: `/website-builder/editor?prompt=${encodeURIComponent(prompt)}` };
   if (cs === max) return { type: "course", label: "Online Course", route: `/website-builder/editor?template=single-course&title=${encodeURIComponent(prompt)}&type=Online%20Course&aiPrompt=${encodeURIComponent(prompt)}` };
-  if (ws === max) return { type: "webinar", label: "Webinar", route: `/website-builder/editor?template=webinar&title=${encodeURIComponent(prompt)}&type=Webinar&aiPrompt=${encodeURIComponent(prompt)}` };
+  if (ws === max) return { type: "webinar", label: "Webinar", route: `/website-builder/webinar/chat` };
   return { type: "coaching", label: "1:1 Coaching", route: `/website-builder/coaching/create` };
 };
 
@@ -97,8 +97,10 @@ const SmartPageCreate = () => {
 
   const handleUseTemplate = (template: TemplateData) => {
     setPreviewTemplate(null);
-    // Coaching templates go to chat UI, others go to editor
-    if (template.id === "coaching") {
+    // Webinar and coaching templates go to chat UI, others go to editor
+    if (template.id === "webinar") {
+      navigate("/website-builder/webinar/chat");
+    } else if (template.id === "coaching") {
       navigate("/website-builder/coaching/create");
     } else {
       navigate(`/website-builder/editor?template=${encodeURIComponent(template.id)}&title=${encodeURIComponent(template.title)}&type=${encodeURIComponent(template.title)}`);

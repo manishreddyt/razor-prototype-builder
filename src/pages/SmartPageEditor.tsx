@@ -86,6 +86,56 @@ const generateFromPrompt = (prompt: string, tpl: TemplateData, generatedData?: a
   if (generatedData?.content) {
     const content = generatedData.content;
     const image = generatedData.image;
+    const sectionData = generatedData.sections || {};
+
+    // Update sections with AI-generated content
+    const updatedSections = tpl.sections.map(section => {
+      if (section.type === "features" && sectionData.features) {
+        return {
+          ...section,
+          data: {
+            ...section.data,
+            title: "What You'll Learn",
+            items: sectionData.features.map((feature: string, idx: number) => ({
+              icon: section.data.items?.[idx]?.icon || "✓",
+              title: feature,
+              desc: "",
+            })),
+          },
+        };
+      }
+      if (section.type === "about" && sectionData.about) {
+        return {
+          ...section,
+          data: {
+            ...section.data,
+            text: sectionData.about,
+          },
+        };
+      }
+      if (section.type === "testimonials" && sectionData.testimonials) {
+        return {
+          ...section,
+          data: {
+            ...section.data,
+            items: sectionData.testimonials,
+          },
+        };
+      }
+      if (section.type === "faq" && sectionData.faqs) {
+        return {
+          ...section,
+          data: {
+            ...section.data,
+            items: sectionData.faqs.map((faq: any) => ({
+              question: faq.question,
+              answer: faq.answer,
+            })),
+          },
+        };
+      }
+      return section;
+    });
 
     return {
       ...tpl,
@@ -94,6 +144,7 @@ const generateFromPrompt = (prompt: string, tpl: TemplateData, generatedData?: a
       heroDescription: content.heroDescription,
       heroCta: content.heroCta,
       bannerImage: image || tpl.bannerImage,
+      sections: updatedSections,
     };
   }
 
