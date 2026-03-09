@@ -51,7 +51,7 @@ const Index = () => {
 
   const quickActions = [
     { title: "Create Course Page", desc: "AI-powered landing page", icon: Globe, path: "/website-builder/create", color: "bg-primary/10 text-primary" },
-    { title: "Host a Webinar", desc: "Free or paid, live or recorded", icon: Video, path: "/website-builder/editor?template=webinar&title=Webinar&type=Webinar", color: "bg-[hsl(152,69%,91%)] text-[hsl(152,69%,30%)]" },
+    { title: "Host a Webinar", desc: "Free or paid, live or recorded", icon: Video, path: "/website-builder/webinar/chat", color: "bg-[hsl(152,69%,91%)] text-[hsl(152,69%,30%)]" },
     { title: "Launch 1:1 Coaching", desc: "Personal coaching packages", icon: GraduationCap, path: "/website-builder/coaching/create", color: "bg-[hsl(38,92%,90%)] text-[hsl(38,92%,35%)]" },
     { title: "Create Offer", desc: "Discounts & bundles", icon: Tag, path: "/offers", color: "bg-accent text-accent-foreground" },
   ];
@@ -69,7 +69,7 @@ const Index = () => {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground">
-              Welcome to Creator Commerce 👋
+              Welcome Back 👋
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               Everything you need to sell courses, host webinars, and grow your education business.
