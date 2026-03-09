@@ -37,9 +37,9 @@ interface Course { id: string; name: string; description: string; price: number;
 interface StudentEnrollment { courseId: string; hasAccess: boolean }
 interface Student { id: string; name: string; email: string; enrollments: StudentEnrollment[]; createdAt: string }
 
-const LS_COURSES = "course-graphy-courses";
-const LS_STUDENTS = "course-graphy-students";
-const LS_ONBOARDING = "course-graphy-onboarding-done";
+const LS_COURSES = "simple-lms-courses";
+const LS_STUDENTS = "simple-lms-students";
+const LS_ONBOARDING = "simple-lms-onboarding-done";
 
 const loadCourses = (): Course[] => JSON.parse(localStorage.getItem(LS_COURSES) || "[]");
 const saveCourses = (c: Course[]) => localStorage.setItem(LS_COURSES, JSON.stringify(c));
@@ -89,7 +89,7 @@ const DEMO_STUDENTS: Student[] = [
 const onboardingSteps = [
   {
     icon: Rocket,
-    title: "Welcome to Course Graphy! 🎓",
+    title: "Welcome to Simple LMS! 🎓",
     description: "Your all-in-one platform to create, sell, and manage online courses — right from your Razorpay dashboard.",
     highlights: ["Create courses with modules & lessons", "Manage student enrollments", "Track revenue & analytics"],
   },
@@ -215,7 +215,7 @@ const CourseGraphyApp = () => {
   const completeOnboarding = () => {
     localStorage.setItem(LS_ONBOARDING, "true");
     setShowOnboarding(false);
-    toast({ title: "Welcome to Course Graphy! 🎉", description: "We've added demo courses & students to get you started." });
+    toast({ title: "Welcome to Simple LMS! 🎉", description: "We've added demo courses & students to get you started." });
   };
 
   const totalRevenue = students.reduce((sum, s) => {
@@ -275,7 +275,7 @@ const CourseGraphyApp = () => {
 
   return (
     <DashboardLayout>
-      <RazorpayAuthGate appName="Course Graphy">
+      <RazorpayAuthGate appName="Simple LMS">
       {showOnboarding && <OnboardingModal onComplete={completeOnboarding} />}
 
       <div className="p-6 max-w-6xl mx-auto space-y-6">
@@ -285,7 +285,7 @@ const CourseGraphyApp = () => {
             <GraduationCap className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">Course Graphy</h1>
+            <h1 className="text-xl font-bold text-foreground">Simple LMS</h1>
             <p className="text-xs text-muted-foreground">Manage your courses and students</p>
           </div>
         </div>

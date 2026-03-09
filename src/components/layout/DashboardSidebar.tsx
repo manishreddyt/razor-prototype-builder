@@ -68,8 +68,8 @@ const navSections = [
 ];
 
 const installedAppMeta: Record<string, { icon: React.ElementType; label: string; path: string }> = {
-  "course-graphy": { icon: GraduationCap, label: "Course Graphy", path: "/apps/course-graphy" },
-  "emergent": { icon: Heart, label: "Emergent", path: "/ai-app-builder" },
+  "simple-lms": { icon: GraduationCap, label: "Simple LMS", path: "/apps/simple-lms" },
+  "graphy": { icon: GraduationCap, label: "Graphy", path: "/apps/graphy" },
   teachable: { icon: BookOpen, label: "Teachable", path: "/apps/teachable" },
   thinkific: { icon: Layers, label: "Thinkific", path: "/apps/thinkific" },
   podia: { icon: Box, label: "Podia", path: "/apps/podia" },
@@ -78,8 +78,7 @@ const installedAppMeta: Record<string, { icon: React.ElementType; label: string;
 
 // Built-in apps that always appear under "Installed Apps"
 const builtInApps = [
-  { icon: Sparkles, label: "Emergent", path: "/ai-app-builder" },
-  { icon: ClipboardList, label: "Forms", path: "/forms" },
+  { icon: Sparkles, label: "Emergent", path: "/apps/emergent" },
 ];
 
 export const DashboardSidebar = () => {

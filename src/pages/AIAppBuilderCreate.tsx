@@ -52,12 +52,12 @@ const AIAppBuilderCreate = () => {
     setTimeout(() => setAnalysisStep(3), 3600);
     setTimeout(() => {
       setIsAnalyzing(false);
-      navigate(`/ai-app-builder/editor?prompt=${encodeURIComponent(aiPrompt)}`);
+      navigate(`/apps/emergent/editor?prompt=${encodeURIComponent(aiPrompt)}`);
     }, 4800);
   };
 
   const handleAppType = (type: typeof appTypes[0]) => {
-    navigate(`/ai-app-builder/editor?type=${encodeURIComponent(type.id)}&title=${encodeURIComponent(type.title)}`);
+    navigate(`/apps/emergent/editor?type=${encodeURIComponent(type.id)}&title=${encodeURIComponent(type.title)}`);
   };
 
   return (
@@ -96,7 +96,7 @@ const AIAppBuilderCreate = () => {
         <div className="animate-fade-in">
           {/* Top bar */}
           <div className="px-6 py-4">
-            <Button variant="outline" size="sm" onClick={() => navigate("/ai-app-builder")} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate("/apps/emergent")} className="gap-2">
               <ArrowLeft className="h-4 w-4" /> Back
             </Button>
           </div>

@@ -21,15 +21,16 @@ import SmartPageProductDetail from "./pages/SmartPageProductDetail";
 import SmartPagePublic from "./pages/SmartPagePublic";
 import MarketingCampaigns from "./pages/MarketingCampaigns";
 import CoachingCreate from "./pages/CoachingCreate";
+import WebinarChat from "./pages/WebinarChat";
 import Connectors from "./pages/Connectors";
-import Forms from "./pages/Forms";
 import Offers from "./pages/Offers";
 import CustomerTracker from "./pages/CustomerTracker";
 import Agents from "./pages/Agents";
 import AgentDetail from "./pages/AgentDetail";
 import AppMarketplace from "./pages/AppMarketplace";
 import AppDetail from "./pages/AppDetail";
-import CourseGraphyApp from "./pages/apps/CourseGraphyApp";
+import SimpleLMSApp from "./pages/apps/CourseGraphyApp";
+import GraphyApp from "./pages/apps/GraphyApp";
 import ZapierApp from "./pages/apps/ZapierApp";
 import InstalledApp from "./pages/apps/InstalledApp";
 import AIAppBuilder from "./pages/AIAppBuilder";
@@ -59,6 +60,7 @@ const App = () => (
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/website-builder" element={<WebsiteBuilder />} />
           <Route path="/website-builder/create" element={<SmartPageCreate />} />
+          <Route path="/website-builder/webinar/chat" element={<WebinarChat />} />
           <Route path="/website-builder/coaching/create" element={<CoachingCreate />} />
           <Route path="/connectors" element={<Connectors />} />
           <Route path="/website-builder/editor" element={<SmartPageEditor />} />
@@ -67,20 +69,20 @@ const App = () => (
           <Route path="/s/:slug/:pageSlug" element={<SmartPagePublic />} />
           <Route path="/s/:slug" element={<SmartPagePublic />} />
           <Route path="/marketing-campaigns" element={<MarketingCampaigns />} />
-          <Route path="/forms" element={<Forms />} />
           <Route path="/offers" element={<Offers />} />
           <Route path="/customers" element={<CustomerTracker />} />
           <Route path="/agents" element={<Agents />} />
           <Route path="/agents/:agentId" element={<AgentDetail />} />
           <Route path="/app-marketplace" element={<AppMarketplace />} />
           <Route path="/app-marketplace/:appId" element={<AppDetail />} />
-          <Route path="/apps/course-graphy" element={<CourseGraphyApp />} />
+          <Route path="/apps/simple-lms" element={<SimpleLMSApp />} />
+          <Route path="/apps/graphy" element={<GraphyApp />} />
           <Route path="/apps/zapier" element={<ZapierApp />} />
+          <Route path="/apps/emergent" element={<AIAppBuilder />} />
+          <Route path="/apps/emergent/create" element={<AIAppBuilderCreate />} />
+          <Route path="/apps/emergent/editor" element={<AIAppBuilderEditor />} />
+          <Route path="/apps/emergent/:id" element={<AIAppBuilderDetail />} />
           <Route path="/apps/:appId" element={<InstalledApp />} />
-          <Route path="/ai-app-builder" element={<AIAppBuilder />} />
-          <Route path="/ai-app-builder/create" element={<AIAppBuilderCreate />} />
-          <Route path="/ai-app-builder/editor" element={<AIAppBuilderEditor />} />
-          <Route path="/ai-app-builder/:id" element={<AIAppBuilderDetail />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -51,7 +51,7 @@ const AIAppBuilderDetail = () => {
       <DashboardLayout>
         <div className="text-center py-20">
           <p className="text-muted-foreground">App not found.</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate("/ai-app-builder")}>Go Back</Button>
+          <Button variant="outline" className="mt-4" onClick={() => navigate("/apps/emergent")}>Go Back</Button>
         </div>
       </DashboardLayout>
     );
@@ -64,7 +64,7 @@ const AIAppBuilderDetail = () => {
       <div className="animate-fade-in space-y-6">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => navigate("/ai-app-builder")} className="gap-1.5">
+          <Button variant="outline" size="sm" onClick={() => navigate("/apps/emergent")} className="gap-1.5">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
           <div className="h-5 w-px bg-border" />
@@ -83,7 +83,7 @@ const AIAppBuilderDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/ai-app-builder/editor?id=${app.id}`)}>
+            <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate(`/apps/emergent/editor?id=${app.id}`)}>
               <Pencil className="h-3.5 w-3.5" /> Edit App
             </Button>
             <Button size="sm" className="gap-1.5">
@@ -137,7 +137,7 @@ const AIAppBuilderDetail = () => {
                   <span className="flex items-center gap-1"><Code2 className="h-3.5 w-3.5" /> AI-Generated</span>
                   <span className="flex items-center gap-1"><Zap className="h-3.5 w-3.5" /> Razorpay Integrated</span>
                 </div>
-                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => navigate(`/ai-app-builder/editor?id=${app.id}`)}>
+                <Button variant="outline" size="sm" className="text-xs gap-1.5" onClick={() => navigate(`/apps/emergent/editor?id=${app.id}`)}>
                   <Pencil className="h-3 w-3" /> Edit
                 </Button>
               </div>

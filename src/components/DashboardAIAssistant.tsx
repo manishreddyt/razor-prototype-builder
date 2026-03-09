@@ -60,13 +60,14 @@ const FLOWS: Record<string, { message: string; actions: ActionItem[] }> = {
     actions: [
       { label: "Use Smart Pages builder", icon: "⚡", route: "/smart-pages/create", description: "AI-powered page builder — just describe your course" },
       { label: "Use Website Builder", icon: "🎨", route: "/website-builder", description: "Full website with custom pages" },
-      { label: "Install Course Graphy", icon: "📚", route: "/app-marketplace/course-graphy", description: "Full LMS with student management" },
+      { label: "Install Simple LMS", icon: "📚", route: "/app-marketplace/simple-lms", description: "Full LMS with student management" },
+      { label: "Install Graphy", icon: "🎓", route: "/app-marketplace/graphy", description: "All-in-one creator platform with mobile app" },
     ],
   },
   run_webinar: {
     message: "Free webinars are a great lead magnet! 📹 Here's the plan:",
     actions: [
-      { label: "Create webinar landing page", icon: "📄", route: "/website-builder/editor?template=webinar&title=Webinar&type=Webinar", description: "Capture registrations with a beautiful page" },
+      { label: "Create webinar landing page", icon: "📄", route: "/website-builder/webinar/chat", description: "Capture registrations with a beautiful page" },
       { label: "Set up email reminders", icon: "📧", route: "/email-workflows", description: "Automate reminder emails before the event" },
       { label: "Deploy Sales Agent", icon: "🤖", route: "/agents", description: "AI agent to follow up with attendees" },
     ],

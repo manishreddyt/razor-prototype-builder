@@ -121,7 +121,7 @@ const AIAppBuilderEditor = () => {
       };
       addApp(newApp);
       toast.success("App published successfully!");
-      setTimeout(() => navigate("/ai-app-builder"), 1200);
+      setTimeout(() => navigate("/apps/emergent"), 1200);
     }, 2000);
   };
 
@@ -132,7 +132,7 @@ const AIAppBuilderEditor = () => {
       {/* Top bar */}
       <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background z-10">
         <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => navigate("/ai-app-builder")} className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => navigate("/apps/emergent")} className="gap-2">
             <ArrowLeft className="h-4 w-4" /> Back
           </Button>
           <div className="h-5 w-px bg-border" />

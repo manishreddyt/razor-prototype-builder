@@ -97,7 +97,7 @@ const AIAppBuilder = () => {
               </span>
             </div>
           </div>
-          <Button className="gap-2" onClick={() => navigate("/ai-app-builder/create")}>
+          <Button className="gap-2" onClick={() => navigate("/apps/emergent/create")}>
             <Plus className="h-4 w-4" /> Build with Emergent
           </Button>
         </div>
@@ -155,7 +155,7 @@ const AIAppBuilder = () => {
                   <tr
                     key={app.id}
                     className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer"
-                    onClick={() => navigate(`/ai-app-builder/${app.id}`)}
+                    onClick={() => navigate(`/apps/emergent/${app.id}`)}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
@@ -177,7 +177,7 @@ const AIAppBuilder = () => {
                     <td className="px-4 py-3 text-xs text-muted-foreground">{app.created}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={(e) => { e.stopPropagation(); navigate(`/ai-app-builder/${app.id}`); }}>
+                        <Button variant="outline" size="sm" className="text-xs h-7 gap-1" onClick={(e) => { e.stopPropagation(); navigate(`/apps/emergent/${app.id}`); }}>
                           Manage
                         </Button>
                         <DropdownMenu>
@@ -187,7 +187,7 @@ const AIAppBuilder = () => {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => navigate(`/ai-app-builder/editor?id=${app.id}`)}>
+                            <DropdownMenuItem onClick={() => navigate(`/apps/emergent/editor?id=${app.id}`)}>
                               <Settings className="h-4 w-4 mr-2" /> Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => duplicateApp(app)}>
@@ -210,7 +210,7 @@ const AIAppBuilder = () => {
             <Sparkles className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
             <p className="text-foreground font-medium">No apps yet</p>
             <p className="text-sm text-muted-foreground mt-1">Build your first app with AI — describe what you want and we'll create it.</p>
-            <Button className="mt-4 gap-2" onClick={() => navigate("/ai-app-builder/create")}>
+            <Button className="mt-4 gap-2" onClick={() => navigate("/apps/emergent/create")}>
               <Plus className="h-4 w-4" /> Build with Emergent
             </Button>
           </div>

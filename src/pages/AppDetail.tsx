@@ -15,7 +15,7 @@ interface AppFeatureDetail {
 }
 
 const appFeatures: Record<string, AppFeatureDetail> = {
-  "course-graphy": {
+  "simple-lms": {
     features: [
       "Create unlimited courses with modules & lessons",
       "Student enrollment & access management",
@@ -25,11 +25,29 @@ const appFeatures: Record<string, AppFeatureDetail> = {
       "Quiz & assignment builder",
     ],
     screenshots: [
-      { label: "Course dashboard with analytics overview", image: "/images/graphy-dashboard.png" },
-      { label: "Course builder with drag-and-drop modules", image: "/images/graphy-courses.png" },
-      { label: "Student management with access controls", image: "/images/graphy-students.png" },
+      { label: "Course dashboard with analytics overview", image: "/images/lms-dashboard.png" },
+      { label: "Course builder with drag-and-drop modules", image: "/images/lms-courses.png" },
+      { label: "Student management with access controls", image: "/images/lms-students.png" },
     ],
     pricing: "₹2,999/month or ₹29,990/year",
+  },
+  "graphy": {
+    features: [
+      "Sell courses, webinars, and digital products",
+      "Branded mobile app for students (iOS & Android)",
+      "Community features with chat & discussions",
+      "Marketing automation & email campaigns",
+      "Live classes with video streaming",
+      "Affiliate program & referral management",
+      "White-label platform with custom domain",
+      "Advanced analytics & revenue insights",
+    ],
+    screenshots: [
+      { label: "Creator dashboard with revenue analytics", image: "/images/graphy-dashboard.png" },
+      { label: "Mobile app builder with brand customization", image: "/images/graphy-mobile.png" },
+      { label: "Live class interface with chat", image: "/images/graphy-live.png" },
+    ],
+    pricing: "₹4,999/month or ₹49,990/year",
   },
   "emergent": {
     features: [
@@ -136,10 +154,12 @@ const AppDetail = () => {
   };
 
   const handleOpen = () => {
-    if (app.id === "course-graphy") {
-      navigate("/apps/course-graphy");
+    if (app.id === "simple-lms") {
+      navigate("/apps/simple-lms");
+    } else if (app.id === "graphy") {
+      navigate("/apps/graphy");
     } else if (app.id === "emergent") {
-      navigate("/ai-app-builder");
+      navigate("/apps/emergent");
     } else if (app.id === "zapier") {
       navigate("/apps/zapier");
     } else {
