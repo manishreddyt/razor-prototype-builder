@@ -4,8 +4,8 @@
  */
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_TEXT_MODEL = "gemini-1.5-flash"; // Stable flash model for chat
-const GEMINI_IMAGE_MODEL = "imagen-3.0-fast-generate-001"; // Fast image generation
+const GEMINI_TEXT_MODEL = "gemini-2.5-flash"; // Latest Flash model (June 2025) - 1M context, 65K output
+const GEMINI_IMAGE_MODEL = "imagen-4.0-fast-generate-001"; // Latest fast image generation (Imagen 4.0)
 
 /**
  * Generate text content using Gemini chat model
