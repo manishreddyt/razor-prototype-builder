@@ -250,10 +250,7 @@ const SmartPageDetail = () => {
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
-              if (site.pageType === "webinar") navigate(`/website-builder/editor?id=${site.id}`);
-              else if (site.pageType === "coaching") navigate("/website-builder/coaching/create");
-              else if (site.pageType === "course") navigate("/website-builder/course/create");
-              else navigate(`/website-builder/editor?id=${site.id}`);
+              navigate(`/website-builder/editor?id=${site.id}`);
             }}>
               <Pencil className="h-3.5 w-3.5" /> Edit Page
             </Button>
@@ -316,10 +313,7 @@ const SmartPageDetail = () => {
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">Site Preview</span>
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => {
-                    if (site.pageType === "webinar") navigate(`/website-builder/editor?id=${site.id}`);
-                    else if (site.pageType === "coaching") navigate("/website-builder/coaching/create");
-                    else if (site.pageType === "course") navigate("/website-builder/course/create");
-                    else navigate(`/website-builder/editor?id=${site.id}`);
+                    navigate(`/website-builder/editor?id=${site.id}`);
                   }}>
                     <Pencil className="h-3 w-3" /> Edit
                   </Button>

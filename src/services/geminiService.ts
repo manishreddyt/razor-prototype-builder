@@ -4,7 +4,7 @@
  */
 
 const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const GEMINI_TEXT_MODEL = "gemini-2.0-flash-exp"; // Newest experimental flash model for chat
+const GEMINI_TEXT_MODEL = "gemini-1.5-flash"; // Stable flash model for chat
 const GEMINI_IMAGE_MODEL = "imagen-3.0-fast-generate-001"; // Fast image generation
 
 /**
