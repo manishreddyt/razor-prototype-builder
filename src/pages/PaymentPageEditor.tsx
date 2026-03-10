@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
+import { generateChatResponse } from "@/services/geminiService";
 
 // --- Page data model ---
 interface FormField {
@@ -158,49 +159,84 @@ const PaymentPageEditor = () => {
     });
   };
 
-  const sendMessage = (text: string) => {
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
+
     const userMsg: ChatMsg = { role: "user", content: text, time: "Just now" };
     setMessages((prev) => [...prev, userMsg]);
     setChatInput("");
 
-    // Simulate AI response with actual page modifications
-    setTimeout(() => {
-      let response = "";
-      const lower = text.toLowerCase();
+    // Add a loading message
+    const loadingMsg: ChatMsg = {
+      role: "assistant",
+      content: "Thinking...",
+      time: "Just now"
+    };
+    setMessages((prev) => [...prev, loadingMsg]);
 
+    try {
+      // Build conversation history for context
+      const conversationHistory = messages.map(msg => ({
+        role: msg.role === "assistant" ? "model" as const : "user" as const,
+        text: msg.content
+      }));
+
+      // Add the new user message
+      conversationHistory.push({
+        role: "user" as const,
+        text: text
+      });
+
+      const systemInstruction = `You are an AI assistant helping users create and customize payment pages.
+Current page details:
+- Title: ${pageData.title}
+- Amount: ₹${pageData.amount}
+- Type: ${pageData.amountType}
+- Form fields: ${pageData.formFields.map(f => f.label).join(", ")}
+- Active sections: ${pageData.sections.filter(s => s.visible).map(s => s.type).join(", ")}
+
+When the user asks to make changes:
+1. Acknowledge the request
+2. Briefly explain what you'll change
+3. Mention where they can find the settings if they want to customize further
+4. Be concise and friendly
+
+If they ask about features that aren't implemented, politely explain they can use the Settings panel to make those changes manually.`;
+
+      // Call Gemini API
+      const response = await generateChatResponse(conversationHistory, systemInstruction);
+
+      // Remove loading message and add real response
+      setMessages((prev) => {
+        const withoutLoading = prev.slice(0, -1);
+        return [...withoutLoading, { role: "assistant", content: response, time: "Just now" }];
+      });
+
+      // Apply changes based on user request (simple keyword matching)
+      const lower = text.toLowerCase();
       if (lower.includes("testimonial") || lower.includes("review")) {
         updatePage({ sections: pageData.sections.map((s) => s.type === "testimonials" ? { ...s, visible: true } : s) });
-        response = "I've enabled the testimonials section on your page. You can see 3 reviews from happy students. Click on any testimonial to edit it.";
       } else if (lower.includes("faq")) {
         updatePage({ sections: pageData.sections.map((s) => s.type === "faq" ? { ...s, visible: true } : s) });
-        response = "I've added a FAQ section to your page with 3 common questions. You can edit or add more FAQs in the settings panel.";
-      } else if (lower.includes("color") || lower.includes("theme") || lower.includes("brand")) {
-        response = "I've updated the page to use your brand colors. You can further customize colors in Settings → Branding.";
-      } else if (lower.includes("price") || lower.includes("amount") || lower.includes("pricing")) {
-        updatePage({ amount: 4999 });
-        response = "I've updated the price to ₹4,999. You can change it anytime in the payment form on the right, or tell me a different amount.";
-      } else if (lower.includes("banner") || lower.includes("image") || lower.includes("header")) {
-        updatePage({ bannerImage: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?w=900&h=300&fit=crop" });
-        response = "I've changed the banner image to a vibrant event photo. Want me to try a different style?";
-      } else if (lower.includes("title") || lower.includes("heading") || lower.includes("name")) {
-        updatePage({ title: "Premium Tech Conference 2026" });
-        response = "I've updated the page title to 'Premium Tech Conference 2026'. Feel free to click on it in the preview to edit directly.";
-      } else if (lower.includes("field") || lower.includes("form")) {
-        const newField: FormField = { id: `f${Date.now()}`, label: "Organization", type: "text", required: false, placeholder: "Enter your company/org name" };
-        updatePage({ formFields: [...pageData.formFields, newField] });
-        response = "I've added an 'Organization' field to the registration form. You can rename it or change its type in Settings → Form Fields.";
-      } else if (lower.includes("button") || lower.includes("cta")) {
-        updatePage({ buttonText: "Register Now — ₹" + pageData.amount.toLocaleString("en-IN") });
-        response = "I've updated the CTA button text. You can customize it further in the settings panel.";
-      } else if (lower.includes("countdown") || lower.includes("timer") || lower.includes("early")) {
-        response = "I've noted your request for a countdown timer. In the full version, this would add a live countdown section above the payment form. For now, you can mention early-bird pricing in the description.";
-      } else {
-        response = `I'll help you with "${text}". I've made note of this change. You can also use the Settings panel on the right to make detailed adjustments to any part of your page.`;
+      } else if (lower.includes("feature")) {
+        updatePage({ sections: pageData.sections.map((s) => s.type === "features" ? { ...s, visible: true } : s) });
       }
 
-      setMessages((prev) => [...prev, { role: "assistant", content: response, time: "Just now" }]);
-    }, 800);
+    } catch (error) {
+      console.error("Error calling Gemini:", error);
+
+      // Remove loading and show error
+      setMessages((prev) => {
+        const withoutLoading = prev.slice(0, -1);
+        return [...withoutLoading, {
+          role: "assistant",
+          content: "Sorry, I'm having trouble connecting right now. You can use the Settings panel on the right to make changes to your page.",
+          time: "Just now"
+        }];
+      });
+
+      toast.error("AI assistant temporarily unavailable");
+    }
   };
 
   const handlePublish = () => {

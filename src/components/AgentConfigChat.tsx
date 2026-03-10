@@ -16,6 +16,7 @@ import {
   MessageCircle,
   Star,
 } from "lucide-react";
+import { generateChatResponse } from "@/services/geminiService";
 
 interface ChatMessage {
   id: string;
@@ -79,65 +80,97 @@ const AgentConfigChat = ({ open, onOpenChange, agentType, onSaveGoal }: AgentCon
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     if (!text.trim()) return;
     const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      const lower = text.toLowerCase();
-      let response: ChatMessage;
+    try {
+      // Build conversation history for Gemini
+      const conversationHistory = messages.map(msg => ({
+        role: msg.role === "assistant" ? "model" as const : "user" as const,
+        text: msg.content
+      }));
 
-      if (lower.includes("webinar") || lower.includes("conversion") || lower.includes("paid")) {
-        response = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `Great! Here's the process I'll follow:\n\n**Goal: Free Webinar → Paid Course Conversion**\n\n📞 **Step 1:** Within 1 hour of webinar ending, call each attendee\n📋 **Step 2:** Pitch the paid course — highlight key outcomes & testimonials\n🤝 **Step 3:** Handle objections using your FAQ database\n💳 **Step 4:** If interested, send personalised payment link via WhatsApp\n🔄 **Step 5:** For "maybe later" — schedule follow-up call in 48 hours\n📊 **Step 6:** Log outcome for each lead (Converted / Interested / Not Interested)\n\nShall I **save this configuration** or would you like to modify any steps?`,
-          suggestions: ["Save this configuration", "Add email follow-up too", "Change follow-up to 24 hours", "Add a discount offer for quick signups"],
-        };
-      } else if (lower.includes("save") || lower.includes("confirm") || lower.includes("create")) {
+      conversationHistory.push({
+        role: "user" as const,
+        text: text
+      });
+
+      const systemInstruction = `You are an AI assistant helping users configure their ${agentName} for their business automation.
+
+Agent Type: ${agentType}
+Available Templates: ${JSON.stringify(templates, null, 2)}
+
+When users describe a goal:
+1. Understand their objective clearly
+2. Break it down into numbered steps with emojis
+3. Be specific about triggers, actions, and success metrics
+4. Always end with "Shall I save this configuration?" or similar
+5. Provide 3-4 relevant modification suggestions
+
+When users say "save", "confirm", or similar:
+- Acknowledge the save
+- Mention they can deploy the agent from the main screen
+- Keep it brief and celebratory
+
+Format:
+- Use **bold** for emphasis
+- Use emojis where appropriate
+- Number steps clearly
+- Be concise and actionable
+
+Examples of good configurations:
+- "After webinar ends → Call attendees → Pitch paid course → Send payment link"
+- "Daily at 9 AM → Send WhatsApp to leads → Follow up on responses → Log outcomes"
+- "When customer submits ticket → Check FAQ → Send solution → Escalate if needed"`;
+
+      const response = await generateChatResponse(conversationHistory, systemInstruction);
+
+      // Check if user is saving
+      const lower = text.toLowerCase();
+      if (lower.includes("save") || lower.includes("confirm") || lower.includes("create")) {
         const goalSummary = messages.filter(m => m.role === "assistant").pop()?.content || text;
         onSaveGoal(goalSummary);
-        response = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `✅ **Configuration saved!**\n\nYour ${agentName} is now configured and ready to deploy. Head back to the agent card and click **Deploy** to start.\n\nYou can reconfigure anytime by opening this chat again.`,
-        };
-      } else if (lower.includes("retarget") || lower.includes("campaign") || lower.includes("ads")) {
-        response = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `Here's the campaign plan:\n\n**Goal: Student Retargeting Campaign**\n\n🎯 **Step 1:** Identify students who attended free webinar but didn't purchase\n📱 **Step 2:** Create custom audience on Meta & Google Ads\n📧 **Step 3:** Day 1 — Send "You missed out" email with course highlights\n📣 **Step 4:** Day 2-5 — Run retargeting ads with student testimonials\n💰 **Step 5:** Day 7 — Send limited-time discount offer (15% off)\n📊 **Step 6:** Track conversions and optimise ad spend\n\nShall I save this configuration?`,
-          suggestions: ["Save this configuration", "Increase discount to 20%", "Add WhatsApp reminders", "Extend campaign to 14 days"],
-        };
-      } else if (lower.includes("nps") || lower.includes("feedback") || lower.includes("review")) {
-        response = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `Here's the feedback collection plan:\n\n**Goal: Post-Course NPS & Review Collection**\n\n📊 **Step 1:** 24 hours after course completion, send NPS survey via email\n⭐ **Step 2:** For scores 9-10 — request a testimonial + Google review link\n⚠️ **Step 3:** For scores 1-6 — alert you immediately, send apology + feedback form\n📧 **Step 4:** For scores 7-8 — send "how can we improve?" follow-up\n📈 **Step 5:** Generate weekly NPS report with trends\n\nReady to save?`,
-          suggestions: ["Save this configuration", "Add WhatsApp survey option", "Change timing to 48 hours", "Include instructor rating"],
-        };
-      } else if (lower.includes("query") || lower.includes("support") || lower.includes("whatsapp")) {
-        response = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `Here's the support process:\n\n**Goal: 24/7 WhatsApp Customer Support**\n\n💬 **Step 1:** Receive student query on WhatsApp\n🔍 **Step 2:** Check against your FAQ database for instant answers\n📚 **Step 3:** If course-related — share relevant materials/links\n🎫 **Step 4:** If complex — create support ticket and notify your team\n⏰ **Step 5:** If no resolution in 2 hours — escalate to you directly\n📊 **Step 6:** Log all interactions for quality review\n\nShall I save this?`,
-          suggestions: ["Save this configuration", "Add voice call escalation", "Include refund handling", "Add auto-response for off-hours"],
-        };
-      } else {
-        response = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `I can build that! Let me understand better:\n\n**1. What's the trigger?**\n- After a webinar / After a purchase / On schedule / Manual\n\n**2. What actions should the agent take?**\n- Call leads / Send WhatsApp / Send email / Run ads\n\n**3. What's the success metric?**\n- Conversions / Response rate / NPS score / Resolution time\n\nDescribe it however you like — I'll structure it into a clear process!`,
-          suggestions: ["Call webinar leads and pitch paid course", "Send NPS survey after course completion", "Handle WhatsApp queries 24/7"],
-        };
       }
 
-      setMessages((prev) => [...prev, response]);
+      // Generate contextual suggestions
+      let suggestions: string[] = [];
+      if (!lower.includes("save")) {
+        suggestions = [
+          "Save this configuration",
+          "Add more automation steps",
+          "Change the timing",
+          "Include follow-up actions"
+        ];
+      }
+
+      const responseMsg: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: response,
+        suggestions: suggestions.length > 0 ? suggestions : undefined,
+      };
+
+      setMessages((prev) => [...prev, responseMsg]);
       setIsTyping(false);
-    }, 1200);
+
+    } catch (error) {
+      console.error("Error calling Gemini:", error);
+
+      // Fallback response
+      const fallbackResponse: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `I can build that! Let me understand better:\n\n**1. What's the trigger?**\n- After a webinar / After a purchase / On schedule / Manual\n\n**2. What actions should the agent take?**\n- Call leads / Send WhatsApp / Send email / Run ads\n\n**3. What's the success metric?**\n- Conversions / Response rate / NPS score / Resolution time\n\nDescribe it however you like — I'll structure it into a clear process!`,
+        suggestions: ["Call webinar leads and pitch paid course", "Send NPS survey after course completion", "Handle WhatsApp queries 24/7"],
+      };
+
+      setMessages((prev) => [...prev, fallbackResponse]);
+      setIsTyping(false);
+    }
   };
 
   const handleOpenChange = (val: boolean) => {

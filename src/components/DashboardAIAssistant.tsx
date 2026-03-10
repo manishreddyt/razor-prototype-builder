@@ -4,6 +4,7 @@ import { Bot, X, Send, ChevronRight, Sparkles, PanelRightClose, PanelRightOpen }
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
+import { generateChatResponse } from "@/services/geminiService";
 
 interface ChatMessage {
   id: string;
@@ -132,13 +133,62 @@ const DashboardAIAssistant = ({ isOpen, onClose }: DashboardAIAssistantProps) =>
     }
   };
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     if (!text.trim()) return;
     const userMsg: ChatMessage = { id: Date.now().toString(), role: "user", content: text };
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
 
-    setTimeout(() => {
+    // Add loading message
+    const loadingMsg: ChatMessage = {
+      id: (Date.now() + 1).toString(),
+      role: "assistant",
+      content: "Thinking...",
+    };
+    setMessages((prev) => [...prev, loadingMsg]);
+
+    try {
+      // Build conversation history for Gemini
+      const conversationHistory = messages.map(msg => ({
+        role: msg.role === "assistant" ? "model" as const : "user" as const,
+        text: msg.content
+      }));
+
+      conversationHistory.push({
+        role: "user" as const,
+        text: text
+      });
+
+      const systemInstruction = `You are a helpful Razorpay AI assistant helping merchants grow their business.
+
+Available features and routes:
+- Smart Pages: /smart-pages/create (AI-powered page builder)
+- Payment Links: /payment-links (quick payment links)
+- Subscriptions: /subscriptions (recurring payments)
+- Email Workflows: /email-workflows (automated emails)
+- Website Builder: /website-builder (full websites)
+- Webinar Pages: /website-builder/webinar/chat (webinar landing pages)
+- App Marketplace: /app-marketplace (integrations)
+- AI Agents: /agents (deploy AI sales/support agents)
+- Offers & Coupons: /offers (promotions)
+- Reports: /reports (analytics)
+- Customer Tracker: /customer-tracker (track customers)
+
+When users mention:
+- Selling courses/education → recommend Smart Pages or Website Builder
+- 1:1 sessions/coaching → recommend Smart Pages with booking
+- Social commerce/WhatsApp → recommend Smart Pages + WhatsApp integration
+- Webinars → recommend Webinar landing pages
+- Payment collection → recommend Payment Links
+- Automation → recommend Email Workflows or AI Agents
+- Subscriptions → recommend Subscriptions
+
+Be friendly, concise, and actionable. Suggest specific features they can use.
+Format responses in plain text with emojis where appropriate.`;
+
+      const response = await generateChatResponse(conversationHistory, systemInstruction);
+
+      // Detect if we should show action buttons based on keywords in response
       const lower = text.toLowerCase();
       let flowKey = "welcome";
       if (lower.includes("course") || lower.includes("teach") || lower.includes("education")) flowKey = "online_courses";
@@ -149,16 +199,32 @@ const DashboardAIAssistant = ({ isOpen, onClose }: DashboardAIAssistantProps) =>
       else if (lower.includes("convert") || lower.includes("paid")) flowKey = "convert_customers";
 
       const flow = FLOWS[flowKey];
-      const assistantMsg: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: flowKey === "welcome"
-          ? "I'd love to help! Here's what I can assist with:"
-          : flow.message,
-        actions: flow.actions,
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
-    }, 500);
+
+      // Remove loading and add real response
+      setMessages((prev) => {
+        const withoutLoading = prev.slice(0, -1);
+        return [...withoutLoading, {
+          id: (Date.now() + 2).toString(),
+          role: "assistant",
+          content: response,
+          actions: flowKey !== "welcome" ? flow.actions : undefined,
+        }];
+      });
+
+    } catch (error) {
+      console.error("Error calling Gemini:", error);
+
+      // Remove loading and show error with fallback
+      setMessages((prev) => {
+        const withoutLoading = prev.slice(0, -1);
+        return [...withoutLoading, {
+          id: (Date.now() + 2).toString(),
+          role: "assistant",
+          content: "I'd love to help! Here's what I can assist with:",
+          actions: FLOWS.welcome.actions,
+        }];
+      });
+    }
   };
 
   const handleReset = () => {
