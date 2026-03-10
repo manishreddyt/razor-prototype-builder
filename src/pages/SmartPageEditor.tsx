@@ -834,8 +834,16 @@ const SmartPageEditor = () => {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setChatInput("");
 
-    const response = await sendPrompt(text);
-    setMessages((prev) => [...prev, { role: "assistant", content: response }]);
+    try {
+      const response = await sendPrompt(text);
+      setMessages((prev) => [...prev, { role: "assistant", content: response }]);
+    } catch (error) {
+      console.error("AI chat error:", error);
+      setMessages((prev) => [...prev, {
+        role: "assistant",
+        content: "I encountered an error. Please check your API key configuration and try again."
+      }]);
+    }
   };
 
   const handlePublish = () => {

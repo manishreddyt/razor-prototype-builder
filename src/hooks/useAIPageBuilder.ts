@@ -40,11 +40,30 @@ interface UseAIPageBuilderOptions {
 async function callGeminiAI(prompt: string, pageType: string, currentData: Record<string, any>): Promise<{ updates: AIPageUpdates; message: string }> {
   const schema = `{
   "updates": {
-    "heroTitle": "new title if requested (string, optional)",
-    "heroDescription": "new description if requested (string, optional)",
-    "heroTagline": "new tagline if requested (string, optional)",
-    "heroCta": "new CTA button text if requested (string, optional)",
-    "sections": [{"type": "testimonials", "action": "add"}]
+    "name": "page name (string, optional)",
+    "tagline": "tagline (string, optional)",
+    "description": "description (string, optional)",
+    "bannerImage": "image URL (string, optional)",
+    "heroTitle": "hero title (string, optional)",
+    "heroTagline": "hero tagline (string, optional)",
+    "heroDescription": "hero description (string, optional)",
+    "heroCta": "CTA button text (string, optional)",
+    "isPaid": "true/false (boolean, optional)",
+    "amount": "price in rupees (number, optional)",
+    "pricingModel": "pricing model (string, optional)",
+    "sessionDuration": "duration in minutes (number, optional)",
+    "courseDuration": "course duration (string, optional)",
+    "courseFormat": "format like 'Self-paced' (string, optional)",
+    "coachName": "instructor/coach name (string, optional)",
+    "coachTitle": "instructor title (string, optional)",
+    "coachBio": "instructor bio (string, optional)",
+    "whatYouWillLearn": ["learning point 1", "learning point 2"] (array of strings, optional)",
+    "courseIncludes": ["include 1", "include 2"] (array of strings, optional)",
+    "testimonials": [{"name": "Name", "text": "Quote", "rating": 5}] (array, optional)",
+    "faqItems": [{"q": "Question?", "a": "Answer"}] (array, optional)",
+    "features": [{"title": "Feature", "desc": "Description", "icon": "icon-name"}] (array, optional)",
+    "sections": [{"type": "testimonials", "action": "add"}] (array, optional - use to add/remove/toggle sections)",
+    "enableWeekends": "true/false (boolean, optional)"
   },
   "message": "A friendly response explaining what you did"
 }`;
