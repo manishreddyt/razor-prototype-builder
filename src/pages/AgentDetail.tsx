@@ -234,7 +234,7 @@ const AgentDetail = () => {
               size="sm"
               variant={status === "deployed" ? "destructive" : "default"}
               onClick={handleDeploy}
-              disabled={status === "draft"}
+              disabled={status === "draft" && agentId !== "instagram"}
             >
               {status === "deployed" ? (
                 <><Pause className="h-4 w-4 mr-1" /> Pause</>

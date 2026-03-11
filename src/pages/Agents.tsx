@@ -317,7 +317,7 @@ const Agents = () => {
                       size="sm"
                       variant={agent.status === "deployed" ? "destructive" : "default"}
                       onClick={() => handleDeploy(agent.id)}
-                      disabled={agent.status === "draft"}
+                      disabled={agent.status === "draft" && agent.id !== "instagram"}
                     >
                       {agent.status === "deployed" ? (
                         <><Pause className="h-4 w-4 mr-1" /> Pause</>
