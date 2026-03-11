@@ -1,5 +1,32 @@
 import { useState } from "react";
 
+export interface CoachingSessionConfig {
+  duration: number;
+  breakBetween: number;
+  maxPerDay: number;
+}
+
+export interface CoachingAvailability {
+  day: string;
+  enabled: boolean;
+  startTime: string;
+  endTime: string;
+}
+
+export interface CoachingBookingField {
+  name: string;
+  label: string;
+  type: string;
+  required: boolean;
+}
+
+export interface CoachingCoach {
+  name: string;
+  title: string;
+  bio: string;
+  image?: string;
+}
+
 export interface CoachingData {
   name: string;
   tagline: string;
@@ -13,6 +40,12 @@ export interface CoachingData {
   amount: number;
   pricingModel: string;
   sessionDuration: number;
+  packageSessions: number;
+  packageAmount: number;
+  sessionConfig: CoachingSessionConfig;
+  availability: CoachingAvailability[];
+  bookingFields: CoachingBookingField[];
+  coach: CoachingCoach;
   coachName: string;
   coachTitle: string;
   coachBio: string;
