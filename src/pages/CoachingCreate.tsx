@@ -15,10 +15,12 @@ export interface CoachingAvailability {
 }
 
 export interface CoachingBookingField {
+  id: string;
   name: string;
   label: string;
   type: string;
   required: boolean;
+  placeholder?: string;
 }
 
 export interface CoachingCoach {
