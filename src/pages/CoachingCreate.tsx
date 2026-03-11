@@ -28,6 +28,7 @@ export interface CoachingCoach {
   title: string;
   bio: string;
   image?: string;
+  credentials?: string[];
 }
 
 export interface CoachingData {
