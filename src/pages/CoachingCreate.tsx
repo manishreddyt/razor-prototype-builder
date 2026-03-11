@@ -1,0 +1,73 @@
+import { useState } from "react";
+
+export interface CoachingSessionConfig {
+  duration: number;
+  buffer: number;
+  breakBetween: number;
+  maxPerDay: number;
+}
+
+export interface CoachingAvailability {
+  day: string;
+  enabled: boolean;
+  startTime: string;
+  endTime: string;
+}
+
+export interface CoachingBookingField {
+  id: string;
+  name: string;
+  label: string;
+  type: string;
+  required: boolean;
+  placeholder?: string;
+}
+
+export interface CoachingCoach {
+  name: string;
+  title: string;
+  bio: string;
+  image?: string;
+  credentials?: string[];
+}
+
+export interface CoachingData {
+  name: string;
+  tagline: string;
+  description: string;
+  bannerImage: string;
+  heroTitle: string;
+  heroTagline: string;
+  heroDescription: string;
+  heroCta: string;
+  isPaid: boolean;
+  amount: number;
+  pricingModel: string;
+  sessionDuration: number;
+  packageSessions: number;
+  packageAmount: number;
+  sessionConfig: CoachingSessionConfig;
+  availability: CoachingAvailability[];
+  bookingFields: CoachingBookingField[];
+  coach: CoachingCoach;
+  coachName: string;
+  coachTitle: string;
+  coachBio: string;
+  enableWeekends: boolean;
+  whatYouWillLearn: string[];
+  features: { title: string; desc: string; icon?: string }[];
+  testimonials: { name: string; text: string; rating?: number }[];
+  faqItems: { q: string; a: string }[];
+  courseIncludes: string[];
+}
+
+const CoachingCreate = () => {
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold">Create Coaching Session</h1>
+      <p className="text-muted-foreground mt-2">Coming soon...</p>
+    </div>
+  );
+};
+
+export default CoachingCreate;
