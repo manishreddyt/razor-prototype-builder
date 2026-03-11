@@ -16,8 +16,12 @@ import {
   MessageCircle,
   Star,
   Instagram,
+  CheckCircle2,
+  ArrowRight,
+  Lightbulb,
 } from "lucide-react";
 import { generateChatResponse } from "@/services/geminiService";
+import ReactMarkdown from "react-markdown";
 
 interface ChatMessage {
   id: string;
@@ -78,7 +82,7 @@ const AgentConfigChat = ({ open, onOpenChange, agentType, onSaveGoal }: AgentCon
     {
       id: "welcome",
       role: "assistant",
-      content: `👋 Hi! I'll help you configure your **${agentName}**.\n\nDescribe your goal in plain language, or pick a template below to get started.`,
+      content: `👋 **Welcome! Let's set up your ${agentName}**\n\nI'll help you configure what this agent should do and when. You can describe your goal in your own words, or pick one of the templates below to get started quickly.`,
       quickActions: templates,
     },
   ];
@@ -106,33 +110,43 @@ const AgentConfigChat = ({ open, onOpenChange, agentType, onSaveGoal }: AgentCon
         text: text
       });
 
-      const systemInstruction = `You are an AI assistant helping users configure their ${agentName} for their business automation.
+      const systemInstruction = `You are an AI assistant helping users configure their ${agentName} for business automation.
 
 Agent Type: ${agentType}
-Available Templates: ${JSON.stringify(templates, null, 2)}
+
+CRITICAL FORMATTING RULES:
+- Keep responses SHORT and SCANNABLE (max 4-5 sentences)
+- Use clear headers with **bold**
+- Use numbered lists (1., 2., 3.) for steps
+- Add emojis sparingly for visual breaks
+- Leave blank lines between sections
+- NO long paragraphs - break into bullet points
 
 When users describe a goal:
-1. Understand their objective clearly
-2. Break it down into numbered steps with emojis
-3. Be specific about triggers, actions, and success metrics
-4. Always end with "Shall I save this configuration?" or similar
-5. Provide 3-4 relevant modification suggestions
+1. Confirm understanding in ONE sentence with emoji
+2. Show workflow as numbered steps (max 4 steps)
+3. End with: "**Ready to save?**"
+4. Keep total response to 4-5 short lines
 
 When users say "save", "confirm", or similar:
-- Acknowledge the save
-- Mention they can deploy the agent from the main screen
-- Keep it brief and celebratory
+Response format:
+✅ **Configuration saved!**
 
-Format:
-- Use **bold** for emphasis
-- Use emojis where appropriate
-- Number steps clearly
-- Be concise and actionable
+You can now deploy this agent from the main screen.
 
-Examples of good configurations:
-- "After webinar ends → Call attendees → Pitch paid course → Send payment link"
-- "Daily at 9 AM → Send WhatsApp to leads → Follow up on responses → Log outcomes"
-- "When customer submits ticket → Check FAQ → Send solution → Escalate if needed"`;
+GOOD Example:
+**Got it! Here's your workflow:** 🎯
+
+1. **Trigger:** After webinar ends
+2. **Action:** Call attendees within 1 hour
+3. **Pitch:** Advanced Python Course
+4. **Close:** Send payment link if interested
+
+**Ready to save?**
+
+BAD Example (too wordy):
+"I understand you want to set up a comprehensive workflow for your business. Let me break this down into a detailed process..."`;
+
 
       const response = await generateChatResponse(conversationHistory, systemInstruction);
 
@@ -171,7 +185,7 @@ Examples of good configurations:
       const fallbackResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `I can build that! Let me understand better:\n\n**1. What's the trigger?**\n- After a webinar / After a purchase / On schedule / Manual\n\n**2. What actions should the agent take?**\n- Call leads / Send WhatsApp / Send email / Run ads\n\n**3. What's the success metric?**\n- Conversions / Response rate / NPS score / Resolution time\n\nDescribe it however you like — I'll structure it into a clear process!`,
+        content: `**I can help with that!** 🎯\n\nTo set this up, I need to know:\n\n1. **When** should this happen? (trigger)\n2. **What** should the agent do? (actions)\n3. **How** do we measure success? (metric)\n\nDescribe it in your own words, and I'll structure it into a workflow!`,
         suggestions: ["Call webinar leads and pitch paid course", "Send NPS survey after course completion", "Handle WhatsApp queries 24/7"],
       };
 
@@ -199,47 +213,86 @@ Examples of good configurations:
         </DialogHeader>
 
         {/* Chat Messages */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           {messages.map((msg) => (
             <div key={msg.id} className={cn("flex", msg.role === "user" ? "justify-end" : "justify-start")}>
               <div
                 className={cn(
-                  "max-w-[85%] rounded-xl px-4 py-3 text-sm",
+                  "max-w-[85%] rounded-2xl px-5 py-4",
                   msg.role === "user"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary text-foreground"
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-background border border-border/60 shadow-sm"
                 )}
               >
-                <div className="whitespace-pre-wrap">{msg.content}</div>
+                {msg.role === "assistant" ? (
+                  <div className="prose prose-sm max-w-none prose-headings:font-semibold prose-headings:text-foreground prose-p:text-foreground prose-p:leading-relaxed prose-strong:text-foreground prose-strong:font-semibold prose-ul:text-foreground prose-li:text-foreground">
+                    <ReactMarkdown
+                      components={{
+                        p: ({ children }) => <p className="mb-2 last:mb-0 text-sm leading-relaxed">{children}</p>,
+                        strong: ({ children }) => <strong className="font-semibold text-foreground">{children}</strong>,
+                        ul: ({ children }) => <ul className="space-y-1 mb-2 ml-4">{children}</ul>,
+                        ol: ({ children }) => <ol className="space-y-1.5 mb-2 ml-4">{children}</ol>,
+                        li: ({ children }) => <li className="text-sm leading-relaxed">{children}</li>,
+                      }}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="text-sm leading-relaxed">{msg.content}</div>
+                )}
 
                 {msg.quickActions && (
-                  <div className="grid grid-cols-1 gap-2 mt-3">
-                    {msg.quickActions.map((action) => (
+                  <div className="grid grid-cols-1 gap-2.5 mt-4 pt-4 border-t border-border/40">
+                    <p className="text-xs font-medium text-muted-foreground mb-1 flex items-center gap-1.5">
+                      <Lightbulb className="h-3.5 w-3.5" />
+                      Choose a template to get started:
+                    </p>
+                    {msg.quickActions.map((action, idx) => (
                       <button
                         key={action.label}
                         onClick={() => handleSend(action.label)}
-                        className="flex items-start gap-2.5 p-2.5 rounded-lg bg-background/80 hover:bg-background border border-border/50 text-left transition-colors"
+                        className="group flex items-center gap-3 p-3.5 rounded-xl bg-secondary/50 hover:bg-secondary hover:shadow-md border border-border/60 hover:border-primary/40 text-left transition-all"
                       >
-                        <div>
-                          <p className="text-xs font-medium text-foreground">{action.label}</p>
-                          <p className="text-[11px] text-muted-foreground mt-0.5">{action.description}</p>
+                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm">
+                          {idx + 1}
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground mb-0.5">{action.label}</p>
+                          <p className="text-xs text-muted-foreground leading-snug">{action.description}</p>
+                        </div>
+                        <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
                       </button>
                     ))}
                   </div>
                 )}
 
                 {msg.suggestions && (
-                  <div className="flex flex-wrap gap-1.5 mt-3">
-                    {msg.suggestions.map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => handleSend(s)}
-                        className="px-2.5 py-1 rounded-full bg-background/80 hover:bg-background border border-border/50 text-[11px] font-medium text-foreground transition-colors"
-                      >
-                        {s}
-                      </button>
-                    ))}
+                  <div className="space-y-2 mt-4 pt-4 border-t border-border/40">
+                    <p className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      Quick actions:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {msg.suggestions.map((s, idx) => {
+                        const isSaveAction = s.toLowerCase().includes("save") || s.toLowerCase().includes("confirm");
+                        return (
+                          <button
+                            key={s}
+                            onClick={() => handleSend(s)}
+                            className={cn(
+                              "px-3.5 py-2 rounded-lg text-xs font-medium transition-all shadow-sm",
+                              isSaveAction
+                                ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-md border-2 border-primary/20"
+                                : "bg-background hover:bg-secondary border border-border/60 text-foreground hover:shadow-md"
+                            )}
+                          >
+                            {isSaveAction && <CheckCircle2 className="h-3 w-3 inline mr-1.5" />}
+                            {s}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
@@ -248,8 +301,11 @@ Examples of good configurations:
 
           {isTyping && (
             <div className="flex justify-start">
-              <div className="bg-secondary rounded-xl px-4 py-3 text-sm text-muted-foreground">
-                Thinking...
+              <div className="bg-background border border-border/60 rounded-2xl px-5 py-4 shadow-sm">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Sparkles className="h-4 w-4 animate-pulse" />
+                  <span className="animate-pulse">Generating your workflow...</span>
+                </div>
               </div>
             </div>
           )}
@@ -267,9 +323,10 @@ Examples of good configurations:
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Describe your agent's goal..."
+              placeholder="Type your goal, or pick a template above..."
               className="flex-1"
               disabled={isTyping}
+              autoFocus
             />
             <Button type="submit" size="icon" disabled={!input.trim() || isTyping}>
               <Send className="h-4 w-4" />
