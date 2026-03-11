@@ -179,6 +179,15 @@ const Agents = () => {
       }
     }
 
+    // For Education agent, show setup wizard on first enable
+    if (agentId === "education") {
+      const agent = agents.find((a) => a.id === agentId);
+      if (agent?.status === "draft" || agent?.status === "configured") {
+        setShowEducationCopilot(true);
+        return;
+      }
+    }
+
     setAgents((prev) =>
       prev.map((a) => {
         if (a.id !== agentId) return a;
@@ -218,7 +227,7 @@ const Agents = () => {
         if (a.id !== "education") return a;
         return {
           ...a,
-          status: "configured" as AgentStatus,
+          status: "deployed" as AgentStatus,
         };
       })
     );
@@ -351,12 +360,12 @@ const Agents = () => {
                       size="sm"
                       variant={agent.status === "deployed" ? "destructive" : "default"}
                       onClick={() => handleDeploy(agent.id)}
-                      disabled={agent.status === "draft" && agent.id !== "instagram"}
+                      disabled={agent.status === "draft" && agent.id !== "instagram" && agent.id !== "education"}
                     >
                       {agent.status === "deployed" ? (
                         <><Pause className="h-4 w-4 mr-1" /> Pause</>
                       ) : (
-                        <><Play className="h-4 w-4 mr-1" /> {agent.id === "instagram" ? "Enable" : "Deploy"}</>
+                        <><Play className="h-4 w-4 mr-1" /> {agent.id === "instagram" || agent.id === "education" ? "Enable" : "Deploy"}</>
                       )}
                     </Button>
                   </div>

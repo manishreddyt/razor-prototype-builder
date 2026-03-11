@@ -492,11 +492,8 @@ const SmartPageEditor = () => {
   // Check if this is a biolink template to default to mobile view
   const isBiolinkTemplate = state.template.id.startsWith("biolink");
 
-  // Check if Supabase is configured for AI features
-  const isSupabaseConfigured = !!supabase;
-
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">(isBiolinkTemplate ? "mobile" : "desktop");
-  const [rightPanel, setRightPanel] = useState<"ai" | "settings" | null>(isSupabaseConfigured ? "ai" : null);
+  const [rightPanel, setRightPanel] = useState<"ai" | "settings" | null>("ai");
   const [previewMode, setPreviewMode] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
@@ -1013,7 +1010,7 @@ const SmartPageEditor = () => {
           {editorView === "editor" && <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}><Settings className="h-4 w-4" /> Settings</Button>}
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShareDialogOpen(true)}><Share2 className="h-4 w-4" /> Share</Button>
           <Button size="sm" onClick={() => setPublishDialogOpen(true)}>Publish</Button>
-          {editorView === "editor" && isSupabaseConfigured && <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "ai" ? null : "ai")}><Sparkles className="h-4 w-4" /> AI</Button>}
+          {editorView === "editor" && <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "ai" ? null : "ai")}><Sparkles className="h-4 w-4" /> AI</Button>}
         </div>
       </div>
 
@@ -1155,7 +1152,7 @@ const SmartPageEditor = () => {
                   </div>
                   <div>
                     <div className="text-sm font-semibold text-foreground">AI Assistant</div>
-                    <div className="text-[10px] text-muted-foreground">Powered by Claude</div>
+                    <div className="text-[10px] text-muted-foreground">Powered by {supabase ? "Claude" : "Gemini"}</div>
                   </div>
                 </div>
                 <button onClick={() => setRightPanel(null)} className="text-muted-foreground hover:text-foreground transition-colors">

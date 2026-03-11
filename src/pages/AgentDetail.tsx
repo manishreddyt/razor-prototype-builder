@@ -200,6 +200,12 @@ const AgentDetail = () => {
       return;
     }
 
+    // For Education agent, show setup wizard on first enable
+    if (agentId === "education" && (status === "draft" || status === "configured")) {
+      setShowEducationCopilot(true);
+      return;
+    }
+
     if (status === "deployed") {
       setStatus("paused");
     } else {
@@ -218,7 +224,7 @@ const AgentDetail = () => {
   };
 
   const handleEducationCopilotComplete = () => {
-    if (status === "draft") setStatus("configured");
+    setStatus("deployed");
     setShowEducationCopilot(false);
   };
 
@@ -263,12 +269,12 @@ const AgentDetail = () => {
               size="sm"
               variant={status === "deployed" ? "destructive" : "default"}
               onClick={handleDeploy}
-              disabled={status === "draft" && agentId !== "instagram"}
+              disabled={status === "draft" && agentId !== "instagram" && agentId !== "education"}
             >
               {status === "deployed" ? (
                 <><Pause className="h-4 w-4 mr-1" /> Pause</>
               ) : (
-                <><Play className="h-4 w-4 mr-1" /> {agentId === "instagram" ? "Enable" : "Deploy"}</>
+                <><Play className="h-4 w-4 mr-1" /> {agentId === "instagram" || agentId === "education" ? "Enable" : "Deploy"}</>
               )}
             </Button>
           </div>

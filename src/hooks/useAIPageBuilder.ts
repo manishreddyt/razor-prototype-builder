@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { generateStructuredContent } from "@/services/geminiService";
 
 export interface AIPageUpdates {
   name?: string;
@@ -70,34 +71,64 @@ export function useAIPageBuilder({ pageType, getCurrentData, onUpdates }: UseAIP
   const sendPrompt = useCallback(async (prompt: string): Promise<string> => {
     setIsLoading(true);
     try {
-      // Check if Supabase is configured
-      if (!supabase) {
-        throw new Error("Supabase not configured. Please set up Supabase credentials to use AI features.");
-      }
-
       const currentData = getCurrentData();
 
-      const { data, error } = await supabase.functions.invoke("ai-page-builder", {
-        body: { prompt, pageType, currentData },
-      });
+      // Try Supabase first, fallback to Gemini
+      if (supabase) {
+        const { data, error } = await supabase.functions.invoke("ai-page-builder", {
+          body: { prompt, pageType, currentData },
+        });
 
-      if (error) {
-        throw new Error(error.message || "AI service error");
+        if (error) {
+          throw new Error(error.message || "AI service error");
+        }
+
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+
+        const updates = data?.updates || {};
+        const message = updates.message || "Changes applied!";
+        const { message: _, ...contentUpdates } = updates;
+
+        if (Object.keys(contentUpdates).length > 0) {
+          onUpdates(contentUpdates);
+        }
+
+        return message;
+      } else {
+        // Fallback to Gemini API
+        const systemInstruction = `You are an AI assistant helping to build ${pageType} pages.
+Analyze the user's request and current page data, then return ONLY a JSON object with the updates to apply.
+Available fields: heroTitle, heroTagline, heroDescription, heroCta, bannerImage, sections (array of {type, action: "add" | "remove" | "toggle"}), and a message field explaining what you changed.`;
+
+        const geminiPrompt = `Current page data: ${JSON.stringify(currentData, null, 2)}
+
+User request: ${prompt}
+
+Return a JSON object with the fields to update and a message explaining the changes.`;
+
+        const response = await generateStructuredContent<AIPageUpdates & { message: string }>(
+          geminiPrompt,
+          JSON.stringify({
+            heroTitle: "string (optional)",
+            heroTagline: "string (optional)",
+            heroDescription: "string (optional)",
+            heroCta: "string (optional)",
+            bannerImage: "string (optional)",
+            message: "string (required - explain what you changed)"
+          }),
+          systemInstruction
+        );
+
+        const { message, ...contentUpdates } = response;
+
+        if (Object.keys(contentUpdates).length > 0) {
+          onUpdates(contentUpdates);
+        }
+
+        return message || "Changes applied!";
       }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      const updates = data?.updates || {};
-      const message = updates.message || "Changes applied!";
-      const { message: _, ...contentUpdates } = updates;
-
-      if (Object.keys(contentUpdates).length > 0) {
-        onUpdates(contentUpdates);
-      }
-
-      return message;
     } catch (err) {
       console.error("AI builder error:", err);
       const errorMessage = err instanceof Error ? err.message : "Failed to connect to AI";
