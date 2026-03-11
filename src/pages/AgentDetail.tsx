@@ -25,6 +25,7 @@ import {
   Activity,
   Sparkles,
   Instagram,
+  GraduationCap,
 } from "lucide-react";
 import { mockInstagramActivities, instagramMetrics, mockConversations } from "@/data/instagramMockData";
 import { InstagramConversationViewer } from "@/components/InstagramConversationViewer";
@@ -136,6 +137,17 @@ const agentsMap: Record<string, AgentData> = {
       revenue: `₹${instagramMetrics.revenue.toLocaleString()}`,
     },
     activities: mockInstagramActivities,
+  },
+  education: {
+    id: "education",
+    type: "education",
+    title: "Education Co-pilot",
+    description: "Intelligent co-pilot for online education businesses that guides Smart Page creation and campaign automation.",
+    icon: GraduationCap,
+    status: "draft",
+    goal: "",
+    metrics: { leads: 0, conversions: 0, revenue: "₹0" },
+    activities: [],
   },
 };
 

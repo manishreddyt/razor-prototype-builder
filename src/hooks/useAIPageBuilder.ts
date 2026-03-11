@@ -70,6 +70,11 @@ export function useAIPageBuilder({ pageType, getCurrentData, onUpdates }: UseAIP
   const sendPrompt = useCallback(async (prompt: string): Promise<string> => {
     setIsLoading(true);
     try {
+      // Check if Supabase is configured
+      if (!supabase) {
+        throw new Error("Supabase not configured. Please set up Supabase credentials to use AI features.");
+      }
+
       const currentData = getCurrentData();
 
       const { data, error } = await supabase.functions.invoke("ai-page-builder", {

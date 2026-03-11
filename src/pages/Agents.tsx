@@ -26,6 +26,7 @@ import {
   Settings,
   Users,
   Instagram,
+  GraduationCap,
 } from "lucide-react";
 
 type AgentStatus = "draft" | "configured" | "deployed" | "paused";
@@ -108,6 +109,19 @@ const initialAgents: AgentState[] = [
     leadsProcessed: 487,
     conversions: 123,
     lastActive: "30 sec ago",
+  },
+  {
+    id: "education",
+    type: "education",
+    icon: GraduationCap,
+    title: "Education Co-pilot",
+    description:
+      "Intelligent assistant that analyzes your education business, recommends Razorpay features, guides Smart Page creation, and sets up automated campaigns.",
+    status: "draft",
+    goal: "",
+    leadsProcessed: 0,
+    conversions: 0,
+    lastActive: "Never",
   },
 ];
 
