@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Plus, Settings, MoreHorizontal, Trash2, Copy, Globe, ExternalLink, BarChart3 } from "lucide-react";
 import { pageTypeLabels, pageTypeColors } from "@/types/smartPages";
@@ -286,10 +286,43 @@ export const addSite = (site: SmartPageSite) => {
 
 const WebsiteBuilder = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [sites, setSites] = useState<SmartPageSite[]>(getStoredSites());
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "Published" | "Draft">("all");
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+
+  // Handle Education Co-pilot handoff
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const source = searchParams.get('source');
+
+    if (source === 'education-copilot') {
+      const copilotData = localStorage.getItem('educationCopilotData');
+
+      if (copilotData) {
+        try {
+          const data = JSON.parse(copilotData);
+
+          // Store data for the create page to pick up
+          localStorage.setItem('websiteBuilderPrefill', copilotData);
+
+          // Show success toast
+          toast.success("Pre-filled from Education Co-pilot! Let's create your page.");
+
+          // Navigate to create page with template parameter
+          navigate(`/website-builder/create?source=education-copilot&template=${data.template || 'academy-platform'}`);
+
+        } catch (error) {
+          console.error('Failed to parse Education copilot data:', error);
+          toast.error("Failed to load pre-filled data. Please try again.");
+        }
+      } else {
+        // No data found, just navigate to create page
+        navigate('/website-builder/create');
+      }
+    }
+  }, [location.search, navigate]);
 
   const filtered = sites.filter((s) => {
     const matchSearch = !searchQuery || s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.type.toLowerCase().includes(searchQuery.toLowerCase());

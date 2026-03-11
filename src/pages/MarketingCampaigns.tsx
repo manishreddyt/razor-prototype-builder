@@ -593,6 +593,56 @@ const MarketingCampaigns = () => {
     }
   }, [viewMode, editingCampaign, currentCampaignType]);
 
+  // Handle Education Co-pilot handoff
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const source = searchParams.get('source');
+
+    if (source === 'education-copilot' && !hasStartedCreate) {
+      const pageContext = localStorage.getItem('smartPageContext');
+      const copilotData = localStorage.getItem('educationCopilotData');
+
+      if (pageContext && copilotData) {
+        try {
+          const pageData = JSON.parse(pageContext);
+          const educationData = JSON.parse(copilotData);
+
+          // Determine campaign type based on business model
+          let campaignType: CampaignType = 'webinar_nurture';
+          if (educationData.businessModel === 'course') {
+            campaignType = 'retarget_dropoff'; // Cart abandonment for courses
+          } else if (educationData.businessModel === 'webinar') {
+            campaignType = 'webinar_nurture';
+          } else if (educationData.businessModel === 'session') {
+            campaignType = 'retarget_dropoff'; // Session booking reminders
+          }
+
+          // Create mock product reference
+          const mockProduct: ProductReference = {
+            id: pageData.pageId || 'new-page',
+            name: pageData.productName || educationData.productName,
+            type: educationData.businessModel === 'course' ? 'online-course' :
+                  educationData.businessModel === 'webinar' ? 'webinar' :
+                  '1-1-session',
+          };
+
+          // Pre-fill campaign
+          startCreateWithPrefill(campaignType, mockProduct);
+          setHasStartedCreate(true);
+
+          // Clean up localStorage
+          localStorage.removeItem('smartPageContext');
+          localStorage.removeItem('educationCopilotData');
+
+          // Show success toast
+          toast.success(`Campaign template ready for ${pageData.productName}!`);
+        } catch (error) {
+          console.error('Failed to parse Education copilot data:', error);
+        }
+      }
+    }
+  }, [location.search, hasStartedCreate]);
+
   // Handle pre-filled campaign creation from URL params
   useEffect(() => {
     if (prefilledType && !hasStartedCreate) {

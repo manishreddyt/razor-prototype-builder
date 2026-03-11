@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, ChevronUp, Package, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,14 +12,6 @@ import { toast } from "sonner";
 
 const tabs = ["All", "Created", "Partially Paid", "Paid", "Cancelled", "Expired"];
 
-const paymentLinks = [
-  { id: "plink_SJYQQ1EkgT1K12", date: "23 Feb 2026, 03:58:41 pm", amount: "₹2.00", refId: "", customer: "", link: "https://rzp.io/rzp/qe4lB7B5", status: "Created" },
-  { id: "plink_ABcDeFgHiJkL01", date: "22 Feb 2026, 11:30:00 am", amount: "₹12,999.00", refId: "COURSE-001", customer: "Priya Sharma", link: "https://rzp.io/rzp/abc123", status: "Paid" },
-  { id: "plink_MnOpQrStUvWx02", date: "21 Feb 2026, 09:15:22 am", amount: "₹8,499.00", refId: "WEBINAR-042", customer: "Rahul Mehta", link: "https://rzp.io/rzp/def456", status: "Paid" },
-  { id: "plink_YzAbCdEfGhIj03", date: "20 Feb 2026, 04:45:10 pm", amount: "₹15,999.00", refId: "BOOT-007", customer: "Ananya Gupta", link: "https://rzp.io/rzp/ghi789", status: "Partially Paid" },
-  { id: "plink_KlMnOpQrStUv04", date: "19 Feb 2026, 02:20:33 pm", amount: "₹4,999.00", refId: "MKTG-101", customer: "", link: "https://rzp.io/rzp/jkl012", status: "Expired" },
-];
-
 const statusBadgeClass: Record<string, string> = {
   "Paid": "blade-badge-paid",
   "Created": "blade-badge-created",
@@ -28,26 +21,150 @@ const statusBadgeClass: Record<string, string> = {
 };
 
 const availableProducts = [
-  { id: "prod_1", name: "Full Stack Dev Bootcamp", price: 12999 },
-  { id: "prod_2", name: "UI/UX Design Masterclass", price: 8499 },
-  { id: "prod_3", name: "Data Science Fundamentals", price: 15999 },
-  { id: "prod_4", name: "Digital Marketing 101", price: 4999 },
+  { id: "prod_1", name: "Full Stack Dev Bootcamp", price: 12999, image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800" },
+  { id: "prod_2", name: "UI/UX Design Masterclass", price: 8499, image: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=800" },
+  { id: "prod_3", name: "Data Science Fundamentals", price: 15999, image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800" },
+  { id: "prod_4", name: "Digital Marketing 101", price: 4999, image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800" },
 ];
 
 const PaymentLinks = () => {
+  const navigate = useNavigate();
+  const [paymentLinks, setPaymentLinks] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("All");
   const [showCreate, setShowCreate] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdLink, setCreatedLink] = useState("");
-  const [selectedLink, setSelectedLink] = useState<typeof paymentLinks[0] | null>(null);
+  const [createdLinkId, setCreatedLinkId] = useState("");
+  const [selectedLink, setSelectedLink] = useState<any | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [productSearchQuery, setProductSearchQuery] = useState("");
   const [collectAddress, setCollectAddress] = useState(false);
+  const [collectEmail, setCollectEmail] = useState(false);
+  const [collectPhone, setCollectPhone] = useState(false);
   const [shiprocketEnabled, setShiprocketEnabled] = useState(false);
   const [whatsappConfirmationEnabled, setWhatsappConfirmationEnabled] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    amount: "",
+    customerName: "",
+    customerPhone: "",
+    customerEmail: "",
+    referenceId: "",
+    acceptPartialPayment: false,
+    minPartialAmount: "",
+  });
 
-  const filtered = activeTab === "All" ? paymentLinks : paymentLinks.filter((l) => l.status === activeTab);
+  // Initialize localStorage with sample data and load existing links
+  useEffect(() => {
+    // Initialize sample products
+    const existingProducts = localStorage.getItem("available_products");
+    if (!existingProducts) {
+      localStorage.setItem("available_products", JSON.stringify(availableProducts));
+    }
+
+    // Load existing payment links or create sample ones
+    const stored = localStorage.getItem("payment_links");
+    if (stored) {
+      setPaymentLinks(JSON.parse(stored));
+    } else {
+      const sampleLinks = [
+        {
+          id: "plink_SJYQQ1EkgT1K12",
+          title: "Sample Payment",
+          description: "Sample payment link",
+          date: "23 Feb 2026, 03:58:41 pm",
+          amount: 2,
+          currency: "INR",
+          refId: "",
+          customer: "",
+          status: "active",
+          createdAt: new Date().toISOString(),
+          collectPhone: true,
+          collectEmail: true,
+          collectAddress: false,
+        },
+        {
+          id: "plink_ABcDeFgHiJkL01",
+          title: "Course Fee - Full Stack Bootcamp",
+          description: "Payment for Full Stack Development Bootcamp",
+          date: "22 Feb 2026, 11:30:00 am",
+          amount: 12999,
+          currency: "INR",
+          refId: "COURSE-001",
+          customer: "Priya Sharma",
+          status: "active",
+          createdAt: new Date().toISOString(),
+          collectPhone: true,
+          collectEmail: true,
+          collectAddress: false,
+          image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800",
+        },
+        {
+          id: "plink_MnOpQrStUvWx02",
+          title: "Webinar Fee - AI Fundamentals",
+          description: "Payment for AI Fundamentals Webinar",
+          date: "21 Feb 2026, 09:15:22 am",
+          amount: 8499,
+          currency: "INR",
+          refId: "WEBINAR-042",
+          customer: "Rahul Mehta",
+          status: "active",
+          createdAt: new Date().toISOString(),
+          collectPhone: true,
+          collectEmail: true,
+          selectedProducts: ["prod_2"],
+          image: "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=800",
+        },
+        {
+          id: "plink_YzAbCdEfGhIj03",
+          title: "Data Science Course Fee",
+          description: "Payment for Data Science Fundamentals Course with installment option",
+          date: "20 Feb 2026, 04:45:10 pm",
+          amount: 15999,
+          currency: "INR",
+          refId: "BOOT-007",
+          customer: "Ananya Gupta",
+          status: "active",
+          createdAt: new Date().toISOString(),
+          collectPhone: true,
+          collectEmail: true,
+          collectAddress: false,
+          acceptPartialPayment: true,
+          minPartialAmount: 5000,
+          selectedProducts: ["prod_3"],
+          image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800",
+        },
+        {
+          id: "plink_KlMnOpQrStUv04",
+          title: "Digital Marketing Course",
+          description: "Payment for Digital Marketing 101 Course",
+          date: "19 Feb 2026, 02:20:33 pm",
+          amount: 4999,
+          currency: "INR",
+          refId: "MKTG-101",
+          customer: "",
+          status: "active",
+          createdAt: new Date().toISOString(),
+          collectPhone: true,
+          collectEmail: true,
+          selectedProducts: ["prod_4"],
+          image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800",
+        },
+      ];
+      localStorage.setItem("payment_links", JSON.stringify(sampleLinks));
+      setPaymentLinks(sampleLinks);
+    }
+  }, []);
+
+  // Map link status to display status
+  const getDisplayStatus = (link: any) => {
+    if (link.status === "active") return "Created";
+    return link.status;
+  };
+
+  const filtered = activeTab === "All" ? paymentLinks : paymentLinks.filter((l) => getDisplayStatus(l) === activeTab);
 
   const copyLink = (link: string) => {
     navigator.clipboard.writeText(link);
@@ -134,28 +251,53 @@ const PaymentLinks = () => {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((link) => (
-                  <tr key={link.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                    <td className="px-5 py-3 font-medium text-primary cursor-pointer hover:underline" onClick={() => setSelectedLink(link)}>{link.id}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{link.date}</td>
-                    <td className="px-5 py-3 text-foreground">{link.amount}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{link.refId || "—"}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{link.customer || "—"}</td>
-                    <td className="px-5 py-3">
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        {link.link}
-                        <button onClick={() => copyLink(link.link)} className="hover:text-primary"><Copy className="h-3 w-3" /></button>
-                        <ExternalLink className="h-3 w-3" />
-                      </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={statusBadgeClass[link.status] || "blade-badge"}>{link.status}</span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <button className="text-muted-foreground hover:text-primary" onClick={() => setSelectedLink(link)}><Eye className="h-4 w-4" /></button>
-                    </td>
-                  </tr>
-                ))}
+                {filtered.map((link) => {
+                  const displayStatus = getDisplayStatus(link);
+                  const linkUrl = `${window.location.origin}/pay/${link.id}`;
+                  return (
+                    <tr key={link.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                      <td className="px-5 py-3 font-medium text-primary cursor-pointer hover:underline" onClick={() => setSelectedLink(link)}>{link.id}</td>
+                      <td className="px-5 py-3 text-muted-foreground">{link.date}</td>
+                      <td className="px-5 py-3 text-foreground">₹{link.amount.toLocaleString('en-IN')}</td>
+                      <td className="px-5 py-3 text-muted-foreground">{link.refId || "—"}</td>
+                      <td className="px-5 py-3 text-muted-foreground">{link.customer || "—"}</td>
+                      <td className="px-5 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => navigate(`/pay/${link.id}`)}
+                            className="text-sm text-primary hover:underline cursor-pointer truncate max-w-[200px]"
+                          >
+                            {linkUrl}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyLink(linkUrl);
+                            }}
+                            className="hover:text-primary text-muted-foreground"
+                          >
+                            <Copy className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(`/pay/${link.id}`, '_blank');
+                            }}
+                            className="hover:text-primary text-muted-foreground"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3">
+                        <span className={statusBadgeClass[displayStatus] || "blade-badge"}>{displayStatus}</span>
+                      </td>
+                      <td className="px-5 py-3">
+                        <button className="text-muted-foreground hover:text-primary" onClick={() => setSelectedLink(link)}><Eye className="h-4 w-4" /></button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -170,38 +312,82 @@ const PaymentLinks = () => {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Create Payment Link</DialogTitle></DialogHeader>
           <div className="space-y-4">
+            {/* Title */}
+            <div>
+              <label className="text-sm font-medium text-foreground">Title</label>
+              <Input
+                placeholder="e.g. Course Fee - Full Stack Bootcamp"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="mt-1.5"
+              />
+            </div>
+
             {/* Amount - Primary Field */}
             <div>
               <label className="text-sm font-medium text-foreground">Amount (₹) <span className="text-destructive">*</span></label>
-              <Input placeholder="e.g. 12999" type="number" className="mt-1.5" />
+              <Input
+                placeholder="e.g. 12999"
+                type="number"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                className="mt-1.5"
+              />
             </div>
 
             {/* Description - Secondary Field */}
             <div>
               <label className="text-sm font-medium text-foreground">Description</label>
-              <Textarea placeholder="e.g. Course Fee for Full Stack Bootcamp" className="mt-1.5" rows={3} />
+              <Textarea
+                placeholder="e.g. Payment for Full Stack Development Bootcamp"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="mt-1.5"
+                rows={3}
+              />
             </div>
 
             {/* Customer Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium text-foreground">Customer Name (Optional)</label>
-                <Input placeholder="e.g. Priya Sharma" className="mt-1.5" />
+                <Input
+                  placeholder="e.g. Priya Sharma"
+                  value={formData.customerName}
+                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                  className="mt-1.5"
+                />
               </div>
               <div>
                 <label className="text-sm font-medium text-foreground">Mobile Number (Optional)</label>
-                <Input placeholder="+91 98765 43210" className="mt-1.5" />
+                <Input
+                  placeholder="+91 98765 43210"
+                  value={formData.customerPhone}
+                  onChange={(e) => setFormData({ ...formData, customerPhone: e.target.value })}
+                  className="mt-1.5"
+                />
               </div>
             </div>
 
             <div>
               <label className="text-sm font-medium text-foreground">Email Address (Optional)</label>
-              <Input placeholder="priya@example.com" type="email" className="mt-1.5" />
+              <Input
+                placeholder="priya@example.com"
+                type="email"
+                value={formData.customerEmail}
+                onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                className="mt-1.5"
+              />
             </div>
 
             <div>
               <label className="text-sm font-medium text-foreground">Reference ID (Optional)</label>
-              <Input placeholder="e.g. COURSE-001" className="mt-1.5" />
+              <Input
+                placeholder="e.g. COURSE-001"
+                value={formData.referenceId}
+                onChange={(e) => setFormData({ ...formData, referenceId: e.target.value })}
+                className="mt-1.5"
+              />
             </div>
 
             {/* Collect Address During Checkout */}
@@ -370,10 +556,60 @@ const PaymentLinks = () => {
             <Button
               className="w-full"
               onClick={() => {
-                const newLink = `https://rzp.io/rzp/${Math.random().toString(36).substring(7)}`;
-                setCreatedLink(newLink);
+                // Validation
+                if (!formData.amount || Number(formData.amount) <= 0) {
+                  toast.error("Please enter a valid amount");
+                  return;
+                }
+
+                // Generate unique link ID
+                const linkId = `plink_${Math.random().toString(36).substring(2, 15)}`;
+                const linkUrl = `${window.location.origin}/pay/${linkId}`;
+
+                // Create new payment link object
+                const newPaymentLink = {
+                  id: linkId,
+                  title: formData.title || `Payment for ₹${formData.amount}`,
+                  description: formData.description || "",
+                  date: new Date().toLocaleString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: true
+                  }),
+                  amount: Number(formData.amount),
+                  currency: "INR",
+                  refId: formData.referenceId || "",
+                  customer: formData.customerName || "",
+                  status: "active",
+                  createdAt: new Date().toISOString(),
+                  collectPhone: collectPhone,
+                  collectEmail: collectEmail,
+                  collectAddress: collectAddress,
+                  selectedProducts: selectedProducts,
+                  shiprocketEnabled: shiprocketEnabled,
+                  whatsappConfirmation: whatsappConfirmationEnabled,
+                  acceptPartialPayment: formData.acceptPartialPayment,
+                  minPartialAmount: formData.minPartialAmount ? Number(formData.minPartialAmount) : undefined,
+                };
+
+                // Save to localStorage
+                const stored = localStorage.getItem("payment_links");
+                const existingLinks = stored ? JSON.parse(stored) : [];
+                const updatedLinks = [newPaymentLink, ...existingLinks];
+                localStorage.setItem("payment_links", JSON.stringify(updatedLinks));
+
+                // Update state
+                setPaymentLinks(updatedLinks);
+                setCreatedLink(linkUrl);
+                setCreatedLinkId(linkId);
                 setShowCreate(false);
                 setShowSuccessModal(true);
+
+                toast.success("Payment link created successfully!");
               }}
             >
               Create Payment Link
@@ -433,7 +669,7 @@ const PaymentLinks = () => {
                 variant="outline"
                 className="flex-1 gap-2"
                 onClick={() => {
-                  window.open(createdLink, '_blank');
+                  window.open(`/pay/${createdLinkId}`, '_blank');
                 }}
               >
                 <ExternalLink className="h-4 w-4" />
@@ -508,11 +744,25 @@ const PaymentLinks = () => {
               onClick={() => {
                 setShowSuccessModal(false);
                 setCreatedLink("");
+                setCreatedLinkId("");
                 setSelectedProducts([]);
-                setSelectedAdditionalFields([]);
+                setCollectAddress(false);
+                setCollectEmail(false);
+                setCollectPhone(false);
                 setShiprocketEnabled(false);
                 setWhatsappConfirmationEnabled(false);
                 setShowAdvanced(false);
+                setFormData({
+                  title: "",
+                  description: "",
+                  amount: "",
+                  customerName: "",
+                  customerPhone: "",
+                  customerEmail: "",
+                  referenceId: "",
+                  acceptPartialPayment: false,
+                  minPartialAmount: "",
+                });
               }}
             >
               Done
@@ -528,8 +778,8 @@ const PaymentLinks = () => {
           {selectedLink && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-2xl font-bold text-foreground">{selectedLink.amount}</span>
-                <span className={statusBadgeClass[selectedLink.status] || "blade-badge"}>{selectedLink.status}</span>
+                <span className="text-2xl font-bold text-foreground">₹{selectedLink.amount.toLocaleString('en-IN')}</span>
+                <span className={statusBadgeClass[getDisplayStatus(selectedLink)] || "blade-badge"}>{getDisplayStatus(selectedLink)}</span>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {[
@@ -545,12 +795,27 @@ const PaymentLinks = () => {
                 ))}
               </div>
               <div className="p-3 bg-secondary rounded-md flex items-center justify-between">
-                <span className="text-sm text-muted-foreground truncate mr-2">{selectedLink.link}</span>
-                <Button variant="outline" size="sm" className="gap-1.5 flex-shrink-0" onClick={() => copyLink(selectedLink.link)}>
+                <span className="text-sm text-muted-foreground truncate mr-2">
+                  {window.location.origin}/pay/{selectedLink.id}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 flex-shrink-0"
+                  onClick={() => copyLink(`${window.location.origin}/pay/${selectedLink.id}`)}
+                >
                   <Copy className="h-3.5 w-3.5" /> Copy
                 </Button>
               </div>
               <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate(`/pay/${selectedLink.id}`)}
+                >
+                  <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                  Preview
+                </Button>
                 {["WhatsApp", "SMS", "Email"].map((m) => (
                   <Button key={m} variant="outline" size="sm" onClick={() => toast.success(`Shared via ${m}`)}>{m}</Button>
                 ))}

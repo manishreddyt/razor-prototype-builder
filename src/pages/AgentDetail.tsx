@@ -30,6 +30,7 @@ import {
 import { mockInstagramActivities, instagramMetrics, mockConversations } from "@/data/instagramMockData";
 import { InstagramConversationViewer } from "@/components/InstagramConversationViewer";
 import { InstagramSetupWizard } from "@/components/InstagramSetupWizard";
+import { EducationCopilotChat } from "@/components/EducationCopilotChat";
 
 type AgentStatus = "draft" | "configured" | "deployed" | "paused";
 
@@ -174,6 +175,7 @@ const AgentDetail = () => {
   const [goal, setGoal] = useState(agentData?.goal || "");
   const [showConfig, setShowConfig] = useState(false);
   const [showInstagramSetup, setShowInstagramSetup] = useState(false);
+  const [showEducationCopilot, setShowEducationCopilot] = useState(false);
 
   if (!agentData) {
     return (
@@ -215,6 +217,11 @@ const AgentDetail = () => {
     setShowConfig(false);
   };
 
+  const handleEducationCopilotComplete = () => {
+    if (status === "draft") setStatus("configured");
+    setShowEducationCopilot(false);
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6 animate-fade-in">
@@ -238,7 +245,17 @@ const AgentDetail = () => {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={() => setShowConfig(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                if (agentId === "education") {
+                  setShowEducationCopilot(true);
+                } else {
+                  setShowConfig(true);
+                }
+              }}
+            >
               <Settings className="h-4 w-4 mr-1" />
               Configure
             </Button>
@@ -401,6 +418,13 @@ const AgentDetail = () => {
         open={showInstagramSetup}
         onOpenChange={setShowInstagramSetup}
         onComplete={handleInstagramSetupComplete}
+      />
+
+      {/* Education Co-pilot Chat */}
+      <EducationCopilotChat
+        open={showEducationCopilot}
+        onOpenChange={setShowEducationCopilot}
+        onComplete={handleEducationCopilotComplete}
       />
     </DashboardLayout>
   );

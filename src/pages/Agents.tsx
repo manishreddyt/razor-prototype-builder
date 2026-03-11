@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/accordion";
 import AgentConfigChat from "@/components/AgentConfigChat";
 import { InstagramSetupWizard } from "@/components/InstagramSetupWizard";
+import { EducationCopilotChat } from "@/components/EducationCopilotChat";
 import {
   PhoneCall,
   Megaphone,
@@ -166,6 +167,7 @@ const Agents = () => {
   const [agents, setAgents] = useState<AgentState[]>(initialAgents);
   const [configAgent, setConfigAgent] = useState<AgentState | null>(null);
   const [showInstagramSetup, setShowInstagramSetup] = useState(false);
+  const [showEducationCopilot, setShowEducationCopilot] = useState(false);
 
   const handleDeploy = (agentId: string) => {
     // For Instagram agent, show setup wizard on first enable
@@ -208,6 +210,18 @@ const Agents = () => {
       })
     );
     setConfigAgent(null);
+  };
+
+  const handleEducationCopilotComplete = () => {
+    setAgents((prev) =>
+      prev.map((a) => {
+        if (a.id !== "education") return a;
+        return {
+          ...a,
+          status: "configured" as AgentStatus,
+        };
+      })
+    );
   };
 
   return (
@@ -322,7 +336,13 @@ const Agents = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setConfigAgent(agent)}
+                      onClick={() => {
+                        if (agent.id === "education") {
+                          setShowEducationCopilot(true);
+                        } else {
+                          setConfigAgent(agent);
+                        }
+                      }}
                     >
                       <Settings className="h-4 w-4 mr-1" />
                       Configure
@@ -377,6 +397,13 @@ const Agents = () => {
         open={showInstagramSetup}
         onOpenChange={setShowInstagramSetup}
         onComplete={handleInstagramSetupComplete}
+      />
+
+      {/* Education Co-pilot Chat */}
+      <EducationCopilotChat
+        open={showEducationCopilot}
+        onOpenChange={setShowEducationCopilot}
+        onComplete={handleEducationCopilotComplete}
       />
     </DashboardLayout>
   );
