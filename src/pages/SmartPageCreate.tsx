@@ -17,14 +17,21 @@ const promptSuggestions = [
   "1:1 coaching session for new parents",
 ];
 
-const TemplateThumb = ({ template }: { template: TemplateData }) => (
-  <div className="h-52 rounded-t-lg border-b border-border overflow-hidden relative bg-background">
-    <div className="origin-top-left absolute" style={{ width: 1200, transform: "scale(0.3)", transformOrigin: "top left" }}>
-      <SitePreview template={template} sections={template.sections} />
+const TemplateThumb = ({ template }: { template: TemplateData }) => {
+  // Biolink templates are mobile-first with max-width 428px
+  const isBiolink = template.id.startsWith("biolink");
+  const width = isBiolink ? 428 : 1200;
+  const scale = isBiolink ? 0.85 : 0.3;
+
+  return (
+    <div className="h-52 rounded-t-lg border-b border-border overflow-hidden relative bg-background">
+      <div className={`origin-top-left absolute ${isBiolink ? 'left-1/2 -translate-x-1/2' : ''}`} style={{ width, transform: `scale(${scale})${isBiolink ? ' translateX(-50%)' : ''}`, transformOrigin: "top left" }}>
+        <SitePreview template={template} sections={template.sections} biolinkConfig={template.biolinkConfig} productsConfig={template.productsConfig} />
+      </div>
+      <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent" />
     </div>
-    <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent" />
-  </div>
-);
+  );
+};
 
 const educationPageTypes = [
   { id: "course", title: "Sell an Online Course", desc: "Course landing page with curriculum, pricing & enrollment.", icon: BookOpen, directRoute: "/website-builder/editor?template=single-course&title=Online%20Course&type=Online%20Course" },
@@ -62,7 +69,7 @@ const SmartPageCreate = () => {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateData | null>(null);
-  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("mobile");
   const [previewActivePage, setPreviewActivePage] = useState<string>("Home");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
@@ -354,7 +361,14 @@ const SmartPageCreate = () => {
             <ScrollArea className="flex-1 bg-muted/30">
               <div className={`mx-auto bg-background ${previewDevice === "mobile" ? "max-w-sm border-x border-border" : ""}`}>
                 {previewPageTemplate && (
-                  <SitePreview template={previewPageTemplate} sections={previewPageTemplate.sections} activePage={previewActivePage} onPageChange={(page) => setPreviewActivePage(page)} />
+                  <SitePreview
+                    template={previewPageTemplate}
+                    sections={previewPageTemplate.sections}
+                    activePage={previewActivePage}
+                    onPageChange={(page) => setPreviewActivePage(page)}
+                    biolinkConfig={previewPageTemplate.biolinkConfig}
+                    productsConfig={previewPageTemplate.productsConfig}
+                  />
                 )}
               </div>
             </ScrollArea>

@@ -51,8 +51,8 @@ export const BiolinkMobileView = ({
   const bgColor = isProfileType ? "bg-[#E8E3D8]" : "bg-white";
 
   return (
-    <div className={`min-h-screen ${bgColor} flex justify-center`}>
-      <div className="w-full max-w-[428px] min-h-screen px-4 py-8 flex flex-col">
+    <div className={`min-h-screen ${bgColor} flex justify-center items-start`}>
+      <div className="w-full max-w-[428px] min-h-screen px-4 py-8 flex flex-col mx-auto">
         {/* Profile Section */}
         <div className="flex flex-col items-center mb-6">
           {/* Profile Image */}
