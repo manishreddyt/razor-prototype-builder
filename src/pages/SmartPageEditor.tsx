@@ -525,27 +525,35 @@ const SmartPageEditor = () => {
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Load HTML template for biolink templates
+  // Load HTML template for templates that have static HTML files
   useEffect(() => {
-    const loadBiolinkTemplate = async () => {
-      if (isBiolinkTemplate && !state.htmlContent) {
+    const loadHtmlTemplate = async () => {
+      if (!state.htmlContent) {
         try {
-          const templateFile = state.template.id === "biolink-profile"
-            ? "/biolink-event-template.html"
-            : "/biolink-shop-template.html";
+          // Map template IDs to their HTML files
+          const htmlTemplateMap: Record<string, string> = {
+            "biolink-profile": "/biolink-event-template.html",
+            "biolink-shop": "/biolink-shop-template.html",
+            // Add more templates with HTML files here as needed
+          };
 
-          const response = await fetch(templateFile);
-          const htmlContent = await response.text();
+          const templateFile = htmlTemplateMap[state.template.id];
 
-          setState(prev => ({ ...prev, htmlContent }));
+          if (templateFile) {
+            const response = await fetch(templateFile);
+            if (response.ok) {
+              const htmlContent = await response.text();
+              setState(prev => ({ ...prev, htmlContent }));
+            }
+          }
         } catch (error) {
-          console.error("Failed to load biolink template:", error);
+          console.error("Failed to load HTML template:", error);
         }
       }
     };
 
-    loadBiolinkTemplate();
-  }, [isBiolinkTemplate, state.template.id, state.htmlContent]);
+    loadHtmlTemplate();
+  }, [state.template.id, state.htmlContent]);
 
   // Current page helpers
   const activePage = state.activePage;
@@ -830,26 +838,38 @@ const SmartPageEditor = () => {
       sections: currentPage.sections.map(s => ({ type: s.type, label: s.label, visible: s.visible })),
     }),
     onUpdates: (updates: AIPageUpdates) => {
-      // Handle HTML content updates for biolink templates
+      // Handle HTML content updates (for templates with HTML files)
       if (updates.htmlContent) {
         setState(prev => ({ ...prev, htmlContent: updates.htmlContent }));
         setUnsavedChanges(true);
         return;
       }
 
-      // Handle regular field updates
-      if (updates.heroTitle) updatePageHero({ heroTitle: updates.heroTitle });
-      if (updates.heroTagline) updatePageHero({ heroTagline: updates.heroTagline });
-      if (updates.heroDescription) updatePageHero({ heroDescription: updates.heroDescription });
-      if (updates.heroCta) updatePageHero({ heroCta: updates.heroCta });
-      if (updates.bannerImage) updatePageHero({ bannerImage: updates.bannerImage });
-      if (updates.name) updatePageHero({ heroTitle: updates.name });
-      if (updates.tagline) updatePageHero({ heroTagline: updates.tagline });
-      if (updates.description) updatePageHero({ heroDescription: updates.description });
-      
+      // Extract message field separately
+      const { message, sections, testimonials, faqItems, features, biolinkProfile, biolinkLinks, ...directUpdates } = updates;
+
+      // Apply all direct field updates to page hero/state
+      const heroUpdates: Partial<PageState> = {};
+
+      // Map common aliases to hero fields
+      if (updates.name) heroUpdates.heroTitle = updates.name;
+      if (updates.tagline) heroUpdates.heroTagline = updates.tagline;
+      if (updates.description) heroUpdates.heroDescription = updates.description;
+
+      // Apply direct hero field updates
+      if (updates.heroTitle) heroUpdates.heroTitle = updates.heroTitle;
+      if (updates.heroTagline) heroUpdates.heroTagline = updates.heroTagline;
+      if (updates.heroDescription) heroUpdates.heroDescription = updates.heroDescription;
+      if (updates.heroCta) heroUpdates.heroCta = updates.heroCta;
+      if (updates.bannerImage) heroUpdates.bannerImage = updates.bannerImage;
+
+      if (Object.keys(heroUpdates).length > 0) {
+        updatePageHero(heroUpdates);
+      }
+
       // Handle section operations
-      if (updates.sections) {
-        updates.sections.forEach(op => {
+      if (sections) {
+        sections.forEach(op => {
           const existing = currentPage.sections.find(s => s.type === op.type);
           if (op.action === "add" && !existing) addSection(op.type);
           else if (op.action === "remove" && existing) removeSection(existing.id);
@@ -858,20 +878,46 @@ const SmartPageEditor = () => {
       }
 
       // Handle section data updates
-      if (updates.testimonials) {
+      if (testimonials) {
         const ts = currentPage.sections.find(s => s.type === "testimonials");
         if (ts) {
-          updateSectionData(ts.id, { items: updates.testimonials.map(t => ({ ...t, avatar: t.name.split(" ").map(n => n[0]).join("") })) });
+          updateSectionData(ts.id, { items: testimonials.map(t => ({ ...t, avatar: t.name.split(" ").map(n => n[0]).join("") })) });
         }
       }
-      if (updates.faqItems) {
+      if (faqItems) {
         const faq = currentPage.sections.find(s => s.type === "faq");
-        if (faq) updateSectionData(faq.id, { items: updates.faqItems });
+        if (faq) updateSectionData(faq.id, { items: faqItems });
       }
-      if (updates.features) {
+      if (features) {
         const feat = currentPage.sections.find(s => s.type === "features" || s.type === "services");
-        if (feat) updateSectionData(feat.id, { items: updates.features });
+        if (feat) updateSectionData(feat.id, { items: features });
       }
+
+      // Handle biolink profile updates
+      if (biolinkProfile || biolinkLinks) {
+        setState(prev => ({
+          ...prev,
+          biolinkConfig: {
+            ...prev.biolinkConfig,
+            profile: biolinkProfile ? { ...prev.biolinkConfig?.profile, ...biolinkProfile } : prev.biolinkConfig?.profile,
+            links: biolinkLinks || prev.biolinkConfig?.links,
+          }
+        }));
+      }
+
+      // Handle any other fields by merging into template data
+      // This allows AI to update fields like isPaid, amount, coachName, etc.
+      if (Object.keys(directUpdates).length > 0) {
+        setState(prev => ({
+          ...prev,
+          template: {
+            ...prev.template,
+            ...directUpdates
+          }
+        }));
+      }
+
+      setUnsavedChanges(true);
     },
   });
 

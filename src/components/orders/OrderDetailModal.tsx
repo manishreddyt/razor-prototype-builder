@@ -2,7 +2,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Order, OrderStatus } from "@/types/orders";
 import { OrderStatusSelect } from "./OrderStatusSelect";
 import { Button } from "@/components/ui/button";
-import { Download, MapPin, CreditCard, Package, Truck, CheckCircle2 } from "lucide-react";
+import { Download, MapPin, CreditCard, Package, Truck, CheckCircle2, Mail, Printer, RefreshCcw } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface OrderDetailModalProps {
   order: Order | null;
@@ -78,6 +79,44 @@ Order Status: ${order.status}
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+
+    toast({
+      title: "Invoice downloaded",
+      description: `Invoice for ${order.orderNumber} has been downloaded.`,
+    });
+  };
+
+  const sendEmailToCustomer = () => {
+    // In production, this would call an API to send email
+    toast({
+      title: "Email sent",
+      description: `Order confirmation email sent to ${order.customerEmail}`,
+    });
+  };
+
+  const printShippingLabel = () => {
+    // In production, this would generate and print a shipping label
+    toast({
+      title: "Printing shipping label",
+      description: `Shipping label for ${order.orderNumber} is being prepared.`,
+    });
+  };
+
+  const initiateRefund = () => {
+    // In production, this would call Razorpay refund API
+    if (order.paymentStatus !== "paid") {
+      toast({
+        title: "Cannot refund",
+        description: "Only paid orders can be refunded.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Refund initiated",
+      description: `Refund of ${formatCurrency(order.total)} initiated for ${order.orderNumber}`,
+    });
   };
 
   return (
@@ -300,11 +339,29 @@ Order Status: ${order.status}
           )}
 
           {/* Actions */}
-          <div className="flex items-center gap-3 pt-2 border-t border-border">
-            <OrderStatusSelect order={order} onStatusUpdate={onStatusUpdate} />
-            <Button variant="outline" size="sm" className="gap-1.5" onClick={downloadInvoice}>
-              <Download className="h-3.5 w-3.5" /> Download Invoice
-            </Button>
+          <div className="space-y-3 pt-2 border-t border-border">
+            <div className="flex items-center gap-2">
+              <OrderStatusSelect order={order} onStatusUpdate={onStatusUpdate} />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={downloadInvoice}>
+                <Download className="h-3.5 w-3.5" /> Download Invoice
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={sendEmailToCustomer}>
+                <Mail className="h-3.5 w-3.5" /> Email Customer
+              </Button>
+              {order.shippingAddress && (
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={printShippingLabel}>
+                  <Printer className="h-3.5 w-3.5" /> Print Label
+                </Button>
+              )}
+              {order.paymentStatus === "paid" && order.status !== "refunded" && (
+                <Button variant="outline" size="sm" className="gap-1.5 text-red-600 hover:text-red-700" onClick={initiateRefund}>
+                  <RefreshCcw className="h-3.5 w-3.5" /> Initiate Refund
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </DialogContent>

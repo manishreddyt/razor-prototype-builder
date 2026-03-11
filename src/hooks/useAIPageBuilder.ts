@@ -103,26 +103,27 @@ export function useAIPageBuilder({ pageType, getCurrentData, onUpdates }: UseAIP
       } else {
         // Fallback to Gemini API
 
-        // Check if this is a biolink template (HTML/CSS editing mode)
-        const isBiolinkTemplate = pageType.toLowerCase().includes('biolink') ||
-                                  currentData.template?.id?.startsWith('biolink');
-
-        if (isBiolinkTemplate && currentData.htmlContent) {
-          // For biolink templates, let AI edit the HTML/CSS directly
-          const systemInstruction = `You are an expert web developer helping to edit a biolink HTML/CSS template.
+        // Prefer HTML/CSS editing mode when HTML content is available (all templates)
+        if (currentData.htmlContent) {
+          // For all templates with HTML content, let AI edit the HTML/CSS directly
+          const systemInstruction = `You are an expert web developer helping to edit an HTML/CSS template.
 The user will provide the current HTML content and request changes.
 You should return the COMPLETE modified HTML file with all changes applied.
 Make sure to:
 - Preserve the overall structure
 - Keep all inline CSS in the <style> tag
 - Update content, styles, colors, layouts as requested
-- Maintain mobile-first responsive design (max-width: 400px)
-- Return valid HTML`;
+- Maintain responsive design and existing breakpoints
+- Return valid HTML
+- Apply any requested changes without restrictions`;
 
           const geminiPrompt = `Current HTML template:
 \`\`\`html
 ${currentData.htmlContent}
 \`\`\`
+
+Template type: ${pageType}
+Current page data context: ${JSON.stringify(currentData, null, 2)}
 
 User request: ${prompt}
 
@@ -142,26 +143,35 @@ Return the complete modified HTML file with the requested changes applied. Inclu
           return "HTML template updated! Check the preview to see your changes.";
 
         } else {
-          // For regular templates, use structured field updates
+          // For templates without HTML content, use structured field updates
           const systemInstruction = `You are an AI assistant helping to build ${pageType} pages.
 Analyze the user's request and current page data, then return ONLY a JSON object with the updates to apply.
-Available fields: heroTitle, heroTagline, heroDescription, heroCta, bannerImage, sections (array of {type, action: "add" | "remove" | "toggle"}), and a message field explaining what you changed.`;
+You can update ANY field in the page data structure without restrictions.
+Include a message field explaining what you changed.`;
 
           const geminiPrompt = `Current page data: ${JSON.stringify(currentData, null, 2)}
 
 User request: ${prompt}
 
-Return a JSON object with the fields to update and a message explaining the changes.`;
+Return a JSON object with the fields to update and a message explaining the changes.
+You can update any field you see in the current page data. Common fields include:
+- heroTitle, heroTagline, heroDescription, heroCta, bannerImage
+- sections (array of section objects)
+- name, tagline, description
+- isPaid, amount, pricingModel
+- coachName, coachTitle, coachBio
+- whatYouWillLearn, courseIncludes (arrays)
+- testimonials, faqItems, features (arrays of objects)
+- biolinkProfile, biolinkLinks
+- productCategory, variants, inventory, shipping
+And any other fields present in the current data.`;
 
           const response = await generateStructuredContent<AIPageUpdates & { message: string }>(
             geminiPrompt,
             JSON.stringify({
-              heroTitle: "string (optional)",
-              heroTagline: "string (optional)",
-              heroDescription: "string (optional)",
-              heroCta: "string (optional)",
-              bannerImage: "string (optional)",
-              message: "string (required - explain what you changed)"
+              // Accept any fields - don't restrict the schema
+              message: "string (required - explain what you changed)",
+              note: "You can include any other fields from the current page data to update them"
             }),
             systemInstruction
           );
