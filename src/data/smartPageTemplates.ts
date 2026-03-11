@@ -11,7 +11,7 @@ export type SectionType =
   | "testimonials" | "google-reviews" | "faq" | "team" | "gallery"
   | "stats" | "cta-banner" | "contact-form" | "curriculum"
   | "schedule" | "speakers" | "newsletter" | "clients" | "portfolio"
-  | "impact" | "donation" | "products" | "video-embed" | "countdown";
+  | "impact" | "donation" | "products" | "video-embed" | "countdown" | "biolink";
 
 export interface SectionData {
   id: string;
@@ -85,6 +85,8 @@ export interface TemplateData {
   productsConfig?: ProductsConfig;
   /** Contact form configuration */
   contactForm?: ContactFormConfig;
+  /** Biolink configuration */
+  biolinkConfig?: Partial<import("@/types/biolink").BiolinkProfile>;
   /** Custom pages beyond template pages */
   customPages?: CustomPage[];
 }
@@ -303,6 +305,14 @@ const countdownSection = (date = "2026-04-15T10:00:00"): SectionData => ({
   data: { heading: "Event Starts In", targetDate: date },
 });
 
+const biolinkSection = (): SectionData => ({
+  id: makeId(), type: "biolink", label: "Biolink Profile", visible: true,
+  data: {
+    // This section uses biolinkConfig from SmartPageSite instead of local data
+    // The data field is kept minimal for compatibility
+  },
+});
+
 // ──────────────── CATEGORIES ────────────────
 
 export const categories = [
@@ -371,7 +381,7 @@ export const templates: TemplateData[] = [
     heroTitle: "@yourname", heroTagline: "Creator • Educator • Entrepreneur",
     heroDescription: "All my important links in one place.",
     heroCta: "Latest Video →", bannerImage: "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=900&h=300&fit=crop",
-    sections: [heroSection(), aboutSection("Bio", "Digital creator sharing insights on tech, design, and entrepreneurship. 100K+ community across platforms."), statsSection([{ value: "100K+", label: "Followers" }, { value: "500+", label: "Videos" }, { value: "50M+", label: "Views" }, { value: "10+", label: "Brands" }]), newsletterSection()],
+    sections: [biolinkSection()],
   },
   {
     id: "event", title: "Event Landing", desc: "Promote events with countdown, speakers, and registration.", category: "general", icon: Calendar,
@@ -1143,6 +1153,139 @@ export const templates: TemplateData[] = [
     sections: [heroSection(), productsSection([{ title: "Notion Template Pack", price: "₹499", image: "https://images.unsplash.com/photo-1531346878377-a5be20888e57?w=300&h=300&fit=crop", badge: "Best Seller" }, { title: "Instagram Template Kit", price: "₹299", image: "https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?w=300&h=300&fit=crop", badge: "" }, { title: "Business Plan Template", price: "₹999", image: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=300&h=300&fit=crop", badge: "New" }, { title: "Resume Templates (5-Pack)", price: "₹399", image: "https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=300&h=300&fit=crop", badge: "" }]), featuresSection([{ title: "Instant Download", desc: "Get your files immediately after purchase.", icon: "⚡" }, { title: "Lifetime Updates", desc: "Free updates for all purchased products.", icon: "🔄" }, { title: "Commercial License", desc: "Use in personal and commercial projects.", icon: "📄" }]), statsSection([{ value: "5000+", label: "Downloads" }, { value: "200+", label: "Products" }, { value: "4.9★", label: "Rating" }, { value: "Instant", label: "Delivery" }]), testimonialsSection(), googleReviewsSection(), faqSection([{ q: "How do I get my files?", a: "Instant download link sent to your email after payment." }, { q: "Can I use these commercially?", a: "Yes, all products include a commercial use license." }, { q: "Do you offer refunds?", a: "Due to digital nature, refunds are case-by-case. Contact support." }]), ctaBannerSection("Bundle & Save 30%", "Get all templates in one pack at a special price.", "View Bundle"), newsletterSection()],
   },
 
+  // ─── Biolink / Social Commerce ───
+  {
+    id: "biolink-profile",
+    title: "Biolink Profile",
+    desc: "Instagram-style link-in-bio page for events, tickets, and links.",
+    category: "ecommerce",
+    icon: Users,
+    pages: ["Links"],
+    heroTitle: "Book Your Tickets ⬇️",
+    heroTagline: "@yourhandle",
+    heroDescription: "Your events and links in one place",
+    heroCta: "",
+    bannerImage: "",
+    sections: [
+      biolinkSection(),
+    ],
+    biolinkConfig: {
+      enabled: true,
+      displayName: "Book Your Tickets ⬇️",
+      bio: "",
+      location: "📍 95, 100 feet Rd, HAL 2nd Stage, Appareddipalya, Indiranagar, Bangalore",
+      theme: "light",
+      socialLinks: [],
+      customLinks: [
+        { id: "e1", title: "8th March - Turtle walker: Notes from the Coastline | a screening with bodyweather1n", subtitle: "", url: "#", icon: "", enabled: true, order: 1, type: "event" },
+        { id: "e2", title: "11th March - Grassroots Wednesdays with My Conscience & PXP | K", subtitle: "", url: "#", icon: "", enabled: true, order: 2, type: "event" },
+        { id: "e3", title: "12th March - GBD-B Pulse with Adi G, EBITDA, Daishō", subtitle: "", url: "#", icon: "", enabled: true, order: 3, type: "event" },
+        { id: "e4", title: "13th March - Gawdy Bhai", subtitle: "", url: "#", icon: "", enabled: true, order: 4, type: "event" },
+        { id: "e5", title: "14th March - THT presents Dawn Bhat", subtitle: "", url: "#", icon: "", enabled: true, order: 5, type: "event" },
+        { id: "e6", title: "15th March - Skin Contact by Project Grapejuice", subtitle: "", url: "#", icon: "", enabled: true, order: 6, type: "event" },
+        { id: "e7", title: "17th March - Solidarity Tuesday with The Threshold by Mo Pallen, B. Bindhu Malini", subtitle: "", url: "#", icon: "", enabled: true, order: 7, type: "event" },
+      ],
+      showContactButton: false,
+      showProductsSection: false,
+      viewMode: "links",
+    },
+    checkout: createCheckoutConfig(499, "Book Now", [
+      "Secure payment via Razorpay",
+      "Instant ticket confirmation",
+      "Easy refunds and support"
+    ]),
+  },
+  {
+    id: "biolink-shop",
+    title: "Biolink Shop",
+    desc: "Product showcase with Instagram-style profile, tabs, and checkout.",
+    category: "ecommerce",
+    icon: ShoppingBag,
+    pages: ["Shop"],
+    heroTitle: "@yourshop",
+    heroTagline: "Your shop",
+    heroDescription: "Shop our products • Instagram • WhatsApp",
+    heroCta: "",
+    bannerImage: "",
+    sections: [
+      biolinkSection(),
+      productsSection([
+        {
+          title: "Choco Chunk Cookies",
+          price: "₹299",
+          image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
+          badge: "Bestseller"
+        },
+        {
+          title: "Nutella Lust Cookies",
+          price: "₹349",
+          image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop",
+          badge: ""
+        },
+        {
+          title: "S'mores Chocolate Chunk",
+          price: "₹399",
+          image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=400&fit=crop",
+          badge: "New"
+        },
+        {
+          title: "16 % Very Chocolate Cookie",
+          price: "₹429",
+          image: "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?w=400&h=400&fit=crop",
+          badge: ""
+        },
+        {
+          title: "Choco-Brownie Cookies",
+          price: "₹379",
+          image: "https://images.unsplash.com/photo-1590841609987-4ac211afdde1?w=400&h=400&fit=crop",
+          badge: ""
+        },
+        {
+          title: "Dohful's 10-Cookie Sampler",
+          price: "₹1299",
+          image: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop",
+          badge: "Value Pack"
+        },
+        {
+          title: "Assorted Cookies",
+          price: "₹299",
+          image: "https://images.unsplash.com/photo-1548365328-8c6db3220e4c?w=400&h=400&fit=crop",
+          badge: ""
+        },
+      ]),
+    ],
+    biolinkConfig: {
+      enabled: true,
+      displayName: "@dohfulcookies",
+      bio: "Gooey cookies for the Guilty!\nBaked on Order | Shipping PAN India",
+      theme: "light",
+      profileImage: "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?w=200&h=200&fit=crop",
+      socialLinks: [
+        { id: "s1", platform: "instagram", url: "https://instagram.com/dohfulcookies", enabled: true, order: 1 },
+        { id: "s2", platform: "youtube", url: "https://youtube.com/@dohfulcookies", enabled: true, order: 2 },
+        { id: "s3", platform: "custom", url: "mailto:hello@dohful.com", label: "Email", icon: "✉️", enabled: true, order: 3 },
+        { id: "s4", platform: "whatsapp", url: "https://wa.me/919876543210", enabled: true, order: 4 },
+        { id: "s5", platform: "custom", url: "https://dohfulcookies.com", label: "Website", icon: "🌐", enabled: true, order: 5 },
+      ],
+      customLinks: [],
+      showContactButton: false,
+      showProductsSection: true,
+      viewMode: "both",
+    },
+    productsConfig: {
+      enabled: true,
+      products: [],
+      displayMode: "grid",
+      showPricing: true,
+      categoriesEnabled: false,
+    },
+    checkout: createCheckoutConfig(299, "Buy Now", [
+      "Free shipping on orders above ₹999",
+      "Easy returns within 7 days",
+      "Secure payment via Razorpay"
+    ]),
+  },
+
   // ─── Product-Focused Templates ───
   ...productFocusedTemplates,
 ];
@@ -1173,6 +1316,7 @@ export const availableSectionTypes: { type: SectionType; label: string; descript
   { type: "products", label: "Products", description: "Product card grid" },
   { type: "video-embed", label: "Video Embed", description: "Embedded video player" },
   { type: "countdown", label: "Countdown Timer", description: "Countdown to a date" },
+  { type: "biolink", label: "Biolink Profile", description: "Linktree-style profile with social links" },
 ];
 
 export const createDefaultSection = (type: SectionType): SectionData => {
@@ -1201,6 +1345,7 @@ export const createDefaultSection = (type: SectionType): SectionData => {
     "products": () => productsSection(),
     "video-embed": () => videoEmbedSection(),
     "countdown": () => countdownSection(),
+    "biolink": () => biolinkSection(),
   };
   const section = (factories[type] || (() => aboutSection()))();
   section.visible = true;
