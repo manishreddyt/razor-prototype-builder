@@ -62,6 +62,8 @@ interface EditorState {
   leads: Lead[];
   /** Custom pages beyond template pages */
   customPages: CustomPage[];
+  /** Biolink configuration */
+  biolinkConfig?: any;
 }
 
 const buildPageState = (pd: PageData | undefined, fallback: TemplateData): PageState => {
@@ -453,7 +455,8 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
       successMessage: "Thank you! We'll be in touch soon."
     },
     leads: [],
-    customPages: base.customPages || []
+    customPages: base.customPages || [],
+    biolinkConfig: base.biolinkConfig
   };
 };
 
@@ -483,7 +486,12 @@ const SmartPageEditor = () => {
   const [searchParams] = useSearchParams();
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
+  const [state, setState] = useState<EditorState>(() => buildInitialState(searchParams));
+
+  // Check if this is a biolink template to default to mobile view
+  const isBiolinkTemplate = state.template.id.startsWith("biolink");
+
+  const [viewMode, setViewMode] = useState<"desktop" | "mobile">(isBiolinkTemplate ? "mobile" : "desktop");
   const [rightPanel, setRightPanel] = useState<"ai" | "settings" | null>("ai");
   const [previewMode, setPreviewMode] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
@@ -494,8 +502,6 @@ const SmartPageEditor = () => {
   const [settingsTab, setSettingsTab] = useState("page");
   const [publishedPageData, setPublishedPageData] = useState<any>(null);
   const [editorView, setEditorView] = useState<"editor" | "products" | "leads">("editor");
-
-  const [state, setState] = useState<EditorState>(() => buildInitialState(searchParams));
   const [slug, setSlug] = useState(() => (searchParams.get("title") || "my-page").toLowerCase().replace(/[^a-z0-9]+/g, "-"));
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);

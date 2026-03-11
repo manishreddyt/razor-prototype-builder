@@ -54,6 +54,24 @@ const PaymentLinks = () => {
     toast.success("Link copied to clipboard!");
   };
 
+  // Product search and selection helpers
+  const filteredProducts = availableProducts.filter((product) =>
+    product.name.toLowerCase().includes(productSearchQuery.toLowerCase())
+  );
+
+  const addProduct = (productId: string) => {
+    if (!selectedProducts.includes(productId)) {
+      setSelectedProducts([...selectedProducts, productId]);
+      setProductSearchQuery(""); // Clear search after adding
+    }
+  };
+
+  const removeProduct = (productId: string) => {
+    setSelectedProducts(selectedProducts.filter((id) => id !== productId));
+  };
+
+  const getProductById = (id: string) => availableProducts.find((p) => p.id === id);
+
   return (
     <DashboardLayout>
       <div className="animate-fade-in space-y-5">
@@ -212,36 +230,8 @@ const PaymentLinks = () => {
 
               {showAdvanced && (
                 <div className="mt-4 space-y-6 p-4 bg-secondary/30 rounded-lg">
-                  {/* Product Selection */}
+                  {/* Shiprocket Integration - Moved to top */}
                   <div>
-                    <label className="text-sm font-medium text-foreground mb-3 block">Select Products (Optional)</label>
-                    <div className="space-y-2">
-                      {availableProducts.map((product) => (
-                        <div key={product.id} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={product.id}
-                            checked={selectedProducts.includes(product.id)}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedProducts([...selectedProducts, product.id]);
-                              } else {
-                                setSelectedProducts(selectedProducts.filter(p => p !== product.id));
-                              }
-                            }}
-                          />
-                          <label
-                            htmlFor={product.id}
-                            className="text-sm text-foreground cursor-pointer flex-1"
-                          >
-                            {product.name} — ₹{product.price.toLocaleString('en-IN')}
-                          </label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Shiprocket Integration */}
-                  <div className="border-t border-border pt-4">
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
@@ -264,6 +254,86 @@ const PaymentLinks = () => {
                           Order details will be sent to Shiprocket upon successful payment
                         </p>
                       </div>
+                    )}
+                  </div>
+
+                  {/* Product Selection with Chips UI */}
+                  <div className="border-t border-border pt-4">
+                    <label className="text-sm font-medium text-foreground mb-1 block">Tag Products (Optional)</label>
+                    <p className="text-xs text-muted-foreground mb-3">Select which products from your catalog the customer is buying</p>
+
+                    {/* Selected Products as Chips */}
+                    {selectedProducts.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-3">
+                        {selectedProducts.map((productId) => {
+                          const product = getProductById(productId);
+                          if (!product) return null;
+                          return (
+                            <div
+                              key={productId}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary text-sm rounded-full border border-primary/20"
+                            >
+                              <span className="font-medium">{product.name}</span>
+                              <span className="text-xs opacity-70">₹{product.price.toLocaleString('en-IN')}</span>
+                              <button
+                                onClick={() => removeProduct(productId)}
+                                className="ml-1 hover:bg-primary/20 rounded-full p-0.5 transition-colors"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Search Input */}
+                    <div className="relative mb-2">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Search products from your catalog..."
+                        value={productSearchQuery}
+                        onChange={(e) => setProductSearchQuery(e.target.value)}
+                        className="pl-9 h-9 text-sm"
+                      />
+                    </div>
+
+                    {/* Product List - Show when searching or no products selected */}
+                    {(productSearchQuery || selectedProducts.length === 0) && (
+                      <div className="border border-border rounded-md max-h-40 overflow-y-auto">
+                        {filteredProducts.length > 0 ? (
+                          <div className="divide-y divide-border">
+                            {filteredProducts.map((product) => {
+                              const isSelected = selectedProducts.includes(product.id);
+                              return (
+                                <button
+                                  key={product.id}
+                                  onClick={() => !isSelected && addProduct(product.id)}
+                                  disabled={isSelected}
+                                  className={`w-full px-3 py-2 text-left hover:bg-secondary/50 transition-colors flex items-center justify-between ${
+                                    isSelected ? 'opacity-50 cursor-not-allowed bg-secondary/30' : 'cursor-pointer'
+                                  }`}
+                                >
+                                  <span className="text-sm text-foreground">{product.name}</span>
+                                  <span className="text-sm font-medium text-muted-foreground">
+                                    ₹{product.price.toLocaleString('en-IN')}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                            No products found
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {selectedProducts.length === 0 && !productSearchQuery && (
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Start typing to search and add products
+                      </p>
                     )}
                   </div>
 
