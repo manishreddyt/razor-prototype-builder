@@ -1,4 +1,4 @@
-export type ProductType = "online-course" | "1-1-session" | "webinar";
+export type ProductType = "online-course" | "1-1-session" | "webinar" | "physical-product" | "digital-product";
 
 export interface PricingModel {
   id: string;
@@ -84,6 +84,17 @@ export interface Product {
   speakers?: Speaker[];
   agenda?: AgendaItem[];
 
+  // E-commerce specific
+  sku?: string; // Stock Keeping Unit
+  productCategory?: string; // Category ID reference
+  variants?: ProductVariant[];
+  inventory?: InventoryConfig;
+  shipping?: ShippingConfig;
+  compareAtPrice?: number; // Original price for discount display
+  discountedPrice?: number; // Calculated discounted price
+  discountPercentage?: number; // Discount percentage (0-100)
+  downloadUrl?: string; // For digital products
+
   // Metadata
   createdAt: string;
   updatedAt: string;
@@ -98,4 +109,37 @@ export interface ProductsConfig {
   showPricing: boolean;
   categoriesEnabled: boolean;
   categories?: string[];
+}
+
+// E-commerce extensions
+export interface ProductVariant {
+  id: string;
+  name: string; // "Small", "Medium", "Large" or "Red", "Blue"
+  sku?: string;
+  price?: number; // Override base price if set
+  compareAtPrice?: number; // Original price for discount display
+  stock?: number; // Override inventory if tracking per variant
+  image?: string; // Variant-specific image
+  attributes: Record<string, string>; // { "size": "M", "color": "Red" }
+  enabled: boolean;
+}
+
+export interface InventoryConfig {
+  trackInventory: boolean;
+  stock: number;
+  lowStockThreshold?: number;
+  allowBackorder: boolean;
+  sku?: string;
+}
+
+export interface ShippingConfig {
+  requiresShipping: boolean;
+  weight?: number; // in grams
+  dimensions?: {
+    length: number; // cm
+    width: number; // cm
+    height: number; // cm
+  };
+  shippingCost?: number; // Fixed shipping cost
+  freeShippingThreshold?: number; // Free shipping above this order value
 }

@@ -1172,7 +1172,7 @@ export const templates: TemplateData[] = [
     biolinkConfig: {
       enabled: true,
       displayName: "Book Your Tickets ⬇️",
-      bio: "",
+      bio: "Live music events and cultural experiences",
       location: "95, 100 feet Rd, HAL 2nd Stage, Appareddipalya, Indiranagar, Bangalore",
       theme: "light",
       socialLinks: [],

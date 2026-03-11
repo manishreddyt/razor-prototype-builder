@@ -27,6 +27,7 @@ import {
   Box,
   Zap,
   Megaphone,
+  Package,
 } from "lucide-react";
 
 const navSections = [
@@ -51,6 +52,7 @@ const navSections = [
     title: "TOOLS",
     items: [
       { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
+      { icon: Package, label: "Orders", path: "/orders" },
       { icon: Megaphone, label: "Marketing Campaigns", path: "/marketing-campaigns" },
       { icon: ShoppingBag, label: "App Store", path: "/app-marketplace" },
       { icon: MessageCircle, label: "Agents", path: "/agents" },

@@ -410,16 +410,20 @@ const SectionRenderer = ({ section, editable, onUpdate, templateId, category, on
     case "products": return <ProductsSection data={data} editable={editable} onUpdate={onUpdate} templateId={templateId} category={category} onProductClick={onProductClick} productsConfig={productsConfig} onOpenProductModal={onOpenProductModal} />;
     case "video-embed": return <VideoSection data={data} />;
     case "countdown": return <CountdownSection data={data} />;
-    case "biolink": return biolinkConfig?.profile ? (
-      <BiolinkMobileView
-        profile={biolinkConfig.profile}
-        products={productsConfig?.products || []}
-        onProductClick={(productId) => {
-          const index = (productsConfig?.products || []).findIndex(p => p.id === productId);
-          if (index >= 0 && onProductClick) onProductClick(index);
-        }}
-      />
-    ) : null;
+    case "biolink": {
+      // Support both BiolinkConfig (with profile field) and direct BiolinkProfile
+      const profile = biolinkConfig?.profile || biolinkConfig;
+      return profile ? (
+        <BiolinkMobileView
+          profile={profile as any}
+          products={productsConfig?.products || []}
+          onProductClick={(productId) => {
+            const index = (productsConfig?.products || []).findIndex(p => p.id === productId);
+            if (index >= 0 && onProductClick) onProductClick(index);
+          }}
+        />
+      ) : null;
+    }
     default: return null;
   }
 };

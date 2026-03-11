@@ -4,12 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
-import { ArrowLeft, ArrowRight, Check, GraduationCap, Video, Calendar, Sparkles } from "lucide-react";
+import { Check, GraduationCap, Video, Calendar, Sparkles, Package, Download } from "lucide-react";
 import { PricingModelBuilder } from "./PricingModelBuilder";
 import { CourseDetailsForm } from "./CourseDetailsForm";
 import { SessionDetailsForm } from "./SessionDetailsForm";
 import { WebinarDetailsForm } from "./WebinarDetailsForm";
+import { EcommerceDetailsForm } from "./EcommerceDetailsForm";
 import { toast } from "sonner";
 
 interface ProductFormProps {
@@ -17,8 +17,6 @@ interface ProductFormProps {
   onSave: (product: Product) => void;
   onCancel: () => void;
 }
-
-type FormStep = 1 | 2 | 3 | 4 | 5;
 
 const productTypes: { value: ProductType; label: string; icon: any; description: string }[] = [
   {
@@ -38,6 +36,18 @@ const productTypes: { value: ProductType; label: string; icon: any; description:
     label: "Webinar",
     icon: Video,
     description: "Host live webinars with speakers, agenda, and registration",
+  },
+  {
+    value: "physical-product",
+    label: "Physical Product",
+    icon: Package,
+    description: "Sell physical goods with inventory tracking, shipping, and variants",
+  },
+  {
+    value: "digital-product",
+    label: "Digital Product",
+    icon: Download,
+    description: "Sell digital downloads like ebooks, templates, or software",
   },
 ];
 
@@ -183,6 +193,125 @@ const generateDummyContent = (type: ProductType): Partial<Product> => {
     };
   }
 
+  if (type === "physical-product") {
+    return {
+      ...baseData,
+      type: "physical-product",
+      title: "Premium Organic Cotton T-Shirt",
+      description: "Sustainable, eco-friendly t-shirt made from 100% organic cotton. Soft, breathable, and perfect for everyday wear.",
+      longDescription: "Experience ultimate comfort with our premium organic cotton t-shirt. Ethically sourced and manufactured with care for the environment. Features include breathable fabric, pre-shrunk for perfect fit, and reinforced stitching for durability. Available in multiple colors and sizes.",
+      image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800",
+      images: [
+        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800",
+        "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800",
+      ],
+      category: "Fashion",
+      tags: ["organic", "sustainable", "cotton", "casual"],
+      badge: "Bestseller",
+      compareAtPrice: 999,
+      inventory: {
+        trackInventory: true,
+        stock: 150,
+        lowStockThreshold: 20,
+        allowBackorder: false,
+        sku: "ORG-TSHIRT-001",
+      },
+      shipping: {
+        requiresShipping: true,
+        weight: 200,
+        dimensions: { length: 30, width: 25, height: 2 },
+        shippingCost: 50,
+        freeShippingThreshold: 500,
+      },
+      pricingModels: [
+        {
+          id: "pm1",
+          name: "Single",
+          price: 699,
+          currency: "INR",
+          interval: "one_time",
+          features: [
+            "100% organic cotton",
+            "Eco-friendly packaging",
+            "Free shipping above ₹500",
+            "Easy returns within 7 days",
+          ],
+          highlighted: false,
+        },
+        {
+          id: "pm2",
+          name: "Pack of 3",
+          price: 1899,
+          currency: "INR",
+          interval: "one_time",
+          features: [
+            "3 t-shirts (mix & match sizes)",
+            "Save ₹198",
+            "Free shipping",
+            "Premium gift packaging",
+            "Extended 15-day returns",
+          ],
+          highlighted: true,
+          description: "Save 10%",
+        },
+      ],
+    };
+  }
+
+  if (type === "digital-product") {
+    return {
+      ...baseData,
+      type: "digital-product",
+      title: "Complete UI/UX Design System Template",
+      description: "Professional Figma design system with 200+ components, design tokens, and comprehensive documentation for rapid product design.",
+      longDescription: "Accelerate your design workflow with our battle-tested design system. Includes 200+ pre-built components, comprehensive color palettes, typography scales, spacing system, and detailed documentation. Perfect for startups and design teams building consistent, scalable products.",
+      image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800",
+      images: [
+        "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800",
+        "https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?w=800",
+      ],
+      category: "Design Resources",
+      tags: ["figma", "design-system", "ui-kit", "templates"],
+      badge: "New",
+      compareAtPrice: 4999,
+      downloadUrl: "https://example.com/downloads/design-system.fig",
+      pricingModels: [
+        {
+          id: "pm1",
+          name: "Personal License",
+          price: 2999,
+          currency: "INR",
+          interval: "one_time",
+          features: [
+            "200+ Figma components",
+            "Design tokens library",
+            "Complete documentation",
+            "Free lifetime updates",
+            "Personal use only",
+          ],
+          highlighted: false,
+        },
+        {
+          id: "pm2",
+          name: "Team License",
+          price: 8999,
+          currency: "INR",
+          interval: "one_time",
+          features: [
+            "Everything in Personal",
+            "Use in unlimited projects",
+            "Team sharing (up to 10)",
+            "Priority support",
+            "Custom component requests",
+            "Commercial use allowed",
+          ],
+          highlighted: true,
+          description: "Best for teams",
+        },
+      ],
+    };
+  }
+
   // Webinar
   return {
     ...baseData,
@@ -259,7 +388,6 @@ const generateDummyContent = (type: ProductType): Partial<Product> => {
 };
 
 export const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => {
-  const [step, setStep] = useState<FormStep>(product ? 2 : 1);
   const [formData, setFormData] = useState<Partial<Product>>(
     product || {
       type: "online-course",
@@ -284,49 +412,31 @@ export const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => 
     const dummyData = generateDummyContent(formData.type || "online-course");
     setFormData((prev) => ({ ...prev, ...dummyData }));
     toast.success("AI content generated! Review and customize as needed.");
-    // Move to step 2 if on step 1
-    if (step === 1) {
-      setStep(2);
-    }
   };
 
-  const handleNext = () => {
-    // Validation for each step
-    if (step === 1 && !formData.type) {
+  const handleSave = () => {
+    // Validation
+    if (!formData.type) {
       toast.error("Please select a product type");
       return;
     }
-    if (step === 2) {
-      if (!formData.title?.trim()) {
-        toast.error("Please enter a product title");
-        return;
-      }
-      if (!formData.description?.trim()) {
-        toast.error("Please enter a description");
-        return;
-      }
-      if (!formData.image?.trim()) {
-        toast.error("Please add a product image");
-        return;
-      }
+    if (!formData.title?.trim()) {
+      toast.error("Please enter a product title");
+      return;
     }
-    if (step === 4 && (!formData.pricingModels || formData.pricingModels.length === 0)) {
+    if (!formData.description?.trim()) {
+      toast.error("Please enter a description");
+      return;
+    }
+    if (!formData.image?.trim()) {
+      toast.error("Please add a product image");
+      return;
+    }
+    if (!formData.pricingModels || formData.pricingModels.length === 0) {
       toast.error("Please add at least one pricing model");
       return;
     }
 
-    if (step < 5) {
-      setStep((prev) => (prev + 1) as FormStep);
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 1) {
-      setStep((prev) => (prev - 1) as FormStep);
-    }
-  };
-
-  const handleSave = () => {
     const now = new Date().toISOString();
     const savedProduct: Product = {
       id: product?.id || `prod-${Date.now()}`,
@@ -364,29 +474,27 @@ export const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => 
       webinarUrl: formData.webinarUrl,
       speakers: formData.speakers,
       agenda: formData.agenda,
+      // E-commerce specific fields
+      variants: formData.variants,
+      inventory: formData.inventory,
+      shipping: formData.shipping,
+      compareAtPrice: formData.compareAtPrice,
+      downloadUrl: formData.downloadUrl,
     };
 
     onSave(savedProduct);
     toast.success(product ? "Product updated" : "Product created");
   };
 
-  const stepTitles = {
-    1: "Select Product Type",
-    2: "Basic Details",
-    3: "Product Configuration",
-    4: "Pricing Models",
-    5: "Preview & Publish",
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto pr-2">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex items-start justify-between sticky top-0 bg-white z-10 pb-4 border-b">
         <div>
           <h2 className="text-2xl font-bold">{product ? "Edit Product" : "Create New Product"}</h2>
-          <p className="text-sm text-muted-foreground mt-1">{stepTitles[step]}</p>
+          <p className="text-sm text-muted-foreground mt-1">Fill in the details below</p>
         </div>
-        {!product && (
+        <div className="flex gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -396,54 +504,47 @@ export const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => 
             <Sparkles className="h-4 w-4" />
             Generate AI Content
           </Button>
-        )}
+        </div>
       </div>
 
-      {/* Progress Steps */}
-      <div className="flex items-center gap-2">
-        {[1, 2, 3, 4, 5].map((s) => (
-          <div key={s} className="flex items-center flex-1">
-            <div
-              className={`h-2 rounded-full flex-1 ${
-                s <= step ? "bg-primary" : "bg-gray-200"
-              }`}
-            />
-            {s < 5 && <div className="w-2" />}
+      {/* Single Form - All Sections */}
+      <div className="space-y-8">
+        {/* Section 1: Product Type */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-lg">1. Product Type *</h3>
+            <p className="text-sm text-muted-foreground">Choose the type of product you're creating</p>
           </div>
-        ))}
-      </div>
-
-      {/* Step Content */}
-      <Card className="p-6">
-        {step === 1 && (
-          <div className="space-y-4">
-            <h3 className="font-semibold text-lg mb-4">What type of product do you want to create?</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {productTypes.map((type) => {
-                const Icon = type.icon;
-                const selected = formData.type === type.value;
-                return (
-                  <button
-                    key={type.value}
-                    onClick={() => updateFormData({ type: type.value })}
-                    className={`p-6 border-2 rounded-lg text-left transition-all ${
-                      selected
-                        ? "border-primary bg-primary/5"
-                        : "border-gray-200 hover:border-gray-300"
-                    }`}
-                  >
-                    <Icon className={`w-8 h-8 mb-3 ${selected ? "text-primary" : "text-gray-400"}`} />
-                    <h4 className="font-semibold mb-1">{type.label}</h4>
-                    <p className="text-sm text-muted-foreground">{type.description}</p>
-                  </button>
-                );
-              })}
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {productTypes.map((type) => {
+              const Icon = type.icon;
+              const selected = formData.type === type.value;
+              return (
+                <button
+                  key={type.value}
+                  onClick={() => updateFormData({ type: type.value })}
+                  className={`p-4 border-2 rounded-lg text-left transition-all ${
+                    selected
+                      ? "border-primary bg-primary/5"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                >
+                  <Icon className={`w-6 h-6 mb-2 ${selected ? "text-primary" : "text-gray-400"}`} />
+                  <h4 className="font-semibold text-sm mb-1">{type.label}</h4>
+                  <p className="text-xs text-muted-foreground">{type.description}</p>
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
 
-        {step === 2 && (
-          <div className="space-y-6 max-w-2xl">
+        {/* Section 2: Basic Details */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-lg">2. Basic Details *</h3>
+            <p className="text-sm text-muted-foreground">Add title, description, and images</p>
+          </div>
+          <div className="space-y-4 max-w-2xl">
             <div className="space-y-2">
               <Label htmlFor="title">Product Title *</Label>
               <Input
@@ -472,7 +573,7 @@ export const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => 
                 placeholder="Detailed description shown on the product page"
                 value={formData.longDescription || ""}
                 onChange={(e) => updateFormData({ longDescription: e.target.value })}
-                rows={6}
+                rows={5}
               />
             </div>
 
@@ -489,7 +590,7 @@ export const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => 
                 <img
                   src={formData.image}
                   alt="Preview"
-                  className="w-full h-48 object-cover rounded border mt-2"
+                  className="w-full max-w-md h-48 object-cover rounded border mt-2"
                 />
               )}
             </div>
@@ -515,114 +616,82 @@ export const ProductForm = ({ product, onSave, onCancel }: ProductFormProps) => 
               </div>
             </div>
           </div>
-        )}
+        </div>
 
-        {step === 3 && formData.type === "online-course" && (
-          <CourseDetailsForm
-            formData={formData}
-            updateFormData={updateFormData}
-          />
-        )}
+        {/* Section 3: Product Configuration (Type-specific) */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-lg">3. Product Configuration</h3>
+            <p className="text-sm text-muted-foreground">
+              {formData.type === "online-course" && "Add course modules and learning outcomes"}
+              {formData.type === "1-1-session" && "Set availability and session details"}
+              {formData.type === "webinar" && "Add speakers, agenda, and event details"}
+              {(formData.type === "physical-product" || formData.type === "digital-product") &&
+                "Configure inventory, shipping, and product variants"}
+            </p>
+          </div>
 
-        {step === 3 && formData.type === "1-1-session" && (
-          <SessionDetailsForm
-            formData={formData}
-            updateFormData={updateFormData}
-          />
-        )}
+          {formData.type === "online-course" && (
+            <CourseDetailsForm formData={formData} updateFormData={updateFormData} />
+          )}
 
-        {step === 3 && formData.type === "webinar" && (
-          <WebinarDetailsForm
-            formData={formData}
-            updateFormData={updateFormData}
-          />
-        )}
+          {formData.type === "1-1-session" && (
+            <SessionDetailsForm formData={formData} updateFormData={updateFormData} />
+          )}
 
-        {step === 4 && (
+          {formData.type === "webinar" && (
+            <WebinarDetailsForm formData={formData} updateFormData={updateFormData} />
+          )}
+
+          {(formData.type === "physical-product" || formData.type === "digital-product") && (
+            <EcommerceDetailsForm formData={formData} updateFormData={updateFormData} />
+          )}
+        </div>
+
+        {/* Section 4: Pricing */}
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-semibold text-lg">4. Pricing Models *</h3>
+            <p className="text-sm text-muted-foreground">Add one or more pricing options</p>
+          </div>
           <PricingModelBuilder
             pricingModels={formData.pricingModels || []}
             onUpdate={(models) => updateFormData({ pricingModels: models })}
           />
-        )}
+        </div>
 
-        {step === 5 && (
-          <div className="space-y-6">
-            <div className="prose max-w-none">
-              <h3>Review Your Product</h3>
-              <div className="not-prose bg-gray-50 p-6 rounded-lg space-y-4">
-                <div className="flex gap-4">
-                  <img
-                    src={formData.image}
-                    alt={formData.title}
-                    className="w-32 h-32 object-cover rounded"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-bold text-lg">{formData.title}</h4>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {formData.description}
-                    </p>
-                    {formData.badge && (
-                      <span className="inline-block mt-2 px-3 py-1 bg-primary/10 text-primary text-xs rounded">
-                        {formData.badge}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t pt-4">
-                  <h5 className="font-semibold mb-2">Pricing Options</h5>
-                  <div className="space-y-2">
-                    {formData.pricingModels?.map((pm) => (
-                      <div key={pm.id} className="flex justify-between items-center">
-                        <span className="font-medium">{pm.name}</span>
-                        <span className="text-lg font-bold">₹{pm.price.toLocaleString()}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex gap-2 pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => updateFormData({ status: "draft" })}
-                    className={formData.status === "draft" ? "bg-gray-100" : ""}
-                  >
-                    Save as Draft
-                  </Button>
-                  <Button
-                    onClick={() => updateFormData({ status: "published" })}
-                    className={formData.status === "published" ? "bg-primary" : ""}
-                  >
-                    Publish Now
-                  </Button>
-                </div>
-              </div>
-            </div>
+        {/* Section 5: Publish Settings */}
+        <div className="space-y-4 pb-6">
+          <div>
+            <h3 className="font-semibold text-lg">5. Publish Settings</h3>
+            <p className="text-sm text-muted-foreground">Choose how to save your product</p>
           </div>
-        )}
-      </Card>
+          <div className="flex gap-2">
+            <Button
+              variant={formData.status === "draft" ? "default" : "outline"}
+              onClick={() => updateFormData({ status: "draft" })}
+            >
+              Save as Draft
+            </Button>
+            <Button
+              variant={formData.status === "published" ? "default" : "outline"}
+              onClick={() => updateFormData({ status: "published" })}
+            >
+              Publish Now
+            </Button>
+          </div>
+        </div>
+      </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between">
-        <Button
-          variant="outline"
-          onClick={handleBack}
-          disabled={step === 1}
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back
+      {/* Footer Actions - Sticky */}
+      <div className="sticky bottom-0 bg-white border-t pt-4 flex justify-between">
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
         </Button>
-        {step < 5 ? (
-          <Button onClick={handleNext}>
-            Next
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        ) : (
-          <Button onClick={handleSave}>
-            <Check className="w-4 h-4 mr-2" />
-            {product ? "Update Product" : "Create Product"}
-          </Button>
-        )}
+        <Button onClick={handleSave} size="lg">
+          <Check className="w-4 h-4 mr-2" />
+          {product ? "Update Product" : "Create Product"}
+        </Button>
       </div>
     </div>
   );

@@ -5,7 +5,7 @@ import {
   X, Copy, Share2, Save, Loader2, CheckCircle2, Plus, Trash2, GripVertical,
   FileText, CreditCard, ShoppingCart, Star, Users, Clock, BookOpen, Shield, Award,
   Megaphone, Package, Mail, MessageSquare, Tag, ArrowRight,
-  Calendar, Video,
+  Calendar, Video, Link,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,10 @@ import { ProductDetailPage } from "@/components/ProductDetailPage";
 import { ProductCheckoutModal } from "@/components/ProductCheckoutModal";
 import { Product, ProductsConfig, PricingModel } from "@/types/products";
 import { Lead, ContactFormConfig } from "@/types/leads";
+import { BiolinkEditor } from "@/components/BiolinkEditor";
+import { BiolinkProfile } from "@/types/biolink";
+import { ProductCategory } from "@/types/categories";
+import { getCategories, saveCategories } from "@/lib/categoryStorage";
 
 interface PageState {
   heroTitle: string;
@@ -499,6 +503,7 @@ const SmartPageEditor = () => {
     product: Product;
     pricingModel: PricingModel;
   } | null>(null);
+  const [categories, setCategories] = useState<ProductCategory[]>(() => getCategories(state.siteId));
 
   const pageType = searchParams.get("type") || "";
   const [chatInput, setChatInput] = useState("");
@@ -931,6 +936,7 @@ const SmartPageEditor = () => {
                 onLeadCreated={handleLeadCreated}
                 customPages={state.customPages}
                 onOpenProductModal={handleOpenProductModal}
+                biolinkConfig={state.biolinkConfig}
               />
             )}
           </div>
@@ -1007,12 +1013,19 @@ const SmartPageEditor = () => {
           <ScrollArea className="h-full">
             <div className="max-w-7xl mx-auto p-8">
               <ProductManager
+                websiteId={state.siteId}
                 products={state.productsConfig.products}
+                categories={categories}
                 onUpdateProducts={(products) => {
                   setState((prev) => ({
                     ...prev,
                     productsConfig: { ...prev.productsConfig, products },
                   }));
+                  setUnsavedChanges(true);
+                }}
+                onUpdateCategories={(updatedCategories) => {
+                  setCategories(updatedCategories);
+                  saveCategories(state.siteId, updatedCategories);
                   setUnsavedChanges(true);
                 }}
               />
@@ -1114,6 +1127,7 @@ const SmartPageEditor = () => {
                 onLeadCreated={handleLeadCreated}
                 customPages={state.customPages}
                 onOpenProductModal={handleOpenProductModal}
+                biolinkConfig={state.biolinkConfig}
               />
             )}
           </div>
@@ -1284,6 +1298,14 @@ const SmartPageEditor = () => {
                 <TabsTrigger value="contact-form" className="text-xs flex items-center gap-1">
                   <MessageSquare className="h-3 w-3" />
                   Contact
+                </TabsTrigger>
+                <TabsTrigger value="products" className="text-xs flex items-center gap-1">
+                  <Package className="h-3 w-3" />
+                  Products
+                </TabsTrigger>
+                <TabsTrigger value="biolink" className="text-xs flex items-center gap-1">
+                  <Link className="h-3 w-3" />
+                  Biolink
                 </TabsTrigger>
                 {hasCheckout && <TabsTrigger value="checkout" className="text-xs">Checkout</TabsTrigger>}
                 <TabsTrigger value="seo" className="text-xs">SEO</TabsTrigger>
@@ -1820,6 +1842,48 @@ const SmartPageEditor = () => {
                       setUnsavedChanges(true);
                     }}
                   />
+                </TabsContent>
+
+                {/* Products Tab */}
+                <TabsContent value="products" className="p-0 m-0">
+                  <ProductManager
+                    websiteId={state.siteId}
+                    products={state.productsConfig.products}
+                    categories={categories}
+                    onUpdateProducts={(products) => {
+                      setState((prev) => ({
+                        ...prev,
+                        productsConfig: { ...prev.productsConfig, products },
+                      }));
+                      setUnsavedChanges(true);
+                    }}
+                    onUpdateCategories={(updatedCategories) => {
+                      setCategories(updatedCategories);
+                      saveCategories(state.siteId, updatedCategories);
+                      setUnsavedChanges(true);
+                    }}
+                  />
+                </TabsContent>
+
+                <TabsContent value="biolink" className="p-4 space-y-4">
+                  {state.biolinkConfig?.profile && (
+                    <BiolinkEditor
+                      profile={state.biolinkConfig.profile}
+                      onUpdate={(updatedProfile) => {
+                        setState((prev) => ({
+                          ...prev,
+                          biolinkConfig: prev.biolinkConfig
+                            ? {
+                                ...prev.biolinkConfig,
+                                profile: updatedProfile,
+                                updatedAt: new Date().toISOString(),
+                              }
+                            : prev.biolinkConfig,
+                        }));
+                        setUnsavedChanges(true);
+                      }}
+                    />
+                  )}
                 </TabsContent>
               </ScrollArea>
             </Tabs>

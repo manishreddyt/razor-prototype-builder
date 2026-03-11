@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { Plus, Search, Filter, Grid, List } from "lucide-react";
+import { Plus, Search, Filter, Grid, List, FolderTree } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Product, ProductType } from "@/types/products";
+import { ProductCategory } from "@/types/categories";
 import { ProductCard } from "./ProductCard";
 import { ProductForm } from "./ProductForm";
+import { CategoryManager } from "@/components/categories/CategoryManager";
 import {
   Select,
   SelectContent,
@@ -20,16 +22,27 @@ import {
 } from "@/components/ui/dialog";
 
 interface ProductManagerProps {
+  websiteId: string;
   products: Product[];
+  categories: ProductCategory[];
   onUpdateProducts: (products: Product[]) => void;
+  onUpdateCategories: (categories: ProductCategory[]) => void;
 }
 
-export const ProductManager = ({ products, onUpdateProducts }: ProductManagerProps) => {
+export const ProductManager = ({
+  websiteId,
+  products,
+  categories,
+  onUpdateProducts,
+  onUpdateCategories,
+}: ProductManagerProps) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<ProductType | "all">("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "published" | "draft" | "archived">("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [showForm, setShowForm] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const filteredProducts = products.filter((p) => {
@@ -37,8 +50,11 @@ export const ProductManager = ({ products, onUpdateProducts }: ProductManagerPro
       p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchType = typeFilter === "all" || p.type === typeFilter;
+    const matchCategory = categoryFilter === "all" ||
+      (categoryFilter === "uncategorized" && !p.categoryId) ||
+      p.categoryId === categoryFilter;
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
-    return matchSearch && matchType && matchStatus;
+    return matchSearch && matchType && matchCategory && matchStatus;
   });
 
   const handleAddProduct = () => {
@@ -105,6 +121,20 @@ export const ProductManager = ({ products, onUpdateProducts }: ProductManagerPro
           />
         </DialogContent>
       </Dialog>
+
+      {/* Category Manager Dialog */}
+      <Dialog open={showCategoryManager} onOpenChange={setShowCategoryManager}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <CategoryManager
+            websiteId={websiteId}
+            categories={categories}
+            onUpdateCategories={(updatedCategories) => {
+              onUpdateCategories(updatedCategories);
+            }}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -113,10 +143,16 @@ export const ProductManager = ({ products, onUpdateProducts }: ProductManagerPro
             Manage courses, sessions, and webinars
           </p>
         </div>
-        <Button onClick={handleAddProduct}>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Product
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setShowCategoryManager(true)}>
+            <FolderTree className="w-4 h-4 mr-2" />
+            Manage Categories
+          </Button>
+          <Button onClick={handleAddProduct}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Product
+          </Button>
+        </div>
       </div>
 
       {/* Filters and Search */}
@@ -143,6 +179,25 @@ export const ProductManager = ({ products, onUpdateProducts }: ProductManagerPro
             <SelectItem value="online-course">Online Courses</SelectItem>
             <SelectItem value="1-1-session">1:1 Sessions</SelectItem>
             <SelectItem value="webinar">Webinars</SelectItem>
+            <SelectItem value="physical-product">Physical Products</SelectItem>
+            <SelectItem value="digital-product">Digital Products</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="uncategorized">Uncategorized</SelectItem>
+            {categories
+              .filter((cat) => cat.enabled)
+              .map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
 

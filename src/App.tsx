@@ -38,6 +38,7 @@ import AIAppBuilder from "./pages/AIAppBuilder";
 import AIAppBuilderCreate from "./pages/AIAppBuilderCreate";
 import AIAppBuilderEditor from "./pages/AIAppBuilderEditor";
 import AIAppBuilderDetail from "./pages/AIAppBuilderDetail";
+import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
           <Route path="/payment-pages/manage" element={<PaymentPageManage />} />
           <Route path="/payment/:slug" element={<PaymentPagePublic />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
+          <Route path="/orders" element={<Orders />} />
           <Route path="/website-builder" element={<WebsiteBuilder />} />
           <Route path="/website-builder/create" element={<SmartPageCreate />} />
           <Route path="/website-builder/webinar/chat" element={<WebinarChat />} />

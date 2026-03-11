@@ -35,8 +35,25 @@ Popular image IDs by category:
 - Healthcare: 1576091160399-112ba8d25d1d, 1559757175-5700dde675bc
 - Real Estate: 1560518883-ce09059eeffa, 1582407947304-fd86f028f716
 - Photography: 1452587925148-ce544e77e70d, 1554080353-a576cf803bda
+- E-commerce/Products: 1521572163474-6864f9cf17ab (t-shirt), 1542744094-3a31f272c490 (ebook)
 
-For sections like testimonials, features, FAQ - generate realistic, specific content relevant to the page topic.`;
+For sections like testimonials, features, FAQ - generate realistic, specific content relevant to the page topic.
+
+**E-commerce Context:**
+- For physical products: Set productType to "physical-product", enable inventory tracking with trackInventory:true, set reasonable stock levels (50-500), and configure shipping with requiresShipping:true, weight in grams (100-1000), shippingCost (50-100), freeShippingThreshold (999).
+- For digital products: Set productType to "digital-product", shipping.requiresShipping to false, set downloadUrl like "/downloads/product-name.pdf", inventory.trackInventory to false.
+- Product categories: fashion-apparel, grocery-consumables, general-merchandise, home-electronics, health-beauty, books-stationery, custom.
+- Variants: For clothing/apparel, create size/color combinations with proper SKUs (e.g., "TSH-BLK-S" for T-Shirt Black Small). Each variant needs name, sku, stock, and attributes object.
+- Discounts: When user mentions discount percentage, calculate compareAtPrice from amount. Example: "20% off ₹999" means amount=799 (discounted), compareAtPrice=999 (original).
+
+**Biolink Context:**
+- Biolink profiles are for influencers, content creators, or personal brands who want a single link for all their social media.
+- Profile: Set displayName (creator name), bio (2-3 engaging sentences about them), theme (light/dark/custom), profileImage (use Unsplash portrait).
+- Social links: Common platforms are instagram, youtube, twitter, linkedin, tiktok. Set platform, url, enabled:true.
+- Contact: If they want contact option, set showContactButton:true, contactEmail or contactPhone.
+- Products: If showing products/merchandise, set showProductsSection:true, productsTitle like "My Products" or "Shop"
+- Example biolink: {"enabled": true, "displayName": "Jane Doe", "bio": "Fashion influencer & content creator. Sharing daily style tips and honest reviews.", "theme": "light", "showContactButton": true, "contactEmail": "jane@example.com", "showProductsSection": true, "productsTitle": "My Favorites"}
+- Example biolink links: [{"platform": "instagram", "url": "https://instagram.com/janedoe", "enabled": true}, {"platform": "youtube", "url": "https://youtube.com/janedoe", "enabled": true}]`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -137,6 +154,76 @@ For sections like testimonials, features, FAQ - generate realistic, specific con
                     description: "Section operations (add/remove/toggle)"
                   },
                   enableWeekends: { type: "boolean", description: "Enable weekend availability" },
+                  productCategory: { type: "string", description: "E-commerce product category (fashion-apparel, books-stationery, etc.)" },
+                  productType: { type: "string", enum: ["physical-product", "digital-product"], description: "Type of product" },
+                  variants: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        name: { type: "string", description: "Variant name like 'Small / Black'" },
+                        sku: { type: "string", description: "SKU code like 'TSH-BLK-S'" },
+                        price: { type: "number", description: "Variant price override" },
+                        stock: { type: "number", description: "Available stock" },
+                        attributes: { type: "object", description: "Variant attributes like {size: 'S', color: 'Black'}" },
+                      },
+                    },
+                    description: "Product variants for different sizes/colors"
+                  },
+                  inventory: {
+                    type: "object",
+                    properties: {
+                      trackInventory: { type: "boolean", description: "Whether to track inventory" },
+                      stock: { type: "number", description: "Total available stock" },
+                      lowStockThreshold: { type: "number", description: "Low stock alert threshold" },
+                      allowBackorder: { type: "boolean", description: "Allow orders when out of stock" },
+                    },
+                    description: "Inventory configuration"
+                  },
+                  shipping: {
+                    type: "object",
+                    properties: {
+                      requiresShipping: { type: "boolean", description: "Whether product needs shipping" },
+                      weight: { type: "number", description: "Product weight in grams" },
+                      shippingCost: { type: "number", description: "Shipping cost in INR" },
+                      freeShippingThreshold: { type: "number", description: "Free shipping above this amount" },
+                    },
+                    description: "Shipping configuration"
+                  },
+                  compareAtPrice: { type: "number", description: "Original price before discount" },
+                  downloadUrl: { type: "string", description: "Download URL for digital products" },
+                  biolinkProfile: {
+                    type: "object",
+                    properties: {
+                      enabled: { type: "boolean", description: "Enable biolink profile" },
+                      displayName: { type: "string", description: "Display name for biolink" },
+                      bio: { type: "string", description: "Short bio (2-3 sentences)" },
+                      profileImage: { type: "string", description: "Profile image URL" },
+                      location: { type: "string", description: "Location" },
+                      theme: { type: "string", enum: ["light", "dark", "custom"], description: "Theme" },
+                      accentColor: { type: "string", description: "Accent color for custom theme" },
+                      showContactButton: { type: "boolean", description: "Show contact button" },
+                      contactButtonText: { type: "string", description: "Contact button text" },
+                      contactEmail: { type: "string", description: "Contact email" },
+                      contactPhone: { type: "string", description: "Contact phone" },
+                      showProductsSection: { type: "boolean", description: "Show products section" },
+                      productsTitle: { type: "string", description: "Products section title" },
+                    },
+                    description: "Biolink profile configuration"
+                  },
+                  biolinkLinks: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        platform: { type: "string", description: "Platform: instagram, youtube, twitter, linkedin, etc." },
+                        url: { type: "string", description: "Social media URL" },
+                        label: { type: "string", description: "Custom label for link" },
+                        enabled: { type: "boolean", description: "Whether link is enabled" },
+                      },
+                    },
+                    description: "Biolink social media links"
+                  },
                   message: { type: "string", description: "Message to display to the user about what was changed" },
                 },
                 required: ["message"],

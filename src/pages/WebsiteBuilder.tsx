@@ -11,6 +11,9 @@ import { templates, CustomPage } from "@/data/smartPageTemplates";
 import { academyTemplate, coachingTemplate, webinarTemplate } from "@/data/productTemplates";
 import { ProductsConfig } from "@/types/products";
 import { ContactFormConfig, Lead, ContactFormField } from "@/types/leads";
+import { CategoryConfig } from "@/types/categories";
+import { Order } from "@/types/orders";
+import { BiolinkConfig } from "@/types/biolink";
 
 
 export interface SmartPageSite {
@@ -36,6 +39,12 @@ export interface SmartPageSite {
   leads?: Lead[];
   /** Custom pages beyond template pages */
   customPages?: CustomPage[];
+  /** Category configuration for e-commerce */
+  categoryConfig?: CategoryConfig;
+  /** Orders for e-commerce sites */
+  orders?: Order[];
+  /** Biolink configuration */
+  biolinkConfig?: BiolinkConfig;
 }
 
 const STORAGE_KEY = "smart-pages-sites";
@@ -87,6 +96,38 @@ const migrateSite = (s: any): SmartPageSite => {
     s.customPages = [];
   }
 
+  // Social Commerce migration: add category/orders/biolink defaults
+  if (!s.categoryConfig) {
+    s.categoryConfig = {
+      enabled: false,
+      categories: [],
+      allowCustomCategories: true,
+      displayMode: "tabs"
+    };
+  }
+
+  if (!s.orders) {
+    s.orders = [];
+  }
+
+  if (!s.biolinkConfig) {
+    s.biolinkConfig = {
+      enabled: false,
+      slug: s.slug || `bio-${s.id}`,
+      profile: {
+        enabled: false,
+        displayName: "",
+        bio: "",
+        theme: "light",
+        socialLinks: [],
+        showContactButton: false,
+        showProductsSection: true
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
   return s as SmartPageSite;
 };
 
@@ -121,7 +162,29 @@ export const getStoredSites = (): SmartPageSite[] => {
       productsConfig: academyTemplate.productsConfig,
       contactForm: academyTemplate.contactForm,
       leads: [],
-      customPages: []
+      customPages: [],
+      categoryConfig: {
+        enabled: false,
+        categories: [],
+        allowCustomCategories: true,
+        displayMode: "tabs"
+      },
+      orders: [],
+      biolinkConfig: {
+        enabled: false,
+        slug: "online-academy-demo-bio",
+        profile: {
+          enabled: false,
+          displayName: "",
+          bio: "",
+          theme: "light",
+          socialLinks: [],
+          showContactButton: false,
+          showProductsSection: true
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
     },
     {
       id: "demo_coaching",
@@ -140,7 +203,29 @@ export const getStoredSites = (): SmartPageSite[] => {
       productsConfig: coachingTemplate.productsConfig,
       contactForm: coachingTemplate.contactForm,
       leads: [],
-      customPages: []
+      customPages: [],
+      categoryConfig: {
+        enabled: false,
+        categories: [],
+        allowCustomCategories: true,
+        displayMode: "tabs"
+      },
+      orders: [],
+      biolinkConfig: {
+        enabled: false,
+        slug: "coaching-demo-bio",
+        profile: {
+          enabled: false,
+          displayName: "",
+          bio: "",
+          theme: "light",
+          socialLinks: [],
+          showContactButton: false,
+          showProductsSection: true
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
     },
     {
       id: "demo_webinar",
@@ -160,7 +245,29 @@ export const getStoredSites = (): SmartPageSite[] => {
       productsConfig: webinarTemplate.productsConfig,
       contactForm: webinarTemplate.contactForm,
       leads: [],
-      customPages: []
+      customPages: [],
+      categoryConfig: {
+        enabled: false,
+        categories: [],
+        allowCustomCategories: true,
+        displayMode: "tabs"
+      },
+      orders: [],
+      biolinkConfig: {
+        enabled: false,
+        slug: "webinar-demo-bio",
+        profile: {
+          enabled: false,
+          displayName: "",
+          bio: "",
+          theme: "light",
+          socialLinks: [],
+          showContactButton: false,
+          showProductsSection: true
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      }
     }
   ];
   localStorage.setItem(STORAGE_KEY, JSON.stringify(defaults));

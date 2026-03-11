@@ -27,6 +27,34 @@ export interface AIPageUpdates {
   features?: { title: string; desc: string; icon?: string }[];
   sections?: { type: string; action: "add" | "remove" | "toggle" }[];
   enableWeekends?: boolean;
+
+  // E-commerce fields
+  productCategory?: string; // Category name or ID
+  variants?: { name: string; sku?: string; price?: number; stock?: number; attributes: Record<string, string> }[];
+  inventory?: { trackInventory: boolean; stock: number; lowStockThreshold?: number; allowBackorder: boolean };
+  shipping?: { requiresShipping: boolean; weight?: number; shippingCost?: number; freeShippingThreshold?: number };
+  compareAtPrice?: number; // Original price for showing discounts
+  downloadUrl?: string; // For digital products
+  productType?: "physical-product" | "digital-product";
+
+  // Biolink fields
+  biolinkProfile?: {
+    enabled?: boolean;
+    displayName?: string;
+    bio?: string;
+    profileImage?: string;
+    location?: string;
+    theme?: "light" | "dark" | "custom";
+    accentColor?: string;
+    showContactButton?: boolean;
+    contactButtonText?: string;
+    contactEmail?: string;
+    contactPhone?: string;
+    showProductsSection?: boolean;
+    productsTitle?: string;
+  };
+  biolinkLinks?: { platform: string; url: string; label?: string; enabled?: boolean }[];
+
   message?: string;
 }
 

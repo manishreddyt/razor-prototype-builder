@@ -1,4 +1,4 @@
-import { GraduationCap, Video, Calendar } from "lucide-react";
+import { GraduationCap, Video, Calendar, ShoppingBag } from "lucide-react";
 import { TemplateData } from "./smartPageTemplates";
 import { Product, CourseModule } from "@/types/products";
 
@@ -639,8 +639,401 @@ export const webinarTemplate: TemplateData = {
   }
 };
 
+// Sample E-commerce Products
+const samplePhysicalProduct: Product = {
+  id: "prod-tshirt-1",
+  type: "physical-product",
+  title: "Premium Cotton T-Shirt",
+  description: "Ultra-soft, breathable cotton t-shirt perfect for everyday wear",
+  longDescription: "Our premium cotton t-shirt is crafted from 100% organic cotton for maximum comfort and durability. Perfect for casual outings or lounging at home.\n\nFeatures:\n- 100% organic cotton fabric\n- Pre-shrunk for perfect fit\n- Reinforced collar and shoulders\n- Double-stitched sleeves and bottom hem\n- Available in multiple colors and sizes\n- Machine washable\n\nSustainably sourced and ethically manufactured. Each purchase supports fair trade practices.",
+  image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=800&fit=crop&q=80",
+  images: [
+    "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=800&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?w=800&h=800&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1562157873-818bc0726f68?w=800&h=800&fit=crop&q=80"
+  ],
+  pricingModels: [
+    {
+      id: "pm1",
+      name: "Standard Price",
+      price: 799,
+      currency: "INR",
+      interval: "one_time",
+      features: [
+        "Premium 100% cotton",
+        "Available in all sizes",
+        "Free shipping on orders above ₹999",
+        "30-day return policy"
+      ],
+      highlighted: true
+    }
+  ],
+  category: "cat_ec_1",
+  productCategory: "cat_ec_1", // Fashion & Apparel
+  tags: ["t-shirt", "casual", "cotton", "unisex"],
+  featured: true,
+  badge: "Bestseller",
+  compareAtPrice: 999,
+  discountedPrice: 799,
+  discountPercentage: 20,
+  variants: [
+    {
+      id: "var-1",
+      name: "Small / Black",
+      sku: "TSH-BLK-S",
+      stock: 50,
+      attributes: { size: "S", color: "Black" },
+      enabled: true
+    },
+    {
+      id: "var-2",
+      name: "Small / White",
+      sku: "TSH-WHT-S",
+      stock: 45,
+      attributes: { size: "S", color: "White" },
+      enabled: true
+    },
+    {
+      id: "var-3",
+      name: "Medium / Black",
+      sku: "TSH-BLK-M",
+      stock: 75,
+      attributes: { size: "M", color: "Black" },
+      enabled: true
+    },
+    {
+      id: "var-4",
+      name: "Medium / White",
+      sku: "TSH-WHT-M",
+      stock: 80,
+      attributes: { size: "M", color: "White" },
+      enabled: true
+    },
+    {
+      id: "var-5",
+      name: "Large / Black",
+      sku: "TSH-BLK-L",
+      stock: 60,
+      attributes: { size: "L", color: "Black" },
+      enabled: true
+    },
+    {
+      id: "var-6",
+      name: "Large / White",
+      sku: "TSH-WHT-L",
+      stock: 55,
+      attributes: { size: "L", color: "White" },
+      enabled: true
+    },
+    {
+      id: "var-7",
+      name: "XL / Black",
+      sku: "TSH-BLK-XL",
+      stock: 40,
+      attributes: { size: "XL", color: "Black" },
+      enabled: true
+    },
+    {
+      id: "var-8",
+      name: "XL / White",
+      sku: "TSH-WHT-XL",
+      stock: 35,
+      attributes: { size: "XL", color: "White" },
+      enabled: true
+    }
+  ],
+  inventory: {
+    trackInventory: true,
+    stock: 50,
+    lowStockThreshold: 10,
+    allowBackorder: false,
+    sku: "TS-001-BLK-M"
+  },
+  shipping: {
+    requiresShipping: true,
+    weight: 200,
+    dimensions: {
+      length: 30,
+      width: 25,
+      height: 2
+    },
+    shippingCost: 80,
+    freeShippingThreshold: 999
+  },
+  status: "published",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
+
+const sampleDigitalProduct: Product = {
+  id: "prod-lightroom-presets-1",
+  type: "digital-product",
+  title: "Premium Lightroom Presets Pack",
+  description: "Professional photo editing presets for stunning Instagram-worthy photos",
+  longDescription: "Transform your photos instantly with our premium collection of 50+ Lightroom presets. Perfect for photographers, influencers, and content creators looking to create a cohesive aesthetic.\n\n**What's Included:**\n- 50+ professional Lightroom presets\n- Desktop (.xmp) and mobile (.dng) formats\n- Portrait, landscape, and lifestyle categories\n- Before/after preview guide\n- Installation instructions\n- Video tutorial on preset application\n\n**Instant Download:** Get immediate access after purchase. Compatible with Lightroom Classic, CC, and Mobile.\n\n**Preset Categories:**\n- Warm & Moody (10 presets)\n- Bright & Airy (12 presets)\n- Vintage Film (8 presets)\n- Black & White (10 presets)\n- Travel & Landscape (10 presets)",
+  image: "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=800&h=800&fit=crop&q=80",
+  images: [
+    "https://images.unsplash.com/photo-1542038784456-1ea8e935640e?w=800&h=800&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1606857521015-7f9fcf423740?w=800&h=800&fit=crop&q=80"
+  ],
+  pricingModels: [
+    {
+      id: "pm1",
+      name: "Standard Price",
+      price: 499,
+      currency: "INR",
+      interval: "one_time",
+      features: [
+        "50+ Lightroom presets",
+        "Desktop & mobile formats",
+        "Instant download",
+        "Lifetime access",
+        "Free updates"
+      ],
+      highlighted: true
+    }
+  ],
+  category: "cat_ec_2",
+  tags: ["lightroom", "presets", "photography", "digital"],
+  featured: true,
+  badge: "Digital Download",
+  downloadUrl: "/downloads/lightroom-presets-pack.zip",
+  inventory: {
+    trackInventory: false,
+    stock: 9999,
+    allowBackorder: true,
+    sku: "LP-PREM-001"
+  },
+  shipping: {
+    requiresShipping: false
+  },
+  status: "published",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
+
+const sampleEarbudsProduct: Product = {
+  id: "prod-earbuds-1",
+  type: "physical-product",
+  title: "Wireless Bluetooth Earbuds",
+  description: "Premium sound quality with active noise cancellation and 24-hour battery life",
+  longDescription: "Experience crystal-clear audio with our premium wireless earbuds. Perfect for music lovers, commuters, and fitness enthusiasts.\n\n**Key Features:**\n- Active Noise Cancellation (ANC)\n- 24-hour battery life with charging case\n- IPX7 water resistance\n- Touch controls for music and calls\n- Premium sound with deep bass\n- Comfortable ergonomic design\n- USB-C fast charging\n- Bluetooth 5.3 connectivity\n\n**What's in the Box:**\n- Wireless earbuds\n- Charging case\n- 3 sizes of ear tips (S, M, L)\n- USB-C charging cable\n- User manual\n- 1-year warranty\n\nPerfect for workouts, travel, and everyday use. Compatible with all Bluetooth devices.",
+  image: "https://images.unsplash.com/photo-1590658165737-15a047b7a0c5?w=800&h=800&fit=crop&q=80",
+  images: [
+    "https://images.unsplash.com/photo-1590658165737-15a047b7a0c5?w=800&h=800&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=800&h=800&fit=crop&q=80",
+    "https://images.unsplash.com/photo-1613040809024-b4ef7ba99bc3?w=800&h=800&fit=crop&q=80"
+  ],
+  pricingModels: [
+    {
+      id: "pm1",
+      name: "Standard Price",
+      price: 2499,
+      currency: "INR",
+      interval: "one_time",
+      features: [
+        "Premium wireless earbuds",
+        "Active noise cancellation",
+        "24-hour battery life",
+        "Free shipping on orders above ₹999",
+        "1-year warranty"
+      ],
+      highlighted: true
+    }
+  ],
+  category: "cat_ec_2",
+  tags: ["earbuds", "wireless", "bluetooth", "audio", "electronics"],
+  featured: true,
+  badge: "Bestseller",
+  compareAtPrice: 2999,
+  discountedPrice: 2499,
+  discountPercentage: 17,
+  inventory: {
+    trackInventory: true,
+    stock: 25,
+    lowStockThreshold: 10,
+    allowBackorder: false,
+    sku: "EB-WRL-001"
+  },
+  shipping: {
+    requiresShipping: true,
+    weight: 150,
+    dimensions: {
+      length: 12,
+      width: 10,
+      height: 4
+    },
+    shippingCost: 50,
+    freeShippingThreshold: 999
+  },
+  status: "published",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString()
+};
+
+// E-commerce Store Template
+export const ecommerceTemplate: TemplateData = {
+  id: "ecommerce-store",
+  title: "E-commerce Store",
+  desc: "Complete online store with product catalog, categories, and cart",
+  category: "ecommerce",
+  icon: ShoppingBag,
+  pages: ["Home", "About Us", "Contact Us"],
+  heroTitle: "Shop Premium Quality Products",
+  heroTagline: "E-commerce • Online Shopping • Fast Delivery",
+  heroDescription: "Discover our curated collection of premium products. Free shipping on orders above ₹999. Shop now and get exclusive deals!",
+  heroCta: "Shop Now",
+  bannerImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&h=1080&fit=crop&q=90",
+  sections: [
+    section("hero", "Hero Banner"),
+    section("products", "Products", {
+      heading: "Featured Products",
+      description: "Handpicked collection of our best-selling items"
+    }),
+    section("features", "Features", {
+      heading: "Why Shop With Us",
+      items: [
+        { title: "Free Shipping", desc: "On orders above ₹999", icon: "🚚" },
+        { title: "Secure Payments", desc: "100% safe & secure checkout", icon: "🔒" },
+        { title: "Easy Returns", desc: "30-day return policy", icon: "↩️" },
+        { title: "Quality Guaranteed", desc: "Premium products, verified quality", icon: "✓" }
+      ]
+    }),
+    section("testimonials", "Testimonials", {
+      heading: "What Customers Say",
+      items: [
+        { name: "Priya Sharma", text: "Amazing quality! The t-shirts are super comfortable and delivery was fast.", rating: 5, avatar: "PS" },
+        { name: "Rahul Verma", text: "Great products at reasonable prices. Will definitely order again!", rating: 5, avatar: "RV" },
+        { name: "Ananya Gupta", text: "Love the collection! Customer service is excellent too.", rating: 5, avatar: "AG" }
+      ]
+    }),
+    section("stats", "Stats", {
+      items: [
+        { value: "10,000+", label: "Happy Customers" },
+        { value: "5,000+", label: "Products Sold" },
+        { value: "4.8/5", label: "Average Rating" },
+        { value: "24/7", label: "Support Available" }
+      ]
+    }),
+    section("faq", "FAQ", {
+      heading: "Frequently Asked Questions",
+      items: [
+        { q: "What is the shipping time?", a: "Most orders are delivered within 5-7 business days." },
+        { q: "Do you offer cash on delivery?", a: "Yes, COD is available for most locations." },
+        { q: "What is your return policy?", a: "We offer a 30-day return policy for unused items in original packaging." },
+        { q: "Are the products genuine?", a: "Yes, all our products are 100% authentic and come with quality guarantee." }
+      ]
+    }),
+    section("contact-form", "Contact Form"),
+    section("cta-banner", "CTA Banner", {
+      heading: "Ready to Shop?",
+      text: "Browse our complete collection and find your perfect product today!",
+      buttonText: "Start Shopping"
+    })
+  ],
+  productsConfig: {
+    enabled: true,
+    products: [samplePhysicalProduct, sampleDigitalProduct, sampleEarbudsProduct],
+    displayMode: "grid",
+    showPricing: true,
+    categoriesEnabled: true,
+    categories: ["Fashion & Apparel", "Electronics", "Digital Products", "Books"]
+  },
+  contactForm: {
+    enabled: true,
+    title: "Get in Touch",
+    description: "Have questions about our products? We're here to help!",
+    fields: [
+      { id: "name", label: "Full Name", type: "text", required: true, placeholder: "Your name" },
+      { id: "email", label: "Email", type: "email", required: true, placeholder: "your.email@example.com" },
+      { id: "phone", label: "Phone", type: "phone", required: false, placeholder: "+91 98765 43210" },
+      { id: "message", label: "Message", type: "textarea", required: true, placeholder: "How can we help?" }
+    ],
+    includeInterests: false,
+    autoReply: true,
+    autoReplyMessage: "Thanks for reaching out! We'll get back to you within 24 hours.",
+    successMessage: "Thank you! We'll be in touch soon."
+  },
+  pagesData: {
+    "About Us": {
+      heroTitle: "About Our Store",
+      heroTagline: "Quality • Trust • Excellence",
+      heroDescription: "Your trusted destination for premium products and exceptional service.",
+      heroCta: "Shop Now",
+      bannerImage: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1920&h=1080&fit=crop&q=90",
+      sections: [
+        section("hero", "Hero Banner"),
+        section("about", "Our Story", {
+          heading: "Built on Quality and Trust",
+          text: "Founded in 2020, we've built a reputation for delivering premium products and exceptional customer service. Our mission is simple: provide our customers with quality products at fair prices, backed by outstanding support.\n\nEvery product in our catalog is carefully selected and quality-checked to ensure you get the best value for your money. We believe in building long-term relationships with our customers through trust and reliability.",
+          image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=600&fit=crop&q=80"
+        }),
+        section("features", "Our Values", {
+          heading: "What We Stand For",
+          items: [
+            { title: "Quality First", desc: "Every product is carefully vetted for quality", icon: "⭐" },
+            { title: "Customer Satisfaction", desc: "Your happiness is our priority", icon: "😊" },
+            { title: "Fast Delivery", desc: "Quick and reliable shipping nationwide", icon: "⚡" },
+            { title: "Secure Shopping", desc: "Safe and encrypted payment processing", icon: "🔒" }
+          ]
+        }),
+        section("stats", "Impact", {
+          items: [
+            { value: "10,000+", label: "Customers Served" },
+            { value: "5,000+", label: "Orders Delivered" },
+            { value: "4.8/5", label: "Average Rating" },
+            { value: "99%", label: "Satisfaction Rate" }
+          ]
+        }),
+        section("cta-banner", "Start Shopping", {
+          heading: "Discover Our Collection",
+          text: "Browse through our carefully curated products and find what you love",
+          buttonText: "Shop Now"
+        })
+      ]
+    },
+    "Contact Us": {
+      heroTitle: "Contact Us",
+      heroTagline: "We're Here to Help",
+      heroDescription: "Have questions? Need support? Get in touch with our friendly customer service team.",
+      heroCta: "",
+      bannerImage: "https://images.unsplash.com/photo-1423666639041-f56000c27a9a?w=1920&h=1080&fit=crop&q=90",
+      sections: [
+        section("hero", "Hero Banner"),
+        section("contact-form", "Contact Form"),
+        section("features", "Reach Us", {
+          heading: "How to Contact Us",
+          items: [
+            { title: "Email", desc: "support@store.com", icon: "📧" },
+            { title: "Phone", desc: "+91 98765 43210", icon: "📞" },
+            { title: "WhatsApp", desc: "Chat with us instantly", icon: "💬" },
+            { title: "Hours", desc: "Mon-Sat, 9 AM - 7 PM IST", icon: "🕐" }
+          ]
+        }),
+        section("faq", "Common Questions", {
+          heading: "Frequently Asked Questions",
+          items: [
+            { q: "How do I track my order?", a: "You'll receive a tracking link via email once your order ships." },
+            { q: "What payment methods do you accept?", a: "We accept UPI, cards, net banking, and cash on delivery." },
+            { q: "Can I cancel my order?", a: "Yes, you can cancel within 24 hours of placing the order." },
+            { q: "Do you ship internationally?", a: "Currently we only ship within India." }
+          ]
+        })
+      ]
+    }
+  }
+};
+
+// Export sample e-commerce products for use in other templates
+export const sampleEcommerceProducts = {
+  tshirt: samplePhysicalProduct,
+  lightroomPresets: sampleDigitalProduct,
+  earbuds: sampleEarbudsProduct
+};
+
 export const productFocusedTemplates = [
   academyTemplate,
   coachingTemplate,
-  webinarTemplate
+  webinarTemplate,
+  ecommerceTemplate
 ];

@@ -1,18 +1,21 @@
 import { useState, useEffect } from "react";
-import { Product, PricingModel } from "@/types/products";
+import { Product, PricingModel, ProductVariant } from "@/types/products";
 import { Lead } from "@/types/leads";
+import { ShippingAddress, Order, OrderItem } from "@/types/orders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Check, Loader2 } from "lucide-react";
+import { ArrowLeft, Check, Loader2, Package } from "lucide-react";
 import { toast } from "sonner";
+import { addOrder, generateOrderNumber } from "@/lib/orderStorage";
 
 // Razorpay type is declared in src/types/razorpay.d.ts
 
 interface ProductCheckoutModalProps {
   product: Product;
   pricingModel: PricingModel;
+  selectedVariant?: ProductVariant;
   siteId: string;
   siteName: string;
   onClose: () => void;
@@ -21,6 +24,7 @@ interface ProductCheckoutModalProps {
 export const ProductCheckoutModal = ({
   product,
   pricingModel,
+  selectedVariant,
   siteId,
   siteName,
   onClose,
@@ -36,7 +40,18 @@ export const ProductCheckoutModal = ({
     preferredTime: "",
     topic: "",
     company: "",
+    // Shipping address fields
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    pincode: "",
+    country: "India",
+    landmark: "",
   });
+
+  const isPhysicalProduct = product.type === "physical-product";
+  const requiresShipping = isPhysicalProduct && product.shipping?.requiresShipping;
 
   // Load Razorpay script on mount
   useEffect(() => {
@@ -76,6 +91,8 @@ export const ProductCheckoutModal = ({
         pricingModel: pricingModel.name,
         amount: pricingModel.price,
         paymentId: paymentId,
+        variantId: selectedVariant?.id,
+        variantName: selectedVariant?.name,
         ...formData,
       },
       createdAt: new Date().toISOString(),
@@ -102,11 +119,88 @@ export const ProductCheckoutModal = ({
     }
   };
 
+  const saveOrder = (paymentId: string) => {
+    // Calculate pricing
+    const itemPrice = selectedVariant?.price || pricingModel.price;
+    const shippingCost = product.shipping?.shippingCost || 0;
+    const subtotal = itemPrice;
+    const total = subtotal + shippingCost;
+
+    // Create order item
+    const orderItem: OrderItem = {
+      id: `item-${Date.now()}`,
+      productId: product.id,
+      productName: product.title,
+      productImage: selectedVariant?.image || product.image,
+      variantId: selectedVariant?.id,
+      variantName: selectedVariant?.name,
+      quantity: 1,
+      price: itemPrice,
+      subtotal: subtotal,
+    };
+
+    // Create shipping address if required
+    let shippingAddress: ShippingAddress | undefined;
+    if (requiresShipping) {
+      shippingAddress = {
+        fullName: formData.name,
+        phone: formData.phone,
+        addressLine1: formData.addressLine1,
+        addressLine2: formData.addressLine2,
+        city: formData.city,
+        state: formData.state,
+        pincode: formData.pincode,
+        country: formData.country,
+        landmark: formData.landmark,
+      };
+    }
+
+    // Create order
+    const order: Order = {
+      id: `order-${Date.now()}`,
+      websiteId: siteId,
+      orderNumber: generateOrderNumber(siteId),
+      customerName: formData.name,
+      customerEmail: formData.email,
+      customerPhone: formData.phone,
+      items: [orderItem],
+      subtotal: subtotal,
+      shippingCost: shippingCost,
+      tax: 0,
+      discount: 0,
+      total: total,
+      currency: "INR",
+      status: "confirmed",
+      paymentStatus: "paid",
+      paymentId: paymentId,
+      shippingAddress: shippingAddress,
+      billingAddress: shippingAddress, // Use same as shipping for now
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      paidAt: new Date().toISOString(),
+      metadata: {
+        pricingModelName: pricingModel.name,
+        productType: product.type,
+      },
+    };
+
+    // Save order using storage utility
+    addOrder(order);
+  };
+
   const handleProceedToPay = async () => {
     // Validate required fields
     if (!formData.name || !formData.email) {
       toast.error("Please fill in all required fields");
       return;
+    }
+
+    // Validate shipping address if required
+    if (requiresShipping) {
+      if (!formData.addressLine1 || !formData.city || !formData.state || !formData.pincode) {
+        toast.error("Please fill in complete shipping address");
+        return;
+      }
     }
 
     // Check if Razorpay is loaded
@@ -117,19 +211,29 @@ export const ProductCheckoutModal = ({
 
     setProcessing(true);
 
+    // Calculate total amount
+    const itemPrice = selectedVariant?.price || pricingModel.price;
+    const shippingCost = product.shipping?.shippingCost || 0;
+    const totalAmount = itemPrice + shippingCost;
+
     // Razorpay checkout options
     const options = {
       key: "rzp_live_SFFFdBjmPbTKZL", // Replace with your Razorpay key
-      amount: pricingModel.price * 100, // Amount in paise
+      amount: totalAmount * 100, // Amount in paise
       currency: pricingModel.currency || "INR",
       name: product.title,
-      description: `${pricingModel.name} - ${product.description.slice(0, 100)}`,
-      image: product.image,
+      description: `${pricingModel.name}${selectedVariant ? ` - ${selectedVariant.name}` : ""} - ${product.description.slice(0, 100)}`,
+      image: selectedVariant?.image || product.image,
       handler: function (response: any) {
         console.log("Payment Success:", response);
 
         // Save lead with payment ID
         saveLead(response.razorpay_payment_id);
+
+        // Save order if e-commerce product
+        if (product.type === "physical-product" || product.type === "digital-product") {
+          saveOrder(response.razorpay_payment_id);
+        }
 
         toast.success("Payment successful! 🎉", {
           description: `Payment ID: ${response.razorpay_payment_id}`,
@@ -157,6 +261,11 @@ export const ProductCheckoutModal = ({
     const razorpay = new window.Razorpay(options);
     razorpay.open();
   };
+
+  // Calculate total amount
+  const itemPrice = selectedVariant?.price || pricingModel.price;
+  const shippingCost = product.shipping?.shippingCost || 0;
+  const totalAmount = itemPrice + shippingCost;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -191,25 +300,40 @@ export const ProductCheckoutModal = ({
             <div className="space-y-4">
               <div>
                 <img
-                  src={product.image}
+                  src={selectedVariant?.image || product.image}
                   alt={product.title}
                   className="w-full h-32 object-cover rounded"
                 />
               </div>
               <div>
                 <div className="font-semibold">{product.title}</div>
+                {selectedVariant && (
+                  <div className="text-sm text-muted-foreground">
+                    Variant: {selectedVariant.name}
+                  </div>
+                )}
                 <div className="text-sm text-muted-foreground mt-1">
                   {product.description}
                 </div>
               </div>
-              <div className="pt-4 border-t">
-                <div className="flex justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Plan</span>
+              <div className="pt-4 border-t space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Plan</span>
                   <span className="font-medium">{pricingModel.name}</span>
                 </div>
-                <div className="flex justify-between text-lg font-bold">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Item Price</span>
+                  <span className="font-medium">₹{itemPrice.toLocaleString()}</span>
+                </div>
+                {requiresShipping && shippingCost > 0 && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Shipping</span>
+                    <span className="font-medium">₹{shippingCost.toLocaleString()}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-lg font-bold pt-2 border-t">
                   <span>Total</span>
-                  <span>₹{pricingModel.price.toLocaleString()}</span>
+                  <span>₹{totalAmount.toLocaleString()}</span>
                 </div>
               </div>
               {pricingModel.features.length > 0 && (
@@ -264,6 +388,92 @@ export const ProductCheckoutModal = ({
                       placeholder="+91 98765 43210"
                     />
                   </div>
+
+                  {/* Shipping Address for Physical Products */}
+                  {requiresShipping && (
+                    <>
+                      <div className="pt-4 border-t">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Package className="w-5 h-5 text-primary" />
+                          <div className="text-sm font-medium">Shipping Address</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="addressLine1">Address Line 1 *</Label>
+                        <Input
+                          id="addressLine1"
+                          value={formData.addressLine1}
+                          onChange={(e) => handleInputChange("addressLine1", e.target.value)}
+                          placeholder="House/Flat No., Building Name"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="addressLine2">Address Line 2</Label>
+                        <Input
+                          id="addressLine2"
+                          value={formData.addressLine2}
+                          onChange={(e) => handleInputChange("addressLine2", e.target.value)}
+                          placeholder="Street, Area"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="landmark">Landmark</Label>
+                        <Input
+                          id="landmark"
+                          value={formData.landmark}
+                          onChange={(e) => handleInputChange("landmark", e.target.value)}
+                          placeholder="Near..."
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="city">City *</Label>
+                          <Input
+                            id="city"
+                            value={formData.city}
+                            onChange={(e) => handleInputChange("city", e.target.value)}
+                            placeholder="Mumbai"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="state">State *</Label>
+                          <Input
+                            id="state"
+                            value={formData.state}
+                            onChange={(e) => handleInputChange("state", e.target.value)}
+                            placeholder="Maharashtra"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="pincode">Pincode *</Label>
+                          <Input
+                            id="pincode"
+                            value={formData.pincode}
+                            onChange={(e) => handleInputChange("pincode", e.target.value)}
+                            placeholder="400001"
+                            maxLength={6}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="country">Country</Label>
+                          <Input
+                            id="country"
+                            value={formData.country}
+                            onChange={(e) => handleInputChange("country", e.target.value)}
+                            placeholder="India"
+                            disabled
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {/* Course-specific fields */}
                   {product.type === "online-course" && (
@@ -345,7 +555,7 @@ export const ProductCheckoutModal = ({
                       Loading...
                     </>
                   ) : (
-                    `Proceed to Pay ₹${pricingModel.price.toLocaleString()}`
+                    `Proceed to Pay ₹${totalAmount.toLocaleString()}`
                   )}
                 </Button>
               </>
@@ -360,6 +570,8 @@ export const ProductCheckoutModal = ({
                   {product.type === "online-course" && "Welcome to the Course!"}
                   {product.type === "1-1-session" && "Session Booked!"}
                   {product.type === "webinar" && "You're Registered!"}
+                  {product.type === "physical-product" && "Order Confirmed!"}
+                  {product.type === "digital-product" && "Purchase Complete!"}
                 </h3>
                 <p className="text-muted-foreground mb-6">
                   {product.type === "online-course" &&
@@ -368,12 +580,27 @@ export const ProductCheckoutModal = ({
                     "Calendar invite sent. We'll confirm your preferred time within 24 hours"}
                   {product.type === "webinar" &&
                     "Confirmation email with join link has been sent"}
+                  {product.type === "physical-product" &&
+                    "Your order will be shipped to the provided address"}
+                  {product.type === "digital-product" &&
+                    "Download link has been sent to your email"}
                 </p>
                 <div className="space-y-3">
                   <div className="bg-gray-50 p-4 rounded-lg text-left">
                     <div className="text-sm text-muted-foreground mb-1">Confirmation sent to</div>
                     <div className="font-medium">{formData.email}</div>
                   </div>
+                  {requiresShipping && (
+                    <div className="bg-gray-50 p-4 rounded-lg text-left">
+                      <div className="text-sm text-muted-foreground mb-1">Shipping to</div>
+                      <div className="font-medium text-sm">
+                        {formData.addressLine1}
+                        {formData.addressLine2 && `, ${formData.addressLine2}`}
+                        <br />
+                        {formData.city}, {formData.state} - {formData.pincode}
+                      </div>
+                    </div>
+                  )}
                   <Button className="w-full" onClick={onClose}>
                     Done
                   </Button>
