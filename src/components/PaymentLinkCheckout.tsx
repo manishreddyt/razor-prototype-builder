@@ -183,16 +183,25 @@ export function PaymentLinkCheckout() {
     setTimeout(() => {
       setProcessing(false);
 
-      // Show success toast
-      toast({
-        title: "Payment Successful! 🎉",
-        description: `Paid ₹${formData.amount.toLocaleString('en-IN')} via ${paymentMethod.toUpperCase()}`,
+      // Calculate final amount
+      const finalAmount = link?.acceptPartialPayment ? formData.amount : totalAmount;
+
+      // Generate transaction ID
+      const transactionId = `TXN${Date.now().toString().slice(-10)}`;
+
+      // Redirect to success page with payment details
+      const params = new URLSearchParams({
+        amount: finalAmount.toString(),
+        method: paymentMethod,
+        merchant: "Razorpay Merchant",
+        description: link?.description || link?.title || "Payment",
+        txnId: transactionId,
+        name: formData.name,
+        email: formData.email || "",
+        phone: formData.phone || "",
       });
 
-      // Redirect to success page after 2 seconds
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+      navigate(`/payment-success?${params.toString()}`);
     }, 2000);
   };
 

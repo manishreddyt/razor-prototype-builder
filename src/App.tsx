@@ -42,10 +42,24 @@ import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
 import { PaymentLinkCheckout } from "./components/PaymentLinkCheckout";
 import { PaymentSuccess } from "./components/PaymentSuccess";
+import { useEffect } from "react";
+import { seedOrderData } from "./lib/orderSeedData";
+import { seedDemoStore } from "./lib/storeSeedData";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+// Seed demo data on app initialization
+const useSeedData = () => {
+  useEffect(() => {
+    seedDemoStore();
+    seedOrderData();
+  }, []);
+};
+
+const App = () => {
+  useSeedData();
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
@@ -96,6 +110,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;
