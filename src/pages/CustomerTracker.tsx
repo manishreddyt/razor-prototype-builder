@@ -525,23 +525,14 @@ const CustomerTracker = () => {
                 <Button variant="outline" size="sm" className="flex-1">
                   <Mail className="h-4 w-4 mr-1" /> Email
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  <ExternalLink className="h-4 w-4 mr-1" /> Freshdesk
-                </Button>
               </div>
 
-              {/* Tabs */}
-              <Tabs defaultValue="transactions" className="mt-6">
-                <TabsList className="w-full">
-                  <TabsTrigger value="transactions" className="flex-1">
-                    Transactions ({selectedCustomer.transactions.length})
-                  </TabsTrigger>
-                  <TabsTrigger value="interactions" className="flex-1">
-                    Interactions ({selectedCustomer.notes.length})
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="transactions" className="space-y-2 mt-3">
+              {/* Transactions */}
+              <div className="mt-6">
+                <h3 className="text-sm font-semibold text-foreground mb-3">
+                  Transactions ({selectedCustomer.transactions.length})
+                </h3>
+                <div className="space-y-2">
                   {selectedCustomer.transactions.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-6">No transactions yet.</p>
                   ) : (
@@ -561,27 +552,8 @@ const CustomerTracker = () => {
                       </div>
                     ))
                   )}
-                </TabsContent>
-
-                <TabsContent value="interactions" className="space-y-2 mt-3">
-                  {selectedCustomer.notes.length === 0 ? (
-                    <p className="text-sm text-muted-foreground text-center py-6">No interactions recorded.</p>
-                  ) : (
-                    selectedCustomer.notes.map((note) => {
-                      const NIcon = noteTypeIcon[note.type] || MessageCircle;
-                      return (
-                        <div key={note.id} className="flex items-start gap-3 p-3 rounded-lg bg-secondary/30">
-                          <NIcon className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-foreground">{note.content}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{note.date}</p>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </TabsContent>
-              </Tabs>
+                </div>
+              </div>
             </>
           )}
         </SheetContent>
