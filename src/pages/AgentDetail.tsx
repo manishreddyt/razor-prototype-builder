@@ -24,7 +24,10 @@ import {
   IndianRupee,
   Activity,
   Sparkles,
+  Instagram,
 } from "lucide-react";
+import { mockInstagramActivities, instagramMetrics, mockConversations } from "@/data/instagramMockData";
+import { InstagramConversationViewer } from "@/components/InstagramConversationViewer";
 
 type AgentStatus = "draft" | "configured" | "deployed" | "paused";
 
@@ -117,6 +120,21 @@ const agentsMap: Record<string, AgentData> = {
       { id: "f3", timestamp: "4 hrs ago", action: "Flagged at-risk student: Low engagement + NPS 3", outcome: "interested", details: "Sent personalised check-in message. Offered 1-on-1 doubt session." },
       { id: "f4", timestamp: "1 day ago", action: "Generated weekly NPS report for all active courses", outcome: "success", details: "Overall NPS: 72. Python: 84, Web Dev: 68, Data Science: 71." },
     ],
+  },
+  instagram: {
+    id: "instagram",
+    type: "instagram",
+    title: "Social Commerce",
+    description: "Auto-respond to Instagram DMs, convert comments to sales, send payment links automatically for your e-commerce business.",
+    icon: Instagram,
+    status: "deployed",
+    goal: "Respond to DMs within 2 min, convert comments to sales, send payment links automatically, remind cart abandoners within 24 hours",
+    metrics: {
+      leads: instagramMetrics.dmsHandled,
+      conversions: instagramMetrics.commentsConverted,
+      revenue: `₹${instagramMetrics.revenue.toLocaleString()}`,
+    },
+    activities: mockInstagramActivities,
   },
 };
 
@@ -220,6 +238,9 @@ const AgentDetail = () => {
           <TabsList>
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="activity">Activity Log</TabsTrigger>
+            {agentId === "instagram" && (
+              <TabsTrigger value="conversations">Conversations</TabsTrigger>
+            )}
             <TabsTrigger value="config">Configuration</TabsTrigger>
           </TabsList>
 
@@ -227,8 +248,16 @@ const AgentDetail = () => {
           <TabsContent value="overview" className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {[
-                { icon: Users, label: "Leads Processed", value: agentData.metrics.leads.toLocaleString() },
-                { icon: TrendingUp, label: "Conversions", value: agentData.metrics.conversions.toLocaleString() },
+                {
+                  icon: Users,
+                  label: agentId === "instagram" ? "DMs Handled" : "Leads Processed",
+                  value: agentData.metrics.leads.toLocaleString()
+                },
+                {
+                  icon: TrendingUp,
+                  label: agentId === "instagram" ? "Comments Converted" : "Conversions",
+                  value: agentData.metrics.conversions.toLocaleString()
+                },
                 { icon: IndianRupee, label: "Revenue Generated", value: agentData.metrics.revenue },
               ].map((s) => (
                 <div key={s.label} className="blade-stat flex items-center gap-4">
@@ -297,6 +326,13 @@ const AgentDetail = () => {
               );
             })}
           </TabsContent>
+
+          {/* Conversations Tab (Instagram only) */}
+          {agentId === "instagram" && (
+            <TabsContent value="conversations" className="space-y-4">
+              <InstagramConversationViewer conversations={mockConversations} />
+            </TabsContent>
+          )}
 
           {/* Configuration Tab */}
           <TabsContent value="config" className="space-y-4">

@@ -24,6 +24,7 @@ import {
   Eye,
   Settings,
   Users,
+  Instagram,
 } from "lucide-react";
 
 type AgentStatus = "draft" | "configured" | "deployed" | "paused";
@@ -93,6 +94,19 @@ const initialAgents: AgentState[] = [
     leadsProcessed: 890,
     conversions: 756,
     lastActive: "30 min ago",
+  },
+  {
+    id: "instagram",
+    type: "instagram",
+    icon: Instagram,
+    title: "Social Commerce",
+    description:
+      "Auto-respond to Instagram DMs, convert comments to sales, send payment links automatically for your e-commerce business.",
+    status: "draft",
+    goal: "",
+    leadsProcessed: 487,
+    conversions: 123,
+    lastActive: "30 sec ago",
   },
 ];
 

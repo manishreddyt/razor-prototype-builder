@@ -15,6 +15,7 @@ import {
   Megaphone,
   MessageCircle,
   Star,
+  Instagram,
 } from "lucide-react";
 import { generateChatResponse } from "@/services/geminiService";
 
@@ -47,6 +48,11 @@ const templatesByType: Record<string, { label: string; description: string }[]> 
     { label: "Testimonial harvesting", description: "Request testimonials from high-NPS students" },
     { label: "At-risk student detection", description: "Identify students likely to churn based on engagement" },
   ],
+  instagram: [
+    { label: "Auto-respond to product inquiries", description: "Answer sizing, price, availability questions instantly" },
+    { label: "Convert comments to sales", description: "Turn Instagram comments into DM conversations with payment links" },
+    { label: "Cart abandonment reminders", description: "Remind customers about items they viewed or added" },
+  ],
 };
 
 const agentTypeMap: Record<string, string> = {
@@ -54,6 +60,7 @@ const agentTypeMap: Record<string, string> = {
   marketing: "Marketing Agent",
   support: "Customer Service Agent",
   feedback: "Feedback Agent",
+  instagram: "Social Commerce Agent",
 };
 
 interface AgentConfigChatProps {
