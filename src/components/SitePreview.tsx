@@ -121,6 +121,9 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
   const Text = editable ? EditableText : ({ value, className, tag }: any) => <ReadOnlyText value={value} className={className} tag={tag} />;
   const visibleSections = sections.filter((s) => s.visible);
 
+  // Check if this is a biolink-only template
+  const isBiolinkOnly = visibleSections.length === 1 && visibleSections[0]?.type === "biolink";
+
   // Get icon component for custom pages
   const getIconComponent = (iconName: string) => {
     const icons: Record<string, any> = {
@@ -136,6 +139,24 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
     };
     return icons[iconName] || FileText;
   };
+
+  // If this is a biolink-only template, render only the biolink section
+  if (isBiolinkOnly) {
+    const profile = biolinkConfig?.profile || biolinkConfig;
+    return profile ? (
+      <BiolinkMobileView
+        profile={profile as any}
+        products={productsConfig?.products || []}
+        onProductClick={(productId) => {
+          const index = (productsConfig?.products || []).findIndex(p => p.id === productId);
+          if (index >= 0 && onProductClick) onProductClick(index);
+        }}
+        onLinkClick={(linkId) => {
+          // Handle link click
+        }}
+      />
+    ) : null;
+  }
 
   return (
     <div className="font-sans">

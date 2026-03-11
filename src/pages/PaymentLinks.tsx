@@ -42,6 +42,7 @@ const PaymentLinks = () => {
   const [selectedLink, setSelectedLink] = useState<typeof paymentLinks[0] | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
   const [collectAddress, setCollectAddress] = useState(false);
   const [shiprocketEnabled, setShiprocketEnabled] = useState(false);
   const [whatsappConfirmationEnabled, setWhatsappConfirmationEnabled] = useState(false);
