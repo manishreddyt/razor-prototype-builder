@@ -1173,7 +1173,7 @@ export const templates: TemplateData[] = [
       enabled: true,
       displayName: "Book Your Tickets ⬇️",
       bio: "",
-      location: "📍 95, 100 feet Rd, HAL 2nd Stage, Appareddipalya, Indiranagar, Bangalore",
+      location: "95, 100 feet Rd, HAL 2nd Stage, Appareddipalya, Indiranagar, Bangalore",
       theme: "light",
       socialLinks: [],
       customLinks: [
@@ -1184,6 +1184,14 @@ export const templates: TemplateData[] = [
         { id: "e5", title: "14th March - THT presents Dawn Bhat", subtitle: "", url: "#", icon: "", enabled: true, order: 5, type: "event" },
         { id: "e6", title: "15th March - Skin Contact by Project Grapejuice", subtitle: "", url: "#", icon: "", enabled: true, order: 6, type: "event" },
         { id: "e7", title: "17th March - Solidarity Tuesday with The Threshold by Mo Pallen, B. Bindhu Malini", subtitle: "", url: "#", icon: "", enabled: true, order: 7, type: "event" },
+        { id: "e8", title: "18th March - Grassroots Wednesdays with Keeravani, Backrooms, threexdweeds18", subtitle: "", url: "#", icon: "", enabled: true, order: 8, type: "event" },
+        { id: "e9", title: "19th March - THT presents Gliding Emotions by Tamil Jazz Collective and a reading of Tamil Pulp Fiction with Hishām", subtitle: "", url: "#", icon: "", enabled: true, order: 9, type: "event" },
+        { id: "e10", title: "20th March - THT x ANHAR RECORDS presents Denbhim Audio + Borai + More", subtitle: "", url: "#", icon: "", enabled: true, order: 10, type: "event" },
+        { id: "e11", title: "22nd March - Oddball x THT present Jack Gardiner", subtitle: "", url: "#", icon: "", enabled: true, order: 11, type: "event" },
+        { id: "e12", title: "25th March - Grassroots Wednesdays with FTP, Skivinnie", subtitle: "", url: "#", icon: "", enabled: true, order: 12, type: "event" },
+        { id: "e13", title: "26th March - THT presents Ranj x Clif, STEVIE", subtitle: "", url: "#", icon: "", enabled: true, order: 13, type: "event" },
+        { id: "e14", title: "27th March - oelii|grlqo: Jatin Talukdar Project + Avedhita + Sei Hek", subtitle: "", url: "#", icon: "", enabled: true, order: 14, type: "event" },
+        { id: "e15", title: "28th March - THT presents Parveez", subtitle: "", url: "#", icon: "", enabled: true, order: 15, type: "event" },
       ],
       showContactButton: false,
       showProductsSection: false,
@@ -1202,57 +1210,13 @@ export const templates: TemplateData[] = [
     category: "ecommerce",
     icon: ShoppingBag,
     pages: ["Shop"],
-    heroTitle: "@yourshop",
+    heroTitle: "@dohfulcookies",
     heroTagline: "Your shop",
-    heroDescription: "Shop our products • Instagram • WhatsApp",
+    heroDescription: "Gooey cookies for the Guilty! Baked on Order | Shipping PAN India",
     heroCta: "",
     bannerImage: "",
     sections: [
       biolinkSection(),
-      productsSection([
-        {
-          title: "Choco Chunk Cookies",
-          price: "₹299",
-          image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
-          badge: "Bestseller"
-        },
-        {
-          title: "Nutella Lust Cookies",
-          price: "₹349",
-          image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop",
-          badge: ""
-        },
-        {
-          title: "S'mores Chocolate Chunk",
-          price: "₹399",
-          image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=400&fit=crop",
-          badge: "New"
-        },
-        {
-          title: "16 % Very Chocolate Cookie",
-          price: "₹429",
-          image: "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?w=400&h=400&fit=crop",
-          badge: ""
-        },
-        {
-          title: "Choco-Brownie Cookies",
-          price: "₹379",
-          image: "https://images.unsplash.com/photo-1590841609987-4ac211afdde1?w=400&h=400&fit=crop",
-          badge: ""
-        },
-        {
-          title: "Dohful's 10-Cookie Sampler",
-          price: "₹1299",
-          image: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop",
-          badge: "Value Pack"
-        },
-        {
-          title: "Assorted Cookies",
-          price: "₹299",
-          image: "https://images.unsplash.com/photo-1548365328-8c6db3220e4c?w=400&h=400&fit=crop",
-          badge: ""
-        },
-      ]),
     ],
     biolinkConfig: {
       enabled: true,
@@ -1274,7 +1238,43 @@ export const templates: TemplateData[] = [
     },
     productsConfig: {
       enabled: true,
-      products: [],
+      products: [
+        {
+          id: "p1", type: "physical-product", title: "Choco Chunk Cookies", description: "Classic chocolate chunk cookies with Belgian chocolate", image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop",
+          pricingModels: [{ id: "pm1", type: "one-time", amount: 299, currency: "INR", label: "Buy Now" }],
+          featured: true, badge: "Bestseller", status: "published",
+        },
+        {
+          id: "p2", type: "physical-product", title: "Nutella Lust Cookies", description: "Gooey Nutella-filled cookies", image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=400&fit=crop",
+          pricingModels: [{ id: "pm2", type: "one-time", amount: 349, currency: "INR", label: "Buy Now" }],
+          featured: false, status: "published",
+        },
+        {
+          id: "p3", type: "physical-product", title: "S'mores Chocolate Chunk", description: "S'mores style chocolate cookies", image: "https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=400&fit=crop",
+          pricingModels: [{ id: "pm3", type: "one-time", amount: 399, currency: "INR", label: "Buy Now" }],
+          featured: false, status: "published",
+        },
+        {
+          id: "p4", type: "physical-product", title: "16% Very Chocolate Cookie", description: "Ultra rich chocolate cookies", image: "https://images.unsplash.com/photo-1576618148400-f54bed99fcfd?w=400&h=400&fit=crop",
+          pricingModels: [{ id: "pm4", type: "one-time", amount: 429, currency: "INR", label: "Buy Now" }],
+          featured: false, badge: "New", status: "published",
+        },
+        {
+          id: "p5", type: "physical-product", title: "Choco-Brownie Cookies", description: "Brownie-style chocolate cookies", image: "https://images.unsplash.com/photo-1590841609987-4ac211afdde1?w=400&h=400&fit=crop",
+          pricingModels: [{ id: "pm5", type: "one-time", amount: 379, currency: "INR", label: "Buy Now" }],
+          featured: false, status: "published",
+        },
+        {
+          id: "p6", type: "physical-product", title: "Dohful's 10-Cookie Sampler", description: "Assorted cookie sampler pack", image: "https://images.unsplash.com/photo-1558961363-fa8fdf82db35?w=400&h=400&fit=crop",
+          pricingModels: [{ id: "pm6", type: "one-time", amount: 1299, currency: "INR", label: "Buy Now" }],
+          featured: true, badge: "Value Pack", status: "published",
+        },
+        {
+          id: "p7", type: "physical-product", title: "Assorted Cookies", description: "Mix of our bestselling cookies", image: "https://images.unsplash.com/photo-1548365328-8c6db3220e4c?w=400&h=400&fit=crop",
+          pricingModels: [{ id: "pm7", type: "one-time", amount: 299, currency: "INR", label: "Buy Now" }],
+          featured: false, status: "published",
+        },
+      ],
       displayMode: "grid",
       showPricing: true,
       categoriesEnabled: false,

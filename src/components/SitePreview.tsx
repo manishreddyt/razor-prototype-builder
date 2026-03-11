@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import { type SectionData, type TemplateData, type CustomPage, availableSectionTypes, createDefaultSection, type SectionType } from "@/data/smartPageTemplates";
 import { ProductsConfig } from "@/types/products";
 import { ContactFormConfig, Lead } from "@/types/leads";
+import { BiolinkConfig } from "@/types/biolink";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Star, MapPin, Clock, Play, ChevronDown, ChevronUp, Plus, Trash2, GripVertical, Pencil, ArrowUp, ArrowDown, CheckCircle2, Check, Users, Award, BookOpen, Home, FileText, Users as UsersIcon, Briefcase, Mail, Info, Settings as SettingsIcon, Star as StarIcon, Package as PackageIcon } from "lucide-react";
 import { ContactFormSection as ContactFormSectionComponent } from "@/components/ContactFormSection";
+import { BiolinkMobileView } from "@/components/BiolinkMobileView";
 
 interface SitePreviewProps {
   template: TemplateData;
@@ -28,6 +30,7 @@ interface SitePreviewProps {
   onLeadCreated?: (lead: Lead) => void;
   customPages?: CustomPage[];
   onOpenProductModal?: () => void;
+  biolinkConfig?: BiolinkConfig;
 }
 
 // Inline editable text
@@ -112,7 +115,7 @@ const AddSectionDivider = ({ onAdd }: { onAdd: (type: string) => void }) => {
   );
 };
 
-export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, customPages = [], onOpenProductModal }: SitePreviewProps) => {
+export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, customPages = [], onOpenProductModal, biolinkConfig }: SitePreviewProps) => {
   const templateId = template.id;
   const category = template.category;
   const Text = editable ? EditableText : ({ value, className, tag }: any) => <ReadOnlyText value={value} className={className} tag={tag} />;
@@ -360,7 +363,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
                   />
                 )}
                 <div className={editable ? "ring-0 hover:ring-1 hover:ring-primary/20 rounded-lg transition-shadow" : ""}>
-                  <SectionRenderer section={section} editable={editable} onUpdate={(data) => onUpdateSection?.(section.id, data)} templateId={templateId} category={category} onCtaClick={onCtaClick} onProductClick={onProductClick} productsConfig={productsConfig} contactForm={contactForm} siteId={siteId} onLeadCreated={onLeadCreated} onOpenProductModal={onOpenProductModal} />
+                  <SectionRenderer section={section} editable={editable} onUpdate={(data) => onUpdateSection?.(section.id, data)} templateId={templateId} category={category} onCtaClick={onCtaClick} onProductClick={onProductClick} productsConfig={productsConfig} contactForm={contactForm} siteId={siteId} onLeadCreated={onLeadCreated} onOpenProductModal={onOpenProductModal} biolinkConfig={biolinkConfig} />
                 </div>
               </div>
               {editable && onAddSection && <AddSectionDivider onAdd={onAddSection} />}
@@ -381,7 +384,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
 
 // ──────────────── Section Renderer ────────────────
 
-const SectionRenderer = ({ section, editable, onUpdate, templateId, category, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, onOpenProductModal }: { section: SectionData; editable: boolean; onUpdate: (data: Record<string, any>) => void; templateId?: string; category?: string; onCtaClick?: () => void; onProductClick?: (index: number) => void; productsConfig?: ProductsConfig; contactForm?: ContactFormConfig; siteId?: string; onLeadCreated?: (lead: Lead) => void; onOpenProductModal?: () => void }) => {
+const SectionRenderer = ({ section, editable, onUpdate, templateId, category, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, onOpenProductModal, biolinkConfig }: { section: SectionData; editable: boolean; onUpdate: (data: Record<string, any>) => void; templateId?: string; category?: string; onCtaClick?: () => void; onProductClick?: (index: number) => void; productsConfig?: ProductsConfig; contactForm?: ContactFormConfig; siteId?: string; onLeadCreated?: (lead: Lead) => void; onOpenProductModal?: () => void; biolinkConfig?: BiolinkConfig }) => {
   const { type, data } = section;
   switch (type) {
     case "about": return <AboutSection data={data} editable={editable} onUpdate={onUpdate} />;
@@ -407,6 +410,16 @@ const SectionRenderer = ({ section, editable, onUpdate, templateId, category, on
     case "products": return <ProductsSection data={data} editable={editable} onUpdate={onUpdate} templateId={templateId} category={category} onProductClick={onProductClick} productsConfig={productsConfig} onOpenProductModal={onOpenProductModal} />;
     case "video-embed": return <VideoSection data={data} />;
     case "countdown": return <CountdownSection data={data} />;
+    case "biolink": return biolinkConfig?.profile ? (
+      <BiolinkMobileView
+        profile={biolinkConfig.profile}
+        products={productsConfig?.products || []}
+        onProductClick={(productId) => {
+          const index = (productsConfig?.products || []).findIndex(p => p.id === productId);
+          if (index >= 0 && onProductClick) onProductClick(index);
+        }}
+      />
+    ) : null;
     default: return null;
   }
 };
