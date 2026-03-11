@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import {
   Users, TrendingUp, IndianRupee, Plus, Upload, Search,
@@ -17,6 +17,23 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 type CustomerStatus = "Lead" | "Active" | "Partial" | "Churned";
+
+type CustomerSegment =
+  | "New"           // 1 order, <30 days since first purchase
+  | "Repeat"        // 2-3 orders within 60-90 days
+  | "Loyal"         // 4+ orders or top 20% frequency
+  | "High Value"    // Top 20% by GMV/LTV
+  | "VIP"           // Top 5% on both frequency + spend
+  | "At Risk"       // Was loyal, now inactive 60-90 days
+  | "Lapsed"        // Inactive >120-180 days
+  | "One-time";     // 1 order, >90 days inactive
+
+interface RFMScore {
+  recency: number;        // Days since last transaction
+  frequency: number;      // Total number of successful transactions
+  monetary: number;       // Total successful transaction value (numeric)
+  rfmScore: number;       // Combined RFM score (1-5)
+}
 
 interface Transaction {
   id: string;
@@ -46,6 +63,9 @@ interface Customer {
   joinedDate: string;
   transactions: Transaction[];
   notes: CustomerNote[];
+  segment?: CustomerSegment;      // Auto-calculated segment
+  rfm?: RFMScore;                // RFM analysis data
+  lifetimeValue: number;         // Numeric LTV for calculations
 }
 
 const initialCustomers: Customer[] = [
@@ -143,6 +163,62 @@ const statusConfig: Record<CustomerStatus, { className: string; variant: "defaul
   Churned: { className: "blade-badge-cancelled", variant: "destructive" },
 };
 
+const segmentConfig: Record<CustomerSegment, {
+  className: string;
+  color: string;
+  icon: string;
+  description: string;
+}> = {
+  "VIP": {
+    className: "px-2.5 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border border-purple-200",
+    color: "hsl(280, 70%, 50%)",
+    icon: "👑",
+    description: "Top 5% - highest value and frequency"
+  },
+  "High Value": {
+    className: "px-2.5 py-1 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200",
+    color: "hsl(152, 69%, 41%)",
+    icon: "💎",
+    description: "Top 20% by total spend"
+  },
+  "Loyal": {
+    className: "px-2.5 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-700 border border-blue-200",
+    color: "hsl(227, 100%, 59%)",
+    icon: "⭐",
+    description: "4+ orders or frequent purchaser"
+  },
+  "Repeat": {
+    className: "px-2.5 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 border border-green-200",
+    color: "hsl(142, 71%, 45%)",
+    icon: "🔄",
+    description: "2-3 orders, active"
+  },
+  "New": {
+    className: "px-2.5 py-1 text-xs font-semibold rounded-full bg-cyan-100 text-cyan-700 border border-cyan-200",
+    color: "hsl(189, 94%, 43%)",
+    icon: "✨",
+    description: "First purchase within 30 days"
+  },
+  "At Risk": {
+    className: "px-2.5 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700 border border-amber-200",
+    color: "hsl(38, 92%, 50%)",
+    icon: "⚠️",
+    description: "Loyal customer, recently inactive"
+  },
+  "Lapsed": {
+    className: "px-2.5 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 border border-red-200",
+    color: "hsl(0, 72%, 51%)",
+    icon: "💔",
+    description: "Inactive >120 days"
+  },
+  "One-time": {
+    className: "px-2.5 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-600 border border-gray-200",
+    color: "hsl(220, 10%, 46%)",
+    icon: "1️⃣",
+    description: "Single purchase, inactive"
+  },
+};
+
 const txnStatusClass: Record<string, string> = {
   Success: "blade-badge-success",
   Failed: "blade-badge-cancelled",
@@ -157,11 +233,126 @@ const noteTypeIcon: Record<string, any> = {
   note: MessageCircle,
 };
 
+// Parse Indian currency format to number
+const parseIndianCurrency = (amount: string): number => {
+  return Number(amount.replace(/[₹,]/g, ''));
+};
+
+// Calculate days between two dates
+const daysBetween = (date1: string, date2: string): number => {
+  const d1 = new Date(date1);
+  const d2 = new Date(date2);
+  return Math.abs(Math.floor((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)));
+};
+
+// Calculate RFM score for a customer
+const calculateRFM = (customer: Customer, today: Date): RFMScore => {
+  const successfulTxns = customer.transactions.filter(t => t.status === "Success");
+
+  const recency = successfulTxns.length > 0
+    ? daysBetween(successfulTxns[0].date, today.toLocaleDateString("en-IN"))
+    : 999;
+
+  const frequency = successfulTxns.length;
+
+  const monetary = successfulTxns.reduce((sum, txn) =>
+    sum + parseIndianCurrency(txn.amount), 0
+  );
+
+  // Simplified RFM score (1-5 scale)
+  const rfmScore = Math.min(5, Math.max(1,
+    Math.floor(((frequency > 0 ? 1 : 0) + (recency < 60 ? 1 : 0) + (monetary > 10000 ? 1 : 0)) * 1.67)
+  ));
+
+  return { recency, frequency, monetary, rfmScore };
+};
+
+// Assign segment based on RFM analysis
+const assignSegment = (
+  customer: Customer,
+  rfm: RFMScore,
+  allCustomers: Customer[]
+): CustomerSegment => {
+  const { recency, frequency, monetary } = rfm;
+
+  // Calculate percentile thresholds
+  const monetaryValues = allCustomers
+    .map(c => c.transactions
+      .filter(t => t.status === "Success")
+      .reduce((sum, t) => sum + parseIndianCurrency(t.amount), 0)
+    )
+    .sort((a, b) => b - a);
+
+  const top20Threshold = monetaryValues[Math.floor(monetaryValues.length * 0.2)] || 10000;
+  const top5Threshold = monetaryValues[Math.floor(monetaryValues.length * 0.05)] || 30000;
+
+  const frequencyValues = allCustomers
+    .map(c => c.transactions.filter(t => t.status === "Success").length)
+    .sort((a, b) => b - a);
+  const top20FreqThreshold = frequencyValues[Math.floor(frequencyValues.length * 0.2)] || 3;
+
+  // VIP: Top 5% spend + high frequency + good RFM
+  if (monetary >= top5Threshold && frequency >= top20FreqThreshold && rfm.rfmScore >= 4) {
+    return "VIP";
+  }
+
+  // High Value: Top 20% by spend
+  if (monetary >= top20Threshold) {
+    return "High Value";
+  }
+
+  // Loyal: 4+ orders or top 20% frequency
+  if (frequency >= 4 || frequency >= top20FreqThreshold) {
+    if (recency >= 60 && recency <= 90) return "At Risk";
+    if (recency > 120) return "Lapsed";
+    return "Loyal";
+  }
+
+  // Repeat: 2-3 orders, recently active
+  if (frequency >= 2 && frequency <= 3 && recency <= 90) {
+    return "Repeat";
+  }
+
+  // New: 1 order, very recent
+  if (frequency === 1 && recency <= 30) {
+    return "New";
+  }
+
+  // One-time: 1 order, inactive
+  if (frequency === 1 && recency > 90) {
+    return "One-time";
+  }
+
+  // Lapsed: Inactive >120 days
+  if (recency > 120) {
+    return "Lapsed";
+  }
+
+  return "Repeat";
+};
+
+// Enrich customers with RFM and segments
+const enrichCustomersWithSegments = (customers: Customer[]): Customer[] => {
+  const today = new Date();
+
+  return customers.map(customer => {
+    const lifetimeValue = customer.transactions
+      .filter(t => t.status === "Success")
+      .reduce((sum, t) => sum + parseIndianCurrency(t.amount), 0);
+
+    const rfm = calculateRFM(customer, today);
+    const segment = assignSegment({ ...customer, lifetimeValue }, rfm, customers);
+
+    return { ...customer, lifetimeValue, rfm, segment };
+  });
+};
+
 const CustomerTracker = () => {
   const { toast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [segmentFilter, setSegmentFilter] = useState<string>("all");
   const [showAdd, setShowAdd] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -173,13 +364,28 @@ const CustomerTracker = () => {
   const [newStatus, setNewStatus] = useState<CustomerStatus>("Lead");
   const [newSource, setNewSource] = useState("");
 
-  const filtered = customers.filter((c) => {
-    const matchesSearch = !search || 
+  const enrichedCustomers = useMemo(() =>
+    enrichCustomersWithSegments(customers),
+    [customers]
+  );
+
+  const segmentCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    enrichedCustomers.forEach(c => {
+      counts[c.segment || "New"] = (counts[c.segment || "New"] || 0) + 1;
+    });
+    return counts;
+  }, [enrichedCustomers]);
+
+  const filtered = enrichedCustomers.filter((c) => {
+    const matchesSearch = !search ||
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.email.toLowerCase().includes(search.toLowerCase()) ||
       c.phone.includes(search);
     const matchesStatus = statusFilter === "all" || c.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesSegment = segmentFilter === "all" || c.segment === segmentFilter;
+
+    return matchesSearch && matchesStatus && matchesSegment;
   });
 
   const handleAddCustomer = () => {
@@ -200,6 +406,7 @@ const CustomerTracker = () => {
       joinedDate: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
       transactions: [],
       notes: [],
+      lifetimeValue: 0,
     };
     setCustomers((prev) => [newCustomer, ...prev]);
     setShowAdd(false);
@@ -247,12 +454,13 @@ const CustomerTracker = () => {
           courses: 0,
           totalPaid: "₹0",
           lastPayment: "—",
-          status: (statusIdx >= 0 && ["Lead", "Active", "Partial", "Churned"].includes(cols[statusIdx]) 
+          status: (statusIdx >= 0 && ["Lead", "Active", "Partial", "Churned"].includes(cols[statusIdx])
             ? cols[statusIdx] as CustomerStatus : "Lead"),
           source: "CSV Import",
           joinedDate: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }),
           transactions: [],
           notes: [],
+          lifetimeValue: 0,
         });
       }
 
@@ -309,35 +517,106 @@ const CustomerTracker = () => {
           ))}
         </div>
 
-        {/* Search & Filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search by name, email, or phone..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-            {search && (
-              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
-                <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
-              </button>
-            )}
+        {/* Segment Distribution */}
+        <div className="blade-card p-5">
+          <h2 className="text-base font-semibold text-foreground mb-4">Customer Segments</h2>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {(["VIP", "High Value", "Loyal", "Repeat", "New", "At Risk", "Lapsed", "One-time"] as const).map((seg) => {
+              const config = segmentConfig[seg];
+              const count = segmentCounts[seg] || 0;
+              const percentage = customers.length > 0 ? ((count / customers.length) * 100).toFixed(1) : "0";
+
+              return (
+                <div
+                  key={seg}
+                  className="p-3 rounded-lg border border-border hover:shadow-sm transition-all cursor-pointer hover:border-primary/50"
+                  onClick={() => setSegmentFilter(seg)}
+                >
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-lg">{config.icon}</span>
+                    <span className="text-xs text-muted-foreground">{percentage}%</span>
+                  </div>
+                  <p className="text-xs font-medium text-muted-foreground">{seg}</p>
+                  <p className="text-xl font-bold text-foreground mt-0.5">{count}</p>
+                  <div className="mt-2 h-1.5 bg-secondary rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{
+                        width: `${percentage}%`,
+                        backgroundColor: config.color
+                      }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
           </div>
-          <div className="flex items-center gap-1.5">
-            {(["all", "Lead", "Active", "Partial", "Churned"] as const).map((s) => (
+        </div>
+
+        {/* Search & Filters */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, or phone..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                </button>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              {(["all", "Lead", "Active", "Partial", "Churned"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setStatusFilter(s)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                    statusFilter === s
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {s === "all" ? "All" : s} ({statusCounts[s]})
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Segment Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-medium text-muted-foreground">Segment:</span>
+            <button
+              onClick={() => setSegmentFilter("all")}
+              className={cn(
+                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                segmentFilter === "all"
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-muted-foreground hover:text-foreground"
+              )}
+            >
+              All
+            </button>
+
+            {(["VIP", "High Value", "Loyal", "Repeat", "New", "At Risk", "Lapsed", "One-time"] as const).map((seg) => (
               <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
+                key={seg}
+                onClick={() => setSegmentFilter(seg)}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                  statusFilter === s
-                    ? "bg-primary text-primary-foreground"
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5",
+                  segmentFilter === seg
+                    ? segmentConfig[seg].className
                     : "bg-secondary text-muted-foreground hover:text-foreground"
                 )}
               >
-                {s === "all" ? "All" : s} ({statusCounts[s]})
+                <span>{segmentConfig[seg].icon}</span>
+                {seg} ({segmentCounts[seg] || 0})
               </button>
             ))}
           </div>
@@ -354,6 +633,7 @@ const CustomerTracker = () => {
                 <th className="blade-table-header px-5 py-3 text-left">Courses</th>
                 <th className="blade-table-header px-5 py-3 text-left">Total Paid</th>
                 <th className="blade-table-header px-5 py-3 text-left">Last Payment</th>
+                <th className="blade-table-header px-5 py-3 text-left">Segment</th>
                 <th className="blade-table-header px-5 py-3 text-left">Status</th>
                 <th className="blade-table-header px-5 py-3 text-left w-8"></th>
               </tr>
@@ -361,7 +641,7 @@ const CustomerTracker = () => {
             <tbody>
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-10 text-center text-muted-foreground">
+                  <td colSpan={9} className="px-5 py-10 text-center text-muted-foreground">
                     No customers found matching your search.
                   </td>
                 </tr>
@@ -384,6 +664,11 @@ const CustomerTracker = () => {
                     <td className="px-5 py-3 text-foreground">{c.courses}</td>
                     <td className="px-5 py-3 text-foreground">{c.totalPaid}</td>
                     <td className="px-5 py-3 text-muted-foreground">{c.lastPayment}</td>
+                    <td className="px-5 py-3">
+                      <span className={segmentConfig[c.segment || "New"].className}>
+                        {segmentConfig[c.segment || "New"].icon} {c.segment || "New"}
+                      </span>
+                    </td>
                     <td className="px-5 py-3">
                       <span className={statusConfig[c.status]?.className || "blade-badge"}>{c.status}</span>
                     </td>
@@ -516,6 +801,45 @@ const CustomerTracker = () => {
                   </div>
                 ))}
               </div>
+
+              {/* RFM Analysis */}
+              {selectedCustomer.rfm && (
+                <div className="blade-card p-4 mt-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-3">RFM Analysis</h3>
+
+                  <div className="grid grid-cols-3 gap-3 mb-3">
+                    <div className="text-center p-2 bg-secondary/50 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Recency</p>
+                      <p className="text-lg font-bold text-foreground">{selectedCustomer.rfm.recency}</p>
+                      <p className="text-xs text-muted-foreground">days ago</p>
+                    </div>
+                    <div className="text-center p-2 bg-secondary/50 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Frequency</p>
+                      <p className="text-lg font-bold text-foreground">{selectedCustomer.rfm.frequency}</p>
+                      <p className="text-xs text-muted-foreground">orders</p>
+                    </div>
+                    <div className="text-center p-2 bg-secondary/50 rounded-lg">
+                      <p className="text-xs text-muted-foreground">Monetary</p>
+                      <p className="text-lg font-bold text-foreground">
+                        ₹{(selectedCustomer.rfm.monetary / 1000).toFixed(1)}k
+                      </p>
+                      <p className="text-xs text-muted-foreground">lifetime</p>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-lg bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">{segmentConfig[selectedCustomer.segment || "New"].icon}</span>
+                      <span className={segmentConfig[selectedCustomer.segment || "New"].className}>
+                        {selectedCustomer.segment || "New"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {segmentConfig[selectedCustomer.segment || "New"].description}
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Quick actions */}
               <div className="flex items-center gap-2 mt-4">
