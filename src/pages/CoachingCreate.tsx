@@ -2,6 +2,7 @@ import { useState } from "react";
 
 export interface CoachingSessionConfig {
   duration: number;
+  buffer: number;
   breakBetween: number;
   maxPerDay: number;
 }
