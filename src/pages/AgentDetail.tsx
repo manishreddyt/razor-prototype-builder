@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { mockInstagramActivities, instagramMetrics, mockConversations } from "@/data/instagramMockData";
 import { InstagramConversationViewer } from "@/components/InstagramConversationViewer";
+import { InstagramSetupWizard } from "@/components/InstagramSetupWizard";
 
 type AgentStatus = "draft" | "configured" | "deployed" | "paused";
 
@@ -160,6 +161,7 @@ const AgentDetail = () => {
   const [status, setStatus] = useState<AgentStatus>(agentData?.status || "draft");
   const [goal, setGoal] = useState(agentData?.goal || "");
   const [showConfig, setShowConfig] = useState(false);
+  const [showInstagramSetup, setShowInstagramSetup] = useState(false);
 
   if (!agentData) {
     return (
@@ -178,11 +180,21 @@ const AgentDetail = () => {
   const statusInfo = statusConfig[status];
 
   const handleDeploy = () => {
+    // For Instagram agent, show setup wizard on first enable
+    if (agentId === "instagram" && (status === "draft" || status === "configured")) {
+      setShowInstagramSetup(true);
+      return;
+    }
+
     if (status === "deployed") {
       setStatus("paused");
     } else {
       setStatus("deployed");
     }
+  };
+
+  const handleInstagramSetupComplete = () => {
+    setStatus("deployed");
   };
 
   const handleSaveGoal = (newGoal: string) => {
@@ -227,7 +239,7 @@ const AgentDetail = () => {
               {status === "deployed" ? (
                 <><Pause className="h-4 w-4 mr-1" /> Pause</>
               ) : (
-                <><Play className="h-4 w-4 mr-1" /> Deploy</>
+                <><Play className="h-4 w-4 mr-1" /> {agentId === "instagram" ? "Enable" : "Deploy"}</>
               )}
             </Button>
           </div>
@@ -370,6 +382,13 @@ const AgentDetail = () => {
         onOpenChange={setShowConfig}
         agentType={agentData.type}
         onSaveGoal={handleSaveGoal}
+      />
+
+      {/* Instagram Setup Wizard */}
+      <InstagramSetupWizard
+        open={showInstagramSetup}
+        onOpenChange={setShowInstagramSetup}
+        onComplete={handleInstagramSetupComplete}
       />
     </DashboardLayout>
   );

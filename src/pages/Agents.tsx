@@ -10,6 +10,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import AgentConfigChat from "@/components/AgentConfigChat";
+import { InstagramSetupWizard } from "@/components/InstagramSetupWizard";
 import {
   PhoneCall,
   Megaphone,
@@ -150,12 +151,31 @@ const Agents = () => {
   const navigate = useNavigate();
   const [agents, setAgents] = useState<AgentState[]>(initialAgents);
   const [configAgent, setConfigAgent] = useState<AgentState | null>(null);
+  const [showInstagramSetup, setShowInstagramSetup] = useState(false);
 
   const handleDeploy = (agentId: string) => {
+    // For Instagram agent, show setup wizard on first enable
+    if (agentId === "instagram") {
+      const agent = agents.find((a) => a.id === agentId);
+      if (agent?.status === "draft" || agent?.status === "configured") {
+        setShowInstagramSetup(true);
+        return;
+      }
+    }
+
     setAgents((prev) =>
       prev.map((a) => {
         if (a.id !== agentId) return a;
         if (a.status === "deployed") return { ...a, status: "paused" as AgentStatus };
+        return { ...a, status: "deployed" as AgentStatus };
+      })
+    );
+  };
+
+  const handleInstagramSetupComplete = () => {
+    setAgents((prev) =>
+      prev.map((a) => {
+        if (a.id !== "instagram") return a;
         return { ...a, status: "deployed" as AgentStatus };
       })
     );
@@ -302,7 +322,7 @@ const Agents = () => {
                       {agent.status === "deployed" ? (
                         <><Pause className="h-4 w-4 mr-1" /> Pause</>
                       ) : (
-                        <><Play className="h-4 w-4 mr-1" /> Deploy</>
+                        <><Play className="h-4 w-4 mr-1" /> {agent.id === "instagram" ? "Enable" : "Deploy"}</>
                       )}
                     </Button>
                   </div>
@@ -337,6 +357,13 @@ const Agents = () => {
           onSaveGoal={handleSaveGoal}
         />
       )}
+
+      {/* Instagram Setup Wizard */}
+      <InstagramSetupWizard
+        open={showInstagramSetup}
+        onOpenChange={setShowInstagramSetup}
+        onComplete={handleInstagramSetupComplete}
+      />
     </DashboardLayout>
   );
 };
