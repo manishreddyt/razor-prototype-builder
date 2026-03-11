@@ -675,7 +675,7 @@ If they ask about features that aren't implemented, politely explain they can us
               <label className="text-xs font-semibold text-foreground mb-2 block">Your Payment Page URL</label>
               <div className="flex items-center gap-2">
                 <Input value={`http://localhost:8080/payment/${pageData.slug}`} readOnly className="flex-1 text-sm font-mono" />
-                <Button variant="outline" size="sm" onClick={() => { copyLink(`http://localhost:8080/payment/${pageData.slug}`); }}>
+                <Button variant="outline" size="sm" onClick={() => { copyLink(); }}>
                   <Copy className="h-4 w-4 mr-1" /> Copy
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => window.open(`/payment/${pageData.slug}`, "_blank")}>

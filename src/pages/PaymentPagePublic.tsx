@@ -7,12 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sparkles, ChevronDown, ArrowLeft, Lock } from "lucide-react";
 import { toast } from "sonner";
 
-// Extend window type for Razorpay
-declare global {
-  interface Window {
-    Razorpay: any;
-  }
-}
+// Razorpay type is declared in src/types/razorpay.d.ts
 
 // Mock function to get published page data
 const getPublishedPage = (slug: string) => {
