@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { generateStructuredContent } from "@/services/geminiService";
+import { generateStructuredContent, generateText } from "@/services/geminiService";
 
 export interface AIPageUpdates {
   name?: string;
@@ -56,6 +56,10 @@ export interface AIPageUpdates {
   };
   biolinkLinks?: { platform: string; url: string; label?: string; enabled?: boolean }[];
 
+  // Raw HTML/CSS editing for full control
+  htmlContent?: string; // Complete HTML file content
+  cssUpdates?: { selector: string; properties: Record<string, string> }[]; // CSS changes
+
   message?: string;
 }
 
@@ -98,36 +102,78 @@ export function useAIPageBuilder({ pageType, getCurrentData, onUpdates }: UseAIP
         return message;
       } else {
         // Fallback to Gemini API
-        const systemInstruction = `You are an AI assistant helping to build ${pageType} pages.
+
+        // Check if this is a biolink template (HTML/CSS editing mode)
+        const isBiolinkTemplate = pageType.toLowerCase().includes('biolink') ||
+                                  currentData.template?.id?.startsWith('biolink');
+
+        if (isBiolinkTemplate && currentData.htmlContent) {
+          // For biolink templates, let AI edit the HTML/CSS directly
+          const systemInstruction = `You are an expert web developer helping to edit a biolink HTML/CSS template.
+The user will provide the current HTML content and request changes.
+You should return the COMPLETE modified HTML file with all changes applied.
+Make sure to:
+- Preserve the overall structure
+- Keep all inline CSS in the <style> tag
+- Update content, styles, colors, layouts as requested
+- Maintain mobile-first responsive design (max-width: 400px)
+- Return valid HTML`;
+
+          const geminiPrompt = `Current HTML template:
+\`\`\`html
+${currentData.htmlContent}
+\`\`\`
+
+User request: ${prompt}
+
+Return the complete modified HTML file with the requested changes applied. Include ONLY the HTML, no explanations.`;
+
+          const modifiedHtml = await generateText(geminiPrompt, systemInstruction);
+
+          // Extract HTML if it's wrapped in markdown code blocks
+          let cleanHtml = modifiedHtml.trim();
+          if (cleanHtml.startsWith('```html')) {
+            cleanHtml = cleanHtml.replace(/^```html\n/, '').replace(/\n```$/, '');
+          } else if (cleanHtml.startsWith('```')) {
+            cleanHtml = cleanHtml.replace(/^```\n/, '').replace(/\n```$/, '');
+          }
+
+          onUpdates({ htmlContent: cleanHtml });
+          return "HTML template updated! Check the preview to see your changes.";
+
+        } else {
+          // For regular templates, use structured field updates
+          const systemInstruction = `You are an AI assistant helping to build ${pageType} pages.
 Analyze the user's request and current page data, then return ONLY a JSON object with the updates to apply.
 Available fields: heroTitle, heroTagline, heroDescription, heroCta, bannerImage, sections (array of {type, action: "add" | "remove" | "toggle"}), and a message field explaining what you changed.`;
 
-        const geminiPrompt = `Current page data: ${JSON.stringify(currentData, null, 2)}
+          const geminiPrompt = `Current page data: ${JSON.stringify(currentData, null, 2)}
 
 User request: ${prompt}
 
 Return a JSON object with the fields to update and a message explaining the changes.`;
 
-        const response = await generateStructuredContent<AIPageUpdates & { message: string }>(
-          geminiPrompt,
-          JSON.stringify({
-            heroTitle: "string (optional)",
-            heroTagline: "string (optional)",
-            heroDescription: "string (optional)",
-            heroCta: "string (optional)",
-            bannerImage: "string (optional)",
-            message: "string (required - explain what you changed)"
-          }),
-          systemInstruction
-        );
+          const response = await generateStructuredContent<AIPageUpdates & { message: string }>(
+            geminiPrompt,
+            JSON.stringify({
+              heroTitle: "string (optional)",
+              heroTagline: "string (optional)",
+              heroDescription: "string (optional)",
+              heroCta: "string (optional)",
+              bannerImage: "string (optional)",
+              message: "string (required - explain what you changed)"
+            }),
+            systemInstruction
+          );
 
-        const { message, ...contentUpdates } = response;
+          const { message, ...contentUpdates } = response;
 
-        if (Object.keys(contentUpdates).length > 0) {
-          onUpdates(contentUpdates);
+          if (Object.keys(contentUpdates).length > 0) {
+            onUpdates(contentUpdates);
+          }
+
+          return message || "Changes applied!";
         }
-
-        return message || "Changes applied!";
       }
     } catch (err) {
       console.error("AI builder error:", err);

@@ -31,6 +31,7 @@ interface SitePreviewProps {
   customPages?: CustomPage[];
   onOpenProductModal?: () => void;
   biolinkConfig?: BiolinkConfig;
+  htmlContent?: string; // Custom HTML content for biolink templates
 }
 
 // Inline editable text
@@ -115,7 +116,7 @@ const AddSectionDivider = ({ onAdd }: { onAdd: (type: string) => void }) => {
   );
 };
 
-export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, customPages = [], onOpenProductModal, biolinkConfig }: SitePreviewProps) => {
+export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, customPages = [], onOpenProductModal, biolinkConfig, htmlContent }: SitePreviewProps) => {
   const templateId = template.id;
   const category = template.category;
   const Text = editable ? EditableText : ({ value, className, tag }: any) => <ReadOnlyText value={value} className={className} tag={tag} />;
@@ -123,6 +124,16 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
 
   // Check if this is a biolink-only template
   const isBiolinkOnly = visibleSections.length === 1 && visibleSections[0]?.type === "biolink";
+
+  // If custom HTML is provided for biolink template, render it directly
+  if (isBiolinkOnly && htmlContent) {
+    return (
+      <div
+        className="w-full h-full"
+        dangerouslySetInnerHTML={{ __html: htmlContent }}
+      />
+    );
+  }
 
   // Get icon component for custom pages
   const getIconComponent = (iconName: string) => {

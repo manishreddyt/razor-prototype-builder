@@ -41,6 +41,7 @@ import AIAppBuilderDetail from "./pages/AIAppBuilderDetail";
 import Orders from "./pages/Orders";
 import NotFound from "./pages/NotFound";
 import { PaymentLinkCheckout } from "./components/PaymentLinkCheckout";
+import { PaymentSuccess } from "./components/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +59,7 @@ const App = () => (
           <Route path="/magic-checkout" element={<MagicCheckout />} />
           <Route path="/payment-links" element={<PaymentLinks />} />
           <Route path="/pay/:linkId" element={<PaymentLinkCheckout />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-pages" element={<PaymentPages />} />
           <Route path="/payment-pages/create" element={<CreatePaymentPage />} />
           <Route path="/payment-pages/editor" element={<PaymentPageEditor />} />

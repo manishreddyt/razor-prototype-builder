@@ -260,441 +260,377 @@ export function PaymentLinkCheckout() {
     : link.amount;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header */}
-      <div className="bg-white border-b sticky top-0 z-10 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-white font-bold text-sm">R</span>
-            </div>
-            <span className="font-semibold text-lg">Razorpay</span>
-          </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Lock className="h-4 w-4" />
-            <span>Secure Checkout</span>
-          </div>
-        </div>
-      </div>
-
+    <div className="min-h-screen bg-gray-50">
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-5 gap-8">
-          {/* Left Column - Form (3 cols) */}
-          <div className="lg:col-span-3 space-y-6">
+      <div className="max-w-5xl mx-auto px-4 py-8">
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Left Column - Merchant Details & Payment Info */}
+          <div className="space-y-6">
+            {/* Merchant Info Card */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl">{link.title}</CardTitle>
-                {link.description && (
-                  <CardDescription className="text-base">
-                    {link.description}
-                  </CardDescription>
-                )}
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Contact Information */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Contact Information
-                    </h3>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="name">Full Name *</Label>
-                      <Input
-                        id="name"
-                        placeholder="John Doe"
-                        value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                        required
-                      />
+              <CardContent className="pt-6">
+                <div className="space-y-6">
+                  {/* Payment Request Header */}
+                  <div>
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
+                      Payment Request from
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-sm">R</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">Razorpay Merchant</p>
+                        <p className="text-xs text-muted-foreground">razorpay.com</p>
+                      </div>
                     </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Payment Details */}
+                  {link.description && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">Description</p>
+                      <p className="text-sm text-foreground">{link.description}</p>
+                    </div>
+                  )}
+
+                  {/* Products List */}
+                  {products.length > 0 && (
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-3">Items</p>
+                      <div className="space-y-2">
+                        {products.map((product) => (
+                          <div key={product.id} className="flex items-center justify-between text-sm">
+                            <span className="text-foreground">{product.name}</span>
+                            <span className="font-medium">₹{product.price.toLocaleString('en-IN')}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  {/* Amount Payable */}
+                  <div>
+                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
+                      Amount Payable
+                    </p>
+                    <p className="text-3xl font-bold text-foreground">
+                      ₹{totalAmount.toLocaleString('en-IN')}
+                    </p>
+                    {link.acceptPartialPayment && link.minPartialAmount && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Minimum payment: ₹{link.minPartialAmount.toLocaleString('en-IN')}
+                      </p>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Contact Info */}
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      For any queries, please contact <span className="font-medium text-foreground">Razorpay Merchant</span>
+                    </p>
+                    {link.shiprocketEnabled && link.collectAddress && (
+                      <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-md">
+                        <Truck className="h-3 w-3" />
+                        <span>Free shipping via Shiprocket</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Security Badges */}
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
+                    <div className="flex items-center gap-1">
+                      <ShieldCheck className="h-3 w-3" />
+                      <span>100% Secure</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      <span>Encrypted</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Payment Options */}
+          <div>
+            <Card>
+              {/* Merchant Header */}
+              <div className="bg-primary text-white p-4 rounded-t-lg">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-sm">R</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold truncate">Razorpay Merchant</p>
+                  </div>
+                </div>
+              </div>
+
+              <CardContent className="p-6">
+                <form onSubmit={handleSubmit} className="space-y-6">
+                  {/* Payment Options Heading */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">Payment Options</h3>
+                    <p className="text-xs text-muted-foreground">Choose your preferred payment method</p>
+                  </div>
+
+                  {/* Contact Information */}
+                  <div className="space-y-3">
+                    <Label htmlFor="name" className="text-sm font-medium">
+                      Full Name *
+                    </Label>
+                    <Input
+                      id="name"
+                      placeholder="Enter your name"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      required
+                      className="h-11"
+                    />
 
                     {link.collectEmail && (
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email Address *</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="john@example.com"
-                            className="pl-9"
-                            value={formData.email}
-                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            required
-                          />
-                        </div>
-                      </div>
+                      <>
+                        <Label htmlFor="email" className="text-sm font-medium">
+                          Email *
+                        </Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="Enter your email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          required
+                          className="h-11"
+                        />
+                      </>
                     )}
 
                     {link.collectPhone && (
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number *</Label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="phone"
-                            type="tel"
-                            placeholder="+91 98765 43210"
-                            className="pl-9"
-                            value={formData.phone}
-                            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                            required
-                          />
-                        </div>
-                      </div>
+                      <>
+                        <Label htmlFor="phone" className="text-sm font-medium">
+                          Phone Number *
+                        </Label>
+                        <Input
+                          id="phone"
+                          type="tel"
+                          placeholder="Enter your phone number"
+                          value={formData.phone}
+                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                          required
+                          className="h-11"
+                        />
+                      </>
                     )}
                   </div>
 
                   {/* Address Collection */}
                   {link.collectAddress && (
-                    <>
+                    <div className="space-y-3 pt-2">
                       <Separator />
-                      <div className="space-y-4">
-                        <h3 className="font-semibold flex items-center gap-2">
-                          <MapPin className="h-4 w-4" />
-                          Delivery Address
-                        </h3>
+                      <h4 className="text-sm font-semibold">Delivery Address</h4>
 
-                        <div className="space-y-2">
-                          <Label htmlFor="address">Street Address *</Label>
-                          <div className="relative">
-                            <Home className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="address"
-                              placeholder="123 Main Street, Apartment 4B"
-                              className="pl-9"
-                              value={formData.address}
-                              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                              required
-                            />
-                          </div>
-                        </div>
+                      <div className="space-y-3">
+                        <Input
+                          id="address"
+                          placeholder="Street Address"
+                          value={formData.address}
+                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                          required
+                          className="h-11"
+                        />
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="city">City *</Label>
-                            <Input
-                              id="city"
-                              placeholder="Mumbai"
-                              value={formData.city}
-                              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                              required
-                            />
-                          </div>
-
-                          <div className="space-y-2">
-                            <Label htmlFor="pincode">Pincode *</Label>
-                            <Input
-                              id="pincode"
-                              placeholder="400001"
-                              value={formData.pincode}
-                              onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                              required
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {/* Amount */}
-                  <Separator />
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Payment Amount</h3>
-
-                    {link.acceptPartialPayment ? (
-                      <div className="space-y-2">
-                        <Label htmlFor="amount">
-                          Amount (Min: ₹{link.minPartialAmount?.toLocaleString('en-IN')})
-                        </Label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                            ₹
-                          </span>
+                        <div className="grid grid-cols-2 gap-3">
                           <Input
-                            id="amount"
-                            type="number"
-                            min={link.minPartialAmount}
-                            max={totalAmount}
-                            placeholder={link.minPartialAmount?.toString()}
-                            className="pl-7"
-                            value={formData.amount || ""}
-                            onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                            id="city"
+                            placeholder="City"
+                            value={formData.city}
+                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                             required
+                            className="h-11"
+                          />
+                          <Input
+                            id="pincode"
+                            placeholder="Pincode"
+                            value={formData.pincode}
+                            onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                            required
+                            className="h-11"
                           />
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                          Total: ₹{totalAmount.toLocaleString('en-IN')} •
-                          Pay minimum ₹{link.minPartialAmount?.toLocaleString('en-IN')} now
-                        </p>
                       </div>
-                    ) : (
-                      <div className="bg-muted/50 rounded-lg p-4 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Total Amount</span>
-                        <span className="text-2xl font-bold">
-                          ₹{totalAmount.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
-                  {/* Payment Method */}
                   <Separator />
-                  <div className="space-y-4">
-                    <h3 className="font-semibold">Payment Method</h3>
 
-                    <div className="grid grid-cols-2 gap-3">
+                  {/* Partial Payment Amount */}
+                  {link.acceptPartialPayment && (
+                    <div className="space-y-3">
+                      <Label htmlFor="amount" className="text-sm font-medium">
+                        Enter Amount (Min: ₹{link.minPartialAmount?.toLocaleString('en-IN')})
+                      </Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
+                          ₹
+                        </span>
+                        <Input
+                          id="amount"
+                          type="number"
+                          min={link.minPartialAmount}
+                          max={totalAmount}
+                          placeholder={link.minPartialAmount?.toString()}
+                          className="pl-7 h-11 text-base font-medium"
+                          value={formData.amount || ""}
+                          onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
+                          required
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payment Method Selection */}
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-semibold">Select Payment Method</h4>
+                    <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("upi")}
-                        className={`p-4 rounded-lg border-2 transition-all ${
+                        className={`p-3 rounded-md border-2 transition-all text-sm font-medium flex flex-col items-center gap-2 ${
                           paymentMethod === "upi"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:border-primary/30"
                         }`}
                       >
-                        <Smartphone className="h-5 w-5 mx-auto mb-2" />
-                        <div className="text-sm font-medium">UPI</div>
+                        <Smartphone className="h-5 w-5" />
+                        UPI
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("card")}
-                        className={`p-4 rounded-lg border-2 transition-all ${
+                        className={`p-3 rounded-md border-2 transition-all text-sm font-medium flex flex-col items-center gap-2 ${
                           paymentMethod === "card"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:border-primary/30"
                         }`}
                       >
-                        <CreditCard className="h-5 w-5 mx-auto mb-2" />
-                        <div className="text-sm font-medium">Card</div>
+                        <CreditCard className="h-5 w-5" />
+                        Card
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("netbanking")}
-                        className={`p-4 rounded-lg border-2 transition-all ${
+                        className={`p-3 rounded-md border-2 transition-all text-sm font-medium flex flex-col items-center gap-2 ${
                           paymentMethod === "netbanking"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:border-primary/30"
                         }`}
                       >
-                        <Building className="h-5 w-5 mx-auto mb-2" />
-                        <div className="text-sm font-medium">NetBanking</div>
+                        <Building className="h-5 w-5" />
+                        NetBanking
                       </button>
 
                       <button
                         type="button"
                         onClick={() => setPaymentMethod("wallet")}
-                        className={`p-4 rounded-lg border-2 transition-all ${
+                        className={`p-3 rounded-md border-2 transition-all text-sm font-medium flex flex-col items-center gap-2 ${
                           paymentMethod === "wallet"
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-primary/50"
+                            ? "border-primary bg-primary/5 text-primary"
+                            : "border-border hover:border-primary/30"
                         }`}
                       >
-                        <Wallet className="h-5 w-5 mx-auto mb-2" />
-                        <div className="text-sm font-medium">Wallet</div>
+                        <Wallet className="h-5 w-5" />
+                        Wallet
                       </button>
                     </div>
                   </div>
 
                   {/* WhatsApp Consent */}
                   {link.whatsappConfirmation && (
-                    <>
-                      <Separator />
-                      <div className="flex items-start gap-3 p-4 bg-green-50 rounded-lg border border-green-200">
-                        <Switch
-                          checked={formData.whatsappConsent}
-                          onCheckedChange={(checked) =>
-                            setFormData({ ...formData, whatsappConsent: checked })
-                          }
-                          className="mt-1"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <MessageCircle className="h-4 w-4 text-green-600" />
-                            <Label className="font-medium text-green-900">
-                              WhatsApp Order Updates
-                            </Label>
-                          </div>
-                          <p className="text-sm text-green-700">
-                            Receive instant order confirmation and updates on WhatsApp
-                          </p>
+                    <div className="flex items-start gap-3 p-3 bg-green-50 rounded-md border border-green-200">
+                      <Switch
+                        checked={formData.whatsappConsent}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, whatsappConsent: checked })
+                        }
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <MessageCircle className="h-3.5 w-3.5 text-green-600" />
+                          <Label className="text-sm font-medium text-green-900">
+                            Get updates on WhatsApp
+                          </Label>
                         </div>
+                        <p className="text-xs text-green-700">
+                          Receive order confirmation and updates
+                        </p>
                       </div>
-                    </>
+                    </div>
                   )}
 
-                  {/* Submit Button */}
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className="w-full text-base"
-                    disabled={processing}
-                  >
-                    {processing ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                        Processing Payment...
-                      </>
-                    ) : (
-                      <>
-                        <Lock className="mr-2 h-4 w-4" />
-                        Pay ₹{(link.acceptPartialPayment ? formData.amount : totalAmount).toLocaleString('en-IN')}
-                      </>
-                    )}
-                  </Button>
+                  <Separator />
 
-                  {/* Trust Badges */}
-                  <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground pt-2">
-                    <div className="flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3" />
-                      <span>SSL Encrypted</span>
+                  {/* Amount Display & Pay Button */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-base">
+                      <span className="font-medium">Amount to Pay</span>
+                      <span className="text-2xl font-bold">
+                        ₹{(link.acceptPartialPayment ? (formData.amount || 0) : totalAmount).toLocaleString('en-IN')}
+                      </span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <BadgeCheck className="h-3 w-3" />
-                      <span>PCI DSS Compliant</span>
+
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className="w-full h-12 text-base font-semibold"
+                      disabled={processing}
+                    >
+                      {processing ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          Processing...
+                        </>
+                      ) : (
+                        "Continue"
+                      )}
+                    </Button>
+
+                    {/* Security Info */}
+                    <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground pt-1">
+                      <div className="flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        <span>Secure</span>
+                      </div>
+                      <span>•</span>
+                      <div className="flex items-center gap-1">
+                        <ShieldCheck className="h-3 w-3" />
+                        <span>Encrypted</span>
+                      </div>
                     </div>
                   </div>
                 </form>
               </CardContent>
             </Card>
           </div>
-
-          {/* Right Column - Order Summary (2 cols) */}
-          <div className="lg:col-span-2">
-            <div className="sticky top-24 space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Payment Link Image */}
-                  {link.image && (
-                    <div className="rounded-lg overflow-hidden">
-                      <img
-                        src={link.image}
-                        alt={link.title}
-                        className="w-full h-48 object-cover"
-                      />
-                    </div>
-                  )}
-
-                  {/* Products */}
-                  {products.length > 0 ? (
-                    <div className="space-y-3">
-                      <h4 className="font-medium text-sm flex items-center gap-2">
-                        <Package className="h-4 w-4" />
-                        Items ({products.length})
-                      </h4>
-                      {products.map((product) => (
-                        <div key={product.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="h-12 w-12 rounded object-cover"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{product.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              ₹{product.price.toLocaleString('en-IN')}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <p className="font-medium">{link.title}</p>
-                      {link.description && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {link.description}
-                        </p>
-                      )}
-                    </div>
-                  )}
-
-                  <Separator />
-
-                  {/* Price Breakdown */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span>₹{totalAmount.toLocaleString('en-IN')}</span>
-                    </div>
-
-                    {link.acceptPartialPayment && formData.amount < totalAmount && (
-                      <>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Paying Now</span>
-                          <span className="font-medium text-primary">
-                            ₹{formData.amount.toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Remaining</span>
-                          <span className="text-orange-600">
-                            ₹{(totalAmount - formData.amount).toLocaleString('en-IN')}
-                          </span>
-                        </div>
-                      </>
-                    )}
-
-                    <Separator />
-
-                    <div className="flex justify-between text-base font-bold">
-                      <span>Total</span>
-                      <span>
-                        ₹{(link.acceptPartialPayment ? formData.amount : totalAmount).toLocaleString('en-IN')}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Shiprocket Badge */}
-                  {link.shiprocketEnabled && link.collectAddress && (
-                    <>
-                      <Separator />
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-50 p-3 rounded-lg border border-blue-200">
-                        <Truck className="h-4 w-4 text-blue-600" />
-                        <span className="text-blue-900">
-                          Fast shipping via Shiprocket
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Security Badge */}
-              <Card className="bg-gradient-to-br from-blue-50 to-purple-50 border-none">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <ShieldCheck className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-1">Secure Payment</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Your payment information is encrypted and secure.
-                        We never store your card details.
-                      </p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="border-t bg-white mt-12">
-        <div className="max-w-6xl mx-auto px-4 py-6 text-center text-sm text-muted-foreground">
-          <p>Powered by <span className="font-semibold text-foreground">Razorpay</span></p>
-          <p className="mt-1">Trusted by 10 million+ businesses across India</p>
+      <div className="border-t bg-white mt-8">
+        <div className="max-w-5xl mx-auto px-4 py-4 text-center">
+          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Lock className="h-3 w-3" />
+            <span>Powered by <span className="font-semibold text-foreground">Razorpay</span></span>
+          </div>
         </div>
       </div>
     </div>

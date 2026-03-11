@@ -65,6 +65,8 @@ interface EditorState {
   customPages: CustomPage[];
   /** Biolink configuration */
   biolinkConfig?: any;
+  /** Raw HTML content for biolink templates (for direct HTML/CSS editing) */
+  htmlContent?: string;
 }
 
 const buildPageState = (pd: PageData | undefined, fallback: TemplateData): PageState => {
@@ -523,6 +525,28 @@ const SmartPageEditor = () => {
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  // Load HTML template for biolink templates
+  useEffect(() => {
+    const loadBiolinkTemplate = async () => {
+      if (isBiolinkTemplate && !state.htmlContent) {
+        try {
+          const templateFile = state.template.id === "biolink-profile"
+            ? "/biolink-event-template.html"
+            : "/biolink-shop-template.html";
+
+          const response = await fetch(templateFile);
+          const htmlContent = await response.text();
+
+          setState(prev => ({ ...prev, htmlContent }));
+        } catch (error) {
+          console.error("Failed to load biolink template:", error);
+        }
+      }
+    };
+
+    loadBiolinkTemplate();
+  }, [isBiolinkTemplate, state.template.id, state.htmlContent]);
+
   // Current page helpers
   const activePage = state.activePage;
   const isCheckoutPage = activePage === "__checkout__";
@@ -796,6 +820,8 @@ const SmartPageEditor = () => {
   const { sendPrompt, isLoading: aiLoading } = useAIPageBuilder({
     pageType: state.template.category || "landing",
     getCurrentData: () => ({
+      template: state.template,
+      htmlContent: state.htmlContent,
       heroTitle: currentPage.heroTitle,
       heroTagline: currentPage.heroTagline,
       heroDescription: currentPage.heroDescription,
@@ -804,6 +830,14 @@ const SmartPageEditor = () => {
       sections: currentPage.sections.map(s => ({ type: s.type, label: s.label, visible: s.visible })),
     }),
     onUpdates: (updates: AIPageUpdates) => {
+      // Handle HTML content updates for biolink templates
+      if (updates.htmlContent) {
+        setState(prev => ({ ...prev, htmlContent: updates.htmlContent }));
+        setUnsavedChanges(true);
+        return;
+      }
+
+      // Handle regular field updates
       if (updates.heroTitle) updatePageHero({ heroTitle: updates.heroTitle });
       if (updates.heroTagline) updatePageHero({ heroTagline: updates.heroTagline });
       if (updates.heroDescription) updatePageHero({ heroDescription: updates.heroDescription });
@@ -944,6 +978,7 @@ const SmartPageEditor = () => {
                 customPages={state.customPages}
                 onOpenProductModal={handleOpenProductModal}
                 biolinkConfig={state.biolinkConfig}
+                htmlContent={state.htmlContent}
               />
             )}
           </div>
@@ -1124,6 +1159,7 @@ const SmartPageEditor = () => {
                 onRemoveSection={removeSection}
                 onMoveSection={moveSection}
                 onAddSection={addSection}
+                htmlContent={state.htmlContent}
                 onCtaClick={() => {
                   if (state.checkout?.enabled) setActivePage("__checkout__");
                 }}

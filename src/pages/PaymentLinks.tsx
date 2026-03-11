@@ -45,7 +45,6 @@ const PaymentLinks = () => {
   const [shiprocketEnabled, setShiprocketEnabled] = useState(false);
   const [whatsappConfirmationEnabled, setWhatsappConfirmationEnabled] = useState(false);
   const [formData, setFormData] = useState({
-    title: "",
     description: "",
     amount: "",
     customerName: "",
@@ -312,17 +311,6 @@ const PaymentLinks = () => {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader><DialogTitle>Create Payment Link</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            {/* Title */}
-            <div>
-              <label className="text-sm font-medium text-foreground">Title</label>
-              <Input
-                placeholder="e.g. Course Fee - Full Stack Bootcamp"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                className="mt-1.5"
-              />
-            </div>
-
             {/* Amount - Primary Field */}
             <div>
               <label className="text-sm font-medium text-foreground">Amount (₹) <span className="text-destructive">*</span></label>
@@ -569,7 +557,7 @@ const PaymentLinks = () => {
                 // Create new payment link object
                 const newPaymentLink = {
                   id: linkId,
-                  title: formData.title || `Payment for ₹${formData.amount}`,
+                  title: formData.description || `Payment for ₹${formData.amount}`,
                   description: formData.description || "",
                   date: new Date().toLocaleString('en-IN', {
                     day: '2-digit',
@@ -753,7 +741,6 @@ const PaymentLinks = () => {
                 setWhatsappConfirmationEnabled(false);
                 setShowAdvanced(false);
                 setFormData({
-                  title: "",
                   description: "",
                   amount: "",
                   customerName: "",
