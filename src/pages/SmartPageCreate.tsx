@@ -18,14 +18,14 @@ const promptSuggestions = [
 ];
 
 const TemplateThumb = ({ template }: { template: TemplateData }) => {
-  // Biolink templates are mobile-first with max-width 428px
+  // Biolink templates are mobile-first with max-width 400px
   const isBiolink = template.id.startsWith("biolink");
-  const width = isBiolink ? 428 : 1200;
-  const scale = isBiolink ? 0.85 : 0.3;
+  const width = isBiolink ? 400 : 1200;
+  const scale = isBiolink ? 0.9 : 0.3;
 
   return (
     <div className="h-52 rounded-t-lg border-b border-border overflow-hidden relative bg-background">
-      <div className={`origin-top-left absolute ${isBiolink ? 'left-1/2 -translate-x-1/2' : ''}`} style={{ width, transform: `scale(${scale})${isBiolink ? ' translateX(-50%)' : ''}`, transformOrigin: "top left" }}>
+      <div className={`origin-top-left absolute ${isBiolink ? 'left-1/2 -translate-x-1/2' : ''}`} style={{ width, transform: `scale(${scale})${isBiolink ? ' translateX(-50%)' : ''}`, transformOrigin: isBiolink ? "top center" : "top left" }}>
         <SitePreview template={template} sections={template.sections} biolinkConfig={template.biolinkConfig} productsConfig={template.productsConfig} />
       </div>
       <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent" />

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Your Tickets</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: #B8AFA0;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 0;
+    }
+
+    .container {
+      background: #E8E3D8;
+      width: 100%;
+      max-width: 400px;
+      min-height: 100vh;
+      padding: 24px 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .header-icons {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: white;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .profile {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0F766E, #14B8A6);
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #0F766E;
+      margin-bottom: 8px;
+    }
+
+    .location-card {
+      background: white;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+    }
+
+    .location-card:hover {
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    .location-icon {
+      width: 40px;
+      height: 40px;
+      background: #0F766E;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+    }
+
+    .location-content {
+      flex: 1;
+    }
+
+    .location-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0F766E;
+      margin-bottom: 4px;
+    }
+
+    .location-address {
+      font-size: 11px;
+      color: #6B7280;
+      line-height: 1.4;
+    }
+
+    .location-menu {
+      color: white;
+      font-size: 16px;
+    }
+
+    .event-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+      flex: 1;
+    }
+
+    .event-card {
+      background: linear-gradient(135deg, #0F766E, #14B8A6);
+      border-radius: 16px;
+      padding: 16px 18px;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 2px 4px rgba(15, 118, 110, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .event-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px rgba(15, 118, 110, 0.4);
+    }
+
+    .event-title {
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 1.5;
+      flex: 1;
+    }
+
+    .event-menu {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: auto;
+      padding-top: 24px;
+    }
+
+    .footer-link {
+      background: white;
+      border-radius: 24px;
+      padding: 12px 24px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #374151;
+      text-decoration: none;
+      display: inline-block;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .footer-links {
+      font-size: 11px;
+      color: #6B7280;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: #6B7280;
+      text-decoration: none;
+    }
+
+    .footer-links a:hover {
+      color: #374151;
+    }
+
+    .separator {
+      color: #9CA3AF;
+    }
+
+    @media (min-width: 768px) {
+      body {
+        background: #B8AFA0;
+      }
+
+      .container {
+        border-radius: 24px;
+        min-height: auto;
+        max-height: 90vh;
+        overflow-y: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-icons">
+      <button class="icon-btn">✱</button>
+      <button class="icon-btn">⤴</button>
+    </div>
+
+    <div class="profile">
+      <div class="logo">🌳</div>
+      <div class="title">Book Your Tickets ⬇️</div>
+    </div>
+
+    <div class="location-card">
+      <div class="location-icon">📍</div>
+      <div class="location-content">
+        <div class="location-label">Location</div>
+        <div class="location-address">95, 100 feet Rd, HAL 2nd Stage, Appareddipalya, Indiranagar, Bangalore</div>
+      </div>
+      <div class="location-menu">⋮</div>
+    </div>
+
+    <div class="event-list">
+      <a href="#" class="event-card">
+        <div class="event-title">8th March - Turtle walker: Notes from the Coastline | a screening with booyawatchin</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">11th March - Grassroots Wednesdays with My Conscience & PXP | K</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">12th March - GBD-B Pulse with Adi G, EBITDA, Daishō</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">13th March - Gawdy Bhai</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">14th March - THT presents Dawn Bhat</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">15th March - Skin Contact by Project Grapejuice</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">17th March - Solidarity Tuesday with The Threshold by Mo Pallen, B. Bindhu Malini</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">18th March - Grassroots Wednesdays with Keeravani, Backrooms, threexdweeds18</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">19th March - THT presents Gliding Emotions by Tamil Jazz Collective and a reading of Tamil Pulp Fiction with Hishām</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">20th March - THT x ANHAR RECORDS presents Denbhim Audio + Borai + More</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">22nd March - Oddball x THT present Jack Gardiner</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">25th March - Grassroots Wednesdays with FTP, Skivinnie</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">26th March - THT presents Ranj x Clif, STEVIE</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">27th March - oelii|grlqo: Jatin Talukdar Project + Avedhita + Sei Hek</div>
+        <div class="event-menu">⋮</div>
+      </a>
+
+      <a href="#" class="event-card">
+        <div class="event-title">28th March - THT presents Parveez</div>
+        <div class="event-menu">⋮</div>
+      </a>
+    </div>
+
+    <div class="footer">
+      <a href="#" class="footer-link">Join the_hummingtree on Linktree</a>
+      <div class="footer-links">
+        <a href="#">Cookie Preferences</a>
+        <span class="separator">·</span>
+        <a href="#">Report</a>
+        <span class="separator">·</span>
+        <a href="#">Privacy</a>
+        <span class="separator">·</span>
+        <a href="#">Explore</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
