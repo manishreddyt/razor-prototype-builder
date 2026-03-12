@@ -962,24 +962,24 @@ const MarketingCampaigns = () => {
     return (
       <DashboardLayout>
         <div className="animate-fade-in space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">Campaigns</h1>
-              <p className="text-sm text-muted-foreground mt-1">Drive revenue with automated marketing campaigns and upsells</p>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Campaigns</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">Drive revenue with automated marketing campaigns and upsells</p>
             </div>
-            <Button className="gap-2" onClick={() => startCreate()}>
-              <Plus className="h-4 w-4" /> Create Campaign
+            <Button className="gap-2 w-full sm:w-auto" onClick={() => startCreate()}>
+              <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Create Campaign</span><span className="sm:hidden">Create</span>
             </Button>
           </div>
 
           <Tabs defaultValue="campaigns" className="space-y-5">
-            <TabsList>
-              <TabsTrigger value="campaigns" className="gap-1.5"><Zap className="h-3.5 w-3.5" /> Campaigns</TabsTrigger>
-              <TabsTrigger value="performance" className="gap-1.5"><BarChart3 className="h-3.5 w-3.5" /> Campaign Performance</TabsTrigger>
+            <TabsList className="w-full sm:w-auto">
+              <TabsTrigger value="campaigns" className="gap-1.5 flex-1 sm:flex-none"><Zap className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Campaigns</span><span className="sm:hidden text-xs">List</span></TabsTrigger>
+              <TabsTrigger value="performance" className="gap-1.5 flex-1 sm:flex-none"><BarChart3 className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Campaign Performance</span><span className="sm:hidden text-xs">Stats</span></TabsTrigger>
             </TabsList>
 
             <TabsContent value="campaigns" className="space-y-5">
-              <div className="grid grid-cols-5 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                 {[
                   { icon: Zap, label: "Active Campaigns", value: campaigns.filter(w => w.enabled).length },
                   { icon: Users, label: "Total Triggers", value: campaigns.reduce((s, w) => s + w.runs, 0).toLocaleString() },
@@ -987,11 +987,11 @@ const MarketingCampaigns = () => {
                   { icon: Eye, label: "Avg Open Rate", value: "42%" },
                   { icon: IndianRupee, label: "Revenue", value: `₹${formatRevenue(totalRevenue)}` },
                 ].map(s => (
-                  <div key={s.label} className="blade-stat flex items-center gap-4">
-                    <s.icon className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">{s.label}</p>
-                      <p className="text-xl font-semibold text-foreground">{s.value}</p>
+                  <div key={s.label} className="blade-stat flex items-center gap-3 sm:gap-4">
+                    <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate">{s.label}</p>
+                      <p className="text-lg sm:text-xl font-semibold text-foreground truncate">{s.value}</p>
                     </div>
                   </div>
                 ))}
@@ -1069,21 +1069,21 @@ const MarketingCampaigns = () => {
 
             <TabsContent value="performance" className="space-y-5">
               {/* Campaign Stats */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {[
                   { icon: Users, label: "Total Leads", value: totalLeads.toLocaleString(), sub: "across all campaigns" },
                   { icon: UserPlus, label: "Paid Customers", value: totalPaid.toLocaleString(), sub: `${avgConversion}% conversion` },
                   { icon: IndianRupee, label: "Revenue Generated", value: `₹${(totalRevenue / 100000).toFixed(1)}L`, sub: "from campaigns" },
                   { icon: Mail, label: "Emails Sent", value: campaignData.reduce((s, c) => s + c.emailsSent, 0).toLocaleString(), sub: "total messages" },
                 ].map(s => (
-                  <div key={s.label} className="blade-stat flex items-center gap-4">
+                  <div key={s.label} className="blade-stat flex items-center gap-3 sm:gap-4">
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <s.icon className="h-5 w-5 text-primary" />
+                      <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">{s.label}</p>
-                      <p className="text-lg font-semibold text-foreground">{s.value}</p>
-                      <p className="text-[11px] text-muted-foreground">{s.sub}</p>
+                    <div className="min-w-0">
+                      <p className="text-[10px] sm:text-xs text-muted-foreground truncate">{s.label}</p>
+                      <p className="text-base sm:text-lg font-semibold text-foreground truncate">{s.value}</p>
+                      <p className="text-[10px] sm:text-[11px] text-muted-foreground truncate">{s.sub}</p>
                     </div>
                   </div>
                 ))}
@@ -1091,47 +1091,48 @@ const MarketingCampaigns = () => {
 
               {/* Campaign Table */}
               <div className="blade-card overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Campaign</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Leads</TableHead>
-                      <TableHead className="text-right">Paid</TableHead>
-                      <TableHead className="text-right">Conversion</TableHead>
-                      <TableHead className="text-right">Revenue</TableHead>
-                      <TableHead className="text-right">Open Rate</TableHead>
-                      <TableHead>Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
+                <div className="overflow-x-auto">
+                  <Table className="min-w-[800px]">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Campaign</TableHead>
+                        <TableHead className="hidden sm:table-cell">Date</TableHead>
+                        <TableHead className="hidden md:table-cell">Type</TableHead>
+                        <TableHead className="text-right hidden lg:table-cell">Leads</TableHead>
+                        <TableHead className="text-right">Paid</TableHead>
+                        <TableHead className="text-right hidden md:table-cell">Conversion</TableHead>
+                        <TableHead className="text-right">Revenue</TableHead>
+                        <TableHead className="text-right hidden lg:table-cell">Open Rate</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
                   <TableBody>
                     {campaignData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(c => {
                       const conversion = c.leads > 0 ? ((c.paidCustomers / c.leads) * 100).toFixed(1) : "—";
                       return (
                         <TableRow key={c.id} className="cursor-pointer hover:bg-muted/50">
                           <TableCell>
-                            <div className="font-medium text-sm text-foreground">{c.name}</div>
+                            <div className="font-medium text-xs sm:text-sm text-foreground truncate max-w-[150px] sm:max-w-none">{c.name}</div>
                           </TableCell>
-                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                          <TableCell className="text-xs text-muted-foreground whitespace-nowrap hidden sm:table-cell">
                             {new Date(c.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0", campaignTypeLabels[c.type].color)}>
                               {campaignTypeLabels[c.type].label}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right font-medium text-sm">{c.leads.toLocaleString()}</TableCell>
-                          <TableCell className="text-right font-medium text-sm">{c.paidCustomers.toLocaleString()}</TableCell>
-                          <TableCell className="text-right">
-                            <span className={cn("text-sm font-medium", parseFloat(conversion) >= 15 ? "text-emerald-600" : parseFloat(conversion) >= 10 ? "text-amber-600" : "text-muted-foreground")}>
+                          <TableCell className="text-right font-medium text-xs sm:text-sm hidden lg:table-cell">{c.leads.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium text-xs sm:text-sm">{c.paidCustomers.toLocaleString()}</TableCell>
+                          <TableCell className="text-right hidden md:table-cell">
+                            <span className={cn("text-xs sm:text-sm font-medium", parseFloat(conversion) >= 15 ? "text-emerald-600" : parseFloat(conversion) >= 10 ? "text-amber-600" : "text-muted-foreground")}>
                               {conversion}{conversion !== "—" ? "%" : ""}
                             </span>
                           </TableCell>
-                          <TableCell className="text-right text-sm font-medium">
+                          <TableCell className="text-right text-xs sm:text-sm font-medium whitespace-nowrap">
                             {c.revenue > 0 ? `₹${(c.revenue / 1000).toFixed(0)}K` : "—"}
                           </TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">
+                          <TableCell className="text-right text-xs sm:text-sm text-muted-foreground hidden lg:table-cell">
                             {c.openRate > 0 ? `${c.openRate}%` : "—"}
                           </TableCell>
                           <TableCell>
@@ -1148,6 +1149,7 @@ const MarketingCampaigns = () => {
                     })}
                   </TableBody>
                 </Table>
+                </div>
               </div>
             </TabsContent>
           </Tabs>
