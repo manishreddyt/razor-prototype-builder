@@ -1,13 +1,16 @@
-export type ProductType = "online-course" | "1-1-session" | "webinar" | "physical-product" | "digital-product";
+export type ProductType = "online-course" | "1-1-session" | "webinar" | "physical-product" | "digital-product" | "physical";
 
 export interface PricingModel {
   id: string;
-  name: string; // "Self-paced", "With Mentorship", "Monthly"
-  price: number;
-  currency: "INR"; // Hardcoded for MVP
+  name?: string; // "Self-paced", "With Mentorship", "Monthly"
+  price?: number;
+  amount?: number; // Alias for price
+  currency?: "INR" | string;
   interval?: "one_time" | "monthly" | "yearly";
-  features: string[];
-  highlighted: boolean;
+  type?: string; // "one-time", "subscription", etc.
+  label?: string; // Display label
+  features?: string[];
+  highlighted?: boolean;
   description?: string;
 }
 
