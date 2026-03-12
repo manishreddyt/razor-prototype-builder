@@ -47,51 +47,56 @@ const Transactions = () => {
     <DashboardLayout>
       <div className="animate-fade-in space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Transactions</h1>
-            <p className="text-sm text-muted-foreground mt-1">View and manage all payment transactions</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Transactions</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">View and manage all payment transactions</p>
           </div>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2 w-full sm:w-auto">
             <Download className="h-4 w-4" />
-            Export CSV
+            <span className="hidden sm:inline">Export CSV</span>
+            <span className="sm:hidden">Export</span>
           </Button>
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-6 border-b border-border">
-          <span className="blade-tab-active">Payments</span>
-          <span className="blade-tab">Refunds</span>
-          <span className="blade-tab">Disputes</span>
-          <span className="blade-tab">Downtimes</span>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-4 sm:gap-6 border-b border-border min-w-max">
+            <span className="blade-tab-active whitespace-nowrap">Payments</span>
+            <span className="blade-tab whitespace-nowrap">Refunds</span>
+            <span className="blade-tab whitespace-nowrap">Disputes</span>
+            <span className="blade-tab whitespace-nowrap hidden sm:inline-flex">Downtimes</span>
+          </div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={activeTab === tab ? "blade-filter-chip-active" : "blade-filter-chip"}
-            >
-              {tab}
-            </button>
-          ))}
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-2 min-w-max">
+            {tabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={activeTab === tab ? "blade-filter-chip-active" : "blade-filter-chip"}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Search & Filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by Payment ID, email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 text-sm"
             />
           </div>
           <Select value={methodFilter} onValueChange={setMethodFilter}>
-            <SelectTrigger className="w-36">
+            <SelectTrigger className="w-full sm:w-36">
               <SelectValue placeholder="Method" />
             </SelectTrigger>
             <SelectContent>
@@ -103,7 +108,7 @@ const Transactions = () => {
             </SelectContent>
           </Select>
           {(searchQuery || methodFilter !== "all") && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(""); setMethodFilter("all"); }}>
+            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(""); setMethodFilter("all"); }} className="w-full sm:w-auto">
               <X className="h-4 w-4 mr-1" /> Clear
             </Button>
           )}
@@ -112,34 +117,34 @@ const Transactions = () => {
         {/* Table */}
         <div className="blade-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="border-b border-border bg-secondary/50">
-                  <th className="blade-table-header px-5 py-3 text-left">Payment ID</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Order ID</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Method</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Email</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Amount</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Fee</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Created On</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                  <th className="blade-table-header px-5 py-3 text-left"></th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Payment ID</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Order ID</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden sm:table-cell">Method</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Email</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Amount</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Fee</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Created On</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Status</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left"></th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((txn) => (
                   <tr key={txn.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => setSelectedTxn(txn)}>
-                    <td className="px-5 py-3 font-medium text-primary">{txn.id}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{txn.orderId}</td>
-                    <td className="px-5 py-3 text-foreground">{txn.method}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{txn.email}</td>
-                    <td className="px-5 py-3 text-foreground font-medium">{txn.amount}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{txn.fee}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{txn.date}</td>
-                    <td className="px-5 py-3">
+                    <td className="px-3 sm:px-5 py-3 font-medium text-primary text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{txn.id}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">{txn.orderId}</td>
+                    <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm hidden sm:table-cell">{txn.method}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden md:table-cell truncate max-w-[150px]">{txn.email}</td>
+                    <td className="px-3 sm:px-5 py-3 text-foreground font-medium text-xs sm:text-sm whitespace-nowrap">{txn.amount}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">{txn.fee}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden md:table-cell whitespace-nowrap">{txn.date}</td>
+                    <td className="px-3 sm:px-5 py-3">
                       <span className={statusClass[txn.status] || "blade-badge"}>{txn.status}</span>
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-3 sm:px-5 py-3">
                       <button className="text-muted-foreground hover:text-primary">
                         <Eye className="h-4 w-4" />
                       </button>
@@ -149,7 +154,7 @@ const Transactions = () => {
               </tbody>
             </table>
           </div>
-          <div className="border-t border-border px-5 py-3 flex items-center justify-between text-sm text-muted-foreground">
+          <div className="border-t border-border px-3 sm:px-5 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs sm:text-sm text-muted-foreground">
             <span>Showing 1 - {filtered.length} of {filtered.length}</span>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" disabled><ChevronLeft className="h-4 w-4" /></Button>
