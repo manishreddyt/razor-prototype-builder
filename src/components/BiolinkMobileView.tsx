@@ -29,7 +29,7 @@ export const BiolinkMobileView = ({
   onLinkClick,
 }: BiolinkMobileViewProps) => {
   const [activeTab, setActiveTab] = useState<"links" | "shop">(
-    profile.viewMode === "shop" ? "shop" : "links"
+    profile.viewMode === "shop" || profile.viewMode === "both" ? "shop" : "links"
   );
 
   if (!profile.enabled) {
