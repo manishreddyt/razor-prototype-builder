@@ -82,7 +82,12 @@ const builtInApps = [
   { icon: Sparkles, label: "Emergent", path: "/apps/emergent" },
 ];
 
-export const DashboardSidebar = () => {
+interface DashboardSidebarProps {
+  isMobileMenuOpen?: boolean;
+  onCloseMobileMenu?: () => void;
+}
+
+export const DashboardSidebar = ({ isMobileMenuOpen, onCloseMobileMenu }: DashboardSidebarProps) => {
   const location = useLocation();
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [installedApps, setInstalledApps] = useState<string[]>(
@@ -102,7 +107,12 @@ export const DashboardSidebar = () => {
   };
 
   return (
-    <aside className="flex w-60 flex-col border-r border-sidebar-border bg-sidebar overflow-y-auto">
+    <aside className={`
+      flex w-60 flex-col border-r border-sidebar-border bg-sidebar overflow-y-auto
+      fixed lg:static inset-y-0 left-0 z-50
+      transform transition-transform duration-300 ease-in-out
+      ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+    `}>
       {/* Logo */}
       <div className="flex items-center gap-2 px-5 py-4 border-b border-sidebar-border">
         <div className="flex items-center gap-2">
@@ -140,6 +150,7 @@ export const DashboardSidebar = () => {
                     <NavLink
                       key={item.path}
                       to={item.path}
+                      onClick={() => onCloseMobileMenu?.()}
                       className={`flex items-center gap-3 px-5 py-2 text-sm transition-colors ${
                         isActive
                           ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
@@ -179,6 +190,7 @@ export const DashboardSidebar = () => {
                   <NavLink
                     key={app.path}
                     to={app.path}
+                    onClick={() => onCloseMobileMenu?.()}
                     className={`flex items-center gap-3 px-5 py-2 text-sm transition-colors ${
                       isActive
                         ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
@@ -199,6 +211,7 @@ export const DashboardSidebar = () => {
                   <NavLink
                     key={appId}
                     to={meta.path}
+                    onClick={() => onCloseMobileMenu?.()}
                     className={`flex items-center gap-3 px-5 py-2 text-sm transition-colors ${
                       isActive
                         ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
