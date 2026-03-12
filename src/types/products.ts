@@ -51,19 +51,20 @@ export interface AgendaItem {
 export interface Product {
   id: string;
   type: ProductType;
-  title: string;
+  title?: string;
+  name?: string; // Alias for title
   description: string;
   longDescription?: string;
-  image: string;
-  images?: string[]; // Gallery
+  image?: string;
+  images?: string[];
   pricingModels: PricingModel[];
   category?: string;
   tags?: string[];
-  featured: boolean;
-  badge?: string; // "Bestseller", "New", "Limited"
+  featured?: boolean;
+  badge?: string;
 
   // Course-specific
-  duration?: string; // "12 weeks", "40 hours"
+  duration?: string;
   modules?: CourseModule[];
   format?: "video" | "text" | "mixed";
   level?: "beginner" | "intermediate" | "advanced";
@@ -71,38 +72,38 @@ export interface Product {
   courseIncludes?: string[];
 
   // Session-specific
-  sessionDuration?: number; // minutes
+  sessionDuration?: number;
   calendarConnected?: boolean;
   calendarProvider?: "google" | "microsoft" | "calendly";
-  calendarUrl?: string; // Fallback URL
+  calendarUrl?: string;
   availability?: AvailabilitySlot[];
 
   // Webinar-specific
   webinarDate?: string;
   webinarTime?: string;
-  webinarDuration?: number; // minutes
+  webinarDuration?: number;
   webinarPlatform?: "zoom" | "gmeet" | "custom";
   webinarConnected?: boolean;
-  webinarUrl?: string; // Fallback or custom URL
+  webinarUrl?: string;
   speakers?: Speaker[];
   agenda?: AgendaItem[];
 
   // E-commerce specific
-  sku?: string; // Stock Keeping Unit
-  productCategory?: string; // Category ID reference
+  sku?: string;
+  productCategory?: string;
   variants?: ProductVariant[];
   inventory?: InventoryConfig;
   shipping?: ShippingConfig;
-  compareAtPrice?: number; // Original price for discount display
-  discountedPrice?: number; // Calculated discounted price
-  discountPercentage?: number; // Discount percentage (0-100)
-  downloadUrl?: string; // For digital products
+  compareAtPrice?: number;
+  discountedPrice?: number;
+  discountPercentage?: number;
+  downloadUrl?: string;
 
   // Metadata
-  createdAt: string;
-  updatedAt: string;
-  status: "draft" | "published" | "archived";
-  metadata?: Record<string, any>; // For storing additional config like session settings
+  createdAt?: string;
+  updatedAt?: string;
+  status?: "draft" | "published" | "archived";
+  metadata?: Record<string, any>;
 }
 
 export interface ProductsConfig {
