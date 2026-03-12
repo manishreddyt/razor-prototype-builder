@@ -1,13 +1,16 @@
-export type ProductType = "online-course" | "1-1-session" | "webinar" | "physical-product" | "digital-product";
+export type ProductType = "online-course" | "1-1-session" | "webinar" | "physical-product" | "digital-product" | "physical";
 
 export interface PricingModel {
   id: string;
-  name: string; // "Self-paced", "With Mentorship", "Monthly"
-  price: number;
-  currency: "INR"; // Hardcoded for MVP
+  name?: string; // "Self-paced", "With Mentorship", "Monthly"
+  price?: number;
+  amount?: number; // Alias for price
+  currency?: "INR" | string;
   interval?: "one_time" | "monthly" | "yearly";
-  features: string[];
-  highlighted: boolean;
+  type?: string; // "one-time", "subscription", etc.
+  label?: string; // Display label
+  features?: string[];
+  highlighted?: boolean;
   description?: string;
 }
 
@@ -48,19 +51,20 @@ export interface AgendaItem {
 export interface Product {
   id: string;
   type: ProductType;
-  title: string;
+  title?: string;
+  name?: string; // Alias for title
   description: string;
   longDescription?: string;
-  image: string;
-  images?: string[]; // Gallery
+  image?: string;
+  images?: string[];
   pricingModels: PricingModel[];
   category?: string;
   tags?: string[];
-  featured: boolean;
-  badge?: string; // "Bestseller", "New", "Limited"
+  featured?: boolean;
+  badge?: string;
 
   // Course-specific
-  duration?: string; // "12 weeks", "40 hours"
+  duration?: string;
   modules?: CourseModule[];
   format?: "video" | "text" | "mixed";
   level?: "beginner" | "intermediate" | "advanced";
@@ -68,38 +72,38 @@ export interface Product {
   courseIncludes?: string[];
 
   // Session-specific
-  sessionDuration?: number; // minutes
+  sessionDuration?: number;
   calendarConnected?: boolean;
   calendarProvider?: "google" | "microsoft" | "calendly";
-  calendarUrl?: string; // Fallback URL
+  calendarUrl?: string;
   availability?: AvailabilitySlot[];
 
   // Webinar-specific
   webinarDate?: string;
   webinarTime?: string;
-  webinarDuration?: number; // minutes
+  webinarDuration?: number;
   webinarPlatform?: "zoom" | "gmeet" | "custom";
   webinarConnected?: boolean;
-  webinarUrl?: string; // Fallback or custom URL
+  webinarUrl?: string;
   speakers?: Speaker[];
   agenda?: AgendaItem[];
 
   // E-commerce specific
-  sku?: string; // Stock Keeping Unit
-  productCategory?: string; // Category ID reference
+  sku?: string;
+  productCategory?: string;
   variants?: ProductVariant[];
   inventory?: InventoryConfig;
   shipping?: ShippingConfig;
-  compareAtPrice?: number; // Original price for discount display
-  discountedPrice?: number; // Calculated discounted price
-  discountPercentage?: number; // Discount percentage (0-100)
-  downloadUrl?: string; // For digital products
+  compareAtPrice?: number;
+  discountedPrice?: number;
+  discountPercentage?: number;
+  downloadUrl?: string;
 
   // Metadata
-  createdAt: string;
-  updatedAt: string;
-  status: "draft" | "published" | "archived";
-  metadata?: Record<string, any>; // For storing additional config like session settings
+  createdAt?: string;
+  updatedAt?: string;
+  status?: "draft" | "published" | "archived";
+  metadata?: Record<string, any>;
 }
 
 export interface ProductsConfig {
@@ -114,21 +118,21 @@ export interface ProductsConfig {
 // E-commerce extensions
 export interface ProductVariant {
   id: string;
-  name: string; // "Small", "Medium", "Large" or "Red", "Blue"
+  name: string;
   sku?: string;
-  price?: number; // Override base price if set
-  compareAtPrice?: number; // Original price for discount display
-  stock?: number; // Override inventory if tracking per variant
-  image?: string; // Variant-specific image
-  attributes: Record<string, string>; // { "size": "M", "color": "Red" }
-  enabled: boolean;
+  price?: number;
+  compareAtPrice?: number;
+  stock?: number;
+  image?: string;
+  attributes?: Record<string, string>;
+  enabled?: boolean;
 }
 
 export interface InventoryConfig {
   trackInventory: boolean;
   stock: number;
   lowStockThreshold?: number;
-  allowBackorder: boolean;
+  allowBackorder?: boolean;
   sku?: string;
 }
 

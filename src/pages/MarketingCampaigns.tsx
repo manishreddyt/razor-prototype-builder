@@ -621,9 +621,9 @@ const MarketingCampaigns = () => {
           const mockProduct: ProductReference = {
             id: pageData.pageId || 'new-page',
             name: pageData.productName || educationData.productName,
-            type: educationData.businessModel === 'course' ? 'online-course' :
+            type: educationData.businessModel === 'course' ? 'course' :
                   educationData.businessModel === 'webinar' ? 'webinar' :
-                  '1-1-session',
+                  'coaching',
           };
 
           // Pre-fill campaign

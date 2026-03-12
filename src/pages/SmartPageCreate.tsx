@@ -26,7 +26,7 @@ const TemplateThumb = ({ template }: { template: TemplateData }) => {
   return (
     <div className="h-52 rounded-t-lg border-b border-border overflow-hidden relative bg-background">
       <div className={`origin-top-left absolute ${isBiolink ? 'left-1/2 -translate-x-1/2' : ''}`} style={{ width, transform: `scale(${scale})${isBiolink ? ' translateX(-50%)' : ''}`, transformOrigin: isBiolink ? "top center" : "top left" }}>
-        <SitePreview template={template} sections={template.sections} biolinkConfig={template.biolinkConfig} productsConfig={template.productsConfig} />
+        <SitePreview template={template} sections={template.sections} biolinkConfig={template.biolinkConfig as any} productsConfig={template.productsConfig} />
       </div>
       <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent" />
     </div>
@@ -366,7 +366,7 @@ const SmartPageCreate = () => {
                     sections={previewPageTemplate.sections}
                     activePage={previewActivePage}
                     onPageChange={(page) => setPreviewActivePage(page)}
-                    biolinkConfig={previewPageTemplate.biolinkConfig}
+                    biolinkConfig={previewPageTemplate.biolinkConfig as any}
                     productsConfig={previewPageTemplate.productsConfig}
                   />
                 )}

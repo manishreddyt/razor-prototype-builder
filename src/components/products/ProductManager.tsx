@@ -51,8 +51,8 @@ export const ProductManager = ({
       p.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchType = typeFilter === "all" || p.type === typeFilter;
     const matchCategory = categoryFilter === "all" ||
-      (categoryFilter === "uncategorized" && !p.categoryId) ||
-      p.categoryId === categoryFilter;
+      (categoryFilter === "uncategorized" && !p.category) ||
+      p.category === categoryFilter;
     const matchStatus = statusFilter === "all" || p.status === statusFilter;
     return matchSearch && matchType && matchCategory && matchStatus;
   });
