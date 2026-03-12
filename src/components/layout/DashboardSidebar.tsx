@@ -52,7 +52,7 @@ const navSections = [
     title: "TOOLS",
     items: [
       { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
-      { icon: Megaphone, label: "Marketing Campaigns", path: "/marketing-campaigns" },
+      { icon: Megaphone, label: "Campaigns", path: "/marketing-campaigns" },
       { icon: ShoppingBag, label: "App Store", path: "/app-marketplace" },
       { icon: MessageCircle, label: "Agents", path: "/agents" },
       { icon: Plug, label: "Connectors", path: "/connectors" },

@@ -964,7 +964,7 @@ const MarketingCampaigns = () => {
         <div className="animate-fade-in space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-semibold text-foreground">Marketing Campaigns</h1>
+              <h1 className="text-2xl font-semibold text-foreground">Campaigns</h1>
               <p className="text-sm text-muted-foreground mt-1">Drive revenue with automated marketing campaigns and upsells</p>
             </div>
             <Button className="gap-2" onClick={() => startCreate()}>
