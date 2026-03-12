@@ -483,35 +483,37 @@ const CustomerTracker = () => {
     <DashboardLayout>
       <div className="animate-fade-in space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Customer Tracker</h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage leads, students, and customer interactions</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Customer Tracker</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage leads, students, and customer interactions</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowUpload(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowUpload(true)} className="flex-1 sm:flex-none">
               <Upload className="h-4 w-4 mr-1" />
-              Upload CSV
+              <span className="hidden sm:inline">Upload CSV</span>
+              <span className="sm:hidden">Upload</span>
             </Button>
-            <Button size="sm" onClick={() => setShowAdd(true)}>
+            <Button size="sm" onClick={() => setShowAdd(true)} className="flex-1 sm:flex-none">
               <Plus className="h-4 w-4 mr-1" />
-              Add Customer
+              <span className="hidden sm:inline">Add Customer</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[
             { icon: Users, label: "Total Customers", value: customers.length.toLocaleString() },
             { icon: TrendingUp, label: "Active This Month", value: String(customers.filter(c => c.status === "Active").length) },
             { icon: IndianRupee, label: "Lifetime Value (Avg)", value: "₹9,240" },
           ].map((s) => (
-            <div key={s.label} className="blade-stat flex items-center gap-4">
-              <s.icon className="h-5 w-5 text-primary" />
+            <div key={s.label} className="blade-stat flex items-center gap-3 sm:gap-4">
+              <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               <div>
-                <p className="text-sm text-muted-foreground">{s.label}</p>
-                <p className="text-xl font-semibold text-foreground">{s.value}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground">{s.label}</p>
+                <p className="text-lg sm:text-xl font-semibold text-foreground">{s.value}</p>
               </div>
             </div>
           ))}
@@ -556,14 +558,14 @@ const CustomerTracker = () => {
 
         {/* Search & Filters */}
         <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search by name, email, or phone..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9"
+                className="pl-9 text-sm"
               />
               {search && (
                 <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -571,115 +573,121 @@ const CustomerTracker = () => {
                 </button>
               )}
             </div>
-            <div className="flex items-center gap-1.5">
-              {(["all", "Lead", "Active", "Partial", "Churned"] as const).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                    statusFilter === s
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-secondary text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {s === "all" ? "All" : s} ({statusCounts[s]})
-                </button>
-              ))}
+            <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="flex items-center gap-1.5 min-w-max">
+                {(["all", "Lead", "Active", "Partial", "Churned"] as const).map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatusFilter(s)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
+                      statusFilter === s
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {s === "all" ? "All" : s} ({statusCounts[s]})
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Segment Filters */}
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-muted-foreground">Segment:</span>
-            <button
-              onClick={() => setSegmentFilter("all")}
-              className={cn(
-                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                segmentFilter === "all"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-secondary text-muted-foreground hover:text-foreground"
-              )}
-            >
-              All
-            </button>
-
-            {(["VIP", "High Value", "Loyal", "Repeat", "New", "At Risk", "Lapsed", "One-time"] as const).map((seg) => (
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex items-center gap-2 min-w-max">
+              <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Segment:</span>
               <button
-                key={seg}
-                onClick={() => setSegmentFilter(seg)}
+                onClick={() => setSegmentFilter("all")}
                 className={cn(
-                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5",
-                  segmentFilter === seg
-                    ? segmentConfig[seg].className
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors whitespace-nowrap",
+                  segmentFilter === "all"
+                    ? "bg-primary text-primary-foreground"
                     : "bg-secondary text-muted-foreground hover:text-foreground"
                 )}
               >
-                <span>{segmentConfig[seg].icon}</span>
-                {seg} ({segmentCounts[seg] || 0})
+                All
               </button>
-            ))}
+
+              {(["VIP", "High Value", "Loyal", "Repeat", "New", "At Risk", "Lapsed", "One-time"] as const).map((seg) => (
+                <button
+                  key={seg}
+                  onClick={() => setSegmentFilter(seg)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap",
+                    segmentFilter === seg
+                      ? segmentConfig[seg].className
+                      : "bg-secondary text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <span>{segmentConfig[seg].icon}</span>
+                  {seg} ({segmentCounts[seg] || 0})
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Table */}
         <div className="blade-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="blade-table-header px-5 py-3 text-left">Name</th>
-                <th className="blade-table-header px-5 py-3 text-left">Contact</th>
-                <th className="blade-table-header px-5 py-3 text-left">Source</th>
-                <th className="blade-table-header px-5 py-3 text-left">Courses</th>
-                <th className="blade-table-header px-5 py-3 text-left">Total Paid</th>
-                <th className="blade-table-header px-5 py-3 text-left">Last Payment</th>
-                <th className="blade-table-header px-5 py-3 text-left">Segment</th>
-                <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                <th className="blade-table-header px-5 py-3 text-left w-8"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="px-5 py-10 text-center text-muted-foreground">
-                    No customers found matching your search.
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[800px]">
+              <thead>
+                <tr className="border-b border-border bg-secondary/50">
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Name</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Contact</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Source</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden sm:table-cell">Courses</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Total Paid</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Last Payment</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Segment</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Status</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left w-8"></th>
                 </tr>
-              ) : (
-                filtered.map((c) => (
-                  <tr
-                    key={c.id}
-                    onClick={() => setSelectedCustomer(c)}
-                    className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer"
-                  >
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-foreground">{c.name}</p>
-                      <p className="text-xs text-muted-foreground">Joined {c.joinedDate}</p>
-                    </td>
-                    <td className="px-5 py-3">
-                      <p className="text-muted-foreground text-xs">{c.email}</p>
-                      <p className="text-muted-foreground text-xs">{c.phone}</p>
-                    </td>
-                    <td className="px-5 py-3 text-muted-foreground">{c.source}</td>
-                    <td className="px-5 py-3 text-foreground">{c.courses}</td>
-                    <td className="px-5 py-3 text-foreground">{c.totalPaid}</td>
-                    <td className="px-5 py-3 text-muted-foreground">{c.lastPayment}</td>
-                    <td className="px-5 py-3">
-                      <span className={segmentConfig[c.segment || "New"].className}>
-                        {segmentConfig[c.segment || "New"].icon} {c.segment || "New"}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className={statusConfig[c.status]?.className || "blade-badge"}>{c.status}</span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </thead>
+              <tbody>
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="px-5 py-10 text-center text-muted-foreground">
+                      No customers found matching your search.
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filtered.map((c) => (
+                    <tr
+                      key={c.id}
+                      onClick={() => setSelectedCustomer(c)}
+                      className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer"
+                    >
+                      <td className="px-3 sm:px-5 py-3">
+                        <p className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{c.name}</p>
+                        <p className="text-[10px] sm:text-xs text-muted-foreground">Joined {c.joinedDate}</p>
+                      </td>
+                      <td className="px-3 sm:px-5 py-3 hidden md:table-cell">
+                        <p className="text-muted-foreground text-xs truncate max-w-[150px]">{c.email}</p>
+                        <p className="text-muted-foreground text-xs">{c.phone}</p>
+                      </td>
+                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">{c.source}</td>
+                      <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm hidden sm:table-cell">{c.courses}</td>
+                      <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm whitespace-nowrap">{c.totalPaid}</td>
+                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">{c.lastPayment}</td>
+                      <td className="px-3 sm:px-5 py-3 hidden md:table-cell">
+                        <span className={segmentConfig[c.segment || "New"].className}>
+                          {segmentConfig[c.segment || "New"].icon} {c.segment || "New"}
+                        </span>
+                      </td>
+                      <td className="px-3 sm:px-5 py-3">
+                        <span className={statusConfig[c.status]?.className || "blade-badge"}>{c.status}</span>
+                      </td>
+                      <td className="px-3 sm:px-5 py-3">
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
