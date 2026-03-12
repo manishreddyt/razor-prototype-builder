@@ -68,43 +68,43 @@ const Connectors = () => {
       <div className="animate-fade-in space-y-6 max-w-4xl">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Connectors</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Connectors</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Connect third-party services to power your Smart Pages workflows.
           </p>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="blade-card p-4">
-            <p className="text-sm text-muted-foreground">Available</p>
-            <p className="text-2xl font-semibold text-foreground mt-1">{connectors.length}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="blade-card p-3 sm:p-4">
+            <p className="text-xs sm:text-sm text-muted-foreground">Available</p>
+            <p className="text-xl sm:text-2xl font-semibold text-foreground mt-1">{connectors.length}</p>
           </div>
-          <div className="blade-card p-4">
-            <p className="text-sm text-muted-foreground">Connected</p>
-            <p className="text-2xl font-semibold text-foreground mt-1">{connectedCount}</p>
+          <div className="blade-card p-3 sm:p-4">
+            <p className="text-xs sm:text-sm text-muted-foreground">Connected</p>
+            <p className="text-xl sm:text-2xl font-semibold text-foreground mt-1">{connectedCount}</p>
           </div>
-          <div className="blade-card p-4">
-            <p className="text-sm text-muted-foreground">Status</p>
-            <p className="text-2xl font-semibold text-foreground mt-1">{connectedCount > 0 ? "Active" : "—"}</p>
+          <div className="blade-card p-3 sm:p-4">
+            <p className="text-xs sm:text-sm text-muted-foreground">Status</p>
+            <p className="text-xl sm:text-2xl font-semibold text-foreground mt-1">{connectedCount > 0 ? "Active" : "—"}</p>
           </div>
         </div>
 
         {/* Connector Cards */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {connectors.map((connector) => (
             <div
               key={connector.id}
-              className={`blade-card p-5 transition-all ${
+              className={`blade-card p-4 sm:p-5 transition-all ${
                 connector.connected ? "border-primary/20 bg-primary/[0.02]" : ""
               }`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-start gap-4">
-                  <div className="text-3xl">{connector.icon}</div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base font-semibold text-foreground">{connector.name}</h3>
+              <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
+                <div className="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
+                  <div className="text-2xl sm:text-3xl flex-shrink-0">{connector.icon}</div>
+                  <div className="space-y-1 flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                      <h3 className="text-sm sm:text-base font-semibold text-foreground">{connector.name}</h3>
                       <Badge variant="secondary" className="text-[10px]">{connector.category}</Badge>
                       {connector.connected && (
                         <Badge className="text-[10px] bg-emerald-100 text-emerald-700 hover:bg-emerald-100">
@@ -112,12 +112,12 @@ const Connectors = () => {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{connector.description}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{connector.description}</p>
                     {connector.connected && connector.accountName && (
-                      <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-                        <span>Account: <span className="text-foreground">{connector.accountName}</span></span>
-                        <span>•</span>
-                        <span>Last synced: {connector.lastSync}</span>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-2 text-[10px] sm:text-xs text-muted-foreground">
+                        <span className="truncate">Account: <span className="text-foreground">{connector.accountName}</span></span>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="truncate">Last synced: {connector.lastSync}</span>
                       </div>
                     )}
                   </div>

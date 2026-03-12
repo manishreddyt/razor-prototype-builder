@@ -26,64 +26,67 @@ const Offers = () => {
   return (
     <DashboardLayout>
       <div className="animate-fade-in space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Offers & Coupons</h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage discount codes, early-bird pricing, and referral coupons</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Offers & Coupons</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage discount codes, early-bird pricing, and referral coupons</p>
           </div>
-          <Button className="gap-2" onClick={() => setShowCreate(true)}>
+          <Button className="gap-2 w-full sm:w-auto" onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4" />
-            Create Offer
+            <span className="hidden sm:inline">Create Offer</span>
+            <span className="sm:hidden">Create</span>
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[
             { icon: Tag, label: "Active Offers", value: "3" },
             { icon: Percent, label: "Total Redemptions", value: "293" },
             { icon: Clock, label: "Revenue from Offers", value: "₹2,84,500" },
           ].map((s) => (
-            <div key={s.label} className="blade-stat flex items-center gap-4">
-              <s.icon className="h-5 w-5 text-primary" />
-              <div>
-                <p className="text-sm text-muted-foreground">{s.label}</p>
-                <p className="text-xl font-semibold text-foreground">{s.value}</p>
+            <div key={s.label} className="blade-stat flex items-center gap-3 sm:gap-4">
+              <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{s.label}</p>
+                <p className="text-lg sm:text-xl font-semibold text-foreground truncate">{s.value}</p>
               </div>
             </div>
           ))}
         </div>
 
         <div className="blade-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="blade-table-header px-5 py-3 text-left">Coupon Code</th>
-                <th className="blade-table-header px-5 py-3 text-left">Type</th>
-                <th className="blade-table-header px-5 py-3 text-left">Discount</th>
-                <th className="blade-table-header px-5 py-3 text-left">Course</th>
-                <th className="blade-table-header px-5 py-3 text-left">Used / Limit</th>
-                <th className="blade-table-header px-5 py-3 text-left">Valid Till</th>
-                <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                <th className="blade-table-header px-5 py-3 text-left"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {offers.map((o) => (
-                <tr key={o.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                  <td className="px-5 py-3 font-mono font-medium text-primary">{o.code}</td>
-                  <td className="px-5 py-3 text-foreground">{o.type}</td>
-                  <td className="px-5 py-3 text-foreground font-medium">{o.discount}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{o.course}</td>
-                  <td className="px-5 py-3 text-foreground">{o.used} / {o.limit || "∞"}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{o.validTill}</td>
-                  <td className="px-5 py-3"><span className={statusClass[o.status] || "blade-badge"}>{o.status}</span></td>
-                  <td className="px-5 py-3">
-                    <button className="text-muted-foreground hover:text-primary"><Copy className="h-4 w-4" /></button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[700px]">
+              <thead>
+                <tr className="border-b border-border bg-secondary/50">
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Coupon Code</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden sm:table-cell">Type</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Discount</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Course</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Used / Limit</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Valid Till</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Status</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left"></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {offers.map((o) => (
+                  <tr key={o.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                    <td className="px-3 sm:px-5 py-3 font-mono font-medium text-primary text-xs sm:text-sm">{o.code}</td>
+                    <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm hidden sm:table-cell">{o.type}</td>
+                    <td className="px-3 sm:px-5 py-3 text-foreground font-medium text-xs sm:text-sm whitespace-nowrap">{o.discount}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell truncate max-w-[150px]">{o.course}</td>
+                    <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm hidden md:table-cell">{o.used} / {o.limit || "∞"}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell whitespace-nowrap">{o.validTill}</td>
+                    <td className="px-3 sm:px-5 py-3"><span className={statusClass[o.status] || "blade-badge"}>{o.status}</span></td>
+                    <td className="px-3 sm:px-5 py-3">
+                      <button className="text-muted-foreground hover:text-primary"><Copy className="h-4 w-4" /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
@@ -99,40 +102,21 @@ const Offers = () => {
             <div>
               <label className="text-sm font-medium text-foreground">Discount Type</label>
               <Select>
-                <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select type" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="percentage">Percentage Off</SelectItem>
-                  <SelectItem value="flat">Flat Discount (₹)</SelectItem>
+                  <SelectItem value="percentage">Percentage (%)</SelectItem>
+                  <SelectItem value="flat">Flat Amount (₹)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
               <label className="text-sm font-medium text-foreground">Discount Value</label>
-              <Input placeholder="e.g. 25 or 500" className="mt-1.5" />
+              <Input placeholder="e.g. 25" type="number" className="mt-1.5" />
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground">Applicable Course</label>
-              <Select>
-                <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Courses</SelectItem>
-                  <SelectItem value="bootcamp">Full Stack Dev Bootcamp</SelectItem>
-                  <SelectItem value="uiux">UI/UX Design Masterclass</SelectItem>
-                  <SelectItem value="datascience">Data Science Fundamentals</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setShowCreate(false)}>Cancel</Button>
+              <Button className="flex-1">Create</Button>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-sm font-medium text-foreground">Usage Limit</label>
-                <Input placeholder="e.g. 100" className="mt-1.5" />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground">Valid Till</label>
-                <Input type="date" className="mt-1.5" />
-              </div>
-            </div>
-            <Button className="w-full">Create Offer</Button>
           </div>
         </DialogContent>
       </Dialog>

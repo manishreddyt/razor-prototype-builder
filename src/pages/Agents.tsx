@@ -235,51 +235,54 @@ const Agents = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+      <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 animate-fade-in">
         {/* Hero */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div className="flex items-center gap-2">
-            <Bot className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold text-foreground">
+            <Bot className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
               Build Your AI Workforce
             </h1>
           </div>
-          <p className="text-muted-foreground text-lg max-w-2xl">
+          <p className="text-muted-foreground text-sm sm:text-lg max-w-2xl">
             Automate sales, marketing, and support for your creator business.
             Deploy AI agents that work 24/7 to convert leads, engage students,
             and grow revenue.
           </p>
 
           {/* Watch banner */}
-          <div className="blade-card flex items-center gap-4 p-4 border-primary/20 bg-accent/50">
-            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10">
+          <div className="blade-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 border-primary/20 bg-accent/50">
+            <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 flex-shrink-0">
               <Play className="h-5 w-5 text-primary" />
             </div>
-            <div className="flex-1">
-              <p className="font-semibold text-foreground text-sm">
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-foreground text-xs sm:text-sm">
                 Agents@Work
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-[10px] sm:text-xs text-muted-foreground">
                 See AI agents in production — automating sales and support for
                 top creators.
               </p>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" className="flex-shrink-0 hidden sm:flex">
               Watch now
+            </Button>
+            <Button variant="outline" size="sm" className="flex-shrink-0 sm:hidden">
+              Watch
             </Button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           {stats.map((s) => (
-            <div key={s.label} className="blade-stat flex items-center gap-4">
-              <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10">
-                <s.icon className="h-5 w-5 text-primary" />
+            <div key={s.label} className="blade-stat flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center justify-center h-10 w-10 rounded-lg bg-primary/10 flex-shrink-0">
+                <s.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{s.value}</p>
-                <p className="text-sm text-muted-foreground">{s.label}</p>
+              <div className="min-w-0">
+                <p className="text-xl sm:text-2xl font-bold text-foreground truncate">{s.value}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">{s.label}</p>
               </div>
             </div>
           ))}
@@ -287,48 +290,48 @@ const Agents = () => {
 
         {/* Agent Cards */}
         <div>
-          <h2 className="text-xl font-semibold text-foreground mb-1">
+          <h2 className="text-lg sm:text-xl font-semibold text-foreground mb-1">
             Your AI Agents
           </h2>
-          <p className="text-sm text-muted-foreground mb-4">
+          <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
             Deploy AI teammates that optimize your creator business engine.
           </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
             {agents.map((agent) => {
               const sInfo = statusConfig[agent.status];
               return (
                 <div
                   key={agent.id}
-                  className="blade-card p-6 flex flex-col gap-4 hover:shadow-md transition-shadow"
+                  className="blade-card p-4 sm:p-6 flex flex-col gap-3 sm:gap-4 hover:shadow-md transition-shadow"
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center justify-center h-11 w-11 rounded-lg bg-primary/10">
+                    <div className="flex items-center justify-center h-10 w-10 sm:h-11 sm:w-11 rounded-lg bg-primary/10">
                       <agent.icon className="h-5 w-5 text-primary" />
                     </div>
-                    <Badge variant={sInfo.variant}>{sInfo.label}</Badge>
+                    <Badge variant={sInfo.variant} className="text-[10px] sm:text-xs">{sInfo.label}</Badge>
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-semibold text-foreground">
+                    <h3 className="font-semibold text-foreground text-sm sm:text-base">
                       {agent.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground leading-relaxed">
+                    <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                       {agent.description}
                     </p>
                   </div>
 
                   {/* Quick stats */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      {agent.leadsProcessed.toLocaleString()} leads
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-[10px] sm:text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <Users className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{agent.leadsProcessed.toLocaleString()} leads</span>
                     </span>
-                    <span className="flex items-center gap-1">
-                      <TrendingUp className="h-3.5 w-3.5" />
-                      {agent.conversions.toLocaleString()} converted
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <TrendingUp className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{agent.conversions.toLocaleString()} converted</span>
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      {agent.lastActive}
+                    <span className="flex items-center gap-1 whitespace-nowrap">
+                      <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span className="truncate">{agent.lastActive}</span>
                     </span>
                   </div>
 
