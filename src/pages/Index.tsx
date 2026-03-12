@@ -66,16 +66,16 @@ const Index = () => {
     <DashboardLayout>
       <div className="animate-fade-in space-y-6 max-w-6xl">
         {/* Welcome Header */}
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">
               Welcome Back 👋
             </h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
               Everything you need to sell courses, host webinars, and grow your education business.
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={() => navigate("/website-builder/create")} className="flex-shrink-0">
+          <Button variant="outline" size="sm" onClick={() => navigate("/website-builder/create")} className="flex-shrink-0 w-full sm:w-auto">
             <Sparkles className="h-4 w-4 mr-1" />
             Quick Create
           </Button>
@@ -237,7 +237,7 @@ const Index = () => {
         </div>
 
         {/* Explore Platform Banner */}
-        <div className="blade-card p-5 bg-accent/30 border-primary/10 flex items-center gap-4">
+        <div className="blade-card p-4 sm:p-5 bg-accent/30 border-primary/10 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
           <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 flex-shrink-0">
             <Trophy className="h-5 w-5 text-primary" />
           </div>
@@ -247,7 +247,7 @@ const Index = () => {
               Creators on this platform have earned ₹12+ Cr in the last 30 days. Set up your first course page to start.
             </p>
           </div>
-          <Button size="sm" onClick={() => navigate("/website-builder/create")}>
+          <Button size="sm" onClick={() => navigate("/website-builder/create")} className="w-full sm:w-auto flex-shrink-0">
             Get Started <ArrowRight className="h-3.5 w-3.5 ml-1" />
           </Button>
         </div>

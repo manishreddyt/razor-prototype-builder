@@ -143,66 +143,70 @@ const Orders = () => {
     <DashboardLayout>
       <div className="animate-fade-in space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Orders</h1>
-            <p className="text-sm text-muted-foreground mt-1">Manage all e-commerce orders from Smart Pages</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Orders</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Manage all e-commerce orders from Smart Pages</p>
           </div>
           <div className="flex gap-2">
             {orders.length === 0 && (
-              <Button variant="default" className="gap-2" onClick={handleSeedData}>
+              <Button variant="default" className="gap-2 text-xs sm:text-sm" onClick={handleSeedData}>
                 <RefreshCw className="h-4 w-4" />
-                Load Sample Data
+                <span className="hidden sm:inline">Load Sample Data</span>
+                <span className="sm:hidden">Load Data</span>
               </Button>
             )}
-            <Button variant="outline" className="gap-2" onClick={exportToCSV} disabled={filtered.length === 0}>
+            <Button variant="outline" className="gap-2 text-xs sm:text-sm" onClick={exportToCSV} disabled={filtered.length === 0}>
               <Download className="h-4 w-4" />
-              Export CSV
+              <span className="hidden sm:inline">Export CSV</span>
+              <span className="sm:hidden">Export</span>
             </Button>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: "Total Orders", value: orders.length, color: "text-primary" },
             { label: "Pending", value: orders.filter(o => o.status === "pending").length, color: "text-muted-foreground" },
             { label: "Delivered", value: orders.filter(o => o.status === "delivered").length, color: "text-green-600" },
             { label: "Cancelled", value: orders.filter(o => o.status === "cancelled" || o.status === "refunded").length, color: "text-red-600" },
           ].map((stat) => (
-            <div key={stat.label} className="blade-card p-4">
-              <p className="text-xs text-muted-foreground uppercase tracking-wide">{stat.label}</p>
-              <p className={`text-2xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
+            <div key={stat.label} className="blade-card p-3 sm:p-4">
+              <p className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wide">{stat.label}</p>
+              <p className={`text-xl sm:text-2xl font-bold mt-1 ${stat.color}`}>{stat.value}</p>
             </div>
           ))}
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2">
-          {statusTabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={activeTab === tab ? "blade-filter-chip-active" : "blade-filter-chip"}
-            >
-              {tab === "all" ? "All" : tab.charAt(0).toUpperCase() + tab.slice(1)}
-            </button>
-          ))}
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-2 min-w-max">
+            {statusTabs.map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={activeTab === tab ? "blade-filter-chip-active" : "blade-filter-chip"}
+              >
+                {tab === "all" ? "All" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Search & Filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search by order number, email, name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 text-sm"
             />
           </div>
           <Select value={paymentFilter} onValueChange={setPaymentFilter}>
-            <SelectTrigger className="w-40">
+            <SelectTrigger className="w-full sm:w-40">
               <SelectValue placeholder="Payment Status" />
             </SelectTrigger>
             <SelectContent>
@@ -214,7 +218,7 @@ const Orders = () => {
             </SelectContent>
           </Select>
           {(searchQuery || paymentFilter !== "all") && (
-            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(""); setPaymentFilter("all"); }}>
+            <Button variant="ghost" size="sm" onClick={() => { setSearchQuery(""); setPaymentFilter("all"); }} className="w-full sm:w-auto">
               <X className="h-4 w-4 mr-1" /> Clear
             </Button>
           )}
@@ -234,17 +238,17 @@ const Orders = () => {
         ) : (
           <div className="blade-card overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-sm min-w-[800px]">
                 <thead>
                   <tr className="border-b border-border bg-secondary/50">
-                    <th className="blade-table-header px-5 py-3 text-left">Order Number</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Customer</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Items</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Total</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Payment</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                    <th className="blade-table-header px-5 py-3 text-left">Created On</th>
-                    <th className="blade-table-header px-5 py-3 text-left"></th>
+                    <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Order Number</th>
+                    <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Customer</th>
+                    <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Items</th>
+                    <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Total</th>
+                    <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden sm:table-cell">Payment</th>
+                    <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Status</th>
+                    <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Created On</th>
+                    <th className="blade-table-header px-3 sm:px-5 py-3 text-left"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -254,16 +258,16 @@ const Orders = () => {
                       className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer"
                       onClick={() => setSelectedOrder(order)}
                     >
-                      <td className="px-5 py-3 font-medium text-primary">{order.orderNumber}</td>
-                      <td className="px-5 py-3">
+                      <td className="px-3 sm:px-5 py-3 font-medium text-primary text-xs sm:text-sm">{order.orderNumber}</td>
+                      <td className="px-3 sm:px-5 py-3">
                         <div>
-                          <p className="text-foreground font-medium">{order.customerName}</p>
-                          <p className="text-xs text-muted-foreground">{order.customerEmail}</p>
+                          <p className="text-foreground font-medium text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none">{order.customerName}</p>
+                          <p className="text-[10px] sm:text-xs text-muted-foreground truncate max-w-[120px] sm:max-w-none">{order.customerEmail}</p>
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground">{order.items.length} item{order.items.length > 1 ? "s" : ""}</td>
-                      <td className="px-5 py-3 text-foreground font-medium">{formatCurrency(order.total)}</td>
-                      <td className="px-5 py-3">
+                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden md:table-cell">{order.items.length} item{order.items.length > 1 ? "s" : ""}</td>
+                      <td className="px-3 sm:px-5 py-3 text-foreground font-medium text-xs sm:text-sm whitespace-nowrap">{formatCurrency(order.total)}</td>
+                      <td className="px-3 sm:px-5 py-3 hidden sm:table-cell">
                         <span className={
                           order.paymentStatus === "paid" ? "blade-badge-paid" :
                           order.paymentStatus === "failed" ? "blade-badge-cancelled" :
@@ -273,15 +277,15 @@ const Orders = () => {
                           {order.paymentStatus}
                         </span>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-3 sm:px-5 py-3">
                         <OrderStatusSelect
                           order={order}
                           onStatusUpdate={handleStatusUpdate}
                           compact
                         />
                       </td>
-                      <td className="px-5 py-3 text-muted-foreground">{formatDate(order.createdAt)}</td>
-                      <td className="px-5 py-3">
+                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">{formatDate(order.createdAt)}</td>
+                      <td className="px-3 sm:px-5 py-3">
                         <button className="text-muted-foreground hover:text-primary">
                           <Eye className="h-4 w-4" />
                         </button>
