@@ -25,28 +25,30 @@ const Receipts = () => {
   return (
     <DashboardLayout>
       <div className="animate-fade-in space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Receipts</h1>
-            <p className="text-sm text-muted-foreground mt-1">Auto-generated, GST-compliant receipts shared via email/WhatsApp</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Receipts</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Auto-generated, GST-compliant receipts shared via email/WhatsApp</p>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="blade-badge-success">GST Compliant</span>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <span className="blade-badge-success text-[10px] sm:text-xs">GST Compliant</span>
             <Button variant="outline" className="gap-2">
-              <Download className="h-4 w-4" /> Export All
+              <Download className="h-4 w-4" />
+              <span className="hidden sm:inline">Export All</span>
+              <span className="sm:hidden">Export</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[
             { label: "Total Receipts", value: receipts.length.toString() },
             { label: "Total Revenue", value: "₹45,495" },
             { label: "Total GST Collected", value: "₹6,941" },
           ].map((s) => (
             <div key={s.label} className="blade-stat">
-              <p className="text-sm text-muted-foreground">{s.label}</p>
-              <p className="text-2xl font-semibold text-foreground mt-1">{s.value}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{s.label}</p>
+              <p className="text-lg sm:text-2xl font-semibold text-foreground mt-1 truncate">{s.value}</p>
             </div>
           ))}
         </div>
@@ -58,30 +60,31 @@ const Receipts = () => {
         </div>
 
         <div className="blade-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="blade-table-header px-5 py-3 text-left">Receipt ID</th>
-                <th className="blade-table-header px-5 py-3 text-left">Student</th>
-                <th className="blade-table-header px-5 py-3 text-left">Course</th>
-                <th className="blade-table-header px-5 py-3 text-left">Amount</th>
-                <th className="blade-table-header px-5 py-3 text-left">GST</th>
-                <th className="blade-table-header px-5 py-3 text-left">Date</th>
-                <th className="blade-table-header px-5 py-3 text-left">Method</th>
-                <th className="blade-table-header px-5 py-3 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => (
-                <tr key={r.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                  <td className="px-5 py-3 font-medium text-primary cursor-pointer hover:underline" onClick={() => setSelectedReceipt(r)}>{r.id}</td>
-                  <td className="px-5 py-3 text-foreground">{r.student}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{r.course}</td>
-                  <td className="px-5 py-3 text-foreground font-medium">{r.amount}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{r.gst}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{r.date}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{r.method}</td>
-                  <td className="px-5 py-3">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[800px]">
+              <thead>
+                <tr className="border-b border-border bg-secondary/50">
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Receipt ID</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden sm:table-cell">Student</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Course</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Amount</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">GST</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Date</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden sm:table-cell">Method</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((r) => (
+                  <tr key={r.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                    <td className="px-3 sm:px-5 py-3 font-medium text-primary cursor-pointer hover:underline text-xs sm:text-sm truncate max-w-[100px] sm:max-w-none" onClick={() => setSelectedReceipt(r)}>{r.id}</td>
+                    <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm hidden sm:table-cell truncate max-w-[120px]">{r.student}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell truncate max-w-[150px]">{r.course}</td>
+                    <td className="px-3 sm:px-5 py-3 text-foreground font-medium text-xs sm:text-sm whitespace-nowrap">{r.amount}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden md:table-cell whitespace-nowrap">{r.gst}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell whitespace-nowrap">{r.date}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell">{r.method}</td>
+                    <td className="px-3 sm:px-5 py-3">
                     <div className="flex items-center gap-2">
                       <button className="text-muted-foreground hover:text-primary" onClick={() => setSelectedReceipt(r)}><Eye className="h-4 w-4" /></button>
                       <button className="text-muted-foreground hover:text-primary" onClick={() => toast.success("Receipt downloaded")}><Download className="h-4 w-4" /></button>
@@ -91,6 +94,7 @@ const Receipts = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 

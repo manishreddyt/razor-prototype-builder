@@ -26,51 +26,53 @@ const Forms = () => {
   return (
     <DashboardLayout>
       <div className="animate-fade-in space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Forms</h1>
-            <p className="text-sm text-muted-foreground mt-1">Collect student details, registrations, and feedback</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Forms</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Collect student details, registrations, and feedback</p>
           </div>
-          <Button className="gap-2" onClick={() => setShowCreate(true)}>
+          <Button className="gap-2 w-full sm:w-auto" onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4" />
-            Create Form
+            <span className="hidden sm:inline">Create Form</span>
+            <span className="sm:hidden">Create</span>
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[
             { label: "Total Forms", value: "5" },
             { label: "Total Responses", value: "1,568" },
             { label: "This Month", value: "312" },
           ].map((s) => (
             <div key={s.label} className="blade-stat">
-              <p className="text-sm text-muted-foreground">{s.label}</p>
-              <p className="text-2xl font-semibold text-foreground mt-1">{s.value}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{s.label}</p>
+              <p className="text-lg sm:text-2xl font-semibold text-foreground mt-1 truncate">{s.value}</p>
             </div>
           ))}
         </div>
 
         <div className="blade-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-secondary/50">
-                <th className="blade-table-header px-5 py-3 text-left">Form Name</th>
-                <th className="blade-table-header px-5 py-3 text-left">Responses</th>
-                <th className="blade-table-header px-5 py-3 text-left">Fields</th>
-                <th className="blade-table-header px-5 py-3 text-left">Created</th>
-                <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                <th className="blade-table-header px-5 py-3 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {forms.map((f) => (
-                <tr key={f.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                  <td className="px-5 py-3 font-medium text-foreground">{f.name}</td>
-                  <td className="px-5 py-3 text-foreground">{f.responses}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{f.fields}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{f.created}</td>
-                  <td className="px-5 py-3"><span className={statusClass[f.status] || "blade-badge"}>{f.status}</span></td>
-                  <td className="px-5 py-3">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[700px]">
+              <thead>
+                <tr className="border-b border-border bg-secondary/50">
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Form Name</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Responses</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden sm:table-cell">Fields</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Created</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Status</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {forms.map((f) => (
+                  <tr key={f.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
+                    <td className="px-3 sm:px-5 py-3 font-medium text-foreground text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">{f.name}</td>
+                    <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm">{f.responses}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell">{f.fields}</td>
+                    <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden md:table-cell whitespace-nowrap">{f.created}</td>
+                    <td className="px-3 sm:px-5 py-3"><span className={statusClass[f.status] || "blade-badge"}>{f.status}</span></td>
+                    <td className="px-3 sm:px-5 py-3">
                     <div className="flex items-center gap-2">
                       <button onClick={() => setShowResponses(f)} className="text-muted-foreground hover:text-primary"><Eye className="h-4 w-4" /></button>
                       <button className="text-muted-foreground hover:text-primary"><Copy className="h-4 w-4" /></button>
@@ -81,6 +83,7 @@ const Forms = () => {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
