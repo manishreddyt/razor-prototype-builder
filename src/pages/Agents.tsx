@@ -47,6 +47,32 @@ interface AgentState {
 
 const initialAgents: AgentState[] = [
   {
+    id: "instagram",
+    type: "instagram",
+    icon: Instagram,
+    title: "Social Commerce",
+    description:
+      "Auto-respond to Instagram DMs, convert comments to sales, send payment links automatically for your e-commerce business.",
+    status: "draft",
+    goal: "",
+    leadsProcessed: 487,
+    conversions: 123,
+    lastActive: "30 sec ago",
+  },
+  {
+    id: "education",
+    type: "education",
+    icon: GraduationCap,
+    title: "Education Co-pilot",
+    description:
+      "Intelligent assistant that analyzes your education business, recommends Razorpay features, guides Smart Page creation, and sets up automated campaigns.",
+    status: "draft",
+    goal: "",
+    leadsProcessed: 0,
+    conversions: 0,
+    lastActive: "Never",
+  },
+  {
     id: "sales",
     type: "sales",
     icon: PhoneCall,
@@ -97,32 +123,6 @@ const initialAgents: AgentState[] = [
     leadsProcessed: 890,
     conversions: 756,
     lastActive: "30 min ago",
-  },
-  {
-    id: "instagram",
-    type: "instagram",
-    icon: Instagram,
-    title: "Social Commerce",
-    description:
-      "Auto-respond to Instagram DMs, convert comments to sales, send payment links automatically for your e-commerce business.",
-    status: "draft",
-    goal: "",
-    leadsProcessed: 487,
-    conversions: 123,
-    lastActive: "30 sec ago",
-  },
-  {
-    id: "education",
-    type: "education",
-    icon: GraduationCap,
-    title: "Education Co-pilot",
-    description:
-      "Intelligent assistant that analyzes your education business, recommends Razorpay features, guides Smart Page creation, and sets up automated campaigns.",
-    status: "draft",
-    goal: "",
-    leadsProcessed: 0,
-    conversions: 0,
-    lastActive: "Never",
   },
 ];
 
