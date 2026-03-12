@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Search, Download, Filter, X, ChevronLeft, ChevronRight, Eye, Package } from "lucide-react";
+import { Search, Download, Filter, X, ChevronLeft, ChevronRight, Eye, Package, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +11,8 @@ import { getOrders } from "@/lib/orderStorage";
 import { OrderDetailModal } from "@/components/orders/OrderDetailModal";
 import { OrderStatusSelect } from "@/components/orders/OrderStatusSelect";
 import { toast } from "@/hooks/use-toast";
+import { seedOrderData } from "@/lib/orderSeedData";
+import { seedDemoStore } from "@/lib/storeSeedData";
 
 const statusClass: Record<OrderStatus, string> = {
   pending: "blade-badge",
@@ -120,6 +122,23 @@ const Orders = () => {
     loadOrders(); // Reload orders after status update
   };
 
+  const handleSeedData = () => {
+    // Clear existing demo store orders first
+    localStorage.removeItem("smart-page-orders-demo_store");
+
+    // Seed demo store and orders
+    seedDemoStore();
+    const orders = seedOrderData();
+
+    // Reload orders
+    loadOrders();
+
+    toast({
+      title: "Demo data loaded",
+      description: `Successfully loaded ${orders?.length || 0} sample orders`,
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="animate-fade-in space-y-5">
@@ -129,10 +148,18 @@ const Orders = () => {
             <h1 className="text-2xl font-semibold text-foreground">Orders</h1>
             <p className="text-sm text-muted-foreground mt-1">Manage all e-commerce orders from Smart Pages</p>
           </div>
-          <Button variant="outline" className="gap-2" onClick={exportToCSV} disabled={filtered.length === 0}>
-            <Download className="h-4 w-4" />
-            Export CSV
-          </Button>
+          <div className="flex gap-2">
+            {orders.length === 0 && (
+              <Button variant="default" className="gap-2" onClick={handleSeedData}>
+                <RefreshCw className="h-4 w-4" />
+                Load Sample Data
+              </Button>
+            )}
+            <Button variant="outline" className="gap-2" onClick={exportToCSV} disabled={filtered.length === 0}>
+              <Download className="h-4 w-4" />
+              Export CSV
+            </Button>
+          </div>
         </div>
 
         {/* Stats Cards */}

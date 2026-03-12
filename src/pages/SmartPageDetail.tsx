@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -15,7 +15,8 @@ import {
   Mail, TrendingUp, TrendingDown, Calendar, Search, MoreHorizontal,
   Globe, Copy, Pencil, ArrowUpRight, Clock, IndianRupee, CheckCircle2,
   XCircle, AlertCircle, Send, ChevronRight, Upload, Video,
-  Zap, Plus, Trash2, MessageCircle, Phone, Check, GraduationCap,
+  Zap, Plus, Trash2, MessageCircle, Phone, Check, GraduationCap, Package,
+  Download, Filter, ChevronLeft, ChevronRight as ChevronRightIcon,
 } from "lucide-react";
 import { getStoredSites, type SmartPageSite } from "./WebsiteBuilder";
 import { templates } from "@/data/smartPageTemplates";
@@ -31,6 +32,9 @@ import {
   type Attendee, type Workflow, type WorkflowAction,
   defaultWorkflows, pageTypeLabels, pageTypeColors,
 } from "@/types/smartPages";
+import { Order, OrderStatus } from "@/types/orders";
+import { getOrders } from "@/lib/orderStorage";
+import { OrderStatusSelect } from "@/components/orders/OrderStatusSelect";
 
 // ─── Mock data ───
 
@@ -159,6 +163,20 @@ const SmartPageDetail = () => {
   const isWebinar = site?.pageType === "webinar" || site?.type?.toLowerCase() === "webinar";
   const isCoaching = site?.pageType === "coaching" || site?.type?.toLowerCase() === "coaching";
   const isCourse = site?.pageType === "course" || site?.type?.toLowerCase() === "course";
+  const isEcommerce = site?.category === "ecommerce";
+
+  // Load orders for e-commerce sites
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [paymentFilter, setPaymentFilter] = useState("all");
+
+  // Load orders when site changes
+  useEffect(() => {
+    if (isEcommerce && site) {
+      const siteOrders = getOrders(site.id);
+      setOrders(siteOrders);
+    }
+  }, [isEcommerce, site]);
 
   if (!site) {
     return (
@@ -279,6 +297,9 @@ const SmartPageDetail = () => {
                 <TabsTrigger value="students" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /> Students</TabsTrigger>
                 <TabsTrigger value="curriculum" className="gap-1.5 text-xs"><GraduationCap className="h-3.5 w-3.5" /> Curriculum</TabsTrigger>
               </>
+            )}
+            {isEcommerce && (
+              <TabsTrigger value="orders" className="gap-1.5 text-xs"><Package className="h-3.5 w-3.5" /> Orders</TabsTrigger>
             )}
             <TabsTrigger value="workflows" className="gap-1.5 text-xs"><Zap className="h-3.5 w-3.5" /> Workflows</TabsTrigger>
             <TabsTrigger value="analytics" className="gap-1.5 text-xs"><TrendingUp className="h-3.5 w-3.5" /> Analytics</TabsTrigger>
@@ -979,6 +1000,154 @@ const SmartPageDetail = () => {
                   </div>
                 ))}
               </div>
+            </TabsContent>
+          )}
+
+          {/* ─── Orders (ecommerce only) ─── */}
+          {isEcommerce && (
+            <TabsContent value="orders" className="space-y-4 mt-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <p className="text-sm text-muted-foreground">
+                    {orders.length} total orders • {orders.filter(o => o.status === "delivered").length} delivered
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    <span className="text-xs text-muted-foreground">{orders.filter(o => o.status === "pending" || o.status === "confirmed").length} pending</span>
+                    <div className="h-2 w-2 rounded-full bg-emerald-500" />
+                    <span className="text-xs text-muted-foreground">{orders.filter(o => o.status === "delivered").length} delivered</span>
+                    <div className="h-2 w-2 rounded-full bg-destructive" />
+                    <span className="text-xs text-muted-foreground">{orders.filter(o => o.status === "cancelled").length} cancelled</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="relative w-64">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search orders..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-9 h-9 text-xs"
+                    />
+                  </div>
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs">
+                    <Download className="h-3 w-3" /> Export CSV
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4">
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Total Revenue</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">
+                    ₹{orders.filter(o => o.paymentStatus === "paid").reduce((sum, o) => sum + o.total, 0).toLocaleString()}
+                  </p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Avg. Order Value</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">
+                    ₹{orders.length > 0 ? Math.round(orders.reduce((sum, o) => sum + o.total, 0) / orders.length).toLocaleString() : "—"}
+                  </p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Pending Orders</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">
+                    {orders.filter(o => o.status === "pending" || o.status === "confirmed").length}
+                  </p>
+                </div>
+                <div className="blade-card p-4">
+                  <p className="text-xs text-muted-foreground">Fulfillment Rate</p>
+                  <p className="text-2xl font-semibold text-foreground mt-1">
+                    {orders.length > 0 ? `${Math.round((orders.filter(o => o.status === "delivered").length / orders.length) * 100)}%` : "—"}
+                  </p>
+                </div>
+              </div>
+
+              {orders.length === 0 ? (
+                <div className="blade-card p-12 text-center">
+                  <Package className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-4" />
+                  <h3 className="text-lg font-medium text-foreground mb-2">No orders yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                    Orders from your e-commerce Smart Page will appear here.
+                  </p>
+                </div>
+              ) : (
+                <div className="blade-card overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border bg-secondary/50">
+                        <th className="blade-table-header px-5 py-3 text-left">Order Number</th>
+                        <th className="blade-table-header px-5 py-3 text-left">Customer</th>
+                        <th className="blade-table-header px-5 py-3 text-left">Items</th>
+                        <th className="blade-table-header px-5 py-3 text-left">Total</th>
+                        <th className="blade-table-header px-5 py-3 text-left">Payment</th>
+                        <th className="blade-table-header px-5 py-3 text-left">Status</th>
+                        <th className="blade-table-header px-5 py-3 text-left">Created On</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {orders
+                        .filter((o) => {
+                          const matchSearch = !searchQuery ||
+                            o.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            o.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            o.customerName.toLowerCase().includes(searchQuery.toLowerCase());
+                          const matchPayment = paymentFilter === "all" || o.paymentStatus === paymentFilter;
+                          return matchSearch && matchPayment;
+                        })
+                        .map((order) => (
+                          <tr
+                            key={order.id}
+                            className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors"
+                          >
+                            <td className="px-5 py-3 font-medium text-primary">{order.orderNumber}</td>
+                            <td className="px-5 py-3">
+                              <div>
+                                <p className="text-foreground font-medium">{order.customerName}</p>
+                                <p className="text-xs text-muted-foreground">{order.customerEmail}</p>
+                              </div>
+                            </td>
+                            <td className="px-5 py-3 text-muted-foreground">{order.items.length} item{order.items.length > 1 ? "s" : ""}</td>
+                            <td className="px-5 py-3 text-foreground font-medium">
+                              ₹{order.total.toLocaleString("en-IN", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </td>
+                            <td className="px-5 py-3">
+                              <span className={
+                                order.paymentStatus === "paid" ? "blade-badge-paid" :
+                                order.paymentStatus === "failed" ? "blade-badge-cancelled" :
+                                order.paymentStatus === "refunded" ? "blade-badge-warning" :
+                                "blade-badge"
+                              }>
+                                {order.paymentStatus}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3">
+                              <OrderStatusSelect
+                                order={order}
+                                onStatusUpdate={() => {
+                                  // Reload orders after status update
+                                  const updatedOrders = getOrders(site.id);
+                                  setOrders(updatedOrders);
+                                }}
+                                compact
+                              />
+                            </td>
+                            <td className="px-5 py-3 text-muted-foreground text-xs">
+                              {new Date(order.createdAt).toLocaleString("en-IN", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              })}
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </TabsContent>
           )}
 

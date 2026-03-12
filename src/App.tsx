@@ -48,16 +48,20 @@ import { seedDemoStore } from "./lib/storeSeedData";
 
 const queryClient = new QueryClient();
 
-// Seed demo data on app initialization
-const useSeedData = () => {
-  useEffect(() => {
-    seedDemoStore();
-    seedOrderData();
-  }, []);
-};
-
 const App = () => {
-  useSeedData();
+  // Seed demo data on app initialization
+  useEffect(() => {
+    console.log("🚀 App initialized - checking for demo data...");
+    try {
+      const store = seedDemoStore();
+      const orders = seedOrderData();
+      if (orders) {
+        console.log(`📦 Total orders seeded: ${orders.length}`);
+      }
+    } catch (error) {
+      console.error("❌ Error seeding data:", error);
+    }
+  }, []);
 
   return (
   <QueryClientProvider client={queryClient}>

@@ -8,12 +8,12 @@ import { saveOrders } from "@/lib/orderStorage";
 export const seedOrderData = () => {
   // Check if orders already exist
   const existingOrders = localStorage.getItem("smart-page-orders-demo_store");
-  if (existingOrders) {
-    console.log("Orders already seeded");
+  if (existingOrders && JSON.parse(existingOrders).length > 0) {
+    console.log("✓ Orders already seeded - skipping");
     return;
   }
 
-  console.log("Seeding order data...");
+  console.log("🌱 Seeding order data...");
 
   // Demo store orders (assuming there's a demo e-commerce store site)
   const storeOrders: Order[] = [
@@ -377,5 +377,8 @@ export const seedOrderData = () => {
   // Save orders to localStorage
   saveOrders("demo_store", storeOrders);
 
-  console.log(`Seeded ${storeOrders.length} orders for demo_store`);
+  console.log(`✅ Seeded ${storeOrders.length} orders for demo_store`);
+
+  // Return the orders for verification
+  return storeOrders;
 };

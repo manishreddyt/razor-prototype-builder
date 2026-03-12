@@ -10,11 +10,11 @@ export const seedDemoStore = () => {
   // Check if demo store already exists
   const existingStore = sites.find((s) => s.id === "demo_store");
   if (existingStore) {
-    console.log("Demo store already exists");
-    return;
+    console.log("✓ Demo store already exists - skipping");
+    return existingStore;
   }
 
-  console.log("Creating demo e-commerce store...");
+  console.log("🏪 Creating demo e-commerce store...");
 
   const demoStore: SmartPageSite = {
     id: "demo_store",
@@ -178,5 +178,8 @@ export const seedDemoStore = () => {
   sites.unshift(demoStore);
   storeSites(sites);
 
-  console.log("Demo e-commerce store created successfully");
+  console.log("✅ Demo e-commerce store created successfully");
+
+  // Return the store for verification
+  return demoStore;
 };
