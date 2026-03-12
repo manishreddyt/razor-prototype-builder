@@ -28,61 +28,64 @@ const Subscriptions = () => {
   return (
     <DashboardLayout>
       <div className="animate-fade-in space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Subscriptions</h1>
-            <p className="text-sm text-muted-foreground mt-1">No-code recurring billing for course fees</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Subscriptions</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">No-code recurring billing for course fees</p>
           </div>
-          <Button className="gap-2" onClick={() => setShowCreate(true)}>
+          <Button className="gap-2 w-full sm:w-auto" onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4" />
-            Create Plan
+            <span className="hidden sm:inline">Create Plan</span>
+            <span className="sm:hidden">Create</span>
           </Button>
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {[
             { label: "Active Subscriptions", value: "186" },
             { label: "Monthly Recurring", value: "₹3,42,800" },
             { label: "Churn Rate", value: "4.2%" },
           ].map((s) => (
             <div key={s.label} className="blade-stat">
-              <p className="text-sm text-muted-foreground">{s.label}</p>
-              <p className="text-2xl font-semibold text-foreground mt-1">{s.value}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{s.label}</p>
+              <p className="text-lg sm:text-2xl font-semibold text-foreground mt-1 truncate">{s.value}</p>
             </div>
           ))}
         </div>
 
         <div className="blade-card overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[800px]">
             <thead>
               <tr className="border-b border-border bg-secondary/50">
-                <th className="blade-table-header px-5 py-3 text-left">Subscription ID</th>
-                <th className="blade-table-header px-5 py-3 text-left">Plan</th>
-                <th className="blade-table-header px-5 py-3 text-left">Student</th>
-                <th className="blade-table-header px-5 py-3 text-left">Amount</th>
-                <th className="blade-table-header px-5 py-3 text-left">Next Due</th>
-                <th className="blade-table-header px-5 py-3 text-left">Method</th>
-                <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                <th className="blade-table-header px-5 py-3 text-left"></th>
+                <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Subscription ID</th>
+                <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Plan</th>
+                <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Student</th>
+                <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Amount</th>
+                <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden sm:table-cell">Next Due</th>
+                <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Method</th>
+                <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Status</th>
+                <th className="blade-table-header px-3 sm:px-5 py-3 text-left"></th>
               </tr>
             </thead>
             <tbody>
               {subscriptions.map((sub) => (
                 <tr key={sub.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                  <td className="px-5 py-3 font-medium text-primary cursor-pointer hover:underline" onClick={() => setSelectedSub(sub)}>{sub.id}</td>
-                  <td className="px-5 py-3 text-foreground">{sub.plan}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{sub.student}</td>
-                  <td className="px-5 py-3 text-foreground">{sub.amount}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{sub.nextDue}</td>
-                  <td className="px-5 py-3 text-muted-foreground">{sub.method}</td>
-                  <td className="px-5 py-3"><span className={statusClass[sub.status] || "blade-badge"}>{sub.status}</span></td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 sm:px-5 py-3 font-medium text-primary cursor-pointer hover:underline text-xs sm:text-sm truncate max-w-[120px] sm:max-w-none" onClick={() => setSelectedSub(sub)}>{sub.id}</td>
+                  <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm hidden lg:table-cell truncate max-w-[150px]">{sub.plan}</td>
+                  <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden md:table-cell truncate max-w-[120px]">{sub.student}</td>
+                  <td className="px-3 sm:px-5 py-3 text-foreground font-medium text-xs sm:text-sm whitespace-nowrap">{sub.amount}</td>
+                  <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden sm:table-cell whitespace-nowrap">{sub.nextDue}</td>
+                  <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">{sub.method}</td>
+                  <td className="px-3 sm:px-5 py-3"><span className={statusClass[sub.status] || "blade-badge"}>{sub.status}</span></td>
+                  <td className="px-3 sm:px-5 py-3">
                     <button className="text-muted-foreground hover:text-primary" onClick={() => setSelectedSub(sub)}><Eye className="h-4 w-4" /></button>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 

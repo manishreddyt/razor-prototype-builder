@@ -19,46 +19,46 @@ const stats = [
 const MagicCheckout = () => (
   <DashboardLayout>
     <div className="animate-fade-in space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-semibold text-foreground">Magic Checkout</h1>
-            <span className="blade-badge-new">Beta</span>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Magic Checkout</h1>
+            <span className="blade-badge-new text-[10px] sm:text-xs">Beta</span>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">1-click checkout experience for your payment pages and links</p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">1-click checkout experience for your payment pages and links</p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground">Enable Magic Checkout</span>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="text-xs sm:text-sm text-muted-foreground">Enable Magic Checkout</span>
           <Switch defaultChecked />
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
         {stats.map((s) => (
           <div key={s.label} className="blade-stat">
-            <p className="text-sm text-muted-foreground">{s.label}</p>
-            <p className="text-2xl font-semibold text-foreground mt-1">{s.value}</p>
-            <p className="text-xs text-primary mt-0.5">{s.trend}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground truncate">{s.label}</p>
+            <p className="text-lg sm:text-2xl font-semibold text-foreground mt-1 truncate">{s.value}</p>
+            <p className="text-xs text-primary mt-0.5 truncate">{s.trend}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         {features.map((f) => (
-          <div key={f.title} className="blade-card p-5 flex items-start gap-4">
-            <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
-              <f.icon className="h-5 w-5 text-primary" />
+          <div key={f.title} className="blade-card p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-lg bg-accent flex items-center justify-center flex-shrink-0">
+              <f.icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
-            <div>
-              <h3 className="font-semibold text-foreground text-sm">{f.title}</h3>
+            <div className="min-w-0">
+              <h3 className="font-semibold text-foreground text-xs sm:text-sm">{f.title}</h3>
               <p className="text-xs text-muted-foreground mt-1">{f.desc}</p>
             </div>
           </div>
         ))}
       </div>
 
-      <div className="blade-card p-6">
-        <h2 className="text-base font-semibold text-foreground mb-3">Integration Settings</h2>
+      <div className="blade-card p-4 sm:p-6">
+        <h2 className="text-sm sm:text-base font-semibold text-foreground mb-3">Integration Settings</h2>
         <div className="space-y-4">
           {[
             ["Auto-apply on Payment Links", true],
@@ -66,9 +66,9 @@ const MagicCheckout = () => (
             ["Auto-apply on Subscriptions", false],
             ["Show Razorpay Trust Badge", true],
           ].map(([label, checked]) => (
-            <div key={label as string} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-              <span className="text-sm text-foreground">{label as string}</span>
-              <Switch defaultChecked={checked as boolean} />
+            <div key={label as string} className="flex items-center justify-between py-2 border-b border-border last:border-0 gap-3">
+              <span className="text-xs sm:text-sm text-foreground">{label as string}</span>
+              <Switch defaultChecked={checked as boolean} className="flex-shrink-0" />
             </div>
           ))}
         </div>

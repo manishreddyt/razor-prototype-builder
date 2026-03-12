@@ -106,44 +106,47 @@ const PaymentPages = () => {
     <DashboardLayout>
       <div className="animate-fade-in space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold text-foreground">Payment Pages</h1>
-          <div className="flex items-center gap-3">
-            <button className="text-sm text-primary hover:underline font-medium">Need help? Take a tour</button>
-            <button className="text-sm text-primary hover:underline font-medium">Documentation</button>
-            <Button onClick={() => navigate("/payment-pages/create")} className="gap-2">
-              <Plus className="h-4 w-4" /> Create Payment Page
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Payment Pages</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <button className="text-xs sm:text-sm text-primary hover:underline font-medium text-left">Need help? Take a tour</button>
+            <button className="text-xs sm:text-sm text-primary hover:underline font-medium text-left">Documentation</button>
+            <Button onClick={() => navigate("/payment-pages/create")} className="gap-2 w-full sm:w-auto">
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Create Payment Page</span>
+              <span className="sm:hidden">Create</span>
             </Button>
           </div>
         </div>
 
         {/* Smart AI Banner */}
         {showBanner && (
-          <div className="blade-card p-6 relative">
-            <button onClick={() => setShowBanner(false)} className="absolute top-4 right-4 text-muted-foreground hover:text-foreground">
+          <div className="blade-card p-4 sm:p-6 relative">
+            <button onClick={() => setShowBanner(false)} className="absolute top-3 right-3 sm:top-4 sm:right-4 text-muted-foreground hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
-            <div className="flex gap-6">
-              <div className="w-32 h-24 rounded-md bg-accent flex-shrink-0 flex items-center justify-center">
-                <Sparkles className="h-8 w-8 text-primary" />
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+              <div className="w-20 h-16 sm:w-32 sm:h-24 rounded-md bg-accent flex-shrink-0 flex items-center justify-center">
+                <Sparkles className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <h2 className="text-lg font-semibold text-foreground">Smart AI Page Builder</h2>
-                  <span className="blade-badge-new">New</span>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
+                  <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0" />
+                  <h2 className="text-base sm:text-lg font-semibold text-foreground">Smart AI Page Builder</h2>
+                  <span className="blade-badge-new text-[10px] sm:text-xs">New</span>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">
+                <p className="text-xs sm:text-sm text-muted-foreground mb-3">
                   Build professional payment pages in minutes with AI assistance. Describe what you need and our AI builder creates a fully customized page.
                 </p>
-                <div className="space-y-1.5 mb-4">
+                <div className="space-y-1.5 mb-3 sm:mb-4">
                   {["Category-specific templates for Education, Events & E-commerce", "AI chat assistant to refine your page in real-time", "Click-to-edit text, drag-and-drop form fields"].map((f) => (
-                    <div key={f} className="flex items-center gap-2 text-sm text-foreground">
-                      <CheckCircle2 className="h-4 w-4 text-primary" /> {f}
+                    <div key={f} className="flex items-start gap-2 text-xs sm:text-sm text-foreground">
+                      <CheckCircle2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary flex-shrink-0 mt-0.5" />
+                      <span className="flex-1">{f}</span>
                     </div>
                   ))}
                 </div>
-                <Button onClick={() => navigate("/payment-pages/create")} className="gap-2">
+                <Button onClick={() => navigate("/payment-pages/create")} className="gap-2 w-full sm:w-auto">
                   Try Smart Builder <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -152,15 +155,15 @@ const PaymentPages = () => {
         )}
 
         {/* Search & Filters */}
-        <div className="flex items-end gap-4">
-          <div className="space-y-1.5">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-4">
+          <div className="space-y-1.5 flex-1 sm:flex-none">
             <label className="text-xs font-medium text-foreground">Title</label>
-            <Input placeholder="Search by title" value={searchTitle} onChange={(e) => setSearchTitle(e.target.value)} className="w-48" />
+            <Input placeholder="Search by title" value={searchTitle} onChange={(e) => setSearchTitle(e.target.value)} className="w-full sm:w-48" />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 flex-1 sm:flex-none">
             <label className="text-xs font-medium text-foreground">Status</label>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-32"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="active">Active</SelectItem>
@@ -168,10 +171,10 @@ const PaymentPages = () => {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 flex-1 sm:flex-none">
             <label className="text-xs font-medium text-foreground">Count</label>
             <Select value={countFilter} onValueChange={setCountFilter}>
-              <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="w-full sm:w-24"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="10">10</SelectItem>
                 <SelectItem value="25">25</SelectItem>
@@ -179,54 +182,57 @@ const PaymentPages = () => {
               </SelectContent>
             </Select>
           </div>
-          <Button className="gap-2"><Search className="h-4 w-4" /> Search</Button>
-          <Button variant="outline" onClick={() => { setSearchTitle(""); setStatusFilter("all"); }}>Clear</Button>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <Button className="gap-2 flex-1 sm:flex-none"><Search className="h-4 w-4" /> Search</Button>
+            <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => { setSearchTitle(""); setStatusFilter("all"); }}>Clear</Button>
+          </div>
         </div>
 
         {/* Table */}
-        <div className="blade-card">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="blade-table-header px-5 py-3 text-left">Title</th>
-                <th className="blade-table-header px-5 py-3 text-left">Total Sales</th>
-                <th className="blade-table-header px-5 py-3 text-left">Item Name</th>
-                <th className="blade-table-header px-5 py-3 text-left">Units Sold</th>
-                <th className="blade-table-header px-5 py-3 text-left">Page Url</th>
-                <th className="blade-table-header px-5 py-3 text-left">Created On</th>
-                <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                <th className="blade-table-header px-5 py-3 text-left"></th>
-              </tr>
-            </thead>
+        <div className="blade-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[900px]">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Title</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Total Sales</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Item Name</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Units Sold</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden sm:table-cell">Page Url</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Created On</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Status</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left"></th>
+                </tr>
+              </thead>
             <tbody>
               {filtered.map((p) => (
                 <tr key={p.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                  <td className="px-5 py-3">
-                    <span className="font-medium text-primary cursor-pointer hover:underline" onClick={() => navigate(`/payment-pages/manage?id=${p.id}`)}>
+                  <td className="px-3 sm:px-5 py-3">
+                    <span className="font-medium text-primary cursor-pointer hover:underline text-xs sm:text-sm truncate max-w-[150px] sm:max-w-[200px] inline-block" onClick={() => navigate(`/payment-pages/manage?id=${p.id}`)}>
                       {p.title}
                     </span>
                   </td>
-                  <td className="px-5 py-3 text-foreground font-medium">{p.totalSales}</td>
-                  <td className="px-5 py-3">
-                    <div className="text-foreground">{p.itemName}</div>
+                  <td className="px-3 sm:px-5 py-3 text-foreground font-medium text-xs sm:text-sm whitespace-nowrap">{p.totalSales}</td>
+                  <td className="px-3 sm:px-5 py-3 hidden lg:table-cell">
+                    <div className="text-foreground text-xs sm:text-sm">{p.itemName}</div>
                     <div className="text-muted-foreground text-xs">{p.itemPrice}</div>
                   </td>
-                  <td className="px-5 py-3 text-foreground">{p.unitsSold}</td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm hidden md:table-cell">{p.unitsSold}</td>
+                  <td className="px-3 sm:px-5 py-3 hidden sm:table-cell">
                     <div className="flex items-center gap-1">
-                      <a href="#" className="text-primary hover:underline text-xs flex items-center gap-1">
-                        {p.pageUrl.substring(0, 28)}... <ExternalLink className="h-3 w-3" />
+                      <a href="#" className="text-primary hover:underline text-xs flex items-center gap-1 truncate max-w-[150px]">
+                        {p.pageUrl.substring(0, 28)}... <ExternalLink className="h-3 w-3 flex-shrink-0" />
                       </a>
-                      <button onClick={() => copyLink(p.pageUrl)} className="text-muted-foreground hover:text-primary">
+                      <button onClick={() => copyLink(p.pageUrl)} className="text-muted-foreground hover:text-primary flex-shrink-0">
                         <Copy className="h-3 w-3" />
                       </button>
                     </div>
                   </td>
-                  <td className="px-5 py-3 text-muted-foreground">{p.createdOn}</td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell whitespace-nowrap">{p.createdOn}</td>
+                  <td className="px-3 sm:px-5 py-3">
                     <span className={p.status === "Active" ? "blade-badge-success" : "blade-badge-expired"}>{p.status}</span>
                   </td>
-                  <td className="px-5 py-3">
+                  <td className="px-3 sm:px-5 py-3">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="text-muted-foreground hover:text-foreground"><MoreHorizontal className="h-4 w-4" /></button>
@@ -254,7 +260,8 @@ const PaymentPages = () => {
               ))}
             </tbody>
           </table>
-          <div className="px-5 py-3 text-xs text-muted-foreground border-t border-border">
+          </div>
+          <div className="px-3 sm:px-5 py-3 text-xs text-muted-foreground border-t border-border">
             Showing 1 - {filtered.length} of {filtered.length}
           </div>
         </div>
