@@ -202,61 +202,69 @@ const PaymentLinks = () => {
     <DashboardLayout>
       <div className="animate-fade-in space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Payment Links</h1>
+            <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Payment Links</h1>
           </div>
-          <Button className="gap-2" onClick={() => setShowCreate(true)}>
+          <Button className="gap-2 w-full sm:w-auto" onClick={() => setShowCreate(true)}>
             <Plus className="h-4 w-4" />
-            Create Payment Link
+            <span className="whitespace-nowrap">Create Payment Link</span>
           </Button>
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-6 border-b border-border">
-          <span className="blade-tab-active">Payment Links</span>
-          <span className="blade-tab">Reminder Settings</span>
-          <span className="blade-tab flex items-center gap-1">Need help? Take a tour</span>
-          <span className="blade-tab flex items-center gap-1">Documentation <span className="blade-badge-new ml-1">new</span></span>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-4 sm:gap-6 border-b border-border min-w-max">
+            <span className="blade-tab-active whitespace-nowrap">Payment Links</span>
+            <span className="blade-tab whitespace-nowrap hidden sm:inline-flex">Reminder Settings</span>
+            <span className="blade-tab whitespace-nowrap hidden md:inline-flex items-center gap-1">Need help? Take a tour</span>
+            <span className="blade-tab whitespace-nowrap hidden lg:inline-flex items-center gap-1">Documentation <span className="blade-badge-new ml-1">new</span></span>
+          </div>
         </div>
 
         {/* Filter Tabs */}
-        <div className="flex items-center gap-2">
-          {tabs.map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={activeTab === tab ? "blade-filter-chip-active" : "blade-filter-chip"}>
-              {tab}
-            </button>
-          ))}
-          <div className="ml-auto flex items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm text-muted-foreground">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex items-center gap-2 min-w-max">
+              {tabs.map((tab) => (
+                <button key={tab} onClick={() => setActiveTab(tab)} className={activeTab === tab ? "blade-filter-chip-active" : "blade-filter-chip"}>
+                  {tab}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="hidden sm:flex ml-auto items-center gap-2 rounded-md border border-input bg-background px-3 py-1.5 text-sm text-muted-foreground">
             <Search className="h-4 w-4" />
             <span>Search</span>
           </div>
         </div>
 
         {/* Active Filters */}
-        <div className="flex items-center gap-2 text-sm">
-          <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-muted-foreground">
-            Payment Link Status: All <X className="h-3 w-3 cursor-pointer hover:text-foreground" />
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-muted-foreground">
-            Duration: 19/02/2026 - 26/02/2026 <X className="h-3 w-3 cursor-pointer hover:text-foreground" />
-          </span>
+        <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
+          <div className="flex items-center gap-2 text-sm min-w-max">
+            <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-muted-foreground text-xs sm:text-sm whitespace-nowrap">
+              Status: All <X className="h-3 w-3 cursor-pointer hover:text-foreground" />
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-muted-foreground text-xs sm:text-sm whitespace-nowrap">
+              Duration: 19/02/26 - 26/02/26 <X className="h-3 w-3 cursor-pointer hover:text-foreground" />
+            </span>
+          </div>
         </div>
 
         {/* Table */}
         <div className="blade-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[800px]">
               <thead>
                 <tr className="border-b border-border bg-secondary/50">
-                  <th className="blade-table-header px-5 py-3 text-left">Payment Link Id</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Created At</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Amount</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Reference Id</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Customer</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Payment Link</th>
-                  <th className="blade-table-header px-5 py-3 text-left">Status</th>
-                  <th className="blade-table-header px-5 py-3 text-left"></th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Payment Link Id</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Created At</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Amount</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Reference Id</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Customer</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Payment Link</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Status</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left"></th>
                 </tr>
               </thead>
               <tbody>
@@ -265,16 +273,18 @@ const PaymentLinks = () => {
                   const linkUrl = `${window.location.origin}/pay/${link.id}`;
                   return (
                     <tr key={link.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                      <td className="px-5 py-3 font-medium text-primary cursor-pointer hover:underline" onClick={() => setSelectedLink(link)}>{link.id}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{link.date}</td>
-                      <td className="px-5 py-3 text-foreground">₹{link.amount.toLocaleString('en-IN')}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{link.refId || "—"}</td>
-                      <td className="px-5 py-3 text-muted-foreground">{link.customer || "—"}</td>
-                      <td className="px-5 py-3">
+                      <td className="px-3 sm:px-5 py-3 font-medium text-primary cursor-pointer hover:underline text-xs sm:text-sm" onClick={() => setSelectedLink(link)}>
+                        <span className="block max-w-[100px] truncate">{link.id}</span>
+                      </td>
+                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm whitespace-nowrap">{link.date}</td>
+                      <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm whitespace-nowrap">₹{link.amount.toLocaleString('en-IN')}</td>
+                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden md:table-cell">{link.refId || "—"}</td>
+                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">{link.customer || "—"}</td>
+                      <td className="px-3 sm:px-5 py-3">
                         <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => navigate(`/pay/${link.id}`)}
-                            className="text-sm text-primary hover:underline cursor-pointer truncate max-w-[200px]"
+                            className="text-xs sm:text-sm text-primary hover:underline cursor-pointer truncate max-w-[120px] sm:max-w-[200px]"
                           >
                             {linkUrl}
                           </button>
@@ -283,7 +293,7 @@ const PaymentLinks = () => {
                               e.stopPropagation();
                               copyLink(linkUrl);
                             }}
-                            className="hover:text-primary text-muted-foreground"
+                            className="hover:text-primary text-muted-foreground flex-shrink-0"
                           >
                             <Copy className="h-3 w-3" />
                           </button>
@@ -292,16 +302,16 @@ const PaymentLinks = () => {
                               e.stopPropagation();
                               window.open(`/pay/${link.id}`, '_blank');
                             }}
-                            className="hover:text-primary text-muted-foreground"
+                            className="hover:text-primary text-muted-foreground flex-shrink-0 hidden sm:block"
                           >
                             <ExternalLink className="h-3 w-3" />
                           </button>
                         </div>
                       </td>
-                      <td className="px-5 py-3">
-                        <span className={statusBadgeClass[displayStatus] || "blade-badge"}>{displayStatus}</span>
+                      <td className="px-3 sm:px-5 py-3">
+                        <span className={`${statusBadgeClass[displayStatus] || "blade-badge"} text-xs whitespace-nowrap`}>{displayStatus}</span>
                       </td>
-                      <td className="px-5 py-3">
+                      <td className="px-3 sm:px-5 py-3">
                         <button className="text-muted-foreground hover:text-primary" onClick={() => setSelectedLink(link)}><Eye className="h-4 w-4" /></button>
                       </td>
                     </tr>
@@ -310,7 +320,7 @@ const PaymentLinks = () => {
               </tbody>
             </table>
           </div>
-          <div className="border-t border-border px-5 py-3 text-center text-sm text-muted-foreground">
+          <div className="border-t border-border px-3 sm:px-5 py-3 text-center text-xs sm:text-sm text-muted-foreground">
             Showing 1 - {filtered.length}
           </div>
         </div>
