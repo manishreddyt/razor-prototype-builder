@@ -131,7 +131,7 @@ export interface InventoryConfig {
   trackInventory: boolean;
   stock: number;
   lowStockThreshold?: number;
-  allowBackorder: boolean;
+  allowBackorder?: boolean;
   sku?: string;
 }
 
