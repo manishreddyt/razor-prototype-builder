@@ -44,7 +44,7 @@ import { PaymentLinkCheckout } from "./components/PaymentLinkCheckout";
 import { PaymentSuccess } from "./components/PaymentSuccess";
 import { useEffect } from "react";
 import { seedOrderData } from "./lib/orderSeedData";
-import { seedDemoStore } from "./lib/storeSeedData";
+import { seedDemoStore, seedBiolinkShop } from "./lib/storeSeedData";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +54,7 @@ const App = () => {
     console.log("🚀 App initialized - checking for demo data...");
     try {
       const store = seedDemoStore();
+      const biolinkShop = seedBiolinkShop();
       const orders = seedOrderData();
       if (orders) {
         console.log(`📦 Total orders seeded: ${orders.length}`);

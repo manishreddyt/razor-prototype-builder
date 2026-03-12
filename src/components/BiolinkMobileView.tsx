@@ -232,13 +232,16 @@ export const BiolinkMobileView = ({
         <div className="mt-auto pt-6 text-center">
           <a
             href="#"
-            className={`inline-block rounded-3xl px-6 py-3 text-[13px] font-medium mb-4 transition-all ${
+            className={`inline-flex items-center gap-2 rounded-3xl px-6 py-3 text-[13px] font-medium mb-4 transition-all ${
               isProfileType
                 ? "bg-white text-gray-700 shadow-sm hover:shadow-md"
                 : "bg-gray-100 text-gray-700 hover:bg-gray-200"
             }`}
           >
-            Join {profile.displayName.replace('@', '')} on Linktree
+            <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-white font-bold text-[10px]">R</span>
+            </div>
+            Powered by Razorpay
           </a>
           <div className="flex items-center justify-center gap-2 flex-wrap text-[11px] text-gray-500">
             <a href="#" className="hover:text-gray-700 transition-colors">Cookie Preferences</a>

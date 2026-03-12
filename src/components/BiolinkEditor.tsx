@@ -126,7 +126,7 @@ export const BiolinkEditor = ({ profile, onUpdate }: BiolinkEditorProps) => {
         <div>
           <h3 className="text-lg font-semibold">Biolink Configuration</h3>
           <p className="text-sm text-muted-foreground">
-            Create your Linktree-style profile page
+            Create your social profile page with Razorpay checkout
           </p>
         </div>
         <div className="flex items-center gap-2">

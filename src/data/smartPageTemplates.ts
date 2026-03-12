@@ -1,6 +1,6 @@
 import {
   Globe, GraduationCap, Briefcase, Heart, ShoppingBag, LayoutGrid,
-  BookOpen, Video, UserCheck, Calendar, Users, Store, Gift, FileText,
+  BookOpen, Video, UserCheck, Calendar, Users, Store, Gift, FileText, CreditCard,
 } from "lucide-react";
 import { ProductsConfig } from "@/types/products";
 import { ContactFormConfig } from "@/types/leads";
@@ -376,7 +376,7 @@ export const templates: TemplateData[] = [
     sections: [heroSection(), aboutSection(), servicesSection(), featuresSection(), statsSection(), teamSection(), clientsSection(), testimonialsSection(), googleReviewsSection(), faqSection(), ctaBannerSection(), contactFormSection(), newsletterSection(), gallerySection()],
   },
   {
-    id: "biolink", title: "Bio Link Page", desc: "Single-page link hub perfect for social bios and creators.", category: "general", icon: Globe,
+    id: "biolink", title: "Bio Link Page", desc: "Single-page link hub perfect for social bios and creators.", category: "general", icon: CreditCard,
     pages: ["Link Page"],
     heroTitle: "@yourname", heroTagline: "Creator • Educator • Entrepreneur",
     heroDescription: "All my important links in one place.",
@@ -1157,9 +1157,9 @@ export const templates: TemplateData[] = [
   {
     id: "biolink-profile",
     title: "Biolink Profile",
-    desc: "Instagram-style link-in-bio page for events, tickets, and links.",
+    desc: "Social profile page for events, tickets, and links with Razorpay checkout.",
     category: "ecommerce",
-    icon: Users,
+    icon: CreditCard,
     pages: ["Links"],
     heroTitle: "Book Your Tickets ⬇️",
     heroTagline: "@yourhandle",
@@ -1206,9 +1206,9 @@ export const templates: TemplateData[] = [
   {
     id: "biolink-shop",
     title: "Biolink Shop",
-    desc: "Product showcase with Instagram-style profile, tabs, and checkout.",
+    desc: "Product showcase with social profile and Razorpay checkout.",
     category: "ecommerce",
-    icon: ShoppingBag,
+    icon: CreditCard,
     pages: ["Shop"],
     heroTitle: "@dohfulcookies",
     heroTagline: "Your shop",
@@ -1316,7 +1316,7 @@ export const availableSectionTypes: { type: SectionType; label: string; descript
   { type: "products", label: "Products", description: "Product card grid" },
   { type: "video-embed", label: "Video Embed", description: "Embedded video player" },
   { type: "countdown", label: "Countdown Timer", description: "Countdown to a date" },
-  { type: "biolink", label: "Biolink Profile", description: "Linktree-style profile with social links" },
+  { type: "biolink", label: "Biolink Profile", description: "Social profile page with products and links" },
 ];
 
 export const createDefaultSection = (type: SectionType): SectionData => {
