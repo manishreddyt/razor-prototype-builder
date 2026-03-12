@@ -366,7 +366,7 @@ const SmartPageCreate = () => {
                     sections={previewPageTemplate.sections}
                     activePage={previewActivePage}
                     onPageChange={(page) => setPreviewActivePage(page)}
-                    biolinkConfig={previewPageTemplate.biolinkConfig}
+                    biolinkConfig={previewPageTemplate.biolinkConfig as any}
                     productsConfig={previewPageTemplate.productsConfig}
                   />
                 )}

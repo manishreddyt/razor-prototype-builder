@@ -481,7 +481,7 @@ Keep response SHORT (3-4 sentences).`;
                     : "bg-secondary rounded-tl-sm"
                 }`}
               >
-                <ReactMarkdown className="text-sm prose prose-sm max-w-none prose-p:leading-relaxed prose-p:mb-2 prose-p:last:mb-0 prose-strong:font-semibold">
+                <ReactMarkdown>
                   {msg.content}
                 </ReactMarkdown>
               </div>

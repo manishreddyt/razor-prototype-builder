@@ -10,14 +10,15 @@ export type CategoryType =
 export interface ProductCategory {
   id: string;
   name: string;
-  type: CategoryType;
+  type?: CategoryType;
+  slug?: string;
   description?: string;
   icon?: string;
-  order: number;
-  productCount?: number; // Computed field
-  enabled: boolean;
-  createdAt: string;
-  updatedAt: string;
+  order?: number;
+  productCount?: number;
+  enabled?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CategoryConfig {

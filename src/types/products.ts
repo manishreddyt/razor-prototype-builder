@@ -117,14 +117,14 @@ export interface ProductsConfig {
 // E-commerce extensions
 export interface ProductVariant {
   id: string;
-  name: string; // "Small", "Medium", "Large" or "Red", "Blue"
+  name: string;
   sku?: string;
-  price?: number; // Override base price if set
-  compareAtPrice?: number; // Original price for discount display
-  stock?: number; // Override inventory if tracking per variant
-  image?: string; // Variant-specific image
-  attributes: Record<string, string>; // { "size": "M", "color": "Red" }
-  enabled: boolean;
+  price?: number;
+  compareAtPrice?: number;
+  stock?: number;
+  image?: string;
+  attributes?: Record<string, string>;
+  enabled?: boolean;
 }
 
 export interface InventoryConfig {

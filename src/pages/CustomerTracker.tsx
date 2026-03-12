@@ -65,7 +65,7 @@ interface Customer {
   notes: CustomerNote[];
   segment?: CustomerSegment;      // Auto-calculated segment
   rfm?: RFMScore;                // RFM analysis data
-  lifetimeValue: number;         // Numeric LTV for calculations
+  lifetimeValue?: number;        // Numeric LTV for calculations
 }
 
 const initialCustomers: Customer[] = [

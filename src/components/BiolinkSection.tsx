@@ -279,7 +279,7 @@ export const BiolinkSection = ({
                         {product.title}
                       </h3>
                       <p className="text-base font-bold">
-                        ₹{product.pricingModels[0]?.amount || 0}
+                        ₹{product.pricingModels[0]?.amount || product.pricingModels[0]?.price || 0}
                       </p>
                     </div>
                   </Card>
