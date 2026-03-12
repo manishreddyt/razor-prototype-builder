@@ -366,21 +366,23 @@ const WebsiteBuilder = () => {
     <DashboardLayout>
       <div className="animate-fade-in space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-semibold text-foreground">Smart Pages</h1>
-              <span className="blade-badge-new">new</span>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Smart Pages</h1>
+              <span className="blade-badge-new text-[10px] sm:text-xs">new</span>
             </div>
-            <p className="text-sm text-muted-foreground mt-1">Build websites, landing pages, and storefronts — powered by AI.</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Build websites, landing pages, and storefronts — powered by AI.</p>
           </div>
-          <Button className="gap-2" onClick={() => navigate("/website-builder/create")}>
-            <Plus className="h-4 w-4" /> Create Page
+          <Button className="gap-2 w-full sm:w-auto flex-shrink-0" onClick={() => navigate("/website-builder/create")}>
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Create Page</span>
+            <span className="sm:hidden">Create</span>
           </Button>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {[
             { label: "Total Sites", value: sites.length.toString() },
             { label: "Published", value: sites.filter((s) => s.status === "Published").length.toString() },
@@ -388,23 +390,23 @@ const WebsiteBuilder = () => {
             { label: "Revenue", value: `₹${totalRevenue.toLocaleString()}` },
           ].map((s) => (
             <div key={s.label} className="blade-stat">
-              <p className="text-sm text-muted-foreground">{s.label}</p>
-              <p className="text-2xl font-semibold text-foreground mt-1">{s.value}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground truncate">{s.label}</p>
+              <p className="text-lg sm:text-2xl font-semibold text-foreground mt-1 truncate">{s.value}</p>
             </div>
           ))}
         </div>
 
         {/* Filters */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1 max-w-sm">
-            <Input placeholder="Search sites..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="relative flex-1 max-w-full sm:max-w-sm">
+            <Input placeholder="Search sites..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full" />
           </div>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {(["all", "Published", "Draft"] as const).map((s) => (
               <button
                 key={s}
                 onClick={() => setStatusFilter(s)}
-                className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
+                className={`px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${statusFilter === s ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-secondary"}`}
               >
                 {s === "all" ? "All" : s}
               </button>
@@ -415,16 +417,17 @@ const WebsiteBuilder = () => {
         {/* List View */}
         {filtered.length > 0 ? (
           <div className="blade-card overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border bg-secondary/50">
-                  <th className="blade-table-header px-4 py-3 text-left">Page</th>
-                  <th className="blade-table-header px-4 py-3 text-left">URL</th>
-                  <th className="blade-table-header px-4 py-3 text-left">Status</th>
-                  <th className="blade-table-header px-4 py-3 text-left">Created</th>
-                  <th className="blade-table-header px-4 py-3 text-right">Actions</th>
-                </tr>
-              </thead>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[700px]">
+                <thead>
+                  <tr className="border-b border-border bg-secondary/50">
+                    <th className="blade-table-header px-3 sm:px-4 py-3 text-left whitespace-nowrap">Page</th>
+                    <th className="blade-table-header px-3 sm:px-4 py-3 text-left whitespace-nowrap hidden sm:table-cell">URL</th>
+                    <th className="blade-table-header px-3 sm:px-4 py-3 text-left whitespace-nowrap">Status</th>
+                    <th className="blade-table-header px-3 sm:px-4 py-3 text-left whitespace-nowrap hidden md:table-cell">Created</th>
+                    <th className="blade-table-header px-3 sm:px-4 py-3 text-right whitespace-nowrap">Actions</th>
+                  </tr>
+                </thead>
               <tbody>
                 {filtered.map((site) => {
                   const tpl = templates.find(
@@ -436,9 +439,9 @@ const WebsiteBuilder = () => {
                       className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors cursor-pointer"
                       onClick={() => navigate(`/website-builder/${site.id}`)}
                     >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-16 h-10 rounded-md border border-border overflow-hidden flex-shrink-0 bg-muted/30 relative">
+                      <td className="px-3 sm:px-4 py-3">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="w-12 h-8 sm:w-16 sm:h-10 rounded-md border border-border overflow-hidden flex-shrink-0 bg-muted/30 relative">
                             {(() => {
                               // Use banner image from template or webinar data as thumbnail
                               let imgSrc: string | null = null;
@@ -461,26 +464,26 @@ const WebsiteBuilder = () => {
                             })()}
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-foreground truncate block max-w-[180px]">{site.name}</span>
+                            <div className="flex items-center gap-1.5 sm:gap-2">
+                              <span className="font-medium text-foreground truncate block max-w-[120px] sm:max-w-[180px] text-xs sm:text-sm">{site.name}</span>
                               {site.pageType && (
-                                <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${pageTypeColors[site.pageType]}`}>
+                                <span className={`text-[8px] sm:text-[9px] font-medium px-1 sm:px-1.5 py-0.5 rounded-full ${pageTypeColors[site.pageType]}`}>
                                   {pageTypeLabels[site.pageType]}
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-3 mt-0.5">
-                              <span className="text-[11px] text-muted-foreground">
+                            <div className="flex items-center gap-2 sm:gap-3 mt-0.5">
+                              <span className="text-[10px] sm:text-[11px] text-muted-foreground">
                                 {site.amount ? `₹${site.amount.toLocaleString()}` : "₹0"}
                               </span>
-                              <span className="text-[11px] text-muted-foreground">
+                              <span className="text-[10px] sm:text-[11px] text-muted-foreground">
                                 {site.transactions || 0} txns
                               </span>
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 sm:px-4 py-3 hidden sm:table-cell">
                         {site.status === "Published" ? (
                           <div className="group/url flex items-center gap-1.5 max-w-[220px]">
                             <a
@@ -508,19 +511,20 @@ const WebsiteBuilder = () => {
                           <span className="text-xs text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-3 sm:px-4 py-3">
                         <span className={site.status === "Published" ? "blade-badge-paid" : "blade-badge-expired"}>{site.status}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted-foreground">{site.created}</td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="px-3 sm:px-4 py-3 text-xs text-muted-foreground hidden md:table-cell whitespace-nowrap">{site.created}</td>
+                      <td className="px-3 sm:px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1 sm:gap-1.5">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-xs h-7 gap-1"
+                            className="text-[10px] sm:text-xs h-6 sm:h-7 gap-1 px-2 sm:px-3"
                             onClick={(e) => { e.stopPropagation(); navigate(`/website-builder/${site.id}`); }}
                           >
-                            Manage
+                            <span className="hidden sm:inline">Manage</span>
+                            <Eye className="h-3 w-3 sm:hidden" />
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -552,6 +556,7 @@ const WebsiteBuilder = () => {
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         ) : (
           <div className="blade-card p-12 text-center">
