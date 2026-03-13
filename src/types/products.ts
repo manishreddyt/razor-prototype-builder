@@ -69,10 +69,14 @@ export interface Product {
 
   // Session-specific
   sessionDuration?: number; // minutes
+  sessionBuffer?: number; // minutes between sessions (default: 15)
+  maxSessionsPerDay?: number; // maximum bookings per day (default: 8)
   calendarConnected?: boolean;
   calendarProvider?: "google" | "microsoft" | "calendly";
   calendarUrl?: string; // Fallback URL
   availability?: AvailabilitySlot[];
+  // TODO: Backend integration - bookedSlots will be fetched from API
+  // bookedSlots?: Array<{ date: string; time: string }>;
 
   // Webinar-specific
   webinarDate?: string;

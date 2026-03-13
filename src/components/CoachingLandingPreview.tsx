@@ -32,48 +32,115 @@ const CoachingLandingPreview = ({ data, interactive = false, editable = false, o
   const [bookingData, setBookingData] = useState<Record<string, string>>({});
   const [currentMonth, setCurrentMonth] = useState(new Date());
 
+  // TODO: Backend Integration - In production, fetch booked slots from API
+  // Mock data for demonstration purposes
+  const [bookedSlots] = useState<Array<{ date: string; time: string }>>([
+    { date: "2026-03-15", time: "10:00" },
+    { date: "2026-03-15", time: "14:00" },
+    { date: "2026-03-16", time: "11:00" },
+    { date: "2026-03-17", time: "09:00" },
+    { date: "2026-03-17", time: "15:00" },
+  ]);
+
   const getAvailableSlots = (date: Date | null) => {
     if (!date) return [];
     const dayName = date.toLocaleDateString("en-US", { weekday: "long" }).toLowerCase();
     const dayAvailability = availability.find(a => a.day === dayName && a.enabled);
     if (!dayAvailability) return [];
+
     const slots: string[] = [];
     const [startH, startM] = dayAvailability.startTime.split(":").map(Number);
     const [endH, endM] = dayAvailability.endTime.split(":").map(Number);
     let currentMinutes = startH * 60 + startM;
     const endMinutes = endH * 60 + endM;
+
     while (currentMinutes + sessionConfig.duration <= endMinutes) {
       const hour = Math.floor(currentMinutes / 60);
       const min = currentMinutes % 60;
       slots.push(`${hour.toString().padStart(2, "0")}:${min.toString().padStart(2, "0")}`);
       currentMinutes += sessionConfig.duration + sessionConfig.buffer;
     }
-    return slots;
+
+    // TODO: Backend Integration - Filter out booked slots from API response
+    // For now, using mock booked slots data
+    const dateStr = date.toISOString().split("T")[0];
+    const bookedTimesForDay = bookedSlots
+      .filter(slot => slot.date === dateStr)
+      .map(slot => slot.time);
+
+    return slots.filter(slot => !bookedTimesForDay.includes(slot));
   };
 
   const availableSlots = getAvailableSlots(selectedDate);
 
   const handleBooking = () => {
-    if (!selectedDate || !selectedTime) { toast.error("Please select a date and time"); return; }
+    // Validation checks
+    if (!selectedDate || !selectedTime) {
+      toast.error("Please select a date and time");
+      return;
+    }
+
     const missingFields = bookingFields.filter(f => f.required && !bookingData[f.id]);
-    if (missingFields.length > 0) { toast.error(`Please fill: ${missingFields.map(f => f.label).join(", ")}`); return; }
+    if (missingFields.length > 0) {
+      toast.error(`Please fill: ${missingFields.map(f => f.label).join(", ")}`);
+      return;
+    }
+
     const bookingAmount = pricingModel === "package" ? packageAmount : amount;
-    if (!interactive) { toast.success("Booking flow demo"); return; }
-    if (typeof window.Razorpay === "undefined") { toast.error("Payment gateway not loaded."); return; }
+
+    if (!interactive) {
+      toast.success("Booking flow demo");
+      return;
+    }
+
+    if (typeof window.Razorpay === "undefined") {
+      toast.error("Payment gateway not loaded.");
+      return;
+    }
+
+    // TODO: Backend Integration - Add slot hold mechanism before payment
+    // In production, hold the slot when payment modal opens and release on cancel
+
     const options = {
       key: "rzp_live_SFFFdBjmPbTKZL",
-      amount: (bookingAmount || 0) * 100, currency: "INR", name,
+      amount: (bookingAmount || 0) * 100,
+      currency: "INR",
+      name,
       description: pricingModel === "package" ? `${packageSessions} Sessions Package` : "1:1 Consultation",
-      prefill: { name: bookingData.rf_name || "", email: bookingData.rf_email || "", contact: bookingData.rf_phone || "" },
+      prefill: {
+        name: bookingData.rf_name || "",
+        email: bookingData.rf_email || "",
+        contact: bookingData.rf_phone || "",
+      },
       theme: { color: "#0d9488" },
       handler: (response: any) => {
-        toast.success("Booking confirmed! 🎉", { description: `Payment ID: ${response.razorpay_payment_id}` });
-        setSelectedDate(null); setSelectedTime(""); setBookingData({});
+        // TODO: Backend Integration - Confirm booking via webhook
+        // POST /api/coaching/:page_id/bookings with payment_id, slot_date, slot_time
+        toast.success("Booking confirmed! 🎉", {
+          description: `You'll receive a confirmation email shortly. Payment ID: ${response.razorpay_payment_id}`,
+        });
+
+        // Reset form
+        setSelectedDate(null);
+        setSelectedTime("");
+        setBookingData({});
+
+        // Note: In production, booked slots would be refreshed from API
+        // For demo purposes, we're using static mock data
       },
-      modal: { ondismiss: () => toast.info("Booking cancelled") },
+      modal: {
+        ondismiss: () => {
+          // TODO: Backend Integration - Release held slot on payment cancel
+          toast.info("Booking cancelled");
+        },
+      },
     };
+
     const rzp = new window.Razorpay(options);
-    rzp.on("payment.failed", (r: any) => toast.error("Payment failed!", { description: r.error.description }));
+    rzp.on("payment.failed", (r: any) => {
+      // TODO: Backend Integration - Release held slot on payment failure
+      toast.error("Payment failed!", { description: r.error.description });
+    });
     rzp.open();
   };
 
@@ -319,26 +386,62 @@ const CoachingLandingPreview = ({ data, interactive = false, editable = false, o
                 availability={availability} interactive={interactive} />
               {selectedDate && (
                 <div className="mt-6 pt-6" style={{ borderTop: "1px solid #e2e8f0" }}>
-                  <h3 className="font-semibold mb-3" style={{ color: "#0f172a" }}>
-                    Available Times
-                    <span className="text-sm font-normal ml-2" style={{ color: "#64748b" }}>
-                      ({selectedDate.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })})
-                    </span>
-                  </h3>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold" style={{ color: "#0f172a" }}>
+                      Available Times
+                      <span className="text-sm font-normal ml-2" style={{ color: "#64748b" }}>
+                        ({selectedDate.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })})
+                      </span>
+                    </h3>
+                    {availableSlots.length > 0 && (
+                      <span className="text-xs font-medium px-2 py-1 rounded-full" style={{ background: "#ccfbf1", color: "#0d9488" }}>
+                        {availableSlots.length} slots available
+                      </span>
+                    )}
+                  </div>
                   {availableSlots.length > 0 ? (
                     <div className="grid grid-cols-3 gap-2">
-                      {availableSlots.map(slot => (
-                        <button key={slot} onClick={() => interactive && setSelectedTime(slot)} disabled={!interactive}
-                          className="p-3 rounded-xl text-sm font-medium transition-all"
-                          style={selectedTime === slot
-                            ? { background: "#0d9488", color: "#fff", border: "1px solid #0d9488" }
-                            : { background: "#fff", color: "#374151", border: "1px solid #e2e8f0" }}>
-                          {slot}
-                        </button>
-                      ))}
+                      {availableSlots.map(slot => {
+                        const isSelected = selectedTime === slot;
+                        return (
+                          <button
+                            key={slot}
+                            onClick={() => interactive && setSelectedTime(slot)}
+                            disabled={!interactive}
+                            className="p-3 rounded-xl text-sm font-medium transition-all hover:shadow-md"
+                            style={
+                              isSelected
+                                ? {
+                                    background: "#0d9488",
+                                    color: "#fff",
+                                    border: "2px solid #0d9488",
+                                    boxShadow: "0 4px 12px rgba(13, 148, 136, 0.3)",
+                                  }
+                                : {
+                                    background: "#fff",
+                                    color: "#374151",
+                                    border: "1px solid #10b981",
+                                    borderLeftWidth: "3px",
+                                  }
+                            }
+                          >
+                            <div className="flex items-center justify-center gap-1">
+                              {!isSelected && <span className="text-green-600 text-xs">✓</span>}
+                              <span>{slot}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <p className="text-sm text-center py-4" style={{ color: "#94a3b8" }}>No available slots</p>
+                    <div className="text-center py-8 px-4 rounded-xl" style={{ background: "#fef3c7", border: "1px solid #fbbf24" }}>
+                      <p className="text-sm font-medium" style={{ color: "#92400e" }}>
+                        No available slots for this day
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: "#b45309" }}>
+                        All slots are booked. Please select another date.
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
@@ -359,20 +462,76 @@ const CoachingLandingPreview = ({ data, interactive = false, editable = false, o
                 </div>
               ))}
               {selectedDate && selectedTime && (
-                <div className="p-4 rounded-xl" style={{ background: "#f0fdfa", border: "1px solid #99f6e4" }}>
-                  <p className="text-sm font-medium" style={{ color: "#0f172a" }}>Selected Slot</p>
-                  <p className="text-sm mt-1" style={{ color: "#475569" }}>
-                    {selectedDate.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })} at {selectedTime}
-                  </p>
+                <div className="space-y-4">
+                  {/* Review/Confirmation Card */}
+                  <div className="p-5 rounded-xl" style={{ background: "#f0fdfa", border: "2px solid #5eead4" }}>
+                    <div className="flex items-start justify-between mb-3">
+                      <p className="text-sm font-semibold uppercase tracking-wide" style={{ color: "#0d9488" }}>
+                        Review Your Booking
+                      </p>
+                      <Badge className="bg-green-100 text-green-700 border-green-300">Ready to book</Badge>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-3">
+                        <Calendar className="h-5 w-5 mt-0.5" style={{ color: "#0d9488" }} />
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: "#0f172a" }}>
+                            {selectedDate.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+                          </p>
+                          <p className="text-xs" style={{ color: "#64748b" }}>Session date</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-start gap-3">
+                        <Clock className="h-5 w-5 mt-0.5" style={{ color: "#0d9488" }} />
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: "#0f172a" }}>
+                            {selectedTime} ({sessionConfig.duration} minutes)
+                          </p>
+                          <p className="text-xs" style={{ color: "#64748b" }}>Session time and duration</p>
+                        </div>
+                      </div>
+
+                      {bookingData.rf_name && (
+                        <div className="flex items-start gap-3">
+                          <Users className="h-5 w-5 mt-0.5" style={{ color: "#0d9488" }} />
+                          <div>
+                            <p className="text-sm font-medium" style={{ color: "#0f172a" }}>{bookingData.rf_name}</p>
+                            {bookingData.rf_email && (
+                              <p className="text-xs" style={{ color: "#64748b" }}>{bookingData.rf_email}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {isPaid && (
+                        <div className="pt-3 mt-3" style={{ borderTop: "1px solid #99f6e4" }}>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-medium" style={{ color: "#475569" }}>Total Amount</span>
+                            <span className="text-2xl font-bold" style={{ color: "#0d9488" }}>{sessionPrice}</span>
+                          </div>
+                          {pricingModel === "package" && perSessionPrice && (
+                            <p className="text-xs mt-1" style={{ color: "#64748b" }}>
+                              {packageSessions} sessions · {perSessionPrice}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Confirm & Pay Button */}
+                  <Button
+                    className="w-full py-6 text-base font-semibold rounded-xl shadow-lg"
+                    style={{ background: "#0d9488" }}
+                    disabled={!interactive}
+                    onClick={handleBooking}
+                  >
+                    {isPaid ? `Confirm & Pay ${sessionPrice}` : "Confirm Booking"}
+                    <ArrowRight className="h-5 w-5 ml-2" />
+                  </Button>
                 </div>
-              )}
-              {selectedDate && selectedTime && (
-                <Button className="w-full py-6 text-base font-semibold rounded-xl shadow-lg"
-                  style={{ background: "#0d9488" }}
-                  disabled={!interactive} onClick={handleBooking}>
-                  {isPaid ? `Pay ${sessionPrice} & Book` : "Confirm Booking"}
-                  <ArrowRight className="h-5 w-5 ml-2" />
-                </Button>
               )}
               <div className="flex items-center justify-center gap-6 text-xs pt-2" style={{ color: "#94a3b8" }}>
                 <span className="flex items-center gap-1"><Shield className="h-3.5 w-3.5" /> Secure</span>

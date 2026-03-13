@@ -22,6 +22,9 @@ import SmartPageDetail from "./pages/SmartPageDetail";
 import SmartPageProductDetail from "./pages/SmartPageProductDetail";
 import SmartPagePublic from "./pages/SmartPagePublic";
 import MarketingCampaigns from "./pages/MarketingCampaigns";
+import SessionCommunications from "./pages/SessionCommunications";
+import CoachingManage from "./pages/CoachingManage";
+import TestPage from "./pages/TestPage";
 import WebinarChat from "./pages/WebinarChat";
 import Connectors from "./pages/Connectors";
 import Offers from "./pages/Offers";
@@ -93,9 +96,12 @@ const App = () => {
           <Route path="/website-builder/editor" element={<SmartPageEditor />} />
           <Route path="/website-builder/:id" element={<SmartPageDetail />} />
           <Route path="/website-builder/product" element={<SmartPageProductDetail />} />
+          <Route path="/coaching/manage" element={<CoachingManage />} />
+          <Route path="/test" element={<TestPage />} />
           <Route path="/s/:slug/:pageSlug" element={<SmartPagePublic />} />
           <Route path="/s/:slug" element={<SmartPagePublic />} />
           <Route path="/marketing-campaigns" element={<MarketingCampaigns />} />
+          <Route path="/communications/:productId" element={<SessionCommunications />} />
           <Route path="/offers" element={<Offers />} />
           <Route path="/customers" element={<CustomerTracker />} />
           <Route path="/agents" element={<Agents />} />
