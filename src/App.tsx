@@ -24,6 +24,7 @@ import SmartPagePublic from "./pages/SmartPagePublic";
 import MarketingCampaigns from "./pages/MarketingCampaigns";
 import SessionCommunications from "./pages/SessionCommunications";
 import CoachingManage from "./pages/CoachingManage";
+import CoachingBooking from "./pages/CoachingBooking";
 import TestPage from "./pages/TestPage";
 import WebinarChat from "./pages/WebinarChat";
 import Connectors from "./pages/Connectors";
@@ -48,6 +49,7 @@ import { PaymentSuccess } from "./components/PaymentSuccess";
 import { useEffect } from "react";
 import { seedOrderData } from "./lib/orderSeedData";
 import { seedDemoStore, seedBiolinkShop } from "./lib/storeSeedData";
+import { seedCoachingPage } from "./lib/coachingSeedData";
 
 const queryClient = new QueryClient();
 
@@ -59,8 +61,12 @@ const App = () => {
       const store = seedDemoStore();
       const biolinkShop = seedBiolinkShop();
       const orders = seedOrderData();
+      const coachingPage = seedCoachingPage();
       if (orders) {
         console.log(`📦 Total orders seeded: ${orders.length}`);
+      }
+      if (coachingPage) {
+        console.log(`🎯 Demo coaching page created: ${coachingPage.title}`);
       }
     } catch (error) {
       console.error("❌ Error seeding data:", error);
@@ -97,6 +103,7 @@ const App = () => {
           <Route path="/website-builder/:id" element={<SmartPageDetail />} />
           <Route path="/website-builder/product" element={<SmartPageProductDetail />} />
           <Route path="/coaching/manage" element={<CoachingManage />} />
+          <Route path="/coaching/book" element={<CoachingBooking />} />
           <Route path="/test" element={<TestPage />} />
           <Route path="/s/:slug/:pageSlug" element={<SmartPagePublic />} />
           <Route path="/s/:slug" element={<SmartPagePublic />} />

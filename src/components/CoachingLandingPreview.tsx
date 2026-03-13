@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ interface CoachingLandingPreviewProps {
 }
 
 const CoachingLandingPreview = ({ data, interactive = false, editable = false, onBook, onEdit }: CoachingLandingPreviewProps) => {
+  const navigate = useNavigate();
   const {
     name, tagline, description, bannerImage, isPaid, amount, pricingModel,
     packageSessions, packageAmount, sessionConfig, availability, bookingFields, coach,
@@ -154,6 +156,20 @@ const CoachingLandingPreview = ({ data, interactive = false, editable = false, o
     ? `₹${Math.round((packageAmount || 0) / packageSessions).toLocaleString()}/session`
     : null;
 
+  const handleBookSession = () => {
+    if (!interactive) {
+      toast.info("Preview mode - booking disabled");
+      return;
+    }
+
+    const bookingAmount = pricingModel === "package" ? packageAmount : amount;
+    const sessionTitle = pricingModel === "package"
+      ? `${packageSessions} Session Package`
+      : "1:1 Consultation";
+
+    navigate(`/coaching/book?title=${encodeURIComponent(sessionTitle)}&price=${bookingAmount}&duration=${sessionConfig.duration}&coach=${encodeURIComponent(coach.name)}`);
+  };
+
   return (
     <div className="min-h-screen" style={{ background: "#fff" }}>
       {/* Nav */}
@@ -171,7 +187,7 @@ const CoachingLandingPreview = ({ data, interactive = false, editable = false, o
             <a href="#testimonials" className="hover:text-[#0d9488] transition-colors">Reviews</a>
             <a href="#book" className="hover:text-[#0d9488] transition-colors">Book</a>
           </div>
-          <Button size="sm" style={{ background: "#0d9488" }} onClick={() => document.getElementById("book")?.scrollIntoView({ behavior: "smooth" })}>
+          <Button size="sm" style={{ background: "#0d9488" }} onClick={handleBookSession}>
             Book Session — {sessionPrice}
           </Button>
         </div>
@@ -210,7 +226,7 @@ const CoachingLandingPreview = ({ data, interactive = false, editable = false, o
               <div className="flex items-center gap-4">
                 <Button size="lg" className="px-8 py-6 text-base font-semibold rounded-xl shadow-xl"
                   style={{ background: "#0d9488" }}
-                  onClick={() => document.getElementById("book")?.scrollIntoView({ behavior: "smooth" })}>
+                  onClick={handleBookSession}>
                   Book a Session <ArrowRight className="h-5 w-5 ml-2" />
                 </Button>
                 <Button size="lg" variant="outline" className="px-6 py-6 text-base rounded-xl"
@@ -362,7 +378,7 @@ const CoachingLandingPreview = ({ data, interactive = false, editable = false, o
             </div>
             <Button className="w-full py-6 text-base font-semibold rounded-xl shadow-lg mt-8"
               style={{ background: "#0d9488" }}
-              onClick={() => document.getElementById("book")?.scrollIntoView({ behavior: "smooth" })}>
+              onClick={handleBookSession}>
               Book Now <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
           </div>
