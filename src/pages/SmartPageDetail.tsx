@@ -161,7 +161,7 @@ const SmartPageDetail = () => {
   }, [id]);
 
   const isWebinar = site?.pageType === "webinar" || site?.type?.toLowerCase() === "webinar";
-  const isCoaching = site?.pageType === "coaching" || site?.type?.toLowerCase() === "coaching";
+  const isCoaching = site?.pageType === "coaching" || site?.type?.toLowerCase() === "coaching" || site?.type?.toLowerCase().includes("1:1") || site?.type?.toLowerCase().includes("session") || site?.templateId === "coaching";
   const isCourse = site?.pageType === "course" || site?.type?.toLowerCase() === "course";
   const isEcommerce = site?.category === "ecommerce";
 
