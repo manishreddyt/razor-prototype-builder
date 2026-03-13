@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Plus, Settings, MoreHorizontal, Trash2, Copy, Globe, ExternalLink, BarChart3 } from "lucide-react";
+import { Plus, Settings, MoreHorizontal, Trash2, Copy, Globe, ExternalLink, BarChart3, Eye } from "lucide-react";
 import { pageTypeLabels, pageTypeColors } from "@/types/smartPages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
