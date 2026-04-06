@@ -14,15 +14,17 @@ export const seedCoachingPage = (): SmartPageSite | null => {
   // Create coaching site
   const coachingSite: SmartPageSite = {
     id: coachingId,
-    title: "Career Coaching with Priya Sharma",
-    description: "Transform your career with personalized 1:1 coaching sessions",
+    name: "Career Coaching with Priya Sharma",
+    type: "Coaching",
+    category: "coaching",
+    url: "/career-coaching-priya",
     slug: "career-coaching-priya",
+    templateId: "coaching",
     pageType: "coaching",
-    template: "coaching",
+    created: new Date().toISOString(),
+    views: 0,
+    conversions: 0,
     status: "Published",
-    publishedAt: new Date().toISOString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
   };
 
   // Create coaching data with slot booking configuration
