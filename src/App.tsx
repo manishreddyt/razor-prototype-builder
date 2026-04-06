@@ -66,7 +66,7 @@ const App = () => {
         console.log(`📦 Total orders seeded: ${orders.length}`);
       }
       if (coachingPage) {
-        console.log(`🎯 Demo coaching page created: ${coachingPage.title}`);
+        console.log(`🎯 Demo coaching page created: ${coachingPage.name}`);
       }
     } catch (error) {
       console.error("❌ Error seeding data:", error);
