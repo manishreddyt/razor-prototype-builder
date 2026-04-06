@@ -135,7 +135,7 @@ export const seedCoachingPage = (): SmartPageSite | null => {
     // Mark as seeded
     localStorage.setItem(coachingPageKey, "true");
 
-    console.log("✅ Demo coaching page seeded successfully:", coachingSite.title);
+    console.log("✅ Demo coaching page seeded successfully:", coachingSite.name);
     return coachingSite;
   } catch (error) {
     console.error("❌ Failed to seed coaching page:", error);
