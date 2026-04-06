@@ -19,7 +19,7 @@ export const seedCoachingPage = (): SmartPageSite | null => {
     slug: "career-coaching-priya",
     pageType: "coaching",
     template: "coaching",
-    status: "published",
+    status: "Published",
     publishedAt: new Date().toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
