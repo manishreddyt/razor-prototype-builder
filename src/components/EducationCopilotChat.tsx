@@ -216,7 +216,7 @@ Keep response SHORT (3-4 sentences). Acknowledge their subject first.`;
 Ask them if they have an existing website or landing page.
 
 📌 If yes, they should share the URL - say you'll check it out!
-📌 If no, reassure them - you'll create one in minutes using Smart Pages
+📌 If no, reassure them - you'll create one in minutes using the Website Builder
 
 Keep response SHORT (2-3 sentences).`;
 
