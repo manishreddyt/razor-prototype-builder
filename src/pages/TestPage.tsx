@@ -25,8 +25,8 @@ const TestPage = () => {
       color: "bg-emerald-100 text-emerald-600",
     },
     {
-      title: "Smart Pages (Website Builder)",
-      description: "Test the website builder and smart pages",
+      title: "Websites (Website Builder)",
+      description: "Test the website builder and websites",
       icon: FileText,
       path: "/website-builder",
       color: "bg-purple-100 text-purple-600",
@@ -191,7 +191,7 @@ const TestPage = () => {
               onClick={() => navigate("/website-builder")}
             >
               <FileText className="h-5 w-5" />
-              <span className="text-xs">Smart Pages</span>
+              <span className="text-xs">Websites</span>
             </Button>
             <Button
               variant="outline"

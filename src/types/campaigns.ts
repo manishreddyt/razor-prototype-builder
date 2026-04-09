@@ -12,7 +12,7 @@ export type TriggerEvent =
   | "cart_abandoned"
   | "course_purchased";
 
-// Product references from Smart Pages
+// Product references from Websites
 export interface ProductReference {
   id: string;
   type: "webinar" | "course" | "coaching" | "workshop";

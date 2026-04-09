@@ -50,7 +50,7 @@ const analyzePrompt = (prompt: string): { type: string; label: string; route: st
   const max = Math.max(cs, ws, cos);
 
   // Route all to editor directly
-  if (max === 0) return { type: "generic", label: "Smart Page", route: `/website-builder/editor?prompt=${encodeURIComponent(prompt)}` };
+  if (max === 0) return { type: "generic", label: "Website", route: `/website-builder/editor?prompt=${encodeURIComponent(prompt)}` };
   if (cs === max) return { type: "course", label: "Online Course", route: `/website-builder/editor?template=single-course&title=${encodeURIComponent(prompt)}&type=Online%20Course&aiPrompt=${encodeURIComponent(prompt)}` };
   if (ws === max) return { type: "webinar", label: "Webinar", route: `/website-builder/webinar/chat` };
   return { type: "coaching", label: "1:1 Coaching", route: `/website-builder/editor?template=coaching&title=${encodeURIComponent(prompt)}&type=Coaching&aiPrompt=${encodeURIComponent(prompt)}` };

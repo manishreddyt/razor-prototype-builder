@@ -213,7 +213,7 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
   const templateId = searchParams.get("template") || "";
   const prompt = searchParams.get("prompt") || "";
   const aiPrompt = searchParams.get("aiPrompt") || "";  // AI prompt from config pages
-  const title = searchParams.get("title") || "My Smart Page";
+  const title = searchParams.get("title") || "My Website";
 
   const found = templates.find((t) => t.id === templateId);
   const tpl = found || templates[0];
@@ -244,7 +244,7 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
       ...tpl,
       heroTitle: title,
       heroTagline: "Welcome to our website",
-      heroDescription: "A professional website built with Smart Pages.",
+      heroDescription: "A professional website built with AI.",
     };
   }
 

@@ -68,7 +68,7 @@ CONVERSATION STYLE:
 BUSINESS CONTEXT:
 • You're optimizing for "time to first sale" - get them live ASAP
 • Education merchants want: ease of use, trust/credibility, partial payments
-• Your goal: Collect just enough info to create a high-converting Smart Page
+• Your goal: Collect just enough info to create a high-converting Website
 
 STRICT RULES:
 • Ask ONE question at a time
@@ -216,7 +216,7 @@ Keep response SHORT (3-4 sentences). Acknowledge their subject first.`;
 Ask them if they have an existing website or landing page.
 
 📌 If yes, they should share the URL - say you'll check it out!
-📌 If no, reassure them - you'll create one in minutes using Smart Pages
+📌 If no, reassure them - you'll create one in minutes using the Website Builder
 
 Keep response SHORT (2-3 sentences).`;
 
@@ -253,7 +253,7 @@ Keep response SHORT (2-3 sentences).`;
 Pretend you analyzed the website. Generate a brief, encouraging analysis:
 - Compliment something good about it
 - Note 1-2 things that could be improved
-- Explain how Razorpay Smart Pages can help
+- Explain how Razorpay Websites can help
 
 Then ask: "What's the first course/webinar/session you want to start selling?"
 
@@ -277,7 +277,7 @@ Keep the entire response SHORT (4-5 sentences max).`;
 
       const prompt = `User doesn't have a website yet.
 
-Encourage them - that's perfect for Smart Pages! Say you'll help them create one.
+Encourage them - that's perfect for the Website Builder! Say you'll help them create one.
 
 Then ask: "What's the first course/webinar/session you want to start selling?"
 
@@ -398,8 +398,8 @@ Keep response SHORT (3-4 sentences).`;
     setState((prev) => ({ ...prev, setupCampaigns, isComplete: true }));
 
     const finalMessage = setupCampaigns
-      ? "Perfect! 🎉 I'll set everything up for you.\n\nYour Smart Page will be ready in seconds, and then I'll help you create your first campaign.\n\nLet's get started!"
-      : "No problem! 🎉 Your Smart Page will be ready in seconds.\n\n(You can always set up campaigns later from the Campaigns tab)\n\nLet's create your page!";
+      ? "Perfect! 🎉 I'll set everything up for you.\n\nYour website will be ready in seconds, and then I'll help you create your first campaign.\n\nLet's get started!"
+      : "No problem! 🎉 Your website will be ready in seconds.\n\n(You can always set up campaigns later from the Campaigns tab)\n\nLet's create your page!";
 
     setMessages([...currentMessages, { role: "assistant", content: finalMessage }]);
 
@@ -433,7 +433,7 @@ Keep response SHORT (3-4 sentences).`;
       })
     );
 
-    // Navigate to Smart Pages builder
+    // Navigate to Website Builder
     navigate(`/website-builder?source=education-copilot&template=${state.businessModel}`);
 
     // Close dialog and mark agent as configured
