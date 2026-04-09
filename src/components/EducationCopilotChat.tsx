@@ -277,7 +277,7 @@ Keep the entire response SHORT (4-5 sentences max).`;
 
       const prompt = `User doesn't have a website yet.
 
-Encourage them - that's perfect for Smart Pages! Say you'll help them create one.
+Encourage them - that's perfect for the Website Builder! Say you'll help them create one.
 
 Then ask: "What's the first course/webinar/session you want to start selling?"
 
