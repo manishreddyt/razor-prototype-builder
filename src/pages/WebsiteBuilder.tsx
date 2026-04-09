@@ -308,7 +308,7 @@ const WebsiteBuilder = () => {
           localStorage.setItem('websiteBuilderPrefill', copilotData);
 
           // Show success toast
-          toast.success("Pre-filled from Education Co-pilot! Let's create your page.");
+          toast.success("Pre-filled from Education Co-pilot! Let's create your website.");
 
           // Navigate to create page with template parameter
           navigate(`/website-builder/create?source=education-copilot&template=${data.template || 'academy-platform'}`);
