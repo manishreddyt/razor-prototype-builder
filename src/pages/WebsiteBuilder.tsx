@@ -369,14 +369,14 @@ const WebsiteBuilder = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Smart Pages</h1>
-              <span className="blade-badge-new text-[10px] sm:text-xs">new</span>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Websites</h1>
+              <span className="blade-badge-new text-[10px] sm:text-xs">AI Builder</span>
             </div>
             <p className="text-xs sm:text-sm text-muted-foreground mt-1">Build websites, landing pages, and storefronts — powered by AI.</p>
           </div>
           <Button className="gap-2 w-full sm:w-auto flex-shrink-0" onClick={() => navigate("/website-builder/create")}>
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Create Page</span>
+            <span className="hidden sm:inline">Create Website</span>
             <span className="sm:hidden">Create</span>
           </Button>
         </div>

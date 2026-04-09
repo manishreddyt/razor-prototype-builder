@@ -244,7 +244,7 @@ const buildInitialState = (searchParams: URLSearchParams): EditorState => {
       ...tpl,
       heroTitle: title,
       heroTagline: "Welcome to our website",
-      heroDescription: "A professional website built with Smart Pages.",
+      heroDescription: "A professional website built with AI.",
     };
   }
 

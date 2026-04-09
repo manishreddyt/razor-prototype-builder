@@ -167,7 +167,7 @@ const SmartPagePublic = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
           <h1 className="text-2xl font-bold text-foreground">Page Not Found</h1>
-          <p className="text-muted-foreground">This Smart Page doesn't exist or has been removed.</p>
+          <p className="text-muted-foreground">This page doesn't exist or has been removed.</p>
           <Button onClick={() => navigate("/")}>Go Home</Button>
         </div>
       </div>

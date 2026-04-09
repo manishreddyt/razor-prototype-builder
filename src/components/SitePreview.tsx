@@ -406,7 +406,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
         {/* Footer */}
         <div className="bg-muted/30 border-t border-border">
           <div className="max-w-4xl mx-auto px-8 py-10 text-center">
-            <p className="text-xs text-muted-foreground">Built with Smart Pages • Powered by Razorpay</p>
+            <p className="text-xs text-muted-foreground">Built with Websites • Powered by Razorpay</p>
           </div>
         </div>
       </div>

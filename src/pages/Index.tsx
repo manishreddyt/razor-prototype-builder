@@ -59,7 +59,7 @@ const Index = () => {
   const tips = [
     { emoji: "🎯", title: "Boost conversions by 40%", desc: "Deploy the Sales Agent to auto-follow-up with free webinar leads and pitch your paid course." },
     { emoji: "⚡", title: "Save 10 hrs/week", desc: "Set up automated workflows for receipts, onboarding emails, and cart recovery." },
-    { emoji: "📈", title: "Grow with Smart Pages", desc: "Creators using AI-built landing pages see 2.5x more enrollments than generic forms." },
+    { emoji: "📈", title: "Grow with Websites", desc: "Creators using AI-built landing pages see 2.5x more enrollments than generic forms." },
   ];
 
   return (
