@@ -398,8 +398,8 @@ Keep response SHORT (3-4 sentences).`;
     setState((prev) => ({ ...prev, setupCampaigns, isComplete: true }));
 
     const finalMessage = setupCampaigns
-      ? "Perfect! 🎉 I'll set everything up for you.\n\nYour Smart Page will be ready in seconds, and then I'll help you create your first campaign.\n\nLet's get started!"
-      : "No problem! 🎉 Your Smart Page will be ready in seconds.\n\n(You can always set up campaigns later from the Campaigns tab)\n\nLet's create your page!";
+      ? "Perfect! 🎉 I'll set everything up for you.\n\nYour website will be ready in seconds, and then I'll help you create your first campaign.\n\nLet's get started!"
+      : "No problem! 🎉 Your website will be ready in seconds.\n\n(You can always set up campaigns later from the Campaigns tab)\n\nLet's create your page!";
 
     setMessages([...currentMessages, { role: "assistant", content: finalMessage }]);
 
