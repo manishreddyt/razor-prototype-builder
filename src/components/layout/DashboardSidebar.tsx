@@ -51,7 +51,7 @@ const navSections = [
   {
     title: "TOOLS",
     items: [
-      { icon: Globe, label: "Smart Pages", path: "/website-builder", badge: "new" },
+      { icon: Globe, label: "Websites", path: "/website-builder", badge: "AI Builder" },
       { icon: Megaphone, label: "Campaigns", path: "/marketing-campaigns" },
       { icon: ShoppingBag, label: "App Store", path: "/app-marketplace" },
       { icon: MessageCircle, label: "Agents", path: "/agents" },
