@@ -253,7 +253,7 @@ Keep response SHORT (2-3 sentences).`;
 Pretend you analyzed the website. Generate a brief, encouraging analysis:
 - Compliment something good about it
 - Note 1-2 things that could be improved
-- Explain how Razorpay Smart Pages can help
+- Explain how Razorpay Websites can help
 
 Then ask: "What's the first course/webinar/session you want to start selling?"
 
