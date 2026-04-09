@@ -433,7 +433,7 @@ Keep response SHORT (3-4 sentences).`;
       })
     );
 
-    // Navigate to Smart Pages builder
+    // Navigate to Website Builder
     navigate(`/website-builder?source=education-copilot&template=${state.businessModel}`);
 
     // Close dialog and mark agent as configured

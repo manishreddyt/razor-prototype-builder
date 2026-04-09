@@ -3,7 +3,7 @@ import { saveOrders } from "@/lib/orderStorage";
 
 /**
  * Seed order data for demo purposes
- * Call this function to populate orders for existing Smart Page sites
+ * Call this function to populate orders for existing Website sites
  */
 export const seedOrderData = () => {
   // Check if orders already exist

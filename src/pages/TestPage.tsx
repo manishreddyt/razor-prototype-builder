@@ -191,7 +191,7 @@ const TestPage = () => {
               onClick={() => navigate("/website-builder")}
             >
               <FileText className="h-5 w-5" />
-              <span className="text-xs">Smart Pages</span>
+              <span className="text-xs">Websites</span>
             </Button>
             <Button
               variant="outline"
