@@ -4,7 +4,7 @@ import {
   ArrowLeft, Monitor, Smartphone, Eye, Settings, Sparkles, Camera, Send,
   X, Copy, ExternalLink, Globe, Palette, Type, Image, Layout, Plus,
   Trash2, GripVertical, Check, Undo2, Redo2, Code, Share2, ChevronDown,
-  Save, Loader2, CheckCircle2, Link2, QrCode, Download, BarChart3, ChevronRight
+  Save, Loader2, CheckCircle2, Link2, QrCode, Download, BarChart3, ChevronRight, Receipt
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,7 +100,8 @@ const PaymentPageEditor = () => {
 
   // View state
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
-  const [rightPanel, setRightPanel] = useState<"ai" | "settings" | null>("ai");
+  const [rightPanel, setRightPanel] = useState<"ai" | "settings" | "receipts" | null>("ai");
+  const [uiMode, setUiMode] = useState<"classic" | "visual">("visual");
   const [previewMode, setPreviewMode] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [postPublishDialogOpen, setPostPublishDialogOpen] = useState(false);
@@ -109,6 +110,12 @@ const PaymentPageEditor = () => {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState("page");
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+
+  // Receipt settings
+  const [receiptDeliveryMode, setReceiptDeliveryMode] = useState<"auto" | "manual">("auto");
+  const [receiptChannel, setReceiptChannel] = useState<"email" | "whatsapp" | "both">("email");
+  const [receiptPrefix, setReceiptPrefix] = useState("RCP");
+  const [receiptStartNumber, setReceiptStartNumber] = useState("001");
 
   // Page data
   const [pageData, setPageData] = useState<PageData>({
@@ -314,44 +321,205 @@ If they ask about features that aren't implemented, politely explain they can us
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {unsavedChanges && (
-            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleSave}>
-              <Save className="h-3.5 w-3.5" /> Save Draft
-            </Button>
-          )}
+          {/* UI Mode Toggle */}
           <div className="flex items-center border border-border rounded-md overflow-hidden">
-            <button onClick={() => setViewMode("desktop")} className={`p-2 ${viewMode === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-              <Monitor className="h-4 w-4" />
+            <button
+              onClick={() => { setUiMode("classic"); if (rightPanel === "ai") setRightPanel(null); }}
+              className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${uiMode === "classic" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Classic
             </button>
-            <button onClick={() => setViewMode("mobile")} className={`p-2 ${viewMode === "mobile" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-              <Smartphone className="h-4 w-4" />
+            <button
+              onClick={() => setUiMode("visual")}
+              className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${uiMode === "visual" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              Visual
             </button>
           </div>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPreviewMode(true)}>
-            <Eye className="h-4 w-4" /> Preview
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}>
-            <Settings className="h-4 w-4" /> Settings
-          </Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShareDialogOpen(true)}>
-            <Share2 className="h-4 w-4" /> Share
-          </Button>
-          <Button size="sm" onClick={() => setPublishDialogOpen(true)}>Publish</Button>
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "ai" ? null : "ai")}>
-            <Sparkles className="h-4 w-4" />
-            AI
-          </Button>
+
+          {uiMode === "visual" && (
+            <>
+              {unsavedChanges && (
+                <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleSave}>
+                  <Save className="h-3.5 w-3.5" /> Save Draft
+                </Button>
+              )}
+              <div className="flex items-center border border-border rounded-md overflow-hidden">
+                <button onClick={() => setViewMode("desktop")} className={`p-2 ${viewMode === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                  <Monitor className="h-4 w-4" />
+                </button>
+                <button onClick={() => setViewMode("mobile")} className={`p-2 ${viewMode === "mobile" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+                  <Smartphone className="h-4 w-4" />
+                </button>
+              </div>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPreviewMode(true)}>
+                <Eye className="h-4 w-4" /> Preview
+              </Button>
+              <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "receipts" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "receipts" ? null : "receipts")}>
+                <Receipt className="h-4 w-4" /> Receipts
+              </Button>
+              <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "settings" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}>
+                <Settings className="h-4 w-4" /> Settings
+              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShareDialogOpen(true)}>
+                <Share2 className="h-4 w-4" /> Share
+              </Button>
+              <Button size="sm" onClick={() => setPublishDialogOpen(true)}>Publish</Button>
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "ai" ? null : "ai")}>
+                <Sparkles className="h-4 w-4" />
+                AI
+              </Button>
+            </>
+          )}
+
+          {uiMode === "classic" && (
+            <>
+              <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "receipts" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "receipts" ? null : "receipts")}>
+                <Receipt className="h-4 w-4" /> Payment Receipts
+              </Button>
+              <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "settings" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}>
+                <Settings className="h-4 w-4" /> Page Settings
+              </Button>
+              <Button size="sm" className="gap-1.5" onClick={() => setPublishDialogOpen(true)}>
+                Create and Publish Page
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Page preview */}
-        <div className="flex-1 overflow-y-auto bg-muted/30 p-6">
-          <div className={`mx-auto bg-background rounded-lg shadow-sm border border-border overflow-hidden transition-all ${viewMode === "mobile" ? "max-w-sm" : "max-w-4xl"}`}>
-            <PagePreviewContent pageData={pageData} viewMode={viewMode} editable onUpdatePage={updatePage} editingSection={editingSection} onEditSection={setEditingSection} />
+        {uiMode === "classic" ? (
+          /* Classic form editor — left column */
+          <div className="flex-1 overflow-y-auto border-r border-border bg-background">
+            <div className="p-8 max-w-2xl">
+              {/* Company branding */}
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center border border-border">
+                  <span className="text-sm font-bold text-foreground">{pageData.logoInitial}</span>
+                </div>
+                <span className="text-xs font-semibold text-foreground/60 uppercase tracking-widest">WEALTHJOY TECHNOLOGIES</span>
+              </div>
+
+              {/* Page title */}
+              <input
+                type="text"
+                value={pageData.title}
+                onChange={(e) => updatePage({ title: e.target.value })}
+                placeholder="Enter page title here"
+                className="w-full text-xl text-foreground bg-transparent border-b border-border focus:outline-none focus:border-primary pb-2 mb-1 placeholder:text-muted-foreground/40"
+              />
+              <div className="w-10 h-0.5 bg-primary mb-5" />
+
+              {/* Goal Tracker */}
+              <button className="flex items-center gap-1.5 text-sm text-primary mb-5 hover:underline">
+                <Plus className="h-3.5 w-3.5" />
+                Add a Goal Tracker
+                <span className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded font-bold ml-0.5">NEW</span>
+              </button>
+
+              {/* Description editor with mock toolbar */}
+              <div className="border border-border rounded-md overflow-hidden mb-3">
+                <div className="border-b border-border bg-muted/30 px-3 py-1.5 flex items-center gap-2 flex-wrap">
+                  <Select defaultValue="normal">
+                    <SelectTrigger className="h-6 text-xs border-0 bg-transparent w-20 focus:ring-0 p-0 px-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="normal">Normal</SelectItem>
+                      <SelectItem value="h1">Heading 1</SelectItem>
+                      <SelectItem value="h2">Heading 2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="w-px h-4 bg-border mx-1" />
+                  <button className="text-xs font-black text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">B</button>
+                  <button className="text-xs italic text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">I</button>
+                  <button className="text-xs underline text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">U</button>
+                  <div className="w-px h-4 bg-border mx-1" />
+                  <button className="text-xs text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">1.</button>
+                  <button className="text-xs text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">•</button>
+                </div>
+                <Textarea
+                  value={pageData.description}
+                  onChange={(e) => updatePage({ description: e.target.value })}
+                  placeholder="Enter page description"
+                  className="border-0 rounded-none focus-visible:ring-0 text-sm min-h-[100px] resize-none"
+                  rows={4}
+                />
+              </div>
+
+              {/* Social share */}
+              <button className="flex items-center gap-1.5 text-sm text-primary mb-6 hover:underline">
+                <Plus className="h-3.5 w-3.5" />
+                Add social media share icons
+              </button>
+
+              {/* Contact Us */}
+              <div className="border-t border-border pt-5">
+                <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                  Contact Us:
+                </p>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 border border-border rounded-md px-2.5 py-1.5 text-xs text-muted-foreground flex-shrink-0">
+                    🇮🇳 +91 (IN)
+                  </div>
+                  <Input placeholder="1 Your support phone" className="text-sm" />
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+        ) : (
+          /* Visual editor canvas */
+          <div className="flex-1 overflow-y-auto bg-muted/30 p-6">
+            <div className={`mx-auto bg-background rounded-lg shadow-sm border border-border overflow-hidden transition-all ${viewMode === "mobile" ? "max-w-sm" : "max-w-4xl"}`}>
+              <PagePreviewContent pageData={pageData} viewMode={viewMode} editable onUpdatePage={updatePage} editingSection={editingSection} onEditSection={setEditingSection} />
+            </div>
+          </div>
+        )}
+
+        {/* Classic mode: Payment Details column (shown only when no panel is open) */}
+        {uiMode === "classic" && !rightPanel && (
+          <div className="w-96 overflow-y-auto bg-background border-l border-border">
+            <div className="p-6">
+              <h3 className="text-xl font-bold text-foreground mb-1">Payment Details</h3>
+              <div className="w-8 h-0.5 bg-primary mb-6" />
+              <div className="mb-4">
+                <label className="text-xs text-muted-foreground mb-1.5 block">Amount</label>
+                <div className="flex items-center border border-border rounded-md">
+                  <input
+                    type="number"
+                    value={pageData.amount || ""}
+                    onChange={(e) => updatePage({ amount: Number(e.target.value) })}
+                    placeholder="0.00"
+                    className="flex-1 px-3 py-2 text-sm text-foreground bg-transparent focus:outline-none"
+                  />
+                  <span className="mr-2 text-[11px] text-primary border border-primary/40 rounded px-2 py-0.5 flex-shrink-0">Price field</span>
+                </div>
+              </div>
+              {pageData.formFields.map((field) => (
+                <div key={field.id} className="mb-4">
+                  <label className="text-xs text-muted-foreground mb-1.5 block">{field.label}:</label>
+                  <Input placeholder={field.placeholder} className="text-sm" />
+                </div>
+              ))}
+              <button className="flex items-center gap-2 text-sm text-muted-foreground mb-6 hover:text-foreground">
+                <Plus className="h-3.5 w-3.5" /> Add new
+                <span className="text-[11px] text-primary border border-primary/40 rounded px-2 py-0.5">Input field</span>
+                <span className="text-[11px] text-primary border border-primary/40 rounded px-2 py-0.5">Price field</span>
+              </button>
+              <div className="flex items-center gap-2 mb-5 flex-wrap">
+                {["UPI", "Visa", "MC", "RuPay", "PhonePe"].map((logo) => (
+                  <span key={logo} className="text-[10px] text-muted-foreground border border-border/60 rounded px-1.5 py-0.5 font-medium">{logo}</span>
+                ))}
+              </div>
+              <Button className="w-full">
+                Pay ₹ {pageData.amount ? pageData.amount.toLocaleString("en-IN") : "0,000.00"}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Right Panel: AI Chat or Settings */}
         {rightPanel === "ai" && (
@@ -470,16 +638,6 @@ If they ask about features that aren't implemented, politely explain they can us
                   <label className="text-xs font-medium text-foreground">Button Text</label>
                   <Input value={pageData.buttonText} onChange={(e) => updatePage({ buttonText: e.target.value })} className="mt-1.5" />
                 </div>
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-foreground">Send payment receipt</span>
-                    <Switch checked={pageData.sendReceipt} onCheckedChange={(v) => updatePage({ sendReceipt: v })} />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-foreground">Enable GST</span>
-                    <Switch checked={pageData.gstEnabled} onCheckedChange={(v) => updatePage({ gstEnabled: v })} />
-                  </div>
-                </div>
               </TabsContent>
 
               <TabsContent value="form" className="p-4 space-y-4">
@@ -561,7 +719,133 @@ If they ask about features that aren't implemented, politely explain they can us
                   <p className="text-[10px] text-muted-foreground mt-1">{pageData.description.length}/160 characters</p>
                 </div>
               </TabsContent>
+
             </Tabs>
+          </div>
+        )}
+
+        {rightPanel === "receipts" && (
+          <div className="w-96 border-l border-border flex flex-col bg-background overflow-y-auto">
+            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Receipt className="h-4 w-4 text-foreground" />
+                <span className="text-sm font-semibold text-foreground">Payment Receipts</span>
+              </div>
+              <button onClick={() => setRightPanel(null)} className="text-muted-foreground hover:text-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="p-4 space-y-5">
+              {/* Master toggle */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Enable payment receipts</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Send a receipt to customers after payment</p>
+                </div>
+                <Switch checked={pageData.sendReceipt} onCheckedChange={(v) => updatePage({ sendReceipt: v })} />
+              </div>
+
+              {pageData.sendReceipt && (
+                <>
+                  {/* Receipt Type */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-foreground">Receipt Type</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => updatePage({ gstEnabled: false })}
+                        className={`p-3 rounded-md border text-left transition-colors ${!pageData.gstEnabled ? "border-primary bg-primary/5" : "border-border hover:border-border/80"}`}
+                      >
+                        <p className={`text-xs font-medium ${!pageData.gstEnabled ? "text-primary" : "text-foreground"}`}>Standard</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">Basic payment receipt</p>
+                      </button>
+                      <button
+                        onClick={() => updatePage({ gstEnabled: true })}
+                        className={`p-3 rounded-md border text-left transition-colors ${pageData.gstEnabled ? "border-primary bg-primary/5" : "border-border hover:border-border/80"}`}
+                      >
+                        <p className={`text-xs font-medium ${pageData.gstEnabled ? "text-primary" : "text-foreground"}`}>GST Receipt</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5">GST-compliant invoice</p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Delivery Mode */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-foreground">Delivery</p>
+                    <Select value={receiptDeliveryMode} onValueChange={(v) => setReceiptDeliveryMode(v as "auto" | "manual")}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="auto">Automatic (sent on payment)</SelectItem>
+                        <SelectItem value="manual">Manual (send from transactions)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Send Via */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-foreground">Send via</p>
+                    <Select value={receiptChannel} onValueChange={(v) => setReceiptChannel(v as "email" | "whatsapp" | "both")}>
+                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="email">Email only</SelectItem>
+                        <SelectItem value="whatsapp">WhatsApp only</SelectItem>
+                        <SelectItem value="both">Email + WhatsApp</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Receipt Numbering */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-foreground">Receipt Numbering</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <p className="text-[10px] text-muted-foreground mb-1">Prefix</p>
+                        <Input
+                          value={receiptPrefix}
+                          onChange={(e) => setReceiptPrefix(e.target.value.toUpperCase())}
+                          className="h-8 text-xs font-mono"
+                          maxLength={6}
+                          placeholder="RCP"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] text-muted-foreground mb-1">Start from</p>
+                        <Input
+                          value={receiptStartNumber}
+                          onChange={(e) => setReceiptStartNumber(e.target.value)}
+                          className="h-8 text-xs font-mono"
+                          placeholder="001"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Preview: <span className="font-mono text-foreground">{receiptPrefix}-{receiptStartNumber}</span>
+                    </p>
+                  </div>
+
+                  {/* Fields included */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-foreground">Include customer fields</p>
+                    <div className="space-y-2">
+                      {[
+                        { label: "Name", always: true },
+                        { label: "Email", always: true },
+                        { label: "Phone number", always: false },
+                      ].map((f) => (
+                        <div key={f.label} className="flex items-center justify-between">
+                          <span className="text-xs text-foreground">{f.label}</span>
+                          {f.always ? (
+                            <span className="text-[10px] text-muted-foreground">Always included</span>
+                          ) : (
+                            <Switch defaultChecked={false} />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         )}
       </div>
