@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Home,
   ArrowLeftRight,
@@ -90,6 +90,7 @@ interface DashboardSidebarProps {
 
 export const DashboardSidebar = ({ isMobileMenuOpen, onCloseMobileMenu }: DashboardSidebarProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [installedApps, setInstalledApps] = useState<string[]>(
     JSON.parse(localStorage.getItem("marketplace-installed-apps") || "[]")
@@ -231,7 +232,10 @@ export const DashboardSidebar = ({ isMobileMenuOpen, onCloseMobileMenu }: Dashbo
 
       {/* Bottom */}
       <div className="border-t border-sidebar-border px-5 py-3">
-        <button className="flex w-full items-center gap-2 text-sm text-sidebar-muted hover:text-sidebar-foreground transition-colors">
+        <button
+          className="flex w-full items-center gap-2 text-sm text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+          onClick={() => navigate("/account-settings")}
+        >
           <span className="text-xs">⚙️</span>
           <span>Account & Settings</span>
         </button>

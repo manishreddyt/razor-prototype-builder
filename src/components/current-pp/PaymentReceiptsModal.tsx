@@ -308,7 +308,7 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
 
                 {/* Tax calculation note */}
                 <Alert
-                  color="notice"
+                  color="information"
                   description="Tax rate will be auto-calculated based on the customer's billing address and your registered business address (CGST+SGST for intra-state, IGST for inter-state)."
                   isFullWidth
                   isDismissible={false}
