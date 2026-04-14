@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { ExternalLink, Info } from "lucide-react";
 import { toast } from "sonner";
 import {
   Modal,
@@ -19,7 +18,7 @@ import {
   Badge,
   Link,
 } from "@razorpay/blade/components";
-import { ChevronUpIcon, ChevronDownIcon } from "@razorpay/blade/components";
+import { ChevronUpIcon, ChevronDownIcon, ExternalLinkIcon } from "@razorpay/blade/components";
 
 interface PaymentFieldItem {
   id: string;
@@ -125,10 +124,10 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
 
           {/* Links */}
           <Box display="flex" gap="spacing.4">
-            <Link href="#" icon={ExternalLink} iconPosition="right" size="small">
+            <Link href="#" icon={ExternalLinkIcon} iconPosition="right" size="small">
               Sample Receipt
             </Link>
-            <Link href="#" icon={ExternalLink} iconPosition="right" size="small">
+            <Link href="#" icon={ExternalLinkIcon} iconPosition="right" size="small">
               Learn More
             </Link>
           </Box>

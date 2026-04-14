@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { GripVertical, Bold, Italic, Underline, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Link2, Image } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +28,38 @@ const CurrentCreatePaymentPage = () => {
   const [showReceiptsModal, setShowReceiptsModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [gstEnabled, setGstEnabled] = useState(false);
+  const [showInputDropdown, setShowInputDropdown] = useState(false);
+  const inputDropdownRef = useRef<HTMLDivElement>(null);
+
+  const inputFieldTypes = [
+    "Single Line Text",
+    "Alphabets",
+    "Alphanumeric",
+    "Number",
+    "Email",
+    "Phone No.",
+    "Link / URL",
+    "Large Textarea",
+    "PAN Number",
+    "Pincode",
+    "Dropdown",
+    "Date Picker",
+    "Name",
+    "Address",
+  ];
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (inputDropdownRef.current && !inputDropdownRef.current.contains(e.target as Node)) {
+        setShowInputDropdown(false);
+      }
+    };
+    if (showInputDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showInputDropdown]);
 
   // Payment form fields
   const [paymentFields, setPaymentFields] = useState([
@@ -36,10 +68,10 @@ const CurrentCreatePaymentPage = () => {
     { id: "f3", label: "Phone", type: "input", rate: "", removable: true },
   ]);
 
-  const addField = (type: "input" | "price") => {
+  const addField = (type: "input" | "price", label?: string) => {
     const newField = {
       id: `f${Date.now()}`,
-      label: type === "input" ? "New Field" : "Price Field",
+      label: label || (type === "input" ? "New Field" : "Price Field"),
       type,
       rate: "",
       removable: true,
@@ -287,25 +319,19 @@ const CurrentCreatePaymentPage = () => {
                 {/* GST Address Fields */}
                 {gstEnabled && (
                   <Box marginTop="spacing.5" paddingTop="spacing.4" borderTopWidth="thin" borderTopColor="surface.border.gray.muted">
-                    <Box display="flex" alignItems="center" gap="spacing.2" marginBottom="spacing.3">
-                      <Text size="xsmall" weight="semibold" color="surface.text.gray.muted">
-                        GST INVOICE FIELDS
-                      </Text>
-                      <Badge color="positive" size="small">Required</Badge>
-                    </Box>
                     <Box display="flex" flexDirection="column" gap="spacing.3">
-                      <TextInput label="Customer Name" isDisabled placeholder="Customer Name" size="small" />
-                      <TextInput label="Billing Address" isDisabled placeholder="Address Line" size="small" />
+                      <TextInput label="Name" isDisabled placeholder="Name" size="small" />
+                      <TextInput label="Address" isDisabled placeholder="Address Line" size="small" />
                       <Box display="flex" gap="spacing.2">
-                        <Box flex="1">
-                          <TextInput label="City" isDisabled placeholder="City" size="small" />
-                        </Box>
                         <Box flex="1">
                           <TextInput label="Pincode" isDisabled placeholder="Pincode" size="small" />
                         </Box>
+                        <Box flex="1">
+                          <TextInput label="City" isDisabled placeholder="City" size="small" />
+                        </Box>
                       </Box>
                       <TextInput label="State" isDisabled placeholder="Select State" size="small" />
-                      <TextInput label="Customer GST Number (optional)" isDisabled placeholder="e.g., 29ABCDE1234F1Z5" size="small" />
+                      <TextInput label="GST Number (optional)" isDisabled placeholder="e.g., 29ABCDE1234F1Z5" size="small" />
                     </Box>
                   </Box>
                 )}
@@ -313,9 +339,60 @@ const CurrentCreatePaymentPage = () => {
                 {/* Add field buttons */}
                 <Box marginTop="spacing.5" display="flex" alignItems="center" gap="spacing.3">
                   <Text size="xsmall" color="surface.text.gray.muted">Add new</Text>
-                  <Button variant="tertiary" size="xsmall" icon={PlusIcon} iconPosition="left" onClick={() => addField("input")}>
-                    Input field
-                  </Button>
+                  <Box position="relative" ref={inputDropdownRef}>
+                    <Button
+                      variant="tertiary"
+                      size="xsmall"
+                      icon={PlusIcon}
+                      iconPosition="left"
+                      onClick={() => setShowInputDropdown(!showInputDropdown)}
+                    >
+                      Input field
+                    </Button>
+                    {showInputDropdown && (
+                      <Box
+                        position="absolute"
+                        top="100%"
+                        left="spacing.0"
+                        marginTop="spacing.2"
+                        backgroundColor="surface.background.gray.intense"
+                        borderRadius="medium"
+                        borderWidth="thin"
+                        borderColor="surface.border.gray.muted"
+                        paddingY="spacing.2"
+                        minWidth="200px"
+                        zIndex={100}
+                        elevation="midRaised"
+                        overflow="auto"
+                        maxHeight="280px"
+                      >
+                        {inputFieldTypes.map((fieldType) => (
+                          <button
+                            key={fieldType}
+                            style={{
+                              display: "block",
+                              width: "100%",
+                              textAlign: "left",
+                              background: "none",
+                              border: "none",
+                              cursor: "pointer",
+                              padding: "8px 16px",
+                              fontSize: "13px",
+                              color: "#1a1a2e",
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = "#f0f0f5"; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                            onClick={() => {
+                              addField("input", fieldType);
+                              setShowInputDropdown(false);
+                            }}
+                          >
+                            {fieldType}
+                          </button>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
                   <Button variant="tertiary" size="xsmall" icon={PlusIcon} iconPosition="left" onClick={() => addField("price")}>
                     Price field
                   </Button>
