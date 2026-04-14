@@ -1,5 +1,4 @@
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, ShoppingBag } from "lucide-react";
 import { toast } from "sonner";
 import {
   Box,
@@ -56,47 +55,75 @@ const CurrentSelectPageType = () => {
           <Card elevation="highRaised">
             <CardBody>
               <Box padding="spacing.0">
-                {/* Preview image area */}
+                {/* Preview image area — realistic payment page mockup */}
                 <Box
-                  backgroundColor="surface.background.gray.intense"
+                  backgroundColor="surface.background.gray.subtle"
                   borderRadius="medium"
                   height="224px"
                   position="relative"
                   overflow="hidden"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
                   marginBottom="spacing.5"
+                  borderWidth="thin"
+                  borderColor="surface.border.gray.muted"
                 >
-                  <Box position="absolute" display="flex" gap="spacing.3" padding="spacing.4">
-                    <Box
-                      flex="1"
-                      backgroundColor="overlay.background.subtle"
-                      borderRadius="medium"
-                      padding="spacing.3"
-                    >
-                      <Box height="12px" width="64px" backgroundColor="overlay.background.moderate" borderRadius="small" marginBottom="spacing.2" />
-                      <Box height="8px" width="100%" backgroundColor="overlay.background.subtle" borderRadius="small" marginBottom="spacing.2" />
-                      <Box height="8px" width="75%" backgroundColor="overlay.background.subtle" borderRadius="small" marginBottom="spacing.2" />
-                      <Box height="8px" width="50%" backgroundColor="overlay.background.subtle" borderRadius="small" marginBottom="spacing.3" />
-                      <Box height="24px" width="96px" backgroundColor="surface.background.positive.intense" borderRadius="small" />
-                    </Box>
-                    <Box
-                      width="144px"
-                      backgroundColor="overlay.background.subtle"
-                      borderRadius="medium"
-                      padding="spacing.3"
-                    >
-                      <Box height="12px" width="100%" backgroundColor="overlay.background.moderate" borderRadius="small" marginBottom="spacing.2" />
-                      <Box display="flex" flexDirection="column" gap="spacing.2">
-                        <Box height="24px" width="100%" backgroundColor="overlay.background.subtle" borderRadius="small" />
-                        <Box height="24px" width="100%" backgroundColor="overlay.background.subtle" borderRadius="small" />
-                        <Box height="32px" width="100%" backgroundColor="surface.background.primary.intense" borderRadius="small" />
+                  <Box display="flex" height="100%" padding="spacing.3" gap="spacing.2">
+                    {/* Left: Page content side */}
+                    <Box flex="1" display="flex" flexDirection="column" overflow="hidden">
+                      {/* Logo + company */}
+                      <Box display="flex" alignItems="center" gap="spacing.2" marginBottom="spacing.2">
+                        <Box width="14px" height="14px" borderRadius="round" backgroundColor="surface.background.primary.intense" flexShrink="0" />
+                        <Box height="6px" width="48px" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
                       </Box>
+                      {/* Title */}
+                      <Box height="8px" width="85%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                      <Box height="8px" width="60%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.2" />
+                      {/* Description lines */}
+                      <Box height="4px" width="100%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                      <Box height="4px" width="92%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                      <Box height="4px" width="85%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                      <Box height="4px" width="96%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                      <Box height="4px" width="70%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.2" />
+                      {/* Second paragraph */}
+                      <Box height="4px" width="100%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                      <Box height="4px" width="88%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                      <Box height="4px" width="75%" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
                     </Box>
-                  </Box>
-                  <Box position="absolute" bottom="spacing.3">
-                    <Text size="xsmall" color="surface.text.staticWhite.muted">Preview Mockup</Text>
+                    {/* Right: Payment details side */}
+                    <Box width="140px" flexShrink="0" display="flex" flexDirection="column">
+                      <Box height="8px" width="72px" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.2" />
+                      <Box height="2px" width="20px" backgroundColor="surface.background.primary.intense" marginBottom="spacing.2" />
+                      {/* Product item 1 */}
+                      <Box display="flex" alignItems="center" gap="spacing.1" marginBottom="spacing.2">
+                        <Box width="20px" height="16px" borderRadius="small" backgroundColor="surface.background.gray.moderate" flexShrink="0" />
+                        <Box flex="1">
+                          <Box height="4px" width="80%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                          <Box height="4px" width="50%" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
+                        </Box>
+                      </Box>
+                      {/* Product item 2 */}
+                      <Box display="flex" alignItems="center" gap="spacing.1" marginBottom="spacing.2">
+                        <Box width="20px" height="16px" borderRadius="small" backgroundColor="surface.background.gray.moderate" flexShrink="0" />
+                        <Box flex="1">
+                          <Box height="4px" width="70%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                          <Box height="4px" width="45%" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
+                        </Box>
+                      </Box>
+                      {/* Product item 3 */}
+                      <Box display="flex" alignItems="center" gap="spacing.1" marginBottom="spacing.3">
+                        <Box width="20px" height="16px" borderRadius="small" backgroundColor="surface.background.gray.moderate" flexShrink="0" />
+                        <Box flex="1">
+                          <Box height="4px" width="75%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                          <Box height="4px" width="40%" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
+                        </Box>
+                      </Box>
+                      {/* Form fields */}
+                      <Box height="4px" width="28px" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                      <Box height="12px" width="100%" borderRadius="small" borderWidth="thin" borderColor="surface.border.gray.muted" marginBottom="spacing.2" />
+                      <Box height="4px" width="28px" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
+                      <Box height="12px" width="100%" borderRadius="small" borderWidth="thin" borderColor="surface.border.gray.muted" marginBottom="spacing.3" />
+                      {/* Pay button */}
+                      <Box height="16px" width="100%" backgroundColor="surface.background.primary.intense" borderRadius="small" />
+                    </Box>
                   </Box>
                 </Box>
 
@@ -191,21 +218,6 @@ const CurrentSelectPageType = () => {
         </Box>
       </Box>
 
-      {/* Bottom bar */}
-      <Box
-        backgroundColor="surface.background.primary.intense"
-        paddingY="spacing.3"
-        paddingX="spacing.8"
-        display="flex"
-        justifyContent="center"
-        gap="spacing.6"
-      >
-        {["Collect Payments", "Webstore"].map((label) => (
-          <Button key={label} variant="tertiary" size="small">
-            {label}
-          </Button>
-        ))}
-      </Box>
     </Box>
   );
 };

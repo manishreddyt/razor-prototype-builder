@@ -282,73 +282,41 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
             )}
           </Box>
 
-          {/* Customer Information on Receipt */}
-          <Box
-            borderWidth="thin"
-            borderColor="surface.border.gray.muted"
-            borderRadius="medium"
-            overflow="hidden"
+          {/* Show customer's information on receipt */}
+          <Checkbox
+            isChecked={showCustomerInfo}
+            onChange={({ isChecked }) => setShowCustomerInfo(isChecked)}
+            helpText="Include customer details like name and PAN on the payment receipt"
           >
-            <button
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 0, width: "100%", textAlign: "left" }}
-              onClick={() => setShowCustomerInfo(!showCustomerInfo)}
-            >
-              <Box
-                display="flex"
-                alignItems="center"
-                justifyContent="space-between"
-                padding="spacing.4"
-                width="100%"
-                backgroundColor="surface.background.gray.moderate"
-              >
-                <Box display="flex" alignItems="center" gap="spacing.3">
-                  <Text size="medium" weight="medium">Customer Information on Receipt</Text>
-                  <Badge color="information" size="small">
-                    Email, Phone{customerFields.name || customerFields.pan
-                      ? ` + ${[customerFields.name && "Name", customerFields.pan && "PAN"].filter(Boolean).join(", ")}`
-                      : ""}
-                  </Badge>
-                </Box>
-                {showCustomerInfo
-                  ? <ChevronUpIcon size="small" color="surface.icon.gray.muted" />
-                  : <ChevronDownIcon size="small" color="surface.icon.gray.muted" />
-                }
+            Show customer's information on receipt
+          </Checkbox>
+          {showCustomerInfo && (
+            <Box marginLeft="spacing.7" display="flex" flexDirection="column" gap="spacing.4">
+              <Box display="flex" gap="spacing.5">
+                <Checkbox
+                  isChecked={customerFields.name}
+                  onChange={() => toggleCustomerField("name")}
+                >
+                  Customer Name
+                </Checkbox>
+                <Checkbox
+                  isChecked={customerFields.pan}
+                  onChange={() => toggleCustomerField("pan")}
+                >
+                  PAN Number
+                </Checkbox>
               </Box>
-            </button>
-
-            {showCustomerInfo && (
-              <Box padding="spacing.4" display="flex" flexDirection="column" gap="spacing.4">
-                <Box>
-                  <Text size="small" color="surface.text.gray.muted" marginBottom="spacing.3">
-                    Additional fields on receipt:
-                  </Text>
-                  <Box display="flex" gap="spacing.5">
-                    <Checkbox
-                      isChecked={customerFields.name}
-                      onChange={() => toggleCustomerField("name")}
-                    >
-                      Customer Name
-                    </Checkbox>
-                    <Checkbox
-                      isChecked={customerFields.pan}
-                      onChange={() => toggleCustomerField("pan")}
-                    >
-                      PAN Number
-                    </Checkbox>
-                  </Box>
-                </Box>
-                <Box>
-                  <Text size="xsmall" color="surface.text.gray.muted" weight="medium" marginBottom="spacing.2">
-                    Always included
-                  </Text>
-                  <Box display="flex" gap="spacing.3">
-                    <Badge color="neutral" size="small">Email Address</Badge>
-                    <Badge color="neutral" size="small">Phone Number</Badge>
-                  </Box>
+              <Box>
+                <Text size="xsmall" color="surface.text.gray.muted" weight="medium" marginBottom="spacing.2">
+                  Always included
+                </Text>
+                <Box display="flex" gap="spacing.3">
+                  <Badge color="neutral" size="small">Email Address</Badge>
+                  <Badge color="neutral" size="small">Phone Number</Badge>
                 </Box>
               </Box>
-            )}
-          </Box>
+            </Box>
+          )}
 
           {/* Show 80G Details on Receipt */}
           <Checkbox
