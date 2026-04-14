@@ -20,8 +20,10 @@ import {
   Alert,
   Badge,
   Link,
+  TextArea,
+  FileUpload,
 } from "@razorpay/blade/components";
-import { ChevronUpIcon, ChevronDownIcon, ExternalLinkIcon } from "@razorpay/blade/components";
+import { ChevronUpIcon, ChevronDownIcon, ExternalLinkIcon, UploadIcon } from "@razorpay/blade/components";
 
 interface PaymentFieldItem {
   id: string;
@@ -58,8 +60,11 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
   });
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
 
-  // Billing details
+  // Billing details (80G)
   const [showBillingDetails, setShowBillingDetails] = useState(true);
+  const [eightyGDescription, setEightyGDescription] = useState(
+    "All donations made to us are eligible for tax exemption under 80G of IT act ITBA/EXM/S80G/2019-20/1XXXXXXX Dated DD/MM/YYYY"
+  );
 
   // GST Receipt
   const [gstEnabled, setGstEnabled] = useState(false);
@@ -422,10 +427,35 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
               )}
             </Box>
             {showBillingDetails && billingExpanded && (
-              <Box padding="spacing.4">
-                <Button variant="tertiary" size="small">
-                  + Add your Billing details
-                </Button>
+              <Box padding="spacing.4" display="flex" flexDirection="column" gap="spacing.4">
+                {/* 80G Description */}
+                <TextArea
+                  label="80G Description"
+                  labelPosition="top"
+                  value={eightyGDescription}
+                  onChange={({ value }) => setEightyGDescription(value ?? "")}
+                  helpText="Sample 80G Receipt"
+                  numberOfLines={4}
+                />
+
+                {/* Signature Upload */}
+                <Box>
+                  <Text size="small" weight="medium" marginBottom="spacing.2">
+                    Signature of Authorised Person (Optional)
+                  </Text>
+                  <FileUpload
+                    uploadType="single"
+                    label="Upload Signature"
+                    helpText="Upload .png, .jpg or .jpeg file | 500 KB Max"
+                    acceptedFileTypes=".png,.jpg,.jpeg"
+                    maxSize={500 * 1024}
+                    onChange={({ fileList }) => {
+                      if (fileList.length > 0) {
+                        toast.success(`File "${fileList[0].name}" selected`);
+                      }
+                    }}
+                  />
+                </Box>
               </Box>
             )}
           </Box>
