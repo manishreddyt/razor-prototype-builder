@@ -1,19 +1,11 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  Modal,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Box,
-  Button,
-  TextInput,
-  RadioGroup,
-  Radio,
-  Checkbox,
-  Text,
-  Heading,
-} from "@razorpay/blade/components";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface PageSettingsModalProps {
   open: boolean;
@@ -36,127 +28,86 @@ export const CurrentPageSettingsModal = ({ open, onClose }: PageSettingsModalPro
   };
 
   return (
-    <Modal isOpen={open} onDismiss={onClose} size="medium">
-      <ModalHeader title="Page Settings" subtitle="Configure URL, theme, and post-payment behavior" />
-      <ModalBody>
-        <Box display="flex" flexDirection="column" gap="spacing.6">
-          {/* URL of this page */}
-          <Box>
-            <TextInput
-              label="URL of this page"
-              value={pageUrl}
-              onChange={({ value }) => setPageUrl(value ?? "")}
-              placeholder="https://pages.razorpay.com/"
-            />
-          </Box>
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Page Settings</DialogTitle>
+          <p className="text-sm text-muted-foreground">Configure URL, theme, and post-payment behavior</p>
+        </DialogHeader>
 
-          {/* Theme */}
-          <Box>
-            <RadioGroup
-              label="Theme"
-              value={theme}
-              onChange={({ value }) => setTheme(value)}
-            >
-              <Radio value="dark">Dark</Radio>
-              <Radio value="light">Light</Radio>
+        <div className="flex flex-col gap-6">
+          <div>
+            <Label>URL of this page</Label>
+            <Input value={pageUrl} onChange={(e) => setPageUrl(e.target.value)} placeholder="https://pages.razorpay.com/" className="mt-1.5" />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Theme</Label>
+            <RadioGroup value={theme} onValueChange={setTheme} className="flex gap-4">
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="dark" id="dark" />
+                <Label htmlFor="dark">Dark</Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <RadioGroupItem value="light" id="light" />
+                <Label htmlFor="light">Light</Label>
+              </div>
             </RadioGroup>
-          </Box>
+          </div>
 
-          {/* Page Expiry Date */}
-          <Box>
-            <Heading size="small" marginBottom="spacing.3">Page Expiry Date</Heading>
-            <Box display="flex" flexDirection="column" gap="spacing.3">
-              <Checkbox
-                isChecked={noExpiry}
-                onChange={({ isChecked }) => setNoExpiry(isChecked)}
-              >
-                No Expiry
-              </Checkbox>
+          <div>
+            <h4 className="text-sm font-semibold mb-3">Page Expiry Date</h4>
+            <div className="flex items-center gap-2 mb-3">
+              <Checkbox checked={noExpiry} onCheckedChange={(v) => setNoExpiry(!!v)} id="no-expiry" />
+              <Label htmlFor="no-expiry">No Expiry</Label>
+            </div>
+            {!noExpiry && (
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <Label>Date</Label>
+                  <Input value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} placeholder="DD/MM/YYYY" className="mt-1" />
+                </div>
+                <div className="w-[140px]">
+                  <Label>Time</Label>
+                  <Input value={expiryTime} onChange={(e) => setExpiryTime(e.target.value)} placeholder="HH:MM" className="mt-1" />
+                </div>
+              </div>
+            )}
+          </div>
 
-              {!noExpiry && (
-                <Box display="flex" gap="spacing.3">
-                  <Box flex="1">
-                    <TextInput
-                      label="Date"
-                      type="text"
-                      value={expiryDate}
-                      onChange={({ value }) => setExpiryDate(value ?? "")}
-                      placeholder="DD/MM/YYYY"
-                    />
-                  </Box>
-                  <Box width="140px">
-                    <TextInput
-                      label="Time"
-                      type="text"
-                      value={expiryTime}
-                      onChange={({ value }) => setExpiryTime(value ?? "")}
-                      placeholder="HH:MM"
-                    />
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          </Box>
-
-          {/* Action after successful payment */}
-          <Box>
-            <Heading size="small" marginBottom="spacing.3">
-              Action after successful payment?
-            </Heading>
-            <Box display="flex" flexDirection="column" gap="spacing.3">
-              <Checkbox
-                isChecked={showCustomMessage}
-                onChange={({ isChecked }) => {
-                  setShowCustomMessage(isChecked);
-                  if (isChecked) setShowRedirect(false);
-                }}
-              >
-                Show custom message
-              </Checkbox>
-
-              <Box>
-                <Checkbox
-                  isChecked={showRedirect}
-                  onChange={({ isChecked }) => {
-                    setShowRedirect(isChecked);
-                    if (isChecked) setShowCustomMessage(false);
-                  }}
-                >
-                  Redirect to your website
-                </Checkbox>
+          <div>
+            <h4 className="text-sm font-semibold mb-3">Action after successful payment?</h4>
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Checkbox checked={showCustomMessage} onCheckedChange={(v) => { setShowCustomMessage(!!v); if (v) setShowRedirect(false); }} id="custom-msg" />
+                <Label htmlFor="custom-msg">Show custom message</Label>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <Checkbox checked={showRedirect} onCheckedChange={(v) => { setShowRedirect(!!v); if (v) setShowCustomMessage(false); }} id="redirect" />
+                  <Label htmlFor="redirect">Redirect to your website</Label>
+                </div>
                 {showRedirect && (
-                  <Box marginTop="spacing.3" marginLeft="spacing.7">
-                    <TextInput
-                      label="Redirect URL"
-                      value={redirectUrl}
-                      onChange={({ value }) => setRedirectUrl(value ?? "")}
-                      placeholder="https://yourwebsite.com/thank-you"
-                    />
-                  </Box>
+                  <div className="mt-3 ml-7">
+                    <Label>Redirect URL</Label>
+                    <Input value={redirectUrl} onChange={(e) => setRedirectUrl(e.target.value)} placeholder="https://yourwebsite.com/thank-you" className="mt-1" />
+                  </div>
                 )}
-              </Box>
-            </Box>
-          </Box>
+              </div>
+            </div>
+          </div>
 
-          {/* Get Hyperlink Button */}
-          <Box>
-            <Heading size="small" marginBottom="spacing.2">Get Hyperlink Button</Heading>
-            <Text size="small" color="surface.text.gray.muted">
-              Embed a payment button on your website that links to this page.
-            </Text>
-          </Box>
-        </Box>
-      </ModalBody>
-      <ModalFooter>
-        <Box display="flex" justifyContent="flex-end" gap="spacing.4" width="100%">
-          <Button variant="tertiary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            Save
-          </Button>
-        </Box>
-      </ModalFooter>
-    </Modal>
+          <div>
+            <h4 className="text-sm font-semibold mb-1">Get Hyperlink Button</h4>
+            <p className="text-xs text-muted-foreground">Embed a payment button on your website that links to this page.</p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };

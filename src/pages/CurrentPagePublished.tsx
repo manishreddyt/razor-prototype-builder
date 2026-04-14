@@ -1,19 +1,12 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Copy, ExternalLink, Check, Mail, ArrowUpRight, BarChart3, ShoppingCart, HelpCircle } from "lucide-react";
+import { Copy, ExternalLink, Check, Mail, ArrowUpRight, BarChart3, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { CurrentPaymentReceiptsModal } from "@/components/current-pp/PaymentReceiptsModal";
 import { CurrentPageSettingsModal } from "@/components/current-pp/PageSettingsModal";
-import {
-  Box,
-  Heading,
-  Text,
-  Button,
-  Card,
-  CardBody,
-  Badge,
-  Link,
-} from "@razorpay/blade/components";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const CurrentPagePublished = () => {
   const navigate = useNavigate();
@@ -39,302 +32,139 @@ const CurrentPagePublished = () => {
   };
 
   return (
-    <Box minHeight="100vh" backgroundColor="surface.background.gray.moderate" display="flex" flexDirection="column">
+    <div className="min-h-screen bg-muted flex flex-col">
       {/* Top bar */}
-      <Box
-        backgroundColor="surface.background.gray.intense"
-        height="56px"
-        display="flex"
-        alignItems="center"
-        justifyContent="space-between"
-        paddingX="spacing.6"
-      >
-        <Text size="small" weight="medium" color="surface.text.staticWhite.normal">
-          Page Published
-        </Text>
-        <Button
-          variant="secondary"
-          size="small"
-          onClick={() => navigate("/payment-pages-current")}
-        >
+      <div className="bg-foreground h-14 flex items-center justify-between px-6">
+        <span className="text-sm font-medium text-white">Page Published</span>
+        <Button variant="secondary" size="sm" onClick={() => navigate("/payment-pages-current")}>
           Back to Dashboard
         </Button>
-      </Box>
+      </div>
 
-      {/* Main content area */}
-      <Box flex="1" paddingX="spacing.8" paddingY="spacing.6" maxWidth="960px" marginX="auto" width="100%">
-        {/* Edit Page link */}
-        <Box marginBottom="spacing.5">
-          <Button
-            variant="tertiary"
-            size="small"
-            onClick={() => navigate("/payment-pages-current/create")}
-          >
+      {/* Main content */}
+      <div className="flex-1 px-8 py-6 max-w-[960px] mx-auto w-full">
+        <div className="mb-5">
+          <Button variant="ghost" size="sm" onClick={() => navigate("/payment-pages-current/create")}>
             ← EDIT PAGE
           </Button>
-        </Box>
+        </div>
 
         {/* Success Card */}
-        <Box marginBottom="spacing.6">
-          <Card>
-            <CardBody>
-              <Box padding="spacing.2">
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                  {/* Left side */}
-                  <Box flex="1">
-                    {/* Category tag */}
-                    <Text size="xsmall" weight="semibold" color="surface.text.gray.muted" marginBottom="spacing.2">
-                      {pageTitle.toUpperCase()}
-                    </Text>
-
-                    {/* Success message */}
-                    <Box display="flex" alignItems="center" gap="spacing.2" marginBottom="spacing.5">
-                      <Badge color="positive" size="medium">Live</Badge>
-                      <Heading size="medium">Your page is now live!</Heading>
-                    </Box>
-
-                    {/* Page URL row */}
-                    <Box display="flex" alignItems="center" gap="spacing.3">
-                      <Text size="small" color="surface.text.gray.muted">Page URL</Text>
-                      <Box
-                        display="flex"
-                        alignItems="center"
-                        borderWidth="thin"
-                        borderColor="surface.border.gray.muted"
-                        borderRadius="medium"
-                        overflow="hidden"
-                      >
-                        <Box paddingX="spacing.3" paddingY="spacing.2" backgroundColor="surface.background.gray.moderate">
-                          <Text size="small" color="surface.text.primary.normal" weight="medium">
-                            {pageUrl}
-                          </Text>
-                        </Box>
-                        <Button
-                          variant="tertiary"
-                          size="small"
-                          onClick={copyUrl}
-                        >
-                          {copied ? "Copied!" : "Copy"}
-                        </Button>
-                        <Button
-                          variant="tertiary"
-                          size="small"
-                          onClick={copyAsLink}
-                        >
-                          Share
-                        </Button>
-                        <Button
-                          variant="tertiary"
-                          size="small"
-                          onClick={() => toast.info("Customize URL coming soon")}
-                        >
-                          CUSTOMIZE URL
-                        </Button>
-                      </Box>
-                    </Box>
-                  </Box>
-
-                  {/* Right side — Page preview thumbnail */}
-                  <Box marginLeft="spacing.8" flexShrink="0">
-                    <button
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                      onClick={() => window.open(pageUrl, "_blank")}
-                    >
-                    <Box
-                      width="180px"
-                      height="120px"
-                      borderRadius="medium"
-                      borderWidth="thin"
-                      borderColor="surface.border.gray.muted"
-                      backgroundColor="surface.background.gray.moderate"
-                      overflow="hidden"
-                      position="relative"
-                    >
-                      <Box padding="spacing.3" height="100%" display="flex" flexDirection="column">
-                        <Box display="flex" alignItems="center" gap="spacing.2" marginBottom="spacing.2">
-                          <Box
-                            width="20px"
-                            height="20px"
-                            borderRadius="round"
-                            backgroundColor="surface.background.primary.intense"
-                            display="flex"
-                            alignItems="center"
-                            justifyContent="center"
-                          >
-                            <Text size="xsmall" color="surface.text.staticWhite.normal" weight="bold">W</Text>
-                          </Box>
-                          <Text size="xsmall" color="surface.text.gray.muted">WEALTHJOY</Text>
-                        </Box>
-                        <Text size="xsmall" weight="semibold" marginBottom="spacing.1">{pageTitle}</Text>
-                        <Box flex="1" display="flex" gap="spacing.2">
-                          <Box flex="1" display="flex" flexDirection="column" gap="spacing.1">
-                            <Box height="6px" backgroundColor="surface.background.gray.moderate" borderRadius="small" width="75%" />
-                            <Box height="6px" backgroundColor="surface.background.gray.moderate" borderRadius="small" width="50%" />
-                            <Box height="6px" backgroundColor="surface.background.gray.moderate" borderRadius="small" width="66%" />
-                          </Box>
-                          <Box width="56px" display="flex" flexDirection="column" gap="spacing.1">
-                            <Box height="6px" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
-                            <Box height="6px" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
-                            <Box height="12px" backgroundColor="surface.background.primary.subtle" borderRadius="small" marginTop="spacing.1" />
-                          </Box>
-                        </Box>
-                      </Box>
-                    </Box>
-                    </button>
-                  </Box>
-                </Box>
-              </Box>
-            </CardBody>
-          </Card>
-        </Box>
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <div className="flex justify-between items-start">
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-muted-foreground mb-2">{pageTitle.toUpperCase()}</p>
+                <div className="flex items-center gap-2 mb-5">
+                  <Badge className="bg-green-100 text-green-800">Live</Badge>
+                  <h2 className="text-lg font-semibold">Your page is now live!</h2>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">Page URL</span>
+                  <div className="flex items-center border rounded-md overflow-hidden">
+                    <div className="px-3 py-2 bg-muted">
+                      <span className="text-sm text-primary font-medium">{pageUrl}</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={copyUrl}>
+                      {copied ? "Copied!" : "Copy"}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={copyAsLink}>Share</Button>
+                    <Button variant="ghost" size="sm" onClick={() => toast.info("Customize URL coming soon")}>
+                      CUSTOMIZE URL
+                    </Button>
+                  </div>
+                </div>
+              </div>
+              <div className="ml-8 shrink-0">
+                <button className="p-0 bg-transparent border-none cursor-pointer" onClick={() => window.open(pageUrl, "_blank")}>
+                  <div className="w-[180px] h-[120px] rounded-md border bg-muted overflow-hidden p-3 flex flex-col">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                        <span className="text-xs text-white font-bold">W</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">WEALTHJOY</span>
+                    </div>
+                    <span className="text-xs font-semibold mb-1">{pageTitle}</span>
+                    <div className="flex-1 flex gap-2">
+                      <div className="flex-1 flex flex-col gap-1">
+                        <div className="h-1.5 bg-muted-foreground/20 rounded w-3/4" />
+                        <div className="h-1.5 bg-muted-foreground/20 rounded w-1/2" />
+                        <div className="h-1.5 bg-muted-foreground/20 rounded w-2/3" />
+                      </div>
+                      <div className="w-14 flex flex-col gap-1">
+                        <div className="h-1.5 bg-muted-foreground/20 rounded" />
+                        <div className="h-1.5 bg-muted-foreground/20 rounded" />
+                        <div className="h-3 bg-primary/20 rounded mt-1" />
+                      </div>
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Next Steps Card */}
         <Card>
-          <CardBody>
-            <Box padding="spacing.2">
-              <Heading size="small" marginBottom="spacing.1">Next Steps for Your Page</Heading>
-              <Box height="2px" width="32px" backgroundColor="surface.background.primary.intense" marginBottom="spacing.5" borderRadius="full" />
+          <CardContent className="p-6">
+            <h3 className="text-base font-semibold mb-1">Next Steps for Your Page</h3>
+            <div className="h-0.5 w-8 bg-primary mb-5 rounded-full" />
 
-              {/* Section 1: Receipts */}
-              <Box
-                display="flex"
-                justifyContent="space-between"
-                alignItems="flex-start"
-                marginBottom="spacing.5"
-                paddingBottom="spacing.5"
-                borderBottomWidth="thin"
-                borderBottomColor="surface.border.gray.muted"
-              >
-                <Box flex="1" display="flex" gap="spacing.3">
-                  <Box
-                    width="20px"
-                    height="20px"
-                    borderRadius="round"
-                    backgroundColor="surface.background.positive.subtle"
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    flexShrink="0"
-                    marginTop="spacing.1"
-                  >
-                    <Mail size={12} color="#1e8e3e" />
-                  </Box>
-                  <Box>
-                    <Text size="small">
-                      <Text as="span" weight="medium">Receipts will be sent automatically</Text> to customers after each payment
-                    </Text>
-                    <Text size="xsmall" color="surface.text.gray.muted" marginTop="spacing.1">
-                      You can customise your receipt by adding customer's information & billing details
-                    </Text>
-                  </Box>
-                </Box>
-                <Box marginLeft="spacing.4" flexShrink="0">
-                  <Button variant="secondary" size="small" onClick={() => setShowReceiptsModal(true)}>
-                    Receipt Settings
-                  </Button>
-                </Box>
-              </Box>
+            {/* Receipts */}
+            <div className="flex justify-between items-start mb-5 pb-5 border-b">
+              <div className="flex-1 flex gap-3">
+                <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center shrink-0 mt-1">
+                  <Mail size={12} className="text-green-700" />
+                </div>
+                <div>
+                  <p className="text-sm"><span className="font-medium">Receipts will be sent automatically</span> to customers after each payment</p>
+                  <p className="text-xs text-muted-foreground mt-1">You can customise your receipt by adding customer's information & billing details</p>
+                </div>
+              </div>
+              <Button variant="outline" size="sm" className="ml-4 shrink-0" onClick={() => setShowReceiptsModal(true)}>
+                Receipt Settings
+              </Button>
+            </div>
 
-              {/* Section 2: Page Settings */}
-              <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                <Box flex="1" display="flex" flexDirection="column" gap="spacing.3">
-                  {/* Redirect */}
-                  <Box display="flex" gap="spacing.3" alignItems="flex-start">
-                    <Box
-                      width="20px"
-                      height="20px"
-                      borderRadius="round"
-                      backgroundColor="surface.background.primary.subtle"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      flexShrink="0"
-                      marginTop="spacing.1"
-                    >
-                      <ArrowUpRight size={12} color="#1a56db" />
-                    </Box>
-                    <Text size="small">
-                      <Text as="span" weight="medium">Redirect</Text> customers to your website after payment
-                    </Text>
-                  </Box>
-
-                  {/* Shiprocket */}
-                  <Box display="flex" gap="spacing.3" alignItems="flex-start">
-                    <Box
-                      width="20px"
-                      height="20px"
-                      borderRadius="round"
-                      backgroundColor="surface.background.notice.subtle"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      flexShrink="0"
-                      marginTop="spacing.1"
-                    >
-                      <ShoppingCart size={12} color="#e65100" />
-                    </Box>
-                    <Text size="small">
-                      <Text as="span" weight="medium">Create orders on Shiprocket</Text> after customer pays on this page
-                    </Text>
-                  </Box>
-
-                  {/* Tracking */}
-                  <Box display="flex" gap="spacing.3" alignItems="flex-start">
-                    <Box
-                      width="20px"
-                      height="20px"
-                      borderRadius="round"
-                      backgroundColor="surface.background.information.subtle"
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      flexShrink="0"
-                      marginTop="spacing.1"
-                    >
-                      <BarChart3 size={12} color="#6200ea" />
-                    </Box>
-                    <Text size="small">
-                      <Text as="span" weight="medium">Track</Text> page usage with Facebook Pixel & Google Analytics
-                    </Text>
-                  </Box>
-
-                  <Text size="small" color="surface.text.gray.disabled" marginLeft="spacing.8">
-                    ...and more!
-                  </Text>
-                </Box>
-
-                <Box marginLeft="spacing.4" flexShrink="0">
-                  <Button variant="secondary" size="small" onClick={() => setShowSettingsModal(true)}>
-                    Page Settings
-                  </Button>
-                </Box>
-              </Box>
-            </Box>
-          </CardBody>
+            {/* Page Settings */}
+            <div className="flex justify-between items-start">
+              <div className="flex-1 flex flex-col gap-3">
+                {[
+                  { icon: ArrowUpRight, color: "text-blue-700", bg: "bg-blue-100", text: <>
+                    <span className="font-medium">Redirect</span> customers to your website after payment
+                  </> },
+                  { icon: ShoppingCart, color: "text-orange-700", bg: "bg-orange-100", text: <>
+                    <span className="font-medium">Create orders on Shiprocket</span> after customer pays on this page
+                  </> },
+                  { icon: BarChart3, color: "text-purple-700", bg: "bg-purple-100", text: <>
+                    <span className="font-medium">Track</span> page usage with Facebook Pixel & Google Analytics
+                  </> },
+                ].map((item, i) => (
+                  <div key={i} className="flex gap-3 items-start">
+                    <div className={`w-5 h-5 rounded-full ${item.bg} flex items-center justify-center shrink-0 mt-1`}>
+                      <item.icon size={12} className={item.color} />
+                    </div>
+                    <p className="text-sm">{item.text}</p>
+                  </div>
+                ))}
+                <p className="text-sm text-muted-foreground/60 ml-8">...and more!</p>
+              </div>
+              <Button variant="outline" size="sm" className="ml-4 shrink-0" onClick={() => setShowSettingsModal(true)}>
+                Page Settings
+              </Button>
+            </div>
+          </CardContent>
         </Card>
-      </Box>
+      </div>
 
-      {/* Help & Support floating button */}
-      <Box position="fixed" bottom="spacing.6" right="spacing.6">
-        <Button
-          variant="primary"
-          size="small"
-          onClick={() => toast.info("Help & Support coming soon")}
-        >
-          Help & Support
-        </Button>
-      </Box>
+      {/* Help button */}
+      <div className="fixed bottom-6 right-6">
+        <Button size="sm" onClick={() => toast.info("Help & Support coming soon")}>Help & Support</Button>
+      </div>
 
-      {/* Modals */}
-      <CurrentPaymentReceiptsModal
-        open={showReceiptsModal}
-        onClose={() => setShowReceiptsModal(false)}
-      />
-      <CurrentPageSettingsModal
-        open={showSettingsModal}
-        onClose={() => setShowSettingsModal(false)}
-      />
-    </Box>
+      <CurrentPaymentReceiptsModal open={showReceiptsModal} onClose={() => setShowReceiptsModal(false)} />
+      <CurrentPageSettingsModal open={showSettingsModal} onClose={() => setShowSettingsModal(false)} />
+    </div>
   );
 };
 

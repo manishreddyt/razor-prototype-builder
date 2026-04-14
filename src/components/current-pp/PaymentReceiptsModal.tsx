@@ -1,29 +1,16 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  Modal,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Box,
-  Button,
-  Text,
-  Heading,
-  RadioGroup,
-  Radio,
-  Switch,
-  TextInput,
-  SelectInput,
-  ActionList,
-  ActionListItem,
-  Checkbox,
-  Alert,
-  Badge,
-  Link,
-  TextArea,
-  FileUpload,
-} from "@razorpay/blade/components";
-import { ChevronUpIcon, ChevronDownIcon, ExternalLinkIcon, UploadIcon } from "@razorpay/blade/components";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChevronUp, ChevronDown, ExternalLink } from "lucide-react";
 
 interface PaymentFieldItem {
   id: string;
@@ -50,427 +37,193 @@ interface GstLineItem {
 
 export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGstChange }: PaymentReceiptsModalProps) => {
   const [receiptMode, setReceiptMode] = useState("auto");
-
-  // Customer info field selections
-  const [customerFields, setCustomerFields] = useState({
-    email: true,
-    phone: true,
-    name: false,
-    pan: false,
-  });
+  const [customerFields, setCustomerFields] = useState({ email: true, phone: true, name: false, pan: false });
   const [showCustomerInfo, setShowCustomerInfo] = useState(false);
-
-  // Billing details (80G)
   const [showBillingDetails, setShowBillingDetails] = useState(true);
   const [eightyGDescription, setEightyGDescription] = useState(
     "All donations made to us are eligible for tax exemption under 80G of IT act ITBA/EXM/S80G/2019-20/1XXXXXXX Dated DD/MM/YYYY"
   );
-
-  // GST Receipt
   const [gstEnabled, setGstEnabled] = useState(false);
   const [gstExpanded, setGstExpanded] = useState(true);
-
-  // Customer info expanded
   const [customerInfoExpanded, setCustomerInfoExpanded] = useState(true);
-
-  // 80G expanded
   const [billingExpanded, setBillingExpanded] = useState(true);
 
-  // Pre-fill GST line items from payment form fields
   const priceFields = paymentItems ? paymentItems.filter((f) => f.type === "price") : [];
   const initialGstItems: GstLineItem[] = priceFields.length > 0
-    ? priceFields.map((field, idx) => ({
-        id: `g${idx + 1}`,
-        item: field.label,
-        fieldName: field.label,
-        rate: field.rate || "",
-        taxRate: "",
-        hsnSac: "",
-      }))
+    ? priceFields.map((field, idx) => ({ id: `g${idx + 1}`, item: field.label, fieldName: field.label, rate: field.rate || "", taxRate: "", hsnSac: "" }))
     : [{ id: "g1", item: "", fieldName: "", rate: "", taxRate: "", hsnSac: "" }];
 
   const [gstLineItems, setGstLineItems] = useState<GstLineItem[]>(initialGstItems);
 
-  const handleSave = () => {
-    toast.success("Payment receipt settings saved!");
-    onClose();
-  };
-
-  const toggleCustomerField = (field: keyof typeof customerFields) => {
-    setCustomerFields((prev) => ({ ...prev, [field]: !prev[field] }));
-  };
-
-  const addGstLineItem = () => {
-    setGstLineItems([
-      ...gstLineItems,
-      { id: `g${Date.now()}`, item: "", fieldName: "", rate: "", taxRate: "", hsnSac: "" },
-    ]);
-  };
-
-  const updateGstLineItem = (id: string, field: keyof GstLineItem, value: string) => {
-    setGstLineItems(
-      gstLineItems.map((li) => (li.id === id ? { ...li, [field]: value } : li))
-    );
-  };
-
-  const removeGstLineItem = (id: string) => {
-    if (gstLineItems.length > 1) {
-      setGstLineItems(gstLineItems.filter((li) => li.id !== id));
-    }
-  };
+  const handleSave = () => { toast.success("Payment receipt settings saved!"); onClose(); };
+  const toggleCustomerField = (field: keyof typeof customerFields) => setCustomerFields((prev) => ({ ...prev, [field]: !prev[field] }));
+  const addGstLineItem = () => setGstLineItems([...gstLineItems, { id: `g${Date.now()}`, item: "", fieldName: "", rate: "", taxRate: "", hsnSac: "" }]);
+  const updateGstLineItem = (id: string, field: keyof GstLineItem, value: string) => setGstLineItems(gstLineItems.map((li) => (li.id === id ? { ...li, [field]: value } : li)));
+  const removeGstLineItem = (id: string) => { if (gstLineItems.length > 1) setGstLineItems(gstLineItems.filter((li) => li.id !== id)); };
 
   return (
-    <Modal isOpen={open} onDismiss={onClose} size="medium">
-      <ModalHeader title="Payment Receipts Settings" />
-      <ModalBody>
-        <Box display="flex" flexDirection="column" gap="spacing.5">
-          {/* Receipt mode */}
-          <RadioGroup
-            label="When to send receipts"
-            value={receiptMode}
-            onChange={({ value }) => setReceiptMode(value)}
-          >
-            <Radio value="auto" helpText="Receipts are emailed to customers immediately after payment.">
-              Send Receipts Automatically
-            </Radio>
-            <Radio value="manual" helpText="You may send receipts later from dashboard. Your own reference ID may be added too.">
-              Don't Send Receipts Automatically
-            </Radio>
-          </RadioGroup>
+    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Payment Receipts Settings</DialogTitle>
+        </DialogHeader>
 
-          {/* Links */}
-          <Box display="flex" gap="spacing.4">
-            <Link href="#" icon={ExternalLinkIcon} iconPosition="right" size="small">
-              Sample Receipt
-            </Link>
-            <Link href="#" icon={ExternalLinkIcon} iconPosition="right" size="small">
-              Learn More
-            </Link>
-          </Box>
+        <div className="flex flex-col gap-5">
+          {/* Receipt mode */}
+          <div>
+            <Label className="mb-2 block">When to send receipts</Label>
+            <RadioGroup value={receiptMode} onValueChange={setReceiptMode}>
+              <div className="flex items-start gap-2 mb-2">
+                <RadioGroupItem value="auto" id="auto" className="mt-1" />
+                <div>
+                  <Label htmlFor="auto">Send Receipts Automatically</Label>
+                  <p className="text-xs text-muted-foreground">Receipts are emailed to customers immediately after payment.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2">
+                <RadioGroupItem value="manual" id="manual" className="mt-1" />
+                <div>
+                  <Label htmlFor="manual">Don't Send Receipts Automatically</Label>
+                  <p className="text-xs text-muted-foreground">You may send receipts later from dashboard.</p>
+                </div>
+              </div>
+            </RadioGroup>
+          </div>
+
+          <div className="flex gap-4">
+            <a href="#" className="text-sm text-primary flex items-center gap-1"><ExternalLink className="h-3 w-3" />Sample Receipt</a>
+            <a href="#" className="text-sm text-primary flex items-center gap-1"><ExternalLink className="h-3 w-3" />Learn More</a>
+          </div>
 
           {/* GST Receipt Section */}
-          <Box
-            borderWidth="thin"
-            borderColor="surface.border.gray.muted"
-            borderRadius="medium"
-            overflow="hidden"
-          >
-            {/* GST Toggle Header */}
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              padding="spacing.4"
-              backgroundColor="surface.background.gray.moderate"
-            >
-              <Box display="flex" alignItems="center" gap="spacing.4">
-                <Switch
-                  accessibilityLabel="Enable GST Receipt"
-                  isChecked={gstEnabled}
-                  onChange={({ isChecked }) => {
-                    setGstEnabled(isChecked);
-                    onGstChange?.(isChecked);
-                    if (isChecked) setGstExpanded(true);
-                  }}
-                />
-                <Box>
-                  <Text size="medium" weight="semibold">GST Receipt</Text>
-                  <Text size="xsmall" color="surface.text.gray.muted">
-                    Generate GST-compliant invoice with customer & tax details
-                  </Text>
-                </Box>
-              </Box>
+          <div className="border rounded-md overflow-hidden">
+            <div className="flex items-center justify-between p-4 bg-muted">
+              <div className="flex items-center gap-4">
+                <Switch checked={gstEnabled} onCheckedChange={(v) => { setGstEnabled(v); onGstChange?.(v); if (v) setGstExpanded(true); }} />
+                <div>
+                  <p className="text-sm font-semibold">GST Receipt</p>
+                  <p className="text-xs text-muted-foreground">Generate GST-compliant invoice with customer & tax details</p>
+                </div>
+              </div>
               {gstEnabled && (
-                <Button
-                  variant="tertiary"
-                  size="small"
-                  icon={gstExpanded ? ChevronUpIcon : ChevronDownIcon}
-                  onClick={() => setGstExpanded(!gstExpanded)}
-                  accessibilityLabel={gstExpanded ? "Collapse" : "Expand"}
-                />
+                <Button variant="ghost" size="sm" onClick={() => setGstExpanded(!gstExpanded)}>
+                  {gstExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
               )}
-            </Box>
-
-            {/* GST Expanded Content */}
+            </div>
             {gstEnabled && gstExpanded && (
-              <Box padding="spacing.4" display="flex" flexDirection="column" gap="spacing.4">
-                {/* Required fields info */}
-                <Alert
-                  color="information"
-                  description="The following fields will be enabled on the payment page for GST invoice generation: Name, Billing Address, City, State, Pincode, and Customer GST (optional)."
-                  isFullWidth
-                  isDismissible={false}
-                />
-
-                {/* Item-wise details */}
-                <Box>
-                  <Heading size="small" marginBottom="spacing.3">Item Details</Heading>
-                  <Box display="flex" flexDirection="column" gap="spacing.3">
-                    {gstLineItems.map((li, idx) => (
-                      <Box
-                        key={li.id}
-                        borderWidth="thin"
-                        borderColor="surface.border.gray.muted"
-                        borderRadius="medium"
-                        padding="spacing.3"
-                        backgroundColor="surface.background.gray.moderate"
-                      >
-                        <Box display="flex" justifyContent="space-between" alignItems="center" marginBottom="spacing.3">
-                          <Text size="small" color="surface.text.gray.muted" weight="medium">
-                            Item {idx + 1}
-                          </Text>
-                          {gstLineItems.length > 1 && (
-                            <Button
-                              variant="tertiary"
-                              size="xsmall"
-                              color="negative"
-                              onClick={() => removeGstLineItem(li.id)}
-                            >
-                              Remove
-                            </Button>
-                          )}
-                        </Box>
-                        <Box display="flex" flexDirection="column" gap="spacing.3">
-                          <Box display="flex" gap="spacing.3">
-                            <Box flex="1">
-                              <TextInput
-                                label="Item Name"
-                                labelPosition="top"
-                                size="small"
-                                value={li.item}
-                                onChange={({ value }) => updateGstLineItem(li.id, "item", value ?? "")}
-                                placeholder="e.g., Online Course"
-                                helpText="Name shown on invoice"
-                              />
-                            </Box>
-                            <Box flex="1">
-                              <TextInput
-                                label="Item Field Name"
-                                labelPosition="top"
-                                size="small"
-                                value={li.fieldName}
-                                onChange={({ value }) => updateGstLineItem(li.id, "fieldName", value ?? "")}
-                                placeholder="e.g., Amount"
-                                helpText="Label shown on payment form"
-                              />
-                            </Box>
-                          </Box>
-                          <Box display="flex" gap="spacing.3">
-                            <Box flex="1">
-                              <TextInput
-                                label="Rate (₹)"
-                                labelPosition="top"
-                                size="small"
-                                value={li.rate}
-                                onChange={({ value }) => updateGstLineItem(li.id, "rate", value ?? "")}
-                                placeholder="0.00"
-                              />
-                            </Box>
-                            <Box flex="1">
-                              <SelectInput
-                                label="Tax Rate"
-                                labelPosition="top"
-                                size="small"
-                                value={li.taxRate}
-                                onChange={({ values }) => updateGstLineItem(li.id, "taxRate", values[0] ?? "")}
-                                placeholder="Select rate"
-                              >
-                                <ActionList>
-                                  <ActionListItem title="0%" value="0" />
-                                  <ActionListItem title="5%" value="5" />
-                                  <ActionListItem title="12%" value="12" />
-                                  <ActionListItem title="18%" value="18" />
-                                  <ActionListItem title="28%" value="28" />
-                                </ActionList>
-                              </SelectInput>
-                            </Box>
-                            <Box flex="1">
-                              <TextInput
-                                label="HSN/SAC Code"
-                                labelPosition="top"
-                                size="small"
-                                value={li.hsnSac}
-                                onChange={({ value }) => updateGstLineItem(li.id, "hsnSac", value ?? "")}
-                                placeholder="e.g., 9992"
-                              />
-                            </Box>
-                          </Box>
-                        </Box>
-                      </Box>
-                    ))}
-                  </Box>
-                  <Box marginTop="spacing.3">
-                    <Button variant="tertiary" size="small" onClick={addGstLineItem}>
-                      + Add another item
-                    </Button>
-                  </Box>
-                </Box>
-
-                {/* Tax calculation note */}
-                <Alert
-                  color="information"
-                  description="Tax rate will be auto-calculated based on the customer's billing address and your registered business address (CGST+SGST for intra-state, IGST for inter-state)."
-                  isFullWidth
-                  isDismissible={false}
-                />
-              </Box>
+              <div className="p-4 flex flex-col gap-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-xs text-blue-800">
+                  The following fields will be enabled on the payment page for GST invoice generation: Name, Billing Address, City, State, Pincode, and Customer GST (optional).
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold mb-3">Item Details</h4>
+                  {gstLineItems.map((li, idx) => (
+                    <div key={li.id} className="border rounded-md p-3 bg-muted mb-3">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-xs text-muted-foreground font-medium">Item {idx + 1}</span>
+                        {gstLineItems.length > 1 && (
+                          <Button variant="ghost" size="sm" className="text-destructive h-6" onClick={() => removeGstLineItem(li.id)}>Remove</Button>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div><Label className="text-xs">Item Name</Label><Input size={1} value={li.item} onChange={(e) => updateGstLineItem(li.id, "item", e.target.value)} placeholder="e.g., Online Course" className="mt-1" /></div>
+                        <div><Label className="text-xs">Item Field Name</Label><Input size={1} value={li.fieldName} onChange={(e) => updateGstLineItem(li.id, "fieldName", e.target.value)} placeholder="e.g., Amount" className="mt-1" /></div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div><Label className="text-xs">Rate (₹)</Label><Input size={1} value={li.rate} onChange={(e) => updateGstLineItem(li.id, "rate", e.target.value)} placeholder="0.00" className="mt-1" /></div>
+                        <div>
+                          <Label className="text-xs">Tax Rate</Label>
+                          <Select value={li.taxRate} onValueChange={(v) => updateGstLineItem(li.id, "taxRate", v)}>
+                            <SelectTrigger className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                            <SelectContent>
+                              {["0", "5", "12", "18", "28"].map((r) => <SelectItem key={r} value={r}>{r}%</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div><Label className="text-xs">HSN/SAC Code</Label><Input size={1} value={li.hsnSac} onChange={(e) => updateGstLineItem(li.id, "hsnSac", e.target.value)} placeholder="e.g., 9992" className="mt-1" /></div>
+                      </div>
+                    </div>
+                  ))}
+                  <Button variant="ghost" size="sm" onClick={addGstLineItem}>+ Add another item</Button>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3 text-xs text-blue-800">
+                  Tax rate will be auto-calculated based on the customer's billing address and your registered business address.
+                </div>
+              </div>
             )}
-          </Box>
+          </div>
 
-          {/* Customer Information on Receipt Section */}
-          <Box
-            borderWidth="thin"
-            borderColor="surface.border.gray.muted"
-            borderRadius="medium"
-            overflow="hidden"
-          >
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              padding="spacing.4"
-              backgroundColor="surface.background.gray.moderate"
-            >
-              <Box display="flex" alignItems="center" gap="spacing.4">
-                <Switch
-                  accessibilityLabel="Show customer information on receipt"
-                  isChecked={showCustomerInfo}
-                  onChange={({ isChecked }) => {
-                    setShowCustomerInfo(isChecked);
-                    if (isChecked) setCustomerInfoExpanded(true);
-                  }}
-                />
-                <Box>
-                  <Text size="medium" weight="semibold">Show customer's information on receipt</Text>
-                  <Text size="xsmall" color="surface.text.gray.muted">
-                    Include customer details like name and PAN on the payment receipt
-                  </Text>
-                </Box>
-              </Box>
+          {/* Customer Information */}
+          <div className="border rounded-md overflow-hidden">
+            <div className="flex items-center justify-between p-4 bg-muted">
+              <div className="flex items-center gap-4">
+                <Switch checked={showCustomerInfo} onCheckedChange={(v) => { setShowCustomerInfo(v); if (v) setCustomerInfoExpanded(true); }} />
+                <div>
+                  <p className="text-sm font-semibold">Show customer's information on receipt</p>
+                  <p className="text-xs text-muted-foreground">Include customer details like name and PAN on the payment receipt</p>
+                </div>
+              </div>
               {showCustomerInfo && (
-                <Button
-                  variant="tertiary"
-                  size="small"
-                  icon={customerInfoExpanded ? ChevronUpIcon : ChevronDownIcon}
-                  onClick={() => setCustomerInfoExpanded(!customerInfoExpanded)}
-                  accessibilityLabel={customerInfoExpanded ? "Collapse" : "Expand"}
-                />
+                <Button variant="ghost" size="sm" onClick={() => setCustomerInfoExpanded(!customerInfoExpanded)}>
+                  {customerInfoExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
               )}
-            </Box>
+            </div>
             {showCustomerInfo && customerInfoExpanded && (
-              <Box padding="spacing.4" display="flex" flexDirection="column" gap="spacing.4">
-                <Box display="flex" gap="spacing.5">
-                  <Checkbox
-                    isChecked={customerFields.name}
-                    onChange={() => toggleCustomerField("name")}
-                  >
-                    Customer Name
-                  </Checkbox>
-                  <Checkbox
-                    isChecked={customerFields.pan}
-                    onChange={() => toggleCustomerField("pan")}
-                  >
-                    PAN Number
-                  </Checkbox>
-                </Box>
-                <Box>
-                  <Text size="xsmall" color="surface.text.gray.muted" weight="medium" marginBottom="spacing.2">
-                    Always included
-                  </Text>
-                  <Box display="flex" gap="spacing.3">
-                    <Badge color="neutral" size="small">Email Address</Badge>
-                    <Badge color="neutral" size="small">Phone Number</Badge>
-                  </Box>
-                </Box>
-              </Box>
+              <div className="p-4 flex flex-col gap-4">
+                <div className="flex gap-5">
+                  <div className="flex items-center gap-2"><Checkbox checked={customerFields.name} onCheckedChange={() => toggleCustomerField("name")} /><Label>Customer Name</Label></div>
+                  <div className="flex items-center gap-2"><Checkbox checked={customerFields.pan} onCheckedChange={() => toggleCustomerField("pan")} /><Label>PAN Number</Label></div>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium mb-2">Always included</p>
+                  <div className="flex gap-3"><Badge variant="secondary">Email Address</Badge><Badge variant="secondary">Phone Number</Badge></div>
+                </div>
+              </div>
             )}
-          </Box>
+          </div>
 
-          {/* 80G Details on Receipt Section */}
-          <Box
-            borderWidth="thin"
-            borderColor="surface.border.gray.muted"
-            borderRadius="medium"
-            overflow="hidden"
-          >
-            <Box
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              padding="spacing.4"
-              backgroundColor="surface.background.gray.moderate"
-            >
-              <Box display="flex" alignItems="center" gap="spacing.4">
-                <Switch
-                  accessibilityLabel="Show 80G details on receipt"
-                  isChecked={showBillingDetails}
-                  onChange={({ isChecked }) => {
-                    setShowBillingDetails(isChecked);
-                    if (isChecked) setBillingExpanded(true);
-                  }}
-                />
-                <Box>
-                  <Text size="medium" weight="semibold">Show 80G Details on Receipt</Text>
-                  <Text size="xsmall" color="surface.text.gray.muted">
-                    Include 80G tax exemption details on the receipt for donors
-                  </Text>
-                </Box>
-              </Box>
+          {/* 80G Details */}
+          <div className="border rounded-md overflow-hidden">
+            <div className="flex items-center justify-between p-4 bg-muted">
+              <div className="flex items-center gap-4">
+                <Switch checked={showBillingDetails} onCheckedChange={(v) => { setShowBillingDetails(v); if (v) setBillingExpanded(true); }} />
+                <div>
+                  <p className="text-sm font-semibold">Show 80G Details on Receipt</p>
+                  <p className="text-xs text-muted-foreground">Include 80G tax exemption details on the receipt for donors</p>
+                </div>
+              </div>
               {showBillingDetails && (
-                <Button
-                  variant="tertiary"
-                  size="small"
-                  icon={billingExpanded ? ChevronUpIcon : ChevronDownIcon}
-                  onClick={() => setBillingExpanded(!billingExpanded)}
-                  accessibilityLabel={billingExpanded ? "Collapse" : "Expand"}
-                />
+                <Button variant="ghost" size="sm" onClick={() => setBillingExpanded(!billingExpanded)}>
+                  {billingExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </Button>
               )}
-            </Box>
+            </div>
             {showBillingDetails && billingExpanded && (
-              <Box padding="spacing.4" display="flex" flexDirection="column" gap="spacing.4">
-                {/* 80G Description */}
-                <TextArea
-                  label="80G Description"
-                  labelPosition="top"
-                  value={eightyGDescription}
-                  onChange={({ value }) => setEightyGDescription(value ?? "")}
-                  helpText="Sample 80G Receipt"
-                  numberOfLines={4}
-                />
-
-                {/* Signature Upload */}
-                <Box>
-                  <Text size="small" weight="medium" marginBottom="spacing.2">
-                    Signature of Authorised Person (Optional)
-                  </Text>
-                  <FileUpload
-                    uploadType="single"
-                    label="Upload Signature"
-                    helpText="Upload .png, .jpg or .jpeg file | 500 KB Max"
-                    acceptedFileTypes=".png,.jpg,.jpeg"
-                    maxSize={500 * 1024}
-                    onChange={({ fileList }) => {
-                      if (fileList.length > 0) {
-                        toast.success(`File "${fileList[0].name}" selected`);
-                      }
-                    }}
-                  />
-                </Box>
-              </Box>
+              <div className="p-4 flex flex-col gap-4">
+                <div>
+                  <Label>80G Description</Label>
+                  <Textarea value={eightyGDescription} onChange={(e) => setEightyGDescription(e.target.value)} className="mt-1" rows={4} />
+                  <p className="text-xs text-muted-foreground mt-1">Sample 80G Receipt</p>
+                </div>
+                <div>
+                  <Label>Signature of Authorised Person (Optional)</Label>
+                  <Input type="file" accept=".png,.jpg,.jpeg" className="mt-1" onChange={(e) => {
+                    if (e.target.files?.[0]) toast.success(`File "${e.target.files[0].name}" selected`);
+                  }} />
+                  <p className="text-xs text-muted-foreground mt-1">Upload .png, .jpg or .jpeg file | 500 KB Max</p>
+                </div>
+              </div>
             )}
-          </Box>
-        </Box>
-      </ModalBody>
-      <ModalFooter>
-        <Box display="flex" justifyContent="flex-end" gap="spacing.4" width="100%">
-          <Button variant="tertiary" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            Save
-          </Button>
-        </Box>
-      </ModalFooter>
-    </Modal>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
