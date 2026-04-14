@@ -1,24 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Copy, ExternalLink } from "lucide-react";
+import { Copy, Plus, Search } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Box,
-  Text,
-  Heading,
-  Button,
-  Badge,
-  TextInput,
-  Table,
-  TableHeader,
-  TableHeaderRow,
-  TableHeaderCell,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "@razorpay/blade/components";
-import { SearchIcon, PlusIcon } from "@razorpay/blade/components";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 
 const existingPages = [
   {
@@ -70,244 +57,132 @@ const PaymentPagesCurrent = () => {
     toast.success("Link copied to clipboard!");
   };
 
-  const tableData = filtered.map((p) => ({
-    id: p.id,
-    title: p.title,
-    totalSales: p.totalSales,
-    itemName: p.itemName,
-    itemPrice: p.itemPrice,
-    unitsSold: p.unitsSold,
-    pageUrl: p.pageUrl,
-    createdOn: p.createdOn,
-    status: p.status,
-  }));
-
   return (
     <DashboardLayout>
-      <Box>
-        {/* Top-level tabs + actions row */}
-        <Box
-          display="flex"
-          alignItems="center"
-          justifyContent="space-between"
-          borderBottomWidth="thin"
-          borderBottomColor="surface.border.gray.muted"
-          paddingBottom="spacing.0"
-        >
-          <Box display="flex" gap="spacing.0">
+      <div>
+        {/* Top-level tabs + actions */}
+        <div className="flex items-center justify-between border-b pb-0">
+          <div className="flex">
             {(["payment-pages", "products"] as TopTab[]).map((tab) => (
               <button
                 key={tab}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                className="bg-transparent border-none cursor-pointer px-4 py-3"
                 onClick={() => setTopTab(tab)}
               >
-                <Box
-                  paddingX="spacing.4"
-                  paddingY="spacing.3"
-                  borderBottomWidth="thick"
-                  borderBottomColor={topTab === tab ? "surface.border.primary.normal" : "transparent"}
+                <span
+                  className={`text-sm font-medium pb-3 border-b-2 ${
+                    topTab === tab ? "border-primary text-primary" : "border-transparent text-muted-foreground"
+                  }`}
                 >
-                  <Text
-                    size="small"
-                    weight="medium"
-                    color={topTab === tab ? "surface.text.primary.normal" : "surface.text.gray.muted"}
-                  >
-                    {tab === "payment-pages" ? "Payment Pages" : "Products"}
-                  </Text>
-                </Box>
+                  {tab === "payment-pages" ? "Payment Pages" : "Products"}
+                </span>
               </button>
             ))}
-          </Box>
-          <Box display="flex" alignItems="center" gap="spacing.3" paddingBottom="spacing.2">
-            <Button variant="tertiary" size="small" onClick={() => {}}>
-              Need help? Take a tour
-            </Button>
-            <Button variant="tertiary" size="small" onClick={() => {}}>
-              Documentation
-            </Button>
-            <Button
-              variant="primary"
-              size="medium"
-              icon={PlusIcon}
-              iconPosition="left"
-              onClick={() => navigate("/payment-pages-current/select")}
-            >
+          </div>
+          <div className="flex items-center gap-3 pb-2">
+            <Button variant="ghost" size="sm">Need help? Take a tour</Button>
+            <Button variant="ghost" size="sm">Documentation</Button>
+            <Button size="sm" onClick={() => navigate("/payment-pages-current/select")}>
+              <Plus className="h-4 w-4 mr-1" />
               Create Payment Page
             </Button>
-          </Box>
-        </Box>
+          </div>
+        </div>
 
-        {/* Sub-tabs: Payment Pages / Razorpay Webstore */}
-        <Box marginTop="spacing.3" marginBottom="spacing.1">
-          <Box
-            display="inline-flex"
-            alignItems="center"
-            backgroundColor="surface.background.gray.moderate"
-            borderRadius="medium"
-            padding="spacing.1"
-          >
+        {/* Sub-tabs */}
+        <div className="mt-3 mb-1">
+          <div className="inline-flex items-center bg-muted rounded-md p-1">
             {(["payment-pages", "webstore"] as SubTab[]).map((tab) => (
               <button
                 key={tab}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                className={`px-4 py-2 rounded-md text-sm font-medium border-none cursor-pointer ${
+                  subTab === tab ? "bg-background text-foreground" : "bg-transparent text-muted-foreground"
+                }`}
                 onClick={() => setSubTab(tab)}
               >
-                <Box
-                  paddingX="spacing.4"
-                  paddingY="spacing.2"
-                  borderRadius="medium"
-                  backgroundColor={subTab === tab ? "surface.background.gray.subtle" : "transparent"}
-                >
-                  <Text
-                    size="small"
-                    weight="medium"
-                    color={subTab === tab ? "surface.text.gray.normal" : "surface.text.gray.muted"}
-                  >
-                    {tab === "payment-pages" ? "Payment Pages" : "Razorpay Webstore"}
-                  </Text>
-                </Box>
+                {tab === "payment-pages" ? "Payment Pages" : "Razorpay Webstore"}
               </button>
             ))}
-          </Box>
-        </Box>
+          </div>
+        </div>
 
-        {/* Status filter tabs + Search */}
-        <Box marginTop="spacing.4" display="flex" flexDirection="column" gap="spacing.3">
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            {/* Status tabs */}
-            <Box
-              display="inline-flex"
-              alignItems="center"
-              backgroundColor="surface.background.gray.moderate"
-              borderRadius="medium"
-              padding="spacing.1"
-            >
-              {(["all", "active", "inactive"] as StatusTab[]).map((tab) => (
-                <button
-                  key={tab}
-                  style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-                  onClick={() => setStatusTab(tab)}
-                >
-                  <Box
-                    paddingX="spacing.4"
-                    paddingY="spacing.2"
-                    borderRadius="medium"
-                    backgroundColor={statusTab === tab ? "surface.background.primary.intense" : "transparent"}
-                  >
-                    <Text
-                      size="small"
-                      weight="medium"
-                      color={statusTab === tab ? "surface.text.staticWhite.normal" : "surface.text.gray.muted"}
-                    >
-                    {tab === "all" ? "All" : tab === "active" ? "Active" : "Inactive"}
-                  </Text>
-                  </Box>
-                </button>
-              ))}
-            </Box>
-
-            {/* Search */}
-            <Box width="240px">
-              <TextInput
-                label="Search"
-                labelPosition="left"
-                placeholder="Search by Title"
-                icon={SearchIcon}
-                value={searchTitle}
-                onChange={({ value }) => setSearchTitle(value ?? "")}
-                size="small"
-              />
-            </Box>
-          </Box>
-        </Box>
+        {/* Status filter + Search */}
+        <div className="mt-4 flex justify-between items-center">
+          <div className="inline-flex items-center bg-muted rounded-md p-1">
+            {(["all", "active", "inactive"] as StatusTab[]).map((tab) => (
+              <button
+                key={tab}
+                className={`px-4 py-2 rounded-md text-sm font-medium border-none cursor-pointer ${
+                  statusTab === tab ? "bg-primary text-primary-foreground" : "bg-transparent text-muted-foreground"
+                }`}
+                onClick={() => setStatusTab(tab)}
+              >
+                {tab === "all" ? "All" : tab === "active" ? "Active" : "Inactive"}
+              </button>
+            ))}
+          </div>
+          <div className="w-60 relative">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by Title"
+              value={searchTitle}
+              onChange={(e) => setSearchTitle(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+        </div>
 
         {/* Table */}
-        <Box marginTop="spacing.4">
-          <Table
-            data={{
-              nodes: tableData,
-            }}
-          >
-            {(tableData) => (
-              <>
-                <TableHeader>
-                  <TableHeaderRow>
-                    <TableHeaderCell>Title</TableHeaderCell>
-                    <TableHeaderCell>Total Sales</TableHeaderCell>
-                    <TableHeaderCell>Item Name</TableHeaderCell>
-                    <TableHeaderCell>Units Sold</TableHeaderCell>
-                    <TableHeaderCell>Page URL</TableHeaderCell>
-                    <TableHeaderCell>Created On</TableHeaderCell>
-                    <TableHeaderCell>Status</TableHeaderCell>
-                  </TableHeaderRow>
-                </TableHeader>
-                <TableBody>
-                  {tableData.map((row: typeof existingPages[0]) => (
-                    <TableRow key={row.id} item={row}>
-                      <TableCell>
-                        <RouterLink to={`/payment-pages-current/details/${row.id}`} style={{ textDecoration: "none" }}>
-                          <Text size="small" color="surface.text.primary.normal">{row.title}</Text>
-                        </RouterLink>
-                      </TableCell>
-                      <TableCell>
-                        <Text size="small">{row.totalSales}</Text>
-                      </TableCell>
-                      <TableCell>
-                        <Box>
-                          <Text size="small">{row.itemName}</Text>
-                          <Text size="xsmall" color="surface.text.gray.muted">{row.itemPrice}</Text>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Text size="small">{row.unitsSold}</Text>
-                      </TableCell>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap="spacing.2">
-                          <Text size="small" color="surface.text.primary.normal" truncateAfterLines={1}>
-                            {row.pageUrl}
-                          </Text>
-                          <Button
-                            variant="tertiary"
-                            size="xsmall"
-                            onClick={() => copyLink(row.pageUrl)}
-                            accessibilityLabel="Copy link"
-                          >
-                            Copy
-                          </Button>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Text size="small" color="surface.text.gray.muted">{row.createdOn}</Text>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          color={row.status === "Active" ? "positive" : "neutral"}
-                          size="small"
-                        >
-                          {row.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </>
-            )}
-          </Table>
-          {/* Pagination footer */}
-          <Box
-            paddingX="spacing.4"
-            paddingY="spacing.3"
-            borderTopWidth="thin"
-            borderTopColor="surface.border.gray.muted"
-            display="flex"
-            justifyContent="flex-end"
-          >
-            <Text size="xsmall" color="surface.text.gray.muted">
-              Showing 1 - {filtered.length}
-            </Text>
-          </Box>
-        </Box>
-      </Box>
+        <div className="mt-4 border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead className="bg-muted/50">
+              <tr>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Title</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Total Sales</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Item Name</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Units Sold</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Page URL</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Created On</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((row) => (
+                <tr key={row.id} className="border-t hover:bg-muted/30">
+                  <td className="px-4 py-3">
+                    <RouterLink to={`/payment-pages-current/details/${row.id}`} className="text-primary hover:underline">
+                      {row.title}
+                    </RouterLink>
+                  </td>
+                  <td className="px-4 py-3">{row.totalSales}</td>
+                  <td className="px-4 py-3">
+                    <div>{row.itemName}</div>
+                    <div className="text-xs text-muted-foreground">{row.itemPrice}</div>
+                  </td>
+                  <td className="px-4 py-3">{row.unitsSold}</td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-primary truncate max-w-[180px]">{row.pageUrl}</span>
+                      <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => copyLink(row.pageUrl)}>
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{row.createdOn}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant={row.status === "Active" ? "default" : "secondary"} className={row.status === "Active" ? "bg-green-100 text-green-800 hover:bg-green-100" : ""}>
+                      {row.status}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="px-4 py-3 border-t flex justify-end">
+            <span className="text-xs text-muted-foreground">Showing 1 - {filtered.length}</span>
+          </div>
+        </div>
+      </div>
     </DashboardLayout>
   );
 };

@@ -410,10 +410,10 @@ const PaymentLinks = () => {
     setGstCustomerName("");
     setGstNumber("");
     setPlaceOfSupply("");
-    setBillingAddress("");
-    setShippingAddress("");
+    setBillingAddressLine("");
+    setShippingAddressLine("");
     setShippingSameAsBilling(false);
-    setInvoiceItems([{ id: "1", name: "", qty: "", hsn: "", taxRate: "" }]);
+    setInvoiceItems([{ id: "1", name: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
   };
 
   const handleCreateLink = () => {

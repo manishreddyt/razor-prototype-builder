@@ -1,224 +1,123 @@
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import {
-  Box,
-  Heading,
-  Text,
-  Button,
-  Badge,
-  Card,
-  CardBody,
-} from "@razorpay/blade/components";
-import { CloseIcon } from "@razorpay/blade/components";
-import { IconButton } from "@razorpay/blade/components";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const CurrentSelectPageType = () => {
   const navigate = useNavigate();
 
   return (
-    <Box
-      minHeight="100vh"
-      backgroundColor="surface.background.primary.intense"
-      display="flex"
-      flexDirection="column"
-    >
+    <div className="min-h-screen bg-primary flex flex-col">
       {/* Close button */}
-      <Box display="flex" justifyContent="flex-end" padding="spacing.4">
-        <IconButton
-          icon={CloseIcon}
-          accessibilityLabel="Close"
+      <div className="flex justify-end p-4">
+        <button
           onClick={() => navigate("/payment-pages-current")}
-          size="large"
-          emphasis="subtle"
-        />
-      </Box>
+          className="text-white hover:text-white/80"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
 
       {/* Header */}
-      <Box textAlign="center" paddingTop="spacing.4" paddingBottom="spacing.8">
-        <Heading size="large" color="surface.text.staticWhite.normal">
-          Select page of your choice
-        </Heading>
-      </Box>
+      <div className="text-center pt-4 pb-8">
+        <h1 className="text-2xl font-bold text-white">Select page of your choice</h1>
+      </div>
 
       {/* Cards */}
-      <Box
-        flex="1"
-        display="flex"
-        alignItems="flex-start"
-        justifyContent="center"
-        gap="spacing.8"
-        paddingX="spacing.8"
-        paddingBottom="spacing.10"
-      >
+      <div className="flex-1 flex items-start justify-center gap-8 px-8 pb-10">
         {/* Payment Page Card */}
-        <Box width="420px">
-          <Card elevation="highRaised">
-            <CardBody>
-              <Box padding="spacing.0">
-                {/* Preview image area — realistic payment page mockup */}
-                <Box
-                  backgroundColor="surface.background.gray.subtle"
-                  borderRadius="medium"
-                  height="224px"
-                  position="relative"
-                  overflow="hidden"
-                  marginBottom="spacing.5"
-                  borderWidth="thin"
-                  borderColor="surface.border.gray.muted"
-                >
-                  <Box display="flex" height="100%" padding="spacing.3" gap="spacing.2">
-                    {/* Left: Page content side */}
-                    <Box flex="1" display="flex" flexDirection="column" overflow="hidden">
-                      {/* Logo + company */}
-                      <Box display="flex" alignItems="center" gap="spacing.2" marginBottom="spacing.2">
-                        <Box width="14px" height="14px" borderRadius="round" backgroundColor="surface.background.primary.intense" flexShrink="0" />
-                        <Box height="6px" width="48px" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
-                      </Box>
-                      {/* Title */}
-                      <Box height="8px" width="85%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                      <Box height="8px" width="60%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.2" />
-                      {/* Description lines */}
-                      <Box height="4px" width="100%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                      <Box height="4px" width="92%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                      <Box height="4px" width="85%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                      <Box height="4px" width="96%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                      <Box height="4px" width="70%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.2" />
-                      {/* Second paragraph */}
-                      <Box height="4px" width="100%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                      <Box height="4px" width="88%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                      <Box height="4px" width="75%" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
-                    </Box>
-                    {/* Right: Payment details side */}
-                    <Box width="140px" flexShrink="0" display="flex" flexDirection="column">
-                      <Box height="8px" width="72px" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.2" />
-                      <Box height="2px" width="20px" backgroundColor="surface.background.primary.intense" marginBottom="spacing.2" />
-                      {/* Product item 1 */}
-                      <Box display="flex" alignItems="center" gap="spacing.1" marginBottom="spacing.2">
-                        <Box width="20px" height="16px" borderRadius="small" backgroundColor="surface.background.gray.moderate" flexShrink="0" />
-                        <Box flex="1">
-                          <Box height="4px" width="80%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                          <Box height="4px" width="50%" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
-                        </Box>
-                      </Box>
-                      {/* Product item 2 */}
-                      <Box display="flex" alignItems="center" gap="spacing.1" marginBottom="spacing.2">
-                        <Box width="20px" height="16px" borderRadius="small" backgroundColor="surface.background.gray.moderate" flexShrink="0" />
-                        <Box flex="1">
-                          <Box height="4px" width="70%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                          <Box height="4px" width="45%" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
-                        </Box>
-                      </Box>
-                      {/* Product item 3 */}
-                      <Box display="flex" alignItems="center" gap="spacing.1" marginBottom="spacing.3">
-                        <Box width="20px" height="16px" borderRadius="small" backgroundColor="surface.background.gray.moderate" flexShrink="0" />
-                        <Box flex="1">
-                          <Box height="4px" width="75%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                          <Box height="4px" width="40%" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
-                        </Box>
-                      </Box>
-                      {/* Form fields */}
-                      <Box height="4px" width="28px" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                      <Box height="12px" width="100%" borderRadius="small" borderWidth="thin" borderColor="surface.border.gray.muted" marginBottom="spacing.2" />
-                      <Box height="4px" width="28px" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                      <Box height="12px" width="100%" borderRadius="small" borderWidth="thin" borderColor="surface.border.gray.muted" marginBottom="spacing.3" />
-                      {/* Pay button */}
-                      <Box height="16px" width="100%" backgroundColor="surface.background.primary.intense" borderRadius="small" />
-                    </Box>
-                  </Box>
-                </Box>
+        <div className="w-[420px]">
+          <Card className="shadow-xl">
+            <CardContent className="p-6">
+              {/* Preview image area */}
+              <div className="bg-muted rounded-lg h-56 relative overflow-hidden mb-5 border">
+                <div className="flex h-full p-3 gap-2">
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-3.5 h-3.5 rounded-full bg-primary shrink-0" />
+                      <div className="h-1.5 w-12 bg-muted-foreground/20 rounded" />
+                    </div>
+                    {[85, 60, 100, 92, 85, 96, 70, 100, 88, 75].map((w, i) => (
+                      <div key={i} className={`h-1 bg-muted-foreground/20 rounded mb-1`} style={{ width: `${w}%` }} />
+                    ))}
+                  </div>
+                  <div className="w-[140px] shrink-0 flex flex-col">
+                    <div className="h-2 w-[72px] bg-muted-foreground/20 rounded mb-2" />
+                    <div className="h-0.5 w-5 bg-primary mb-2" />
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-1 mb-2">
+                        <div className="w-5 h-4 rounded bg-muted-foreground/20 shrink-0" />
+                        <div className="flex-1">
+                          <div className="h-1 w-4/5 bg-muted-foreground/20 rounded mb-1" />
+                          <div className="h-1 w-1/2 bg-muted-foreground/20 rounded" />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="h-1 w-7 bg-muted-foreground/20 rounded mb-1" />
+                    <div className="h-3 w-full rounded border mb-2" />
+                    <div className="h-1 w-7 bg-muted-foreground/20 rounded mb-1" />
+                    <div className="h-3 w-full rounded border mb-3" />
+                    <div className="h-4 w-full bg-primary rounded" />
+                  </div>
+                </div>
+              </div>
 
-                {/* Content */}
-                <Box>
-                  <Heading size="medium" marginBottom="spacing.2">Payment page</Heading>
-                  <Text size="small" color="surface.text.gray.muted" marginBottom="spacing.1">
-                    Setup your own custom branded page. Collect payments for:
-                  </Text>
-                  <Text size="xsmall" color="surface.text.gray.disabled" marginBottom="spacing.5">
-                    Events & tickets &bull; Donations &bull; Fees &bull; Courses & more
-                  </Text>
-                  <Button
-                    variant="primary"
-                    onClick={() => navigate("/payment-pages-current/create")}
-                    iconPosition="right"
-                  >
-                    Select Payment page
-                  </Button>
-                </Box>
-              </Box>
-            </CardBody>
+              <h3 className="text-lg font-semibold mb-2">Payment page</h3>
+              <p className="text-sm text-muted-foreground mb-1">
+                Setup your own custom branded page. Collect payments for:
+              </p>
+              <p className="text-xs text-muted-foreground/60 mb-5">
+                Events & tickets &bull; Donations &bull; Fees &bull; Courses & more
+              </p>
+              <Button onClick={() => navigate("/payment-pages-current/create")}>
+                Select Payment page
+              </Button>
+            </CardContent>
           </Card>
-        </Box>
+        </div>
 
         {/* Razorpay Webstore Card */}
-        <Box width="420px">
-          <Card elevation="highRaised">
-            <CardBody>
-              <Box padding="spacing.0">
-                {/* Preview image area */}
-                <Box
-                  backgroundColor="surface.background.gray.moderate"
-                  borderRadius="medium"
-                  height="224px"
-                  position="relative"
-                  overflow="hidden"
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  marginBottom="spacing.5"
-                  borderWidth="thin"
-                  borderColor="surface.border.gray.muted"
-                >
-                  <Box position="absolute" padding="spacing.4">
-                    <Box height="12px" width="128px" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.3" />
-                    <Box display="flex" flexWrap="wrap" gap="spacing.2">
-                      {[1, 2, 3, 4].map((i) => (
-                        <Box
-                          key={i}
-                          width="48%"
-                          backgroundColor="surface.background.gray.moderate"
-                          borderRadius="medium"
-                          borderWidth="thin"
-                          borderColor="surface.border.gray.muted"
-                          padding="spacing.2"
-                        >
-                          <Box height="64px" width="100%" backgroundColor="surface.background.gray.subtle" borderRadius="small" marginBottom="spacing.2" />
-                          <Box height="8px" width="75%" backgroundColor="surface.background.gray.moderate" borderRadius="small" marginBottom="spacing.1" />
-                          <Box height="8px" width="50%" backgroundColor="surface.background.gray.moderate" borderRadius="small" />
-                        </Box>
-                      ))}
-                    </Box>
-                  </Box>
-                  <Box position="absolute" bottom="spacing.3" right="spacing.3">
-                    <Text size="xsmall" color="surface.text.gray.muted">Catalogue Preview</Text>
-                  </Box>
-                </Box>
+        <div className="w-[420px]">
+          <Card className="shadow-xl">
+            <CardContent className="p-6">
+              <div className="bg-muted rounded-lg h-56 relative overflow-hidden flex items-center justify-center mb-5 border">
+                <div className="absolute p-4">
+                  <div className="h-3 w-32 bg-muted-foreground/20 rounded mb-3" />
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="w-[48%] bg-muted rounded-lg border p-2">
+                        <div className="h-16 w-full bg-background rounded mb-2" />
+                        <div className="h-2 w-3/4 bg-muted-foreground/20 rounded mb-1" />
+                        <div className="h-2 w-1/2 bg-muted-foreground/20 rounded" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="absolute bottom-3 right-3">
+                  <span className="text-xs text-muted-foreground">Catalogue Preview</span>
+                </div>
+              </div>
 
-                {/* Content */}
-                <Box>
-                  <Box display="flex" alignItems="center" gap="spacing.3" marginBottom="spacing.2">
-                    <Heading size="medium">Razorpay Webstore</Heading>
-                    <Badge color="information" size="small">Beta</Badge>
-                  </Box>
-                  <Text size="small" color="surface.text.gray.muted" marginBottom="spacing.1">
-                    Showcase products on your online Razorpay Webstore and start accepting orders.
-                  </Text>
-                  <Text size="xsmall" color="surface.text.gray.disabled" marginBottom="spacing.5">
-                    Add multiple images and detailed descriptions for your products & deliver...
-                  </Text>
-                  <Button
-                    variant="secondary"
-                    onClick={() => toast.info("Razorpay Webstore coming soon")}
-                  >
-                    Explore Webstore
-                  </Button>
-                </Box>
-              </Box>
-            </CardBody>
+              <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-lg font-semibold">Razorpay Webstore</h3>
+                <Badge variant="secondary">Beta</Badge>
+              </div>
+              <p className="text-sm text-muted-foreground mb-1">
+                Showcase products on your online Razorpay Webstore and start accepting orders.
+              </p>
+              <p className="text-xs text-muted-foreground/60 mb-5">
+                Add multiple images and detailed descriptions for your products & deliver...
+              </p>
+              <Button variant="outline" onClick={() => toast.info("Razorpay Webstore coming soon")}>
+                Explore Webstore
+              </Button>
+            </CardContent>
           </Card>
-        </Box>
-      </Box>
-
-    </Box>
+        </div>
+      </div>
+    </div>
   );
 };
 
