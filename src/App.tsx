@@ -49,6 +49,7 @@ import AIAppBuilderEditor from "./pages/AIAppBuilderEditor";
 import AIAppBuilderDetail from "./pages/AIAppBuilderDetail";
 import Orders from "./pages/Orders";
 import AccountSettings from "./pages/AccountSettings";
+import ReceiptsSettings from "./pages/ReceiptsSettings";
 import NotFound from "./pages/NotFound";
 import { PaymentLinkCheckout } from "./components/PaymentLinkCheckout";
 import { PaymentSuccess } from "./components/PaymentSuccess";
@@ -135,6 +136,7 @@ const App = () => {
           <Route path="/apps/emergent/:id" element={<AIAppBuilderDetail />} />
           <Route path="/apps/:appId" element={<InstalledApp />} />
           <Route path="/account-settings" element={<AccountSettings />} />
+          <Route path="/account-settings/receipts" element={<ReceiptsSettings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
