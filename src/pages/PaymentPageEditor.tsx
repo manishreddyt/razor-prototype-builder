@@ -327,13 +327,13 @@ If they ask about features that aren't implemented, politely explain they can us
               onClick={() => { setUiMode("classic"); if (rightPanel === "ai") setRightPanel(null); }}
               className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${uiMode === "classic" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
-              Classic
+              Current
             </button>
             <button
               onClick={() => setUiMode("visual")}
               className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${uiMode === "visual" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
             >
-              Visual
+              Proposed
             </button>
           </div>
 

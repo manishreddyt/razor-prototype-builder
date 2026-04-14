@@ -45,6 +45,7 @@ const navSections = [
       { icon: Sparkles, label: "Magic Checkout", path: "/magic-checkout" },
       { icon: Link2, label: "Payment Links", path: "/payment-links" },
       { icon: FileText, label: "Payment Pages", path: "/payment-pages" },
+      { icon: FileText, label: "Payment Pages", path: "/payment-pages-current", badge: "Current" },
       { icon: CreditCard, label: "Subscriptions", path: "/subscriptions" },
     ],
   },

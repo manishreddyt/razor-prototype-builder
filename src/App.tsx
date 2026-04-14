@@ -14,6 +14,10 @@ import CreatePaymentPage from "./pages/CreatePaymentPage";
 import PaymentPageEditor from "./pages/PaymentPageEditor";
 import PaymentPagePublic from "./pages/PaymentPagePublic";
 import PaymentPageManage from "./pages/PaymentPageManage";
+import PaymentPagesCurrent from "./pages/PaymentPagesCurrent";
+import CurrentSelectPageType from "./pages/CurrentSelectPageType";
+import CurrentCreatePaymentPage from "./pages/CurrentCreatePaymentPage";
+import CurrentPagePublished from "./pages/CurrentPagePublished";
 import Subscriptions from "./pages/Subscriptions";
 import WebsiteBuilder from "./pages/WebsiteBuilder";
 import SmartPageCreate from "./pages/SmartPageCreate";
@@ -92,6 +96,10 @@ const App = () => {
           <Route path="/payment-pages/create" element={<CreatePaymentPage />} />
           <Route path="/payment-pages/editor" element={<PaymentPageEditor />} />
           <Route path="/payment-pages/manage" element={<PaymentPageManage />} />
+          <Route path="/payment-pages-current" element={<PaymentPagesCurrent />} />
+          <Route path="/payment-pages-current/select" element={<CurrentSelectPageType />} />
+          <Route path="/payment-pages-current/create" element={<CurrentCreatePaymentPage />} />
+          <Route path="/payment-pages-current/published" element={<CurrentPagePublished />} />
           <Route path="/payment/:slug" element={<PaymentPagePublic />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/orders" element={<Orders />} />
