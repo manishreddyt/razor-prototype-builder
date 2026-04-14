@@ -18,6 +18,7 @@ import PaymentPagesCurrent from "./pages/PaymentPagesCurrent";
 import CurrentSelectPageType from "./pages/CurrentSelectPageType";
 import CurrentCreatePaymentPage from "./pages/CurrentCreatePaymentPage";
 import CurrentPagePublished from "./pages/CurrentPagePublished";
+import CurrentPaymentPageDetails from "./pages/CurrentPaymentPageDetails";
 import Subscriptions from "./pages/Subscriptions";
 import WebsiteBuilder from "./pages/WebsiteBuilder";
 import SmartPageCreate from "./pages/SmartPageCreate";
@@ -100,6 +101,7 @@ const App = () => {
           <Route path="/payment-pages-current/select" element={<CurrentSelectPageType />} />
           <Route path="/payment-pages-current/create" element={<CurrentCreatePaymentPage />} />
           <Route path="/payment-pages-current/published" element={<CurrentPagePublished />} />
+          <Route path="/payment-pages-current/details/:pageId" element={<CurrentPaymentPageDetails />} />
           <Route path="/payment/:slug" element={<PaymentPagePublic />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/orders" element={<Orders />} />

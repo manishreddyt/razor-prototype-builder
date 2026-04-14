@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Copy, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
@@ -245,13 +245,9 @@ const PaymentPagesCurrent = () => {
                   {tableData.map((row: typeof existingPages[0]) => (
                     <TableRow key={row.id} item={row}>
                       <TableCell>
-                        <Button
-                          variant="tertiary"
-                          size="small"
-                          onClick={() => toast.info(`Details for "${row.title}" coming soon`)}
-                        >
-                          {row.title}
-                        </Button>
+                        <RouterLink to={`/payment-pages-current/details/${row.id}`} style={{ textDecoration: "none" }}>
+                          <Text size="small" color="surface.text.primary.normal">{row.title}</Text>
+                        </RouterLink>
                       </TableCell>
                       <TableCell>
                         <Text size="small">{row.totalSales}</Text>
