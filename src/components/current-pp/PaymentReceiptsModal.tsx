@@ -13,6 +13,9 @@ import {
   Radio,
   Switch,
   TextInput,
+  SelectInput,
+  ActionList,
+  ActionListItem,
   Checkbox,
   Alert,
   Badge,
@@ -37,6 +40,7 @@ interface PaymentReceiptsModalProps {
 interface GstLineItem {
   id: string;
   item: string;
+  fieldName: string;
   rate: string;
   taxRate: string;
   hsnSac: string;
@@ -61,17 +65,24 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
   const [gstEnabled, setGstEnabled] = useState(false);
   const [gstExpanded, setGstExpanded] = useState(true);
 
+  // Customer info expanded
+  const [customerInfoExpanded, setCustomerInfoExpanded] = useState(true);
+
+  // 80G expanded
+  const [billingExpanded, setBillingExpanded] = useState(true);
+
   // Pre-fill GST line items from payment form fields
   const priceFields = paymentItems ? paymentItems.filter((f) => f.type === "price") : [];
   const initialGstItems: GstLineItem[] = priceFields.length > 0
     ? priceFields.map((field, idx) => ({
         id: `g${idx + 1}`,
         item: field.label,
+        fieldName: field.label,
         rate: field.rate || "",
         taxRate: "",
         hsnSac: "",
       }))
-    : [{ id: "g1", item: "", rate: "", taxRate: "", hsnSac: "" }];
+    : [{ id: "g1", item: "", fieldName: "", rate: "", taxRate: "", hsnSac: "" }];
 
   const [gstLineItems, setGstLineItems] = useState<GstLineItem[]>(initialGstItems);
 
@@ -87,7 +98,7 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
   const addGstLineItem = () => {
     setGstLineItems([
       ...gstLineItems,
-      { id: `g${Date.now()}`, item: "", rate: "", taxRate: "", hsnSac: "" },
+      { id: `g${Date.now()}`, item: "", fieldName: "", rate: "", taxRate: "", hsnSac: "" },
     ]);
   };
 
@@ -224,8 +235,22 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
                                 value={li.item}
                                 onChange={({ value }) => updateGstLineItem(li.id, "item", value ?? "")}
                                 placeholder="e.g., Online Course"
+                                helpText="Name shown on invoice"
                               />
                             </Box>
+                            <Box flex="1">
+                              <TextInput
+                                label="Item Field Name"
+                                labelPosition="top"
+                                size="small"
+                                value={li.fieldName}
+                                onChange={({ value }) => updateGstLineItem(li.id, "fieldName", value ?? "")}
+                                placeholder="e.g., Amount"
+                                helpText="Label shown on payment form"
+                              />
+                            </Box>
+                          </Box>
+                          <Box display="flex" gap="spacing.3">
                             <Box flex="1">
                               <TextInput
                                 label="Rate (₹)"
@@ -236,18 +261,23 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
                                 placeholder="0.00"
                               />
                             </Box>
-                          </Box>
-                          <Box display="flex" gap="spacing.3">
                             <Box flex="1">
-                              <TextInput
-                                label="Tax Rate (%)"
+                              <SelectInput
+                                label="Tax Rate"
                                 labelPosition="top"
                                 size="small"
                                 value={li.taxRate}
-                                onChange={({ value }) => updateGstLineItem(li.id, "taxRate", value ?? "")}
-                                placeholder="e.g., 18"
-                                helpText="0%, 5%, 12%, 18%, or 28%"
-                              />
+                                onChange={({ values }) => updateGstLineItem(li.id, "taxRate", values[0] ?? "")}
+                                placeholder="Select rate"
+                              >
+                                <ActionList>
+                                  <ActionListItem title="0%" value="0" />
+                                  <ActionListItem title="5%" value="5" />
+                                  <ActionListItem title="12%" value="12" />
+                                  <ActionListItem title="18%" value="18" />
+                                  <ActionListItem title="28%" value="28" />
+                                </ActionList>
+                              </SelectInput>
                             </Box>
                             <Box flex="1">
                               <TextInput
@@ -282,57 +312,123 @@ export const CurrentPaymentReceiptsModal = ({ open, onClose, paymentItems, onGst
             )}
           </Box>
 
-          {/* Show customer's information on receipt */}
-          <Checkbox
-            isChecked={showCustomerInfo}
-            onChange={({ isChecked }) => setShowCustomerInfo(isChecked)}
-            helpText="Include customer details like name and PAN on the payment receipt"
+          {/* Customer Information on Receipt Section */}
+          <Box
+            borderWidth="thin"
+            borderColor="surface.border.gray.muted"
+            borderRadius="medium"
+            overflow="hidden"
           >
-            Show customer's information on receipt
-          </Checkbox>
-          {showCustomerInfo && (
-            <Box marginLeft="spacing.7" display="flex" flexDirection="column" gap="spacing.4">
-              <Box display="flex" gap="spacing.5">
-                <Checkbox
-                  isChecked={customerFields.name}
-                  onChange={() => toggleCustomerField("name")}
-                >
-                  Customer Name
-                </Checkbox>
-                <Checkbox
-                  isChecked={customerFields.pan}
-                  onChange={() => toggleCustomerField("pan")}
-                >
-                  PAN Number
-                </Checkbox>
-              </Box>
-              <Box>
-                <Text size="xsmall" color="surface.text.gray.muted" weight="medium" marginBottom="spacing.2">
-                  Always included
-                </Text>
-                <Box display="flex" gap="spacing.3">
-                  <Badge color="neutral" size="small">Email Address</Badge>
-                  <Badge color="neutral" size="small">Phone Number</Badge>
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              padding="spacing.4"
+              backgroundColor="surface.background.gray.moderate"
+            >
+              <Box display="flex" alignItems="center" gap="spacing.4">
+                <Switch
+                  accessibilityLabel="Show customer information on receipt"
+                  isChecked={showCustomerInfo}
+                  onChange={({ isChecked }) => {
+                    setShowCustomerInfo(isChecked);
+                    if (isChecked) setCustomerInfoExpanded(true);
+                  }}
+                />
+                <Box>
+                  <Text size="medium" weight="semibold">Show customer's information on receipt</Text>
+                  <Text size="xsmall" color="surface.text.gray.muted">
+                    Include customer details like name and PAN on the payment receipt
+                  </Text>
                 </Box>
               </Box>
+              {showCustomerInfo && (
+                <Button
+                  variant="tertiary"
+                  size="small"
+                  icon={customerInfoExpanded ? ChevronUpIcon : ChevronDownIcon}
+                  onClick={() => setCustomerInfoExpanded(!customerInfoExpanded)}
+                  accessibilityLabel={customerInfoExpanded ? "Collapse" : "Expand"}
+                />
+              )}
             </Box>
-          )}
+            {showCustomerInfo && customerInfoExpanded && (
+              <Box padding="spacing.4" display="flex" flexDirection="column" gap="spacing.4">
+                <Box display="flex" gap="spacing.5">
+                  <Checkbox
+                    isChecked={customerFields.name}
+                    onChange={() => toggleCustomerField("name")}
+                  >
+                    Customer Name
+                  </Checkbox>
+                  <Checkbox
+                    isChecked={customerFields.pan}
+                    onChange={() => toggleCustomerField("pan")}
+                  >
+                    PAN Number
+                  </Checkbox>
+                </Box>
+                <Box>
+                  <Text size="xsmall" color="surface.text.gray.muted" weight="medium" marginBottom="spacing.2">
+                    Always included
+                  </Text>
+                  <Box display="flex" gap="spacing.3">
+                    <Badge color="neutral" size="small">Email Address</Badge>
+                    <Badge color="neutral" size="small">Phone Number</Badge>
+                  </Box>
+                </Box>
+              </Box>
+            )}
+          </Box>
 
-          {/* Show 80G Details on Receipt */}
-          <Checkbox
-            isChecked={showBillingDetails}
-            onChange={({ isChecked }) => setShowBillingDetails(isChecked)}
-            helpText="Include 80G tax exemption details on the receipt for donors"
+          {/* 80G Details on Receipt Section */}
+          <Box
+            borderWidth="thin"
+            borderColor="surface.border.gray.muted"
+            borderRadius="medium"
+            overflow="hidden"
           >
-            Show 80G Details on Receipt
-          </Checkbox>
-          {showBillingDetails && (
-            <Box marginLeft="spacing.7">
-              <Button variant="tertiary" size="small">
-                + Add your Billing details
-              </Button>
+            <Box
+              display="flex"
+              alignItems="center"
+              justifyContent="space-between"
+              padding="spacing.4"
+              backgroundColor="surface.background.gray.moderate"
+            >
+              <Box display="flex" alignItems="center" gap="spacing.4">
+                <Switch
+                  accessibilityLabel="Show 80G details on receipt"
+                  isChecked={showBillingDetails}
+                  onChange={({ isChecked }) => {
+                    setShowBillingDetails(isChecked);
+                    if (isChecked) setBillingExpanded(true);
+                  }}
+                />
+                <Box>
+                  <Text size="medium" weight="semibold">Show 80G Details on Receipt</Text>
+                  <Text size="xsmall" color="surface.text.gray.muted">
+                    Include 80G tax exemption details on the receipt for donors
+                  </Text>
+                </Box>
+              </Box>
+              {showBillingDetails && (
+                <Button
+                  variant="tertiary"
+                  size="small"
+                  icon={billingExpanded ? ChevronUpIcon : ChevronDownIcon}
+                  onClick={() => setBillingExpanded(!billingExpanded)}
+                  accessibilityLabel={billingExpanded ? "Collapse" : "Expand"}
+                />
+              )}
             </Box>
-          )}
+            {showBillingDetails && billingExpanded && (
+              <Box padding="spacing.4">
+                <Button variant="tertiary" size="small">
+                  + Add your Billing details
+                </Button>
+              </Box>
+            )}
+          </Box>
         </Box>
       </ModalBody>
       <ModalFooter>
