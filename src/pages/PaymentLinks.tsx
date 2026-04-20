@@ -120,15 +120,25 @@ const PaymentLinks = () => {
   const [shippingCity, setShippingCity] = useState("");
   const [shippingState, setShippingState] = useState("");
   const [shippingSameAsBilling, setShippingSameAsBilling] = useState(false);
-  const [invoiceItems, setInvoiceItems] = useState([{ id: "1", name: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
+  const [showShippingAddress, setShowShippingAddress] = useState(false);
+  const [itemSuggestionOpen, setItemSuggestionOpen] = useState<number | null>(null);
+  const [invoiceItems, setInvoiceItems] = useState([{ id: "1", name: "", description: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
   // Detail dialog receipt generation state
   const [detailReceiptGenerated, setDetailReceiptGenerated] = useState(false);
   const [detailIncludeGst, setDetailIncludeGst] = useState(false);
   const [detailGstCustomerName, setDetailGstCustomerName] = useState("");
   const [detailGstNumber, setDetailGstNumber] = useState("");
   const [detailGstPlaceOfSupply, setDetailGstPlaceOfSupply] = useState("");
-  const [detailGstBillingAddress, setDetailGstBillingAddress] = useState("");
-  const [detailInvoiceItems, setDetailInvoiceItems] = useState([{ id: "1", name: "", qty: "", hsn: "", taxRate: "" }]);
+  const [detailBillingAddress, setDetailBillingAddress] = useState("");
+  const [detailBillingCity, setDetailBillingCity] = useState("");
+  const [detailBillingState, setDetailBillingState] = useState("");
+  const [detailBillingPincode, setDetailBillingPincode] = useState("");
+  const [detailShippingSameAsBilling, setDetailShippingSameAsBilling] = useState(false);
+  const [detailShippingAddress, setDetailShippingAddress] = useState("");
+  const [detailShippingCity, setDetailShippingCity] = useState("");
+  const [detailShippingState, setDetailShippingState] = useState("");
+  const [detailShippingPincode, setDetailShippingPincode] = useState("");
+  const [detailInvoiceItems, setDetailInvoiceItems] = useState([{ id: "1", name: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
   const [showGstModal, setShowGstModal] = useState(false);
   const [formData, setFormData] = useState({
     description: "",
@@ -372,8 +382,16 @@ const PaymentLinks = () => {
     setDetailGstCustomerName("");
     setDetailGstNumber("");
     setDetailGstPlaceOfSupply("");
-    setDetailGstBillingAddress("");
-    setDetailInvoiceItems([{ id: "1", name: "", qty: "", hsn: "", taxRate: "" }]);
+    setDetailBillingAddress("");
+    setDetailBillingCity("");
+    setDetailBillingState("");
+    setDetailBillingPincode("");
+    setDetailShippingSameAsBilling(false);
+    setDetailShippingAddress("");
+    setDetailShippingCity("");
+    setDetailShippingState("");
+    setDetailShippingPincode("");
+    setDetailInvoiceItems([{ id: "1", name: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
   }, [selectedLink]);
 
   // Map link status to display status
@@ -413,7 +431,9 @@ const PaymentLinks = () => {
     setBillingAddressLine("");
     setShippingAddressLine("");
     setShippingSameAsBilling(false);
-    setInvoiceItems([{ id: "1", name: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
+    setShowShippingAddress(false);
+    setItemSuggestionOpen(null);
+    setInvoiceItems([{ id: "1", name: "", description: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
   };
 
   const handleCreateLink = () => {
@@ -759,37 +779,48 @@ const PaymentLinks = () => {
               </div>
 
               <div className="px-4 py-4 space-y-4">
-                {/* Single checkbox */}
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="sendReceiptAuto"
-                    checked={sendReceiptAuto}
-                    onCheckedChange={(checked) => setSendReceiptAuto(!!checked)}
-                  />
-                  <label htmlFor="sendReceiptAuto" className="text-sm font-medium text-foreground cursor-pointer">
-                    Send Payment Confirmation Receipt PDF
-                  </label>
-                </div>
-
-                {/* Links */}
-                <div className="flex items-center gap-4">
-                  <a href="https://razorpay.com/docs/payments/payment-pages/receipt/#pdf-receipt-to-customers" target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                    Sample Receipt <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                  <a href="https://razorpay.com/docs/payments/payment-pages/receipt/" target="_blank" rel="noreferrer" className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                    Know More <ExternalLink className="h-3.5 w-3.5" />
-                  </a>
-                </div>
-
-                <Separator />
-
-                {/* GST Receipt Toggle */}
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-foreground">GST Receipt</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">Generate GST-compliant invoice with customer &amp; tax details</p>
+                {/* Receipt type — mutually exclusive checkboxes */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="sendReceiptAuto"
+                      checked={sendReceiptAuto}
+                      onCheckedChange={(checked) => {
+                        setSendReceiptAuto(!!checked);
+                        if (checked) setGstReceiptEnabled(false);
+                      }}
+                    />
+                    <div>
+                      <label htmlFor="sendReceiptAuto" className="text-sm font-medium text-foreground cursor-pointer">
+                        Send Payment Confirmation Receipt PDF
+                      </label>
+                      <div className="flex items-center gap-4 mt-0.5">
+                        <a href="https://razorpay.com/docs/payments/payment-pages/receipt/#pdf-receipt-to-customers" target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                          Sample Receipt <ExternalLink className="h-3 w-3" />
+                        </a>
+                        <a href="https://razorpay.com/docs/payments/payment-pages/receipt/" target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                          Know More <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                  <Switch checked={gstReceiptEnabled} onCheckedChange={setGstReceiptEnabled} />
+
+                  <div className="flex items-start gap-2">
+                    <Checkbox
+                      id="gstReceiptEnabled"
+                      checked={gstReceiptEnabled}
+                      onCheckedChange={(checked) => {
+                        setGstReceiptEnabled(!!checked);
+                        if (checked) setSendReceiptAuto(false);
+                      }}
+                    />
+                    <div>
+                      <label htmlFor="gstReceiptEnabled" className="text-sm font-medium text-foreground cursor-pointer">
+                        GST Receipt
+                      </label>
+                      <p className="text-xs text-muted-foreground mt-0.5">Generate GST-compliant invoice with customer &amp; tax details</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* GST Invoice Details Form */}
@@ -876,63 +907,78 @@ const PaymentLinks = () => {
                     </div>
 
                     <div>
-                      <label className="text-xs text-muted-foreground mb-1.5 block">Shipping Address</label>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Checkbox
-                          id="shippingSameAsBilling"
-                          checked={shippingSameAsBilling}
-                          onCheckedChange={(checked) => {
-                            setShippingSameAsBilling(!!checked);
-                            if (checked) {
-                              setShippingAddressLine(billingAddressLine);
-                              setShippingPincode(billingPincode);
-                              setShippingCity(billingCity);
-                              setShippingState(billingState);
-                            }
-                          }}
-                        />
-                        <label htmlFor="shippingSameAsBilling" className="text-xs text-muted-foreground cursor-pointer">
-                          Same as billing address
-                        </label>
-                      </div>
-                      {!shippingSameAsBilling && (
+                      {!showShippingAddress ? (
+                        <button
+                          type="button"
+                          onClick={() => setShowShippingAddress(true)}
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                        >
+                          + Add Shipping Address
+                        </button>
+                      ) : (
                         <div className="space-y-2">
-                          <Input
-                            placeholder="Street address"
-                            value={shippingAddressLine}
-                            onChange={(e) => setShippingAddressLine(e.target.value)}
-                          />
-                          <div className="grid grid-cols-3 gap-2">
-                            <div>
-                              <Input
-                                placeholder="Pincode"
-                                maxLength={6}
-                                value={shippingPincode}
-                                onChange={(e) => {
-                                  const pin = e.target.value.replace(/\D/g, "");
-                                  setShippingPincode(pin);
-                                  if (pin.length === 6 && PINCODE_DB[pin]) {
-                                    setShippingCity(PINCODE_DB[pin].city);
-                                    setShippingState(PINCODE_DB[pin].state);
-                                  }
-                                }}
-                              />
-                            </div>
-                            <div>
-                              <Input
-                                placeholder="City"
-                                value={shippingCity}
-                                onChange={(e) => setShippingCity(e.target.value)}
-                              />
-                            </div>
-                            <div>
-                              <Input
-                                placeholder="State"
-                                value={shippingState}
-                                onChange={(e) => setShippingState(e.target.value)}
-                              />
-                            </div>
+                          <div className="flex items-center justify-between">
+                            <label className="text-xs text-muted-foreground">Shipping Address</label>
+                            <button
+                              type="button"
+                              onClick={() => { setShowShippingAddress(false); setShippingSameAsBilling(false); setShippingAddressLine(""); setShippingPincode(""); setShippingCity(""); setShippingState(""); }}
+                              className="text-xs text-muted-foreground hover:text-destructive"
+                            >
+                              Remove
+                            </button>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id="shippingSameAsBilling"
+                              checked={shippingSameAsBilling}
+                              onCheckedChange={(checked) => {
+                                setShippingSameAsBilling(!!checked);
+                                if (checked) {
+                                  setShippingAddressLine(billingAddressLine);
+                                  setShippingPincode(billingPincode);
+                                  setShippingCity(billingCity);
+                                  setShippingState(billingState);
+                                }
+                              }}
+                            />
+                            <label htmlFor="shippingSameAsBilling" className="text-xs text-muted-foreground cursor-pointer">
+                              Same as Billing Address
+                            </label>
+                          </div>
+                          {!shippingSameAsBilling && (
+                            <div className="space-y-2">
+                              <Input
+                                placeholder="Street address"
+                                value={shippingAddressLine}
+                                onChange={(e) => setShippingAddressLine(e.target.value)}
+                              />
+                              <div className="grid grid-cols-3 gap-2">
+                                <Input
+                                  placeholder="Pincode"
+                                  maxLength={6}
+                                  value={shippingPincode}
+                                  onChange={(e) => {
+                                    const pin = e.target.value.replace(/\D/g, "");
+                                    setShippingPincode(pin);
+                                    if (pin.length === 6 && PINCODE_DB[pin]) {
+                                      setShippingCity(PINCODE_DB[pin].city);
+                                      setShippingState(PINCODE_DB[pin].state);
+                                    }
+                                  }}
+                                />
+                                <Input
+                                  placeholder="City"
+                                  value={shippingCity}
+                                  onChange={(e) => setShippingCity(e.target.value)}
+                                />
+                                <Input
+                                  placeholder="State"
+                                  value={shippingState}
+                                  onChange={(e) => setShippingState(e.target.value)}
+                                />
+                              </div>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
@@ -954,34 +1000,55 @@ const PaymentLinks = () => {
                                 </button>
                               )}
                             </div>
-                            <Select
-                              value=""
-                              onValueChange={(val) => {
-                                if (val === "__new__") return;
-                                const saved = SAVED_ITEMS.find((s) => s.id === val);
-                                if (saved) {
+                            {/* Item name with suggestion dropdown */}
+                            <div className="relative">
+                              <Input
+                                placeholder="Item name"
+                                value={item.name}
+                                onFocus={() => setItemSuggestionOpen(idx)}
+                                onBlur={() => setTimeout(() => setItemSuggestionOpen(null), 150)}
+                                onChange={(e) => {
                                   const updated = [...invoiceItems];
-                                  updated[idx] = { ...item, name: saved.name, rate: saved.rate, hsn: saved.hsn, taxRate: saved.taxRate };
+                                  updated[idx] = { ...item, name: e.target.value };
                                   setInvoiceItems(updated);
-                                }
-                              }}
-                            >
-                              <SelectTrigger className="h-8 text-xs text-muted-foreground border-dashed">
-                                <SelectValue placeholder="Select from saved items or fill below" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {SAVED_ITEMS.map((s) => (
-                                  <SelectItem key={s.id} value={s.id}>{s.name} — ₹{s.rate}</SelectItem>
-                                ))}
-                                <SelectItem value="__new__">+ Create new item</SelectItem>
-                              </SelectContent>
-                            </Select>
+                                  setItemSuggestionOpen(idx);
+                                }}
+                              />
+                              {itemSuggestionOpen === idx && (
+                                <div className="absolute z-50 left-0 right-0 top-full mt-1 border border-border rounded-md bg-background shadow-lg overflow-hidden">
+                                  {SAVED_ITEMS.filter((s) =>
+                                    !item.name || s.name.toLowerCase().includes(item.name.toLowerCase())
+                                  ).map((s) => (
+                                    <button
+                                      key={s.id}
+                                      type="button"
+                                      className="w-full text-left px-3 py-2 text-xs hover:bg-secondary/60 flex justify-between items-center gap-2"
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        const updated = [...invoiceItems];
+                                        updated[idx] = { ...item, name: s.name, rate: s.rate, hsn: s.hsn, taxRate: s.taxRate };
+                                        setInvoiceItems(updated);
+                                        setItemSuggestionOpen(null);
+                                      }}
+                                    >
+                                      <span className="truncate">{s.name}</span>
+                                      <span className="text-muted-foreground flex-shrink-0">₹{s.rate}</span>
+                                    </button>
+                                  ))}
+                                  {SAVED_ITEMS.filter((s) =>
+                                    !item.name || s.name.toLowerCase().includes(item.name.toLowerCase())
+                                  ).length === 0 && (
+                                    <p className="px-3 py-2 text-xs text-muted-foreground">No saved items match</p>
+                                  )}
+                                </div>
+                              )}
+                            </div>
                             <Input
-                              placeholder="Item name"
-                              value={item.name}
+                              placeholder="Item description (optional)"
+                              value={item.description}
                               onChange={(e) => {
                                 const updated = [...invoiceItems];
-                                updated[idx] = { ...item, name: e.target.value };
+                                updated[idx] = { ...item, description: e.target.value };
                                 setInvoiceItems(updated);
                               }}
                             />
@@ -1000,7 +1067,7 @@ const PaymentLinks = () => {
                                 />
                               </div>
                               <div>
-                                <label className="text-xs text-muted-foreground mb-1 block">Rate (₹)</label>
+                                <label className="text-xs text-muted-foreground mb-1 block">Rate (₹) incl. taxes</label>
                                 <Input
                                   type="number"
                                   placeholder="0"
@@ -1053,7 +1120,7 @@ const PaymentLinks = () => {
                         ))}
                       </div>
                       <button
-                        onClick={() => setInvoiceItems([...invoiceItems, { id: Date.now().toString(), name: "", qty: "", rate: "", hsn: "", taxRate: "" }])}
+                        onClick={() => setInvoiceItems([...invoiceItems, { id: Date.now().toString(), name: "", description: "", qty: "", rate: "", hsn: "", taxRate: "" }])}
                         className="mt-2 text-sm text-blue-600 hover:underline flex items-center gap-1"
                       >
                         + Add Item
@@ -1485,18 +1552,12 @@ const PaymentLinks = () => {
                         onClick={() => toast.success("Receipt downloaded!")}>
                         <Download className="h-3.5 w-3.5" /> Download
                       </Button>
-                      <Button size="sm" className="gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs h-8"
-                        onClick={() => toast.success("Receipt sent via WhatsApp!")}>
-                        <MessageCircle className="h-3.5 w-3.5" /> WhatsApp
-                      </Button>
-                      <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8"
-                        onClick={() => toast.success("Receipt sent via Email!")}>
-                        <Mail className="h-3.5 w-3.5" /> Email
-                      </Button>
-                      <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8"
-                        onClick={() => toast.success("Receipt sent via SMS!")}>
-                        <Send className="h-3.5 w-3.5" /> SMS
-                      </Button>
+                      {detailIncludeGst && (
+                        <Button size="sm" variant="outline" className="gap-1.5 text-xs h-8"
+                          onClick={() => toast.success("GST Receipt resent to customer!")}>
+                          <Send className="h-3.5 w-3.5" /> Resend GST Receipt
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ) : (
@@ -1570,98 +1631,243 @@ const PaymentLinks = () => {
                     onChange={(e) => setDetailGstNumber(e.target.value.toUpperCase())}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-foreground">Place of Supply *</label>
-                    <select
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
-                      value={detailGstPlaceOfSupply}
-                      onChange={(e) => setDetailGstPlaceOfSupply(e.target.value)}
-                    >
-                      <option value="">Select state</option>
-                      {["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh","Puducherry","Chandigarh"].map(s => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-foreground">Billing Address *</label>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Place of Supply *</label>
+                  <select
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                    value={detailGstPlaceOfSupply}
+                    onChange={(e) => setDetailGstPlaceOfSupply(e.target.value)}
+                  >
+                    <option value="">Select state</option>
+                    {["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh","Puducherry","Chandigarh"].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Billing Address *</label>
+                  <Input
+                    className="h-9 text-sm"
+                    placeholder="Street address"
+                    value={detailBillingAddress}
+                    onChange={(e) => {
+                      setDetailBillingAddress(e.target.value);
+                      if (detailShippingSameAsBilling) setDetailShippingAddress(e.target.value);
+                    }}
+                  />
+                  <div className="grid grid-cols-3 gap-2">
                     <Input
                       className="h-9 text-sm"
-                      placeholder="Street, City, PIN"
-                      value={detailGstBillingAddress}
-                      onChange={(e) => setDetailGstBillingAddress(e.target.value)}
+                      placeholder="Pincode"
+                      maxLength={6}
+                      value={detailBillingPincode}
+                      onChange={(e) => {
+                        const pin = e.target.value.replace(/\D/g, "");
+                        setDetailBillingPincode(pin);
+                        if (detailShippingSameAsBilling) setDetailShippingPincode(pin);
+                        if (pin.length === 6 && PINCODE_DB[pin]) {
+                          setDetailBillingCity(PINCODE_DB[pin].city);
+                          setDetailBillingState(PINCODE_DB[pin].state);
+                          if (detailShippingSameAsBilling) {
+                            setDetailShippingCity(PINCODE_DB[pin].city);
+                            setDetailShippingState(PINCODE_DB[pin].state);
+                          }
+                        }
+                      }}
+                    />
+                    <Input
+                      className="h-9 text-sm"
+                      placeholder="City"
+                      value={detailBillingCity}
+                      onChange={(e) => {
+                        setDetailBillingCity(e.target.value);
+                        if (detailShippingSameAsBilling) setDetailShippingCity(e.target.value);
+                      }}
+                    />
+                    <Input
+                      className="h-9 text-sm"
+                      placeholder="State"
+                      value={detailBillingState}
+                      onChange={(e) => {
+                        setDetailBillingState(e.target.value);
+                        if (detailShippingSameAsBilling) setDetailShippingState(e.target.value);
+                      }}
                     />
                   </div>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-foreground">Shipping Address</label>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Checkbox
+                      id="detailShippingSameAsBilling"
+                      checked={detailShippingSameAsBilling}
+                      onCheckedChange={(checked) => {
+                        setDetailShippingSameAsBilling(!!checked);
+                        if (checked) {
+                          setDetailShippingAddress(detailBillingAddress);
+                          setDetailShippingPincode(detailBillingPincode);
+                          setDetailShippingCity(detailBillingCity);
+                          setDetailShippingState(detailBillingState);
+                        }
+                      }}
+                    />
+                    <label htmlFor="detailShippingSameAsBilling" className="text-xs text-muted-foreground cursor-pointer">
+                      Same as Billing Address
+                    </label>
+                  </div>
+                  {!detailShippingSameAsBilling && (
+                    <div className="space-y-2">
+                      <Input
+                        className="h-9 text-sm"
+                        placeholder="Street address"
+                        value={detailShippingAddress}
+                        onChange={(e) => setDetailShippingAddress(e.target.value)}
+                      />
+                      <div className="grid grid-cols-3 gap-2">
+                        <Input
+                          className="h-9 text-sm"
+                          placeholder="Pincode"
+                          maxLength={6}
+                          value={detailShippingPincode}
+                          onChange={(e) => {
+                            const pin = e.target.value.replace(/\D/g, "");
+                            setDetailShippingPincode(pin);
+                            if (pin.length === 6 && PINCODE_DB[pin]) {
+                              setDetailShippingCity(PINCODE_DB[pin].city);
+                              setDetailShippingState(PINCODE_DB[pin].state);
+                            }
+                          }}
+                        />
+                        <Input
+                          className="h-9 text-sm"
+                          placeholder="City"
+                          value={detailShippingCity}
+                          onChange={(e) => setDetailShippingCity(e.target.value)}
+                        />
+                        <Input
+                          className="h-9 text-sm"
+                          placeholder="State"
+                          value={detailShippingState}
+                          onChange={(e) => setDetailShippingState(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Invoice Items */}
               <div className="space-y-3">
                 <p className="text-sm font-semibold text-foreground">Invoice Items</p>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {detailInvoiceItems.map((item, idx) => (
-                    <div key={item.id} className="grid grid-cols-[1fr_60px_80px_90px_24px] gap-2 items-center">
-                      <Input
-                        className="h-8 text-sm"
-                        placeholder="Item / service name"
-                        value={item.name}
-                        onChange={(e) => {
-                          const updated = [...detailInvoiceItems];
-                          updated[idx].name = e.target.value;
-                          setDetailInvoiceItems(updated);
-                        }}
-                      />
-                      <Input
-                        className="h-8 text-sm text-center"
-                        placeholder="Qty"
-                        value={item.qty}
-                        onChange={(e) => {
-                          const updated = [...detailInvoiceItems];
-                          updated[idx].qty = e.target.value;
-                          setDetailInvoiceItems(updated);
-                        }}
-                      />
-                      <Input
-                        className="h-8 text-sm"
-                        placeholder="HSN/SAC"
-                        value={item.hsn}
-                        onChange={(e) => {
-                          const updated = [...detailInvoiceItems];
-                          updated[idx].hsn = e.target.value;
-                          setDetailInvoiceItems(updated);
-                        }}
-                      />
-                      <select
-                        className="h-8 text-sm border border-input rounded-md px-2 bg-background"
-                        value={item.taxRate}
-                        onChange={(e) => {
-                          const updated = [...detailInvoiceItems];
-                          updated[idx].taxRate = e.target.value;
-                          setDetailInvoiceItems(updated);
-                        }}
-                      >
-                        <option value="">Tax %</option>
-                        <option value="0">0%</option>
-                        <option value="5">5%</option>
-                        <option value="12">12%</option>
-                        <option value="18">18%</option>
-                        <option value="28">28%</option>
-                      </select>
-                      {detailInvoiceItems.length > 1 && (
-                        <button
-                          onClick={() => setDetailInvoiceItems(detailInvoiceItems.filter((_, i) => i !== idx))}
-                          className="text-muted-foreground hover:text-destructive"
+                    <div key={item.id} className="border border-border rounded-md p-3 space-y-2 bg-background">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-medium text-foreground">Item {idx + 1}</span>
+                        {detailInvoiceItems.length > 1 && (
+                          <button
+                            onClick={() => setDetailInvoiceItems(detailInvoiceItems.filter((_, i) => i !== idx))}
+                            className="text-muted-foreground hover:text-destructive"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <Select
+                            value=""
+                            onValueChange={(val) => {
+                              if (val === "__new__") return;
+                              const saved = SAVED_ITEMS.find((s) => s.id === val);
+                              if (saved) {
+                                const updated = [...detailInvoiceItems];
+                                updated[idx] = { ...updated[idx], name: saved.name, rate: saved.rate, hsn: saved.hsn, taxRate: saved.taxRate };
+                                setDetailInvoiceItems(updated);
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs text-muted-foreground border-dashed">
+                              <SelectValue placeholder="Select from saved items" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SAVED_ITEMS.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>{s.name} — ₹{s.rate}</SelectItem>
+                              ))}
+                              <SelectItem value="__new__">+ Create new item</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          className="h-8 text-sm flex-1"
+                          placeholder="Item / service name"
+                          value={item.name}
+                          onChange={(e) => {
+                            const updated = [...detailInvoiceItems];
+                            updated[idx] = { ...updated[idx], name: e.target.value };
+                            setDetailInvoiceItems(updated);
+                          }}
+                        />
+                        <div className="w-24">
+                          <Input
+                            className="h-8 text-sm"
+                            placeholder="Rate (₹)"
+                            type="number"
+                            value={item.rate}
+                            onChange={(e) => {
+                              const updated = [...detailInvoiceItems];
+                              updated[idx] = { ...updated[idx], rate: e.target.value };
+                              setDetailInvoiceItems(updated);
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <Input
+                          className="h-8 text-sm text-center"
+                          placeholder="Qty"
+                          value={item.qty}
+                          onChange={(e) => {
+                            const updated = [...detailInvoiceItems];
+                            updated[idx] = { ...updated[idx], qty: e.target.value };
+                            setDetailInvoiceItems(updated);
+                          }}
+                        />
+                        <Input
+                          className="h-8 text-sm"
+                          placeholder="HSN/SAC"
+                          value={item.hsn}
+                          onChange={(e) => {
+                            const updated = [...detailInvoiceItems];
+                            updated[idx] = { ...updated[idx], hsn: e.target.value };
+                            setDetailInvoiceItems(updated);
+                          }}
+                        />
+                        <select
+                          className="h-8 text-sm border border-input rounded-md px-2 bg-background"
+                          value={item.taxRate}
+                          onChange={(e) => {
+                            const updated = [...detailInvoiceItems];
+                            updated[idx] = { ...updated[idx], taxRate: e.target.value };
+                            setDetailInvoiceItems(updated);
+                          }}
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )}
+                          <option value="">Tax %</option>
+                          <option value="0">0%</option>
+                          <option value="5">5%</option>
+                          <option value="12">12%</option>
+                          <option value="18">18%</option>
+                          <option value="28">28%</option>
+                        </select>
+                      </div>
                     </div>
                   ))}
                 </div>
                 <button
                   className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  onClick={() => setDetailInvoiceItems([...detailInvoiceItems, { id: String(Date.now()), name: "", qty: "", hsn: "", taxRate: "" }])}
+                  onClick={() => setDetailInvoiceItems([...detailInvoiceItems, { id: String(Date.now()), name: "", qty: "", rate: "", hsn: "", taxRate: "" }])}
                 >
                   + Add Item
                 </button>
@@ -1673,20 +1879,15 @@ const PaymentLinks = () => {
           <div className="flex gap-2 px-4 py-4 border-t border-border flex-shrink-0">
             <Button
               size="sm"
-              className="flex-1 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
-              onClick={() => {
-                setDetailReceiptGenerated(true);
-                setDetailIncludeGst(true);
-                setShowGstModal(false);
-                toast.success("GST Receipt generated and downloaded!");
-              }}
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setShowGstModal(false)}
             >
-              <Download className="h-3.5 w-3.5" /> Generate &amp; Download
+              Cancel
             </Button>
             <Button
               size="sm"
-              variant="outline"
-              className="flex-1 gap-1.5"
+              className="flex-1 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
                 setDetailReceiptGenerated(true);
                 setDetailIncludeGst(true);
@@ -1694,7 +1895,7 @@ const PaymentLinks = () => {
                 toast.success("GST Receipt generated and sent to customer!");
               }}
             >
-              <Send className="h-3.5 w-3.5" /> Generate &amp; Send
+              <Send className="h-3.5 w-3.5" /> Generate and Send to Customer
             </Button>
           </div>
         </DialogContent>
