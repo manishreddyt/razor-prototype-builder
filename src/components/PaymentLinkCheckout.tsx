@@ -35,8 +35,10 @@ interface PaymentLink {
   amount: number;
   currency: string;
   image?: string;
-  acceptPartialPayment?: boolean;
-  minPartialAmount?: number;
+  collectInMultiplePayments?: boolean;
+  multiPaymentMode?: "schedule" | "customer_choice";
+  splitType?: "equal" | "custom";
+  installments?: Array<{ id: string; label: string; amount: number; dueDate: string; description: string }>;
   collectPhone?: boolean;
   collectEmail?: boolean;
   collectAddress?: boolean;
@@ -166,17 +168,6 @@ export function PaymentLinkCheckout() {
       }
     }
 
-    if (link?.acceptPartialPayment && link.minPartialAmount) {
-      if (formData.amount < link.minPartialAmount) {
-        toast({
-          title: "Invalid amount",
-          description: `Minimum amount is ₹${link.minPartialAmount.toLocaleString('en-IN')}`,
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
     setProcessing(true);
 
     // Simulate payment processing
@@ -184,7 +175,7 @@ export function PaymentLinkCheckout() {
       setProcessing(false);
 
       // Calculate final amount
-      const finalAmount = link?.acceptPartialPayment ? formData.amount : totalAmount;
+      const finalAmount = totalAmount;
 
       // Generate transaction ID
       const transactionId = `TXN${Date.now().toString().slice(-10)}`;
@@ -330,11 +321,6 @@ export function PaymentLinkCheckout() {
                     <p className="text-3xl font-bold text-foreground">
                       ₹{totalAmount.toLocaleString('en-IN')}
                     </p>
-                    {link.acceptPartialPayment && link.minPartialAmount && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Minimum payment: ₹{link.minPartialAmount.toLocaleString('en-IN')}
-                      </p>
-                    )}
                   </div>
 
                   <Separator />
@@ -480,28 +466,35 @@ export function PaymentLinkCheckout() {
 
                   <Separator />
 
-                  {/* Partial Payment Amount */}
-                  {link.acceptPartialPayment && (
-                    <div className="space-y-3">
-                      <Label htmlFor="amount" className="text-sm font-medium">
-                        Enter Amount (Min: ₹{link.minPartialAmount?.toLocaleString('en-IN')})
-                      </Label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
-                          ₹
-                        </span>
-                        <Input
-                          id="amount"
-                          type="number"
-                          min={link.minPartialAmount}
-                          max={totalAmount}
-                          placeholder={link.minPartialAmount?.toString()}
-                          className="pl-7 h-11 text-base font-medium"
-                          value={formData.amount || ""}
-                          onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
-                          required
-                        />
-                      </div>
+                  {/* Payment Schedule */}
+                  {link.collectInMultiplePayments && (
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-semibold">Payment Schedule</h4>
+                      {link.multiPaymentMode === "schedule" && link.installments && link.installments.length > 0 ? (
+                        <div className="rounded-lg border border-border bg-secondary/30 divide-y divide-border">
+                          {link.installments.map((inst, idx) => (
+                            <div key={inst.id} className="flex items-center justify-between px-3 py-2.5">
+                              <div>
+                                <p className="text-sm font-medium text-foreground">
+                                  {inst.label || `Installment ${idx + 1}`}
+                                </p>
+                                {inst.dueDate && (
+                                  <p className="text-xs text-muted-foreground">
+                                    Due {new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                                  </p>
+                                )}
+                              </div>
+                              <span className="text-sm font-semibold text-foreground">
+                                ₹{inst.amount.toLocaleString("en-IN")}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          You can pay any amount across multiple visits up to the total of ₹{totalAmount.toLocaleString("en-IN")}.
+                        </p>
+                      )}
                     </div>
                   )}
 
@@ -593,7 +586,7 @@ export function PaymentLinkCheckout() {
                     <div className="flex items-center justify-between text-base">
                       <span className="font-medium">Amount to Pay</span>
                       <span className="text-2xl font-bold">
-                        ₹{(link.acceptPartialPayment ? (formData.amount || 0) : totalAmount).toLocaleString('en-IN')}
+                        ₹{totalAmount.toLocaleString('en-IN')}
                       </span>
                     </div>
 

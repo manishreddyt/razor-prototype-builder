@@ -146,8 +146,15 @@ const PaymentLinks = () => {
     customerPhone: "",
     customerEmail: "",
     referenceId: "",
-    acceptPartialPayment: false,
   });
+  // Multi-payment state
+  const [collectInMultiplePayments, setCollectInMultiplePayments] = useState(false);
+  const [multiPaymentMode, setMultiPaymentMode] = useState<"schedule" | "customer_choice">("schedule");
+  const [splitType, setSplitType] = useState<"equal" | "custom">("equal");
+  const [installments, setInstallments] = useState([
+    { id: "1", label: "Installment 1", amount: "", dueDate: "", description: "" },
+    { id: "2", label: "Installment 2", amount: "", dueDate: "", description: "" },
+  ]);
 
   // Initialize localStorage with sample data and load existing links
   useEffect(() => {
@@ -410,7 +417,14 @@ const PaymentLinks = () => {
   const getProductById = (id: string) => availableProducts.find((p) => p.id === id);
 
   const resetCreateForm = () => {
-    setFormData({ description: "", amount: "", customerPhone: "", customerEmail: "", referenceId: "", acceptPartialPayment: false });
+    setFormData({ description: "", amount: "", customerPhone: "", customerEmail: "", referenceId: "" });
+    setCollectInMultiplePayments(false);
+    setMultiPaymentMode("schedule");
+    setSplitType("equal");
+    setInstallments([
+      { id: "1", label: "Installment 1", amount: "", dueDate: "", description: "" },
+      { id: "2", label: "Installment 2", amount: "", dueDate: "", description: "" },
+    ]);
     setNotifyEmail(false);
     setNotifySMS(false);
     setNoExpiry(true);
@@ -460,7 +474,10 @@ const PaymentLinks = () => {
       selectedProducts,
       shiprocketEnabled,
       whatsappConfirmation: whatsappConfirmationEnabled,
-      acceptPartialPayment: formData.acceptPartialPayment,
+      collectInMultiplePayments,
+      multiPaymentMode: collectInMultiplePayments ? multiPaymentMode : undefined,
+      splitType: collectInMultiplePayments && multiPaymentMode === "schedule" ? splitType : undefined,
+      installments: collectInMultiplePayments && multiPaymentMode === "schedule" ? installments.map(i => ({ ...i, amount: Number(i.amount) })) : undefined,
       sendReceiptAuto,
     };
     const stored = localStorage.getItem("payment_links");
@@ -751,16 +768,201 @@ const PaymentLinks = () => {
               </div>
             </div>
 
-            {/* Partial Payment */}
+            {/* Collect in Multiple Payments */}
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">Partial Payment</label>
-              <div className="flex items-center gap-2">
+              <label className="text-sm text-muted-foreground mb-2 block">Collect in Multiple Payments</label>
+              <div className="flex items-center gap-2 mb-3">
                 <Switch
-                  checked={formData.acceptPartialPayment}
-                  onCheckedChange={(checked) => setFormData({ ...formData, acceptPartialPayment: checked })}
+                  checked={collectInMultiplePayments}
+                  onCheckedChange={setCollectInMultiplePayments}
                 />
-                <span className="text-sm text-foreground">Enable Partial Payment</span>
+                <span className="text-sm text-foreground">Enable multiple payment collection</span>
               </div>
+
+              {collectInMultiplePayments && (
+                <div className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-border">
+                  {/* Mode selection */}
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-foreground mb-2">How should the customer pay?</p>
+
+                    {/* Option 1: As per defined schedule */}
+                    <div
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "schedule" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-background hover:bg-secondary/30"}`}
+                      onClick={() => setMultiPaymentMode("schedule")}
+                    >
+                      <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 ${multiPaymentMode === "schedule" ? "border-blue-500 bg-blue-500" : "border-muted-foreground"}`}>
+                        {multiPaymentMode === "schedule" && <div className="h-full w-full rounded-full bg-white scale-50" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-medium text-foreground">As per defined schedule</span>
+                          <div className="relative group">
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2 bg-popover border border-border rounded-md shadow-lg text-xs text-muted-foreground hidden group-hover:block z-50">
+                              You define the payment schedule — amounts, labels, and due dates. The customer pays each installment as per your plan.
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">You set the installment amounts and due dates</p>
+                      </div>
+                    </div>
+
+                    {/* Option 2: Let customer choose */}
+                    <div
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "customer_choice" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-background hover:bg-secondary/30"}`}
+                      onClick={() => setMultiPaymentMode("customer_choice")}
+                    >
+                      <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 ${multiPaymentMode === "customer_choice" ? "border-blue-500 bg-blue-500" : "border-muted-foreground"}`}>
+                        {multiPaymentMode === "customer_choice" && <div className="h-full w-full rounded-full bg-white scale-50" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-medium text-foreground">Let customer choose and pay</span>
+                          <div className="relative group">
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2 bg-popover border border-border rounded-md shadow-lg text-xs text-muted-foreground hidden group-hover:block z-50">
+                              The customer decides how much to pay each time. They can pay any amount up to the total, and return to pay the remainder later.
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">Customer pays any amount, balance remains open</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Schedule builder — only shown for "schedule" mode */}
+                  {multiPaymentMode === "schedule" && (
+                    <div className="space-y-3">
+                      <Separator />
+
+                      {/* Split type toggle */}
+                      <div className="flex items-center gap-2">
+                        <button
+                          className={`px-3 py-1 text-xs rounded-full border transition-colors ${splitType === "equal" ? "bg-blue-600 text-white border-blue-600" : "border-border text-muted-foreground hover:bg-secondary/50"}`}
+                          onClick={() => {
+                            setSplitType("equal");
+                            if (formData.amount && Number(formData.amount) > 0) {
+                              const equalAmt = (Number(formData.amount) / installments.length).toFixed(2);
+                              setInstallments(installments.map(i => ({ ...i, amount: equalAmt })));
+                            }
+                          }}
+                        >
+                          Equal split
+                        </button>
+                        <button
+                          className={`px-3 py-1 text-xs rounded-full border transition-colors ${splitType === "custom" ? "bg-blue-600 text-white border-blue-600" : "border-border text-muted-foreground hover:bg-secondary/50"}`}
+                          onClick={() => setSplitType("custom")}
+                        >
+                          Custom split
+                        </button>
+                      </div>
+
+                      {/* Installments list */}
+                      <div className="space-y-3">
+                        {installments.map((inst, idx) => (
+                          <div key={inst.id} className="p-3 bg-background border border-border rounded-lg space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs font-medium text-foreground">Installment {idx + 1}</span>
+                              {installments.length > 2 && (
+                                <button
+                                  onClick={() => setInstallments(installments.filter(i => i.id !== inst.id))}
+                                  className="text-muted-foreground hover:text-destructive transition-colors"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Label</label>
+                                <Input
+                                  placeholder="e.g. Token, Part 1"
+                                  value={inst.label}
+                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, label: e.target.value } : i))}
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Amount (₹)</label>
+                                <Input
+                                  type="number"
+                                  placeholder="0.00"
+                                  value={inst.amount}
+                                  disabled={splitType === "equal"}
+                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, amount: e.target.value } : i))}
+                                  className="h-8 text-xs disabled:opacity-60"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Due Date</label>
+                                <Input
+                                  type="date"
+                                  value={inst.dueDate}
+                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: e.target.value } : i))}
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-muted-foreground mb-1 block">Description (optional)</label>
+                                <Input
+                                  placeholder="e.g. First payment"
+                                  value={inst.description}
+                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, description: e.target.value } : i))}
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Validation: total must equal amount */}
+                      {formData.amount && Number(formData.amount) > 0 && (
+                        (() => {
+                          const total = installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+                          const target = Number(formData.amount);
+                          const diff = Math.abs(total - target);
+                          if (diff > 0.01) {
+                            return (
+                              <p className="text-xs text-destructive flex items-center gap-1">
+                                <Info className="h-3 w-3" />
+                                Installment total (₹{total.toFixed(2)}) must equal link amount (₹{target.toFixed(2)})
+                              </p>
+                            );
+                          }
+                          return (
+                            <p className="text-xs text-green-600 flex items-center gap-1">
+                              <CheckCircle2 className="h-3 w-3" />
+                              Installment total matches link amount
+                            </p>
+                          );
+                        })()
+                      )}
+
+                      {/* Add installment button */}
+                      <button
+                        className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        onClick={() => {
+                          const newId = String(Date.now());
+                          const newInst = { id: newId, label: `Installment ${installments.length + 1}`, amount: "", dueDate: "", description: "" };
+                          const updated = [...installments, newInst];
+                          if (splitType === "equal" && formData.amount && Number(formData.amount) > 0) {
+                            const equalAmt = (Number(formData.amount) / updated.length).toFixed(2);
+                            setInstallments(updated.map(i => ({ ...i, amount: equalAmt })));
+                          } else {
+                            setInstallments(updated);
+                          }
+                        }}
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add Installment
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Notes */}
@@ -1287,6 +1489,28 @@ const PaymentLinks = () => {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Payment schedule summary */}
+            {collectInMultiplePayments && (
+              <div className="p-3 bg-secondary/30 rounded-lg border border-border">
+                <p className="text-xs font-medium text-foreground mb-2">
+                  Payment Schedule
+                  {multiPaymentMode === "schedule" ? ` — ${installments.length} installments` : " — Customer chooses amount"}
+                </p>
+                {multiPaymentMode === "schedule" ? (
+                  <div className="space-y-1.5">
+                    {installments.map((inst, idx) => (
+                      <div key={inst.id} className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{inst.label || `Installment ${idx + 1}`}{inst.dueDate ? ` · Due ${new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}</span>
+                        <span className="font-medium text-foreground">₹{Number(inst.amount).toLocaleString("en-IN")}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Customer can pay any amount up to ₹{Number(formData.amount || 0).toLocaleString("en-IN")} across multiple visits.</p>
+                )}
               </div>
             )}
 
