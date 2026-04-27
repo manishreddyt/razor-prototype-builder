@@ -3,42 +3,49 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   CheckCircle2,
-  Package,
   ShieldCheck,
   Lock,
   CreditCard,
   Smartphone,
   Wallet,
-  Building,
+  Building2,
   ArrowLeft,
-  Mail,
-  Phone,
-  User,
-  MapPin,
-  Home,
-  MessageCircle,
-  Truck,
-  BadgeCheck
+  Calendar,
+  QrCode,
+  Check,
+  ChevronRight,
 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
+
+// ── Merchant constants ──────────────────────────────────────────────
+const MERCHANT_NAME = "Wealthjoy Technologies";
+const MERCHANT_INITIALS = "WJ";
+const MERCHANT_DOMAIN = "wealthjoy.in";
+
+// ── Types ───────────────────────────────────────────────────────────
+interface Installment {
+  id: string;
+  label: string;
+  amount: number | string;
+  dueDate: string;
+  description: string;
+}
 
 interface PaymentLink {
   id: string;
   title: string;
   description: string;
   amount: number;
-  currency: string;
-  image?: string;
+  currency?: string;
   collectInMultiplePayments?: boolean;
   multiPaymentMode?: "schedule" | "customer_choice";
   splitType?: "equal" | "custom";
-  installments?: Array<{ id: string; label: string; amount: number; dueDate: string; description: string }>;
+  installments?: Installment[];
   collectPhone?: boolean;
   collectEmail?: boolean;
   collectAddress?: boolean;
@@ -49,531 +56,344 @@ interface PaymentLink {
   createdAt: string;
 }
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  description?: string;
-}
+type Screen = "overview" | "method" | "success";
+type PayMethod = "upi" | "card" | "netbanking" | "wallet";
 
+// ── Demo fallback link ───────────────────────────────────────────────
+const today = new Date();
+const fmt = (d: Date) => d.toISOString().split("T")[0];
+const addDays = (d: Date, n: number) => {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+};
+
+const DEMO_LINK: PaymentLink = {
+  id: "demo-wj-001",
+  title: "Business Management Programme",
+  description: "3-month intensive programme · Batch starting 1 May 2026",
+  amount: 12000,
+  collectInMultiplePayments: true,
+  multiPaymentMode: "schedule",
+  installments: [
+    { id: "1", label: "Payment 1 — Enrolment Fee", amount: 4000, dueDate: fmt(today), description: "" },
+    { id: "2", label: "Payment 2 — Month 2", amount: 4000, dueDate: fmt(addDays(today, 30)), description: "" },
+    { id: "3", label: "Payment 3 — Month 3", amount: 4000, dueDate: fmt(addDays(today, 60)), description: "" },
+  ],
+  collectEmail: true,
+  collectPhone: true,
+  status: "active",
+  createdAt: new Date().toISOString(),
+};
+
+// ── Helpers ─────────────────────────────────────────────────────────
+const fmtINR = (n: number) =>
+  `₹${n.toLocaleString("en-IN")}`;
+
+const fmtDate = (iso: string) =>
+  new Date(iso).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+
+const isToday = (iso: string) => {
+  const d = new Date(iso);
+  const t = new Date();
+  return d.getDate() === t.getDate() && d.getMonth() === t.getMonth() && d.getFullYear() === t.getFullYear();
+};
+
+// ── Main component ───────────────────────────────────────────────────
 export function PaymentLinkCheckout() {
   const { linkId } = useParams<{ linkId: string }>();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
   const [link, setLink] = useState<PaymentLink | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [screen, setScreen] = useState<Screen>("overview");
+  const [payMethod, setPayMethod] = useState<PayMethod>("upi");
   const [processing, setProcessing] = useState(false);
+  const [payFull, setPayFull] = useState(false);
+  const [txnId, setTxnId] = useState("");
+  const [upiId, setUpiId] = useState("");
+  const [upiVerified, setUpiVerified] = useState(false);
 
-  // Form state
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    amount: 0,
-    // Address fields
-    address: "",
-    city: "",
-    pincode: "",
-    // WhatsApp
-    whatsappConsent: true,
-  });
+  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+  const [cardData, setCardData] = useState({ number: "", expiry: "", cvv: "", name: "" });
 
-  const [paymentMethod, setPaymentMethod] = useState<"upi" | "card" | "netbanking" | "wallet">("upi");
+  useEffect(() => { loadLink(); }, [linkId]);
 
-  useEffect(() => {
-    loadPaymentLink();
-  }, [linkId]);
-
-  const loadPaymentLink = () => {
+  const loadLink = () => {
     try {
-      // Load payment links from localStorage
       const stored = localStorage.getItem("payment_links");
-      if (!stored) {
-        setLoading(false);
-        return;
+      if (stored) {
+        const links: PaymentLink[] = JSON.parse(stored);
+        const found = links.find((l) => l.id === linkId);
+        if (found) { setLink(found); setLoading(false); return; }
       }
-
-      const links: PaymentLink[] = JSON.parse(stored);
-      const foundLink = links.find((l) => l.id === linkId);
-
-      if (!foundLink) {
-        setLoading(false);
-        return;
-      }
-
-      setLink(foundLink);
-      setFormData((prev) => ({ ...prev, amount: foundLink.amount }));
-
-      // Load products if any are tagged
-      if (foundLink.selectedProducts && foundLink.selectedProducts.length > 0) {
-        const storedProducts = localStorage.getItem("available_products");
-        if (storedProducts) {
-          const allProducts: Product[] = JSON.parse(storedProducts);
-          const taggedProducts = allProducts.filter((p) =>
-            foundLink.selectedProducts?.includes(p.id)
-          );
-          setProducts(taggedProducts);
-        }
-      }
-
-      setLoading(false);
-    } catch (error) {
-      console.error("Error loading payment link:", error);
-      setLoading(false);
-    }
+    } catch {}
+    // Fall back to demo
+    setLink(DEMO_LINK);
+    setLoading(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // ── Derived values ─────────────────────────────────────────────────
+  const isSchedule =
+    link?.collectInMultiplePayments && link.multiPaymentMode === "schedule" && (link.installments?.length ?? 0) > 0;
 
-    // Validation
-    if (!formData.name.trim()) {
-      toast({
-        title: "Name required",
-        description: "Please enter your name",
-        variant: "destructive",
-      });
-      return;
-    }
+  const installments: Installment[] = (link?.installments ?? []).map((i) => ({
+    ...i,
+    amount: Number(i.amount),
+  }));
 
-    if (link?.collectEmail && !formData.email.trim()) {
-      toast({
-        title: "Email required",
-        description: "Please enter your email address",
-        variant: "destructive",
-      });
-      return;
-    }
+  // First unpaid installment (for prototype = first one)
+  const currentInst = installments[0];
+  const remainingInsts = installments.slice(1);
 
-    if (link?.collectPhone && !formData.phone.trim()) {
-      toast({
-        title: "Phone required",
-        description: "Please enter your phone number",
-        variant: "destructive",
-      });
-      return;
-    }
+  const payNowAmount = payFull
+    ? installments.reduce((s, i) => s + Number(i.amount), 0)
+    : currentInst
+    ? Number(currentInst.amount)
+    : link?.amount ?? 0;
 
-    if (link?.collectAddress) {
-      if (!formData.address.trim() || !formData.city.trim() || !formData.pincode.trim()) {
-        toast({
-          title: "Address required",
-          description: "Please fill in all address fields",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
+  const totalAmount = link
+    ? installments.length > 0
+      ? installments.reduce((s, i) => s + Number(i.amount), 0)
+      : link.amount
+    : 0;
 
+  // ── Handlers ────────────────────────────────────────────────────────
+  const handleContinue = () => {
+    if (!formData.name.trim()) return;
+    setScreen("method");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handlePay = () => {
     setProcessing(true);
-
-    // Simulate payment processing
     setTimeout(() => {
       setProcessing(false);
-
-      // Calculate final amount
-      const finalAmount = totalAmount;
-
-      // Generate transaction ID
-      const transactionId = `TXN${Date.now().toString().slice(-10)}`;
-
-      // Redirect to success page with payment details
-      const params = new URLSearchParams({
-        amount: finalAmount.toString(),
-        method: paymentMethod,
-        merchant: "Razorpay Merchant",
-        description: link?.description || link?.title || "Payment",
-        txnId: transactionId,
-        name: formData.name,
-        email: formData.email || "",
-        phone: formData.phone || "",
-      });
-
-      navigate(`/payment-success?${params.toString()}`);
+      setTxnId(`TXN${Date.now().toString().slice(-10)}`);
+      setScreen("success");
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }, 2000);
   };
 
+  // ── Loading / error states ─────────────────────────────────────────
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading payment link...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Loading…</p>
         </div>
       </div>
     );
   }
 
-  if (!link) {
+  if (!link || link.status === "inactive") {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
-              <Lock className="h-6 w-6 text-red-600" />
-            </div>
-            <CardTitle>Payment Link Not Found</CardTitle>
-            <CardDescription>
-              This payment link doesn't exist or has been removed.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate("/")} className="w-full">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Go Back
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (link.status === "inactive") {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
-          <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-orange-100 flex items-center justify-center">
-              <Lock className="h-6 w-6 text-orange-600" />
-            </div>
-            <CardTitle>Payment Link Inactive</CardTitle>
-            <CardDescription>
-              This payment link is currently inactive and cannot accept payments.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={() => navigate("/")} variant="outline" className="w-full">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Go Back
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const totalAmount = products.length > 0
-    ? products.reduce((sum, p) => sum + p.price, 0)
-    : link.amount;
-
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Left Column - Merchant Details & Payment Info */}
-          <div className="space-y-6">
-            {/* Merchant Info Card */}
-            <Card>
-              <CardContent className="pt-6">
-                <div className="space-y-6">
-                  {/* Payment Request Header */}
-                  <div>
-                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
-                      Payment Request from
-                    </p>
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-sm">R</span>
-                      </div>
-                      <div>
-                        <p className="font-semibold text-foreground">Razorpay Merchant</p>
-                        <p className="text-xs text-muted-foreground">razorpay.com</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  {/* Payment Details */}
-                  {link.description && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-2">Description</p>
-                      <p className="text-sm text-foreground">{link.description}</p>
-                    </div>
-                  )}
-
-                  {/* Products List */}
-                  {products.length > 0 && (
-                    <div>
-                      <p className="text-sm text-muted-foreground mb-3">Items</p>
-                      <div className="space-y-2">
-                        {products.map((product) => (
-                          <div key={product.id} className="flex items-center justify-between text-sm">
-                            <span className="text-foreground">{product.name}</span>
-                            <span className="font-medium">₹{product.price.toLocaleString('en-IN')}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <Separator />
-
-                  {/* Amount Payable */}
-                  <div>
-                    <p className="text-sm text-muted-foreground uppercase tracking-wide mb-2">
-                      Amount Payable
-                    </p>
-                    <p className="text-3xl font-bold text-foreground">
-                      ₹{totalAmount.toLocaleString('en-IN')}
-                    </p>
-                  </div>
-
-                  <Separator />
-
-                  {/* Contact Info */}
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      For any queries, please contact <span className="font-medium text-foreground">Razorpay Merchant</span>
-                    </p>
-                    {link.shiprocketEnabled && link.collectAddress && (
-                      <div className="flex items-center gap-2 text-xs text-blue-600 bg-blue-50 p-2 rounded-md">
-                        <Truck className="h-3 w-3" />
-                        <span>Free shipping via Shiprocket</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Security Badges */}
-                  <div className="flex items-center gap-4 text-xs text-muted-foreground pt-2">
-                    <div className="flex items-center gap-1">
-                      <ShieldCheck className="h-3 w-3" />
-                      <span>100% Secure</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Lock className="h-3 w-3" />
-                      <span>Encrypted</span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="max-w-sm w-full bg-white rounded-xl border border-gray-200 shadow-sm p-8 text-center">
+          <div className="mx-auto mb-4 h-12 w-12 rounded-full bg-red-100 flex items-center justify-center">
+            <Lock className="h-5 w-5 text-red-600" />
           </div>
+          <h2 className="font-semibold text-gray-900 mb-1">
+            {!link ? "Link not found" : "Link inactive"}
+          </h2>
+          <p className="text-sm text-gray-500 mb-6">
+            {!link
+              ? "This payment link doesn't exist or has been removed."
+              : "This payment link is currently inactive."}
+          </p>
+          <Button variant="outline" onClick={() => navigate("/")} className="w-full">
+            <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
-          {/* Right Column - Payment Options */}
-          <div>
-            <Card>
-              {/* Merchant Header */}
-              <div className="bg-primary text-white p-4 rounded-t-lg">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white font-bold text-sm">R</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">Razorpay Merchant</p>
-                  </div>
+  // ── Layout ────────────────────────────────────────────────────────
+  return (
+    <div className="min-h-screen bg-[#f5f5f5]">
+      <div className="max-w-5xl mx-auto px-4 py-6 lg:py-10">
+        <div className="grid lg:grid-cols-[360px_1fr] gap-6 items-start">
+
+          {/* ─── LEFT PANEL ─────────────────────────────────────────── */}
+          <div className="lg:sticky lg:top-8 space-y-4">
+            {/* Merchant card */}
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
+              {/* Merchant identity */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-11 w-11 rounded-xl bg-blue-700 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white font-bold text-sm">{MERCHANT_INITIALS}</span>
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 leading-tight">{MERCHANT_NAME}</p>
+                  <p className="text-xs text-gray-400">{MERCHANT_DOMAIN}</p>
                 </div>
               </div>
 
-              <CardContent className="p-6">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  {/* Payment Options Heading */}
+              <Separator className="mb-4" />
+
+              {/* Payment title & description */}
+              <div className="mb-4">
+                <p className="font-semibold text-gray-900">{link.title}</p>
+                {link.description && (
+                  <p className="text-sm text-gray-500 mt-1">{link.description}</p>
+                )}
+              </div>
+
+              {/* Total amount */}
+              <div className="mb-4">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Total Amount</p>
+                <p className="text-2xl font-bold text-gray-900">{fmtINR(totalAmount)}</p>
+              </div>
+
+              {/* Payment schedule timeline */}
+              {isSchedule && installments.length > 0 && (
+                <>
+                  <Separator className="mb-4" />
                   <div>
-                    <h3 className="text-lg font-semibold mb-1">Payment Options</h3>
-                    <p className="text-xs text-muted-foreground">Choose your preferred payment method</p>
+                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+                      Payment Schedule
+                    </p>
+                    <div className="space-y-0">
+                      {installments.map((inst, idx) => {
+                        const isDue = idx === 0;
+                        const isLast = idx === installments.length - 1;
+                        return (
+                          <div key={inst.id} className="flex gap-3">
+                            {/* Timeline dot + line */}
+                            <div className="flex flex-col items-center">
+                              <div
+                                className={cn(
+                                  "h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                                  isDue
+                                    ? "bg-blue-600"
+                                    : "bg-gray-200"
+                                )}
+                              >
+                                {isDue && <Check className="h-3 w-3 text-white" />}
+                              </div>
+                              {!isLast && (
+                                <div className="w-px flex-1 bg-gray-200 my-1 min-h-[20px]" />
+                              )}
+                            </div>
+                            {/* Content */}
+                            <div className="pb-4 flex-1">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className={cn("text-sm font-medium leading-tight", isDue ? "text-gray-900" : "text-gray-500")}>
+                                    {inst.label || `Payment ${idx + 1}`}
+                                  </p>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <Calendar className="h-3 w-3 text-gray-400" />
+                                    <span className="text-xs text-gray-400">
+                                      {isToday(inst.dueDate) ? "Today" : fmtDate(inst.dueDate)}
+                                    </span>
+                                    {isDue && (
+                                      <Badge className="text-[10px] px-1.5 py-0 h-4 bg-blue-100 text-blue-700 border-blue-200">
+                                        Due now
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className={cn("text-sm font-semibold flex-shrink-0", isDue ? "text-gray-900" : "text-gray-400")}>
+                                  {fmtINR(Number(inst.amount))}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
+                </>
+              )}
+            </div>
 
-                  {/* Contact Information */}
-                  <div className="space-y-3">
-                    <Label htmlFor="name" className="text-sm font-medium">
-                      Full Name *
-                    </Label>
-                    <Input
-                      id="name"
-                      placeholder="Enter your name"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                      className="h-11"
-                    />
+            {/* Security badge */}
+            <div className="flex items-center justify-center gap-4 text-xs text-gray-400 px-2">
+              <div className="flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <span>100% Secure</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Lock className="h-3.5 w-3.5" />
+                <span>256-bit Encrypted</span>
+              </div>
+            </div>
+          </div>
 
-                    {link.collectEmail && (
-                      <>
-                        <Label htmlFor="email" className="text-sm font-medium">
-                          Email *
-                        </Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="Enter your email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          required
-                          className="h-11"
-                        />
-                      </>
-                    )}
+          {/* ─── RIGHT PANEL ────────────────────────────────────────── */}
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
 
-                    {link.collectPhone && (
-                      <>
-                        <Label htmlFor="phone" className="text-sm font-medium">
-                          Phone Number *
-                        </Label>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="Enter your phone number"
-                          value={formData.phone}
-                          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                          required
-                          className="h-11"
-                        />
-                      </>
-                    )}
-                  </div>
+            {/* ══ SCREEN 1: OVERVIEW ════════════════════════════════ */}
+            {screen === "overview" && (
+              <div>
+                {/* Header bar */}
+                <div className="bg-blue-700 px-5 py-4">
+                  <p className="text-white font-semibold">{MERCHANT_NAME}</p>
+                  <p className="text-blue-200 text-xs mt-0.5">Secure Payment</p>
+                </div>
 
-                  {/* Address Collection */}
-                  {link.collectAddress && (
-                    <div className="space-y-3 pt-2">
-                      <Separator />
-                      <h4 className="text-sm font-semibold">Delivery Address</h4>
-
-                      <div className="space-y-3">
-                        <Input
-                          id="address"
-                          placeholder="Street Address"
-                          value={formData.address}
-                          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                          required
-                          className="h-11"
-                        />
-
-                        <div className="grid grid-cols-2 gap-3">
-                          <Input
-                            id="city"
-                            placeholder="City"
-                            value={formData.city}
-                            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                            required
-                            className="h-11"
-                          />
-                          <Input
-                            id="pincode"
-                            placeholder="Pincode"
-                            value={formData.pincode}
-                            onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
-                            required
-                            className="h-11"
-                          />
+                <div className="p-5 space-y-5">
+                  {/* Current payment highlight */}
+                  {isSchedule && currentInst ? (
+                    <div className="rounded-xl border-2 border-blue-600 bg-blue-50 p-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-0.5">
+                            Payment Due Now
+                          </p>
+                          <p className="font-semibold text-gray-900">
+                            {currentInst.label || "Payment 1"}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-1">
+                            <Calendar className="h-3 w-3 text-gray-400" />
+                            <span className="text-xs text-gray-500">
+                              Due {isToday(currentInst.dueDate) ? "today" : fmtDate(currentInst.dueDate)}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-blue-700">
+                            {fmtINR(Number(currentInst.amount))}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">of {fmtINR(totalAmount)} total</p>
                         </div>
                       </div>
                     </div>
+                  ) : (
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">Amount to Pay</p>
+                      <p className="text-2xl font-bold text-gray-900">{fmtINR(link.amount)}</p>
+                    </div>
                   )}
 
-                  <Separator />
-
-                  {/* Payment Schedule */}
-                  {link.collectInMultiplePayments && (
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-semibold">Payment Schedule</h4>
-                      {link.multiPaymentMode === "schedule" && link.installments && link.installments.length > 0 ? (
-                        <div className="rounded-lg border border-border bg-secondary/30 divide-y divide-border">
-                          {link.installments.map((inst, idx) => (
-                            <div key={inst.id} className="flex items-center justify-between px-3 py-2.5">
-                              <div>
-                                <p className="text-sm font-medium text-foreground">
-                                  {inst.label || `Installment ${idx + 1}`}
-                                </p>
-                                {inst.dueDate && (
-                                  <p className="text-xs text-muted-foreground">
-                                    Due {new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                                  </p>
-                                )}
-                              </div>
-                              <span className="text-sm font-semibold text-foreground">
-                                ₹{inst.amount.toLocaleString("en-IN")}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          You can pay any amount across multiple visits up to the total of ₹{totalAmount.toLocaleString("en-IN")}.
-                        </p>
+                  {/* Pay full amount option */}
+                  {isSchedule && remainingInsts.length > 0 && (
+                    <div
+                      className={cn(
+                        "flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer transition-all",
+                        payFull ? "border-blue-300 bg-blue-50" : "border-gray-200 hover:border-gray-300"
                       )}
-                    </div>
-                  )}
-
-                  {/* Payment Method Selection */}
-                  <div className="space-y-3">
-                    <h4 className="text-sm font-semibold">Select Payment Method</h4>
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("upi")}
-                        className={`p-3 rounded-md border-2 transition-all text-sm font-medium flex flex-col items-center gap-2 ${
-                          paymentMethod === "upi"
-                            ? "border-primary bg-primary/5 text-primary"
-                            : "border-border hover:border-primary/30"
-                        }`}
-                      >
-                        <Smartphone className="h-5 w-5" />
-                        UPI
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("card")}
-                        className={`p-3 rounded-md border-2 transition-all text-sm font-medium flex flex-col items-center gap-2 ${
-                          paymentMethod === "card"
-                            ? "border-primary bg-primary/5 text-primary"
-                            : "border-border hover:border-primary/30"
-                        }`}
-                      >
-                        <CreditCard className="h-5 w-5" />
-                        Card
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("netbanking")}
-                        className={`p-3 rounded-md border-2 transition-all text-sm font-medium flex flex-col items-center gap-2 ${
-                          paymentMethod === "netbanking"
-                            ? "border-primary bg-primary/5 text-primary"
-                            : "border-border hover:border-primary/30"
-                        }`}
-                      >
-                        <Building className="h-5 w-5" />
-                        NetBanking
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setPaymentMethod("wallet")}
-                        className={`p-3 rounded-md border-2 transition-all text-sm font-medium flex flex-col items-center gap-2 ${
-                          paymentMethod === "wallet"
-                            ? "border-primary bg-primary/5 text-primary"
-                            : "border-border hover:border-primary/30"
-                        }`}
-                      >
-                        <Wallet className="h-5 w-5" />
-                        Wallet
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* WhatsApp Consent */}
-                  {link.whatsappConfirmation && (
-                    <div className="flex items-start gap-3 p-3 bg-green-50 rounded-md border border-green-200">
-                      <Switch
-                        checked={formData.whatsappConsent}
-                        onCheckedChange={(checked) =>
-                          setFormData({ ...formData, whatsappConsent: checked })
-                        }
+                      onClick={() => setPayFull(!payFull)}
+                    >
+                      <Checkbox
+                        id="pay-full"
+                        checked={payFull}
+                        onCheckedChange={(v) => setPayFull(!!v)}
+                        className="mt-0.5 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                       />
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <MessageCircle className="h-3.5 w-3.5 text-green-600" />
-                          <Label className="text-sm font-medium text-green-900">
-                            Get updates on WhatsApp
-                          </Label>
-                        </div>
-                        <p className="text-xs text-green-700">
-                          Receive order confirmation and updates
+                        <label htmlFor="pay-full" className="text-sm font-medium text-gray-900 cursor-pointer">
+                          Pay full amount instead
+                        </label>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          Pay {fmtINR(totalAmount)} now and clear all {installments.length} payments
                         </p>
                       </div>
                     </div>
@@ -581,58 +401,381 @@ export function PaymentLinkCheckout() {
 
                   <Separator />
 
-                  {/* Amount Display & Pay Button */}
+                  {/* Customer details */}
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-base">
-                      <span className="font-medium">Amount to Pay</span>
-                      <span className="text-2xl font-bold">
-                        ₹{totalAmount.toLocaleString('en-IN')}
-                      </span>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className="w-full h-12 text-base font-semibold"
-                      disabled={processing}
-                    >
-                      {processing ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                          Processing...
-                        </>
-                      ) : (
-                        "Continue"
+                    <h3 className="text-sm font-semibold text-gray-700">Your Details</h3>
+                    <div className="space-y-2.5">
+                      <div>
+                        <Label htmlFor="name" className="text-xs font-medium text-gray-600 mb-1 block">
+                          Full Name *
+                        </Label>
+                        <Input
+                          id="name"
+                          placeholder="Enter your full name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="h-10"
+                        />
+                      </div>
+                      {link.collectEmail !== false && (
+                        <div>
+                          <Label htmlFor="email" className="text-xs font-medium text-gray-600 mb-1 block">
+                            Email Address {link.collectEmail ? "*" : "(optional)"}
+                          </Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder="you@example.com"
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                            className="h-10"
+                          />
+                        </div>
                       )}
-                    </Button>
-
-                    {/* Security Info */}
-                    <div className="flex items-center justify-center gap-3 text-xs text-muted-foreground pt-1">
-                      <div className="flex items-center gap-1">
-                        <Lock className="h-3 w-3" />
-                        <span>Secure</span>
-                      </div>
-                      <span>•</span>
-                      <div className="flex items-center gap-1">
-                        <ShieldCheck className="h-3 w-3" />
-                        <span>Encrypted</span>
-                      </div>
+                      {link.collectPhone !== false && (
+                        <div>
+                          <Label htmlFor="phone" className="text-xs font-medium text-gray-600 mb-1 block">
+                            Mobile Number {link.collectPhone ? "*" : "(optional)"}
+                          </Label>
+                          <div className="flex gap-2">
+                            <div className="flex items-center px-3 h-10 rounded-md border border-gray-200 bg-gray-50 text-sm text-gray-600 flex-shrink-0">
+                              +91
+                            </div>
+                            <Input
+                              id="phone"
+                              type="tel"
+                              placeholder="10-digit number"
+                              value={formData.phone}
+                              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                              className="h-10 flex-1"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </form>
-              </CardContent>
-            </Card>
+
+                  <Separator />
+
+                  {/* CTA */}
+                  <div>
+                    <Button
+                      onClick={handleContinue}
+                      disabled={!formData.name.trim()}
+                      className="w-full h-11 bg-blue-700 hover:bg-blue-800 text-sm font-semibold"
+                    >
+                      Continue to Pay {fmtINR(payNowAmount)}
+                      <ChevronRight className="ml-1.5 h-4 w-4" />
+                    </Button>
+                    <p className="text-center text-xs text-gray-400 mt-2.5 flex items-center justify-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      Secured by Razorpay
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ══ SCREEN 2: PAYMENT METHOD ══════════════════════════ */}
+            {screen === "method" && (
+              <div>
+                {/* Header */}
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+                  <button
+                    onClick={() => setScreen("overview")}
+                    className="text-gray-400 hover:text-gray-700 transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900">Select Payment Method</p>
+                    <p className="text-xs text-gray-400">
+                      Paying {fmtINR(payNowAmount)}
+                      {payFull ? " (full amount)" : isSchedule ? " (first instalment)" : ""}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-base font-bold text-gray-900">{fmtINR(payNowAmount)}</p>
+                  </div>
+                </div>
+
+                <div className="p-5 space-y-4">
+                  {/* Method tabs */}
+                  <div className="grid grid-cols-4 gap-2">
+                    {(
+                      [
+                        { key: "upi" as PayMethod, icon: <Smartphone className="h-4 w-4" />, label: "UPI" },
+                        { key: "card" as PayMethod, icon: <CreditCard className="h-4 w-4" />, label: "Card" },
+                        { key: "netbanking" as PayMethod, icon: <Building2 className="h-4 w-4" />, label: "Net Banking" },
+                        { key: "wallet" as PayMethod, icon: <Wallet className="h-4 w-4" />, label: "Wallet" },
+                      ] as const
+                    ).map(({ key, icon, label }) => (
+                      <button
+                        key={key}
+                        onClick={() => setPayMethod(key)}
+                        className={cn(
+                          "flex flex-col items-center gap-1.5 py-3 rounded-lg border text-xs font-medium transition-all",
+                          payMethod === key
+                            ? "border-blue-600 bg-blue-50 text-blue-700"
+                            : "border-gray-200 text-gray-500 hover:border-gray-300"
+                        )}
+                      >
+                        {icon}
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* UPI */}
+                  {payMethod === "upi" && (
+                    <div className="space-y-4">
+                      {/* QR code placeholder */}
+                      <div className="flex flex-col items-center py-5 rounded-xl border border-gray-200 bg-gray-50">
+                        <QrCode className="h-24 w-24 text-gray-300" />
+                        <p className="text-xs text-gray-500 mt-2">Scan with any UPI app</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          {["G Pay", "PhonePe", "Paytm", "BHIM"].map((app) => (
+                            <span key={app} className="text-[10px] px-1.5 py-0.5 rounded bg-white border border-gray-200 text-gray-500">
+                              {app}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <div className="flex-1 h-px bg-gray-200" />
+                        <span>or pay with UPI ID</span>
+                        <div className="flex-1 h-px bg-gray-200" />
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="yourname@upi"
+                          value={upiId}
+                          onChange={(e) => { setUpiId(e.target.value); setUpiVerified(false); }}
+                          className="h-10 flex-1"
+                        />
+                        <Button
+                          variant="outline"
+                          className="h-10 px-4 text-sm"
+                          onClick={() => { if (upiId.includes("@")) setUpiVerified(true); }}
+                        >
+                          {upiVerified ? (
+                            <span className="flex items-center gap-1 text-green-600">
+                              <Check className="h-4 w-4" /> Verified
+                            </span>
+                          ) : "Verify"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Card */}
+                  {payMethod === "card" && (
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-gray-600 mb-1 block">Card Number</Label>
+                        <Input
+                          placeholder="0000 0000 0000 0000"
+                          value={cardData.number}
+                          onChange={(e) => {
+                            const v = e.target.value.replace(/\D/g, "").slice(0, 16);
+                            const f = v.replace(/(.{4})/g, "$1 ").trim();
+                            setCardData({ ...cardData, number: f });
+                          }}
+                          className="h-10 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-600 mb-1 block">Name on Card</Label>
+                        <Input
+                          placeholder="As printed on card"
+                          value={cardData.name}
+                          onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
+                          className="h-10"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs text-gray-600 mb-1 block">Expiry</Label>
+                          <Input
+                            placeholder="MM / YY"
+                            value={cardData.expiry}
+                            onChange={(e) => {
+                              let v = e.target.value.replace(/\D/g, "").slice(0, 4);
+                              if (v.length >= 3) v = v.slice(0, 2) + " / " + v.slice(2);
+                              setCardData({ ...cardData, expiry: v });
+                            }}
+                            className="h-10 font-mono"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs text-gray-600 mb-1 block">CVV</Label>
+                          <Input
+                            placeholder="• • •"
+                            type="password"
+                            maxLength={4}
+                            value={cardData.cvv}
+                            onChange={(e) => setCardData({ ...cardData, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                            className="h-10 font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Net Banking */}
+                  {payMethod === "netbanking" && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {["SBI", "HDFC", "ICICI", "Axis", "Kotak", "Yes Bank", "PNB", "Canara", "Union Bank"].map((bank) => (
+                        <button
+                          key={bank}
+                          className="py-3 px-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition-all"
+                        >
+                          {bank}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Wallet */}
+                  {payMethod === "wallet" && (
+                    <div className="grid grid-cols-3 gap-2">
+                      {["Paytm", "PhonePe", "Amazon Pay", "Mobikwik", "Freecharge", "Ola Money"].map((w) => (
+                        <button
+                          key={w}
+                          className="py-3 px-2 rounded-lg border border-gray-200 text-xs font-medium text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition-all"
+                        >
+                          {w}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <Separator />
+
+                  {/* Pay button */}
+                  <Button
+                    onClick={handlePay}
+                    disabled={processing}
+                    className="w-full h-11 bg-blue-700 hover:bg-blue-800 text-sm font-semibold"
+                  >
+                    {processing ? (
+                      <span className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                        Processing…
+                      </span>
+                    ) : (
+                      `Pay ${fmtINR(payNowAmount)}`
+                    )}
+                  </Button>
+
+                  <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1.5">
+                    <ShieldCheck className="h-3 w-3" />
+                    Payments secured by Razorpay · PCI DSS compliant
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* ══ SCREEN 3: SUCCESS ════════════════════════════════ */}
+            {screen === "success" && (
+              <div>
+                {/* Success header */}
+                <div className="bg-green-50 border-b border-green-100 px-5 py-6 text-center">
+                  <div className="mx-auto h-14 w-14 rounded-full bg-green-600 flex items-center justify-center mb-3">
+                    <CheckCircle2 className="h-7 w-7 text-white" />
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900">Payment Successful!</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {fmtINR(payNowAmount)} paid to {MERCHANT_NAME}
+                  </p>
+                </div>
+
+                <div className="p-5 space-y-5">
+                  {/* Transaction details */}
+                  <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
+                    {[
+                      { label: "Transaction ID", value: txnId },
+                      { label: "Amount Paid", value: fmtINR(payNowAmount) },
+                      {
+                        label: "Payment", value: payFull
+                          ? "Full amount cleared"
+                          : isSchedule && currentInst
+                          ? currentInst.label || "Payment 1"
+                          : link.title,
+                      },
+                      { label: "Method", value: { upi: "UPI", card: "Credit / Debit Card", netbanking: "Net Banking", wallet: "Wallet" }[payMethod] },
+                      { label: "Date", value: new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }) },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex items-center justify-between px-4 py-3">
+                        <span className="text-xs text-gray-500">{label}</span>
+                        <span className="text-sm font-medium text-gray-900">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Remaining payments */}
+                  {isSchedule && !payFull && remainingInsts.length > 0 && (
+                    <div>
+                      <p className="text-sm font-semibold text-gray-700 mb-3">
+                        Upcoming Payments
+                      </p>
+                      <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
+                        {remainingInsts.map((inst, idx) => (
+                          <div key={inst.id} className="flex items-center justify-between px-4 py-3">
+                            <div>
+                              <p className="text-sm font-medium text-gray-900">
+                                {inst.label || `Payment ${idx + 2}`}
+                              </p>
+                              <div className="flex items-center gap-1 mt-0.5">
+                                <Calendar className="h-3 w-3 text-gray-400" />
+                                <span className="text-xs text-gray-400">{fmtDate(inst.dueDate)}</span>
+                              </div>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-700">
+                              {fmtINR(Number(inst.amount))}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-400 mt-2 text-center">
+                        You'll receive a reminder before each payment is due.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* All paid confirmation */}
+                  {isSchedule && payFull && (
+                    <div className="rounded-xl bg-green-50 border border-green-200 px-4 py-3 flex items-center gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <p className="text-sm text-green-800">
+                        All {installments.length} payments cleared. You're fully paid up!
+                      </p>
+                    </div>
+                  )}
+
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm"
+                    onClick={() => navigate("/")}
+                  >
+                    Done
+                  </Button>
+                </div>
+              </div>
+            )}
+
           </div>
+          {/* end right panel */}
         </div>
       </div>
 
       {/* Footer */}
-      <div className="border-t bg-white mt-8">
-        <div className="max-w-5xl mx-auto px-4 py-4 text-center">
-          <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-            <Lock className="h-3 w-3" />
-            <span>Powered by <span className="font-semibold text-foreground">Razorpay</span></span>
-          </div>
+      <div className="border-t border-gray-200 bg-white mt-4">
+        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-center gap-1.5 text-xs text-gray-400">
+          <Lock className="h-3 w-3" />
+          <span>Powered by <span className="font-semibold text-gray-600">Razorpay</span></span>
         </div>
       </div>
     </div>
