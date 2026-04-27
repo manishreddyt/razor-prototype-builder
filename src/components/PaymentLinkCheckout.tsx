@@ -90,15 +90,32 @@ const DEMO_LINK: PaymentLink = {
 const fmtINR = (n: number) =>
   `₹${n.toLocaleString("en-IN")}`;
 
-const fmtDate = (iso: string) =>
-  new Date(iso).toLocaleDateString("en-IN", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+const parseDate = (iso: string): Date | null => {
+  if (!iso) return null;
+  const d = new Date(iso);
+  return isNaN(d.getTime()) ? null : d;
+};
+
+/** Returns a human-readable relative label: "Today", "Tomorrow", "in 30 days", "15 Apr" */
+const fmtRelative = (iso: string): string => {
+  const d = parseDate(iso);
+  if (!d) return "—";
+  const todayMid = new Date();
+  todayMid.setHours(0, 0, 0, 0);
+  const targetMid = new Date(d);
+  targetMid.setHours(0, 0, 0, 0);
+  const diff = Math.round((targetMid.getTime() - todayMid.getTime()) / 86_400_000);
+  if (diff === 0) return "Today";
+  if (diff === 1) return "Tomorrow";
+  if (diff > 1 && diff <= 90) return `in ${diff} days`;
+  if (diff < 0 && diff >= -1) return "Yesterday";
+  if (diff < -1) return `${Math.abs(diff)} days ago`;
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+};
 
 const isToday = (iso: string) => {
-  const d = new Date(iso);
+  const d = parseDate(iso);
+  if (!d) return false;
   const t = new Date();
   return d.getDate() === t.getDate() && d.getMonth() === t.getMonth() && d.getFullYear() === t.getFullYear();
 };
@@ -291,7 +308,7 @@ export function PaymentLinkCheckout() {
                                   <div className="flex items-center gap-1.5 mt-0.5">
                                     <Calendar className="h-3 w-3 text-gray-400" />
                                     <span className="text-xs text-gray-400">
-                                      {isToday(inst.dueDate) ? "Today" : fmtDate(inst.dueDate)}
+                                      {fmtRelative(inst.dueDate)}
                                     </span>
                                     {isDue && (
                                       <Badge className="text-[10px] px-1.5 py-0 h-4 bg-blue-100 text-blue-700 border-blue-200">
@@ -354,7 +371,7 @@ export function PaymentLinkCheckout() {
                           <div className="flex items-center gap-1.5 mt-1">
                             <Calendar className="h-3 w-3 text-gray-400" />
                             <span className="text-xs text-gray-500">
-                              Due {isToday(currentInst.dueDate) ? "today" : fmtDate(currentInst.dueDate)}
+                              Due {fmtRelative(currentInst.dueDate).toLowerCase()}
                             </span>
                           </div>
                         </div>
@@ -730,7 +747,7 @@ export function PaymentLinkCheckout() {
                               </p>
                               <div className="flex items-center gap-1 mt-0.5">
                                 <Calendar className="h-3 w-3 text-gray-400" />
-                                <span className="text-xs text-gray-400">{fmtDate(inst.dueDate)}</span>
+                                <span className="text-xs text-gray-400">{fmtRelative(inst.dueDate)}</span>
                               </div>
                             </div>
                             <span className="text-sm font-semibold text-gray-700">
