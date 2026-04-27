@@ -152,8 +152,8 @@ const PaymentLinks = () => {
   const [multiPaymentMode, setMultiPaymentMode] = useState<"schedule" | "customer_choice">("schedule");
   const [splitType, setSplitType] = useState<"equal" | "custom">("equal");
   const [installments, setInstallments] = useState([
-    { id: "1", label: "Installment 1", amount: "", dueDate: "", description: "" },
-    { id: "2", label: "Installment 2", amount: "", dueDate: "", description: "" },
+    { id: "1", label: "Payment 1", amount: "", dueDate: new Date().toISOString().split('T')[0], description: "" },
+    { id: "2", label: "Payment 2", amount: "", dueDate: "", description: "" },
   ]);
 
   // Initialize localStorage with sample data and load existing links
@@ -422,8 +422,8 @@ const PaymentLinks = () => {
     setMultiPaymentMode("schedule");
     setSplitType("equal");
     setInstallments([
-      { id: "1", label: "Installment 1", amount: "", dueDate: "", description: "" },
-      { id: "2", label: "Installment 2", amount: "", dueDate: "", description: "" },
+      { id: "1", label: "Payment 1", amount: "", dueDate: new Date().toISOString().split('T')[0], description: "" },
+      { id: "2", label: "Payment 2", amount: "", dueDate: "", description: "" },
     ]);
     setNotifyEmail(false);
     setNotifySMS(false);
@@ -842,8 +842,11 @@ const PaymentLinks = () => {
                           onClick={() => {
                             setSplitType("equal");
                             if (formData.amount && Number(formData.amount) > 0) {
-                              const equalAmt = (Number(formData.amount) / installments.length).toFixed(2);
-                              setInstallments(installments.map(i => ({ ...i, amount: equalAmt })));
+                              const target = Number(formData.amount);
+                              const count = installments.length;
+                              const baseAmt = Math.floor(target / count * 100) / 100;
+                              const lastAmt = Math.round((target - baseAmt * (count - 1)) * 100) / 100;
+                              setInstallments(installments.map((i, idx2) => ({ ...i, amount: idx2 === count - 1 ? lastAmt.toFixed(2) : baseAmt.toFixed(2) })));
                             }
                           }}
                         >
@@ -862,7 +865,7 @@ const PaymentLinks = () => {
                         {installments.map((inst, idx) => (
                           <div key={inst.id} className="p-3 bg-background border border-border rounded-lg space-y-2">
                             <div className="flex items-center justify-between">
-                              <span className="text-xs font-medium text-foreground">Installment {idx + 1}</span>
+                              <span className="text-xs font-medium text-foreground">Payment {idx + 1}</span>
                               {installments.length > 2 && (
                                 <button
                                   onClick={() => setInstallments(installments.filter(i => i.id !== inst.id))}
@@ -896,7 +899,7 @@ const PaymentLinks = () => {
                             </div>
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <label className="text-xs text-muted-foreground mb-1 block">Due Date</label>
+                                <label className="text-xs text-muted-foreground mb-1 block">{idx === 0 ? "Due Date" : "Due Date (optional)"}</label>
                                 <Input
                                   type="date"
                                   value={inst.dueDate}
@@ -928,14 +931,14 @@ const PaymentLinks = () => {
                             return (
                               <p className="text-xs text-destructive flex items-center gap-1">
                                 <Info className="h-3 w-3" />
-                                Installment total (₹{total.toFixed(2)}) must equal link amount (₹{target.toFixed(2)})
+                                Payment total (₹{total.toFixed(2)}) must equal link amount (₹{target.toFixed(2)})
                               </p>
                             );
                           }
                           return (
                             <p className="text-xs text-green-600 flex items-center gap-1">
                               <CheckCircle2 className="h-3 w-3" />
-                              Installment total matches link amount
+                              Payment total matches link amount
                             </p>
                           );
                         })()
@@ -946,18 +949,21 @@ const PaymentLinks = () => {
                         className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
                         onClick={() => {
                           const newId = String(Date.now());
-                          const newInst = { id: newId, label: `Installment ${installments.length + 1}`, amount: "", dueDate: "", description: "" };
+                          const newInst = { id: newId, label: `Payment ${installments.length + 1}`, amount: "", dueDate: "", description: "" };
                           const updated = [...installments, newInst];
                           if (splitType === "equal" && formData.amount && Number(formData.amount) > 0) {
-                            const equalAmt = (Number(formData.amount) / updated.length).toFixed(2);
-                            setInstallments(updated.map(i => ({ ...i, amount: equalAmt })));
+                            const target = Number(formData.amount);
+                            const count = updated.length;
+                            const baseAmt = Math.floor(target / count * 100) / 100;
+                            const lastAmt = Math.round((target - baseAmt * (count - 1)) * 100) / 100;
+                            setInstallments(updated.map((i, idx2) => ({ ...i, amount: idx2 === count - 1 ? lastAmt.toFixed(2) : baseAmt.toFixed(2) })));
                           } else {
                             setInstallments(updated);
                           }
                         }}
                       >
                         <Plus className="h-3.5 w-3.5" />
-                        Add Installment
+                        Add Payment
                       </button>
                     </div>
                   )}
@@ -974,13 +980,7 @@ const PaymentLinks = () => {
             </div>
 
             {/* Receipt Settings */}
-            <div className="border border-border rounded-lg overflow-hidden">
-              <div className="flex items-center gap-2 px-4 py-3 bg-secondary/30 border-b border-border">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-semibold text-foreground">Payment Receipts Settings</span>
-              </div>
-
-              <div className="px-4 py-4 space-y-4">
+            <div className="space-y-4">
                 {/* Receipt type — mutually exclusive checkboxes */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -1018,7 +1018,7 @@ const PaymentLinks = () => {
                     />
                     <div>
                       <label htmlFor="gstReceiptEnabled" className="text-sm font-medium text-foreground cursor-pointer">
-                        GST Receipt
+                        Post-Payment Invoice
                       </label>
                       <p className="text-xs text-muted-foreground mt-0.5">Generate GST-compliant invoice with customer &amp; tax details</p>
                     </div>
@@ -1443,7 +1443,6 @@ const PaymentLinks = () => {
                 </div>
               </div>
             </div>
-          </div>
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 flex-shrink-0 bg-background">
@@ -1497,13 +1496,13 @@ const PaymentLinks = () => {
               <div className="p-3 bg-secondary/30 rounded-lg border border-border">
                 <p className="text-xs font-medium text-foreground mb-2">
                   Payment Schedule
-                  {multiPaymentMode === "schedule" ? ` — ${installments.length} installments` : " — Customer chooses amount"}
+                  {multiPaymentMode === "schedule" ? ` — ${installments.length} payments` : " — Customer chooses amount"}
                 </p>
                 {multiPaymentMode === "schedule" ? (
                   <div className="space-y-1.5">
                     {installments.map((inst, idx) => (
                       <div key={inst.id} className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{inst.label || `Installment ${idx + 1}`}{inst.dueDate ? ` · Due ${new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}</span>
+                        <span>{inst.label || `Payment ${idx + 1}`}{inst.dueDate ? ` · Due ${new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}</span>
                         <span className="font-medium text-foreground">₹{Number(inst.amount).toLocaleString("en-IN")}</span>
                       </div>
                     ))}
