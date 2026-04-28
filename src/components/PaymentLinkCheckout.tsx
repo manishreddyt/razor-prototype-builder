@@ -247,8 +247,8 @@ export function PaymentLinkCheckout() {
                   <span className="text-white font-bold text-sm">{MERCHANT_INITIALS}</span>
                 </div>
                 <div>
+                  <p className="text-xs text-gray-400 leading-tight">Payment Request from</p>
                   <p className="font-semibold text-gray-900 leading-tight">{MERCHANT_NAME}</p>
-                  <p className="text-xs text-gray-400">{MERCHANT_DOMAIN}</p>
                 </div>
               </div>
 
@@ -256,9 +256,10 @@ export function PaymentLinkCheckout() {
 
               {/* Payment title & description */}
               <div className="mb-4">
+                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Payment For</p>
                 <p className="font-semibold text-gray-900">{link.title}</p>
                 {link.description && (
-                  <p className="text-sm text-gray-500 mt-1">{link.description}</p>
+                  <p className="text-sm text-gray-500 mt-1 line-clamp-1">{link.description}</p>
                 )}
               </div>
 
@@ -341,6 +342,17 @@ export function PaymentLinkCheckout() {
                 <Lock className="h-3.5 w-3.5" />
                 <span>256-bit Encrypted</span>
               </div>
+            </div>
+
+            {/* Contact & policies footer */}
+            <div className="mt-4 pt-4 border-t border-gray-100 text-center space-y-1">
+              <p className="text-xs text-gray-400">
+                For any queries, please contact{" "}
+                <span className="font-medium text-gray-600">{MERCHANT_NAME}</span>
+              </p>
+              <button className="text-xs text-blue-600 underline underline-offset-2 hover:text-blue-700">
+                Merchant's business policies
+              </button>
             </div>
           </div>
 
