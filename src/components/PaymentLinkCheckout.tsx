@@ -802,9 +802,51 @@ export function PaymentLinkCheckout() {
 
       {/* Footer */}
       <div className="border-t border-gray-200 bg-white mt-4">
-        <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-center gap-1.5 text-xs text-gray-400">
-          <Lock className="h-3 w-3" />
-          <span>Powered by <span className="font-semibold text-gray-600">Razorpay</span></span>
+        <div className="max-w-5xl mx-auto px-4 py-5 space-y-3 text-center">
+
+          {/* Razorpay branding + accepted payment methods */}
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <Lock className="h-3 w-3" />
+              <span>Secured by{" "}
+                <span className="font-bold tracking-tight" style={{ color: "#072654" }}>Razorpay</span>
+              </span>
+            </div>
+            <span className="text-gray-300 hidden sm:inline">|</span>
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-600">UPI</span>
+              <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded text-white" style={{ background: "#1A1F71" }}>VISA</span>
+              <span className="flex items-center">
+                <span className="h-4 w-4 rounded-full inline-block" style={{ background: "#EB001B", marginRight: "-7px" }} />
+                <span className="h-4 w-4 rounded-full inline-block" style={{ background: "#F79E1B" }} />
+              </span>
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-600">Net Banking</span>
+              <span className="text-[10px] font-medium px-1.5 py-0.5 rounded border border-gray-200 bg-gray-50 text-gray-600">Wallets</span>
+            </div>
+          </div>
+
+          {/* Merchant CTA */}
+          <p className="text-xs text-gray-500">
+            Want to create payment links for your business?{" "}
+            <a
+              href="https://razorpay.com/payment-links"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline font-medium"
+            >
+              Visit razorpay.com/payment-links
+            </a>{" "}
+            and get started instantly.
+          </p>
+
+          {/* Report link */}
+          <p className="text-xs text-gray-400">
+            Please report this Payment Link if you find it to be suspicious{" "}
+            <button className="text-red-500 hover:text-red-600 font-medium">
+              🚩 Report Payment Link
+            </button>
+          </p>
+
         </div>
       </div>
     </div>
