@@ -167,10 +167,31 @@ const PaymentLinks = () => {
     // Load existing payment links or create sample ones (v3 forces refresh with paid examples)
     const stored = localStorage.getItem("payment_links");
     const storedVersion = localStorage.getItem("payment_links_version");
-    if (stored && storedVersion === "v4") {
+    if (stored && storedVersion === "v5") {
       setPaymentLinks(JSON.parse(stored));
     } else {
       const sampleLinks = [
+        {
+          id: "demo-wj-001",
+          title: "Business Management Programme",
+          description: "3-month intensive programme · Batch starting 1 May 2026",
+          date: new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+          amount: 12000,
+          currency: "INR",
+          status: "Created",
+          createdAt: new Date().toISOString(),
+          collectPhone: true,
+          collectEmail: true,
+          collectAddress: false,
+          sendReceiptAuto: false,
+          collectInMultiplePayments: true,
+          multiPaymentMode: "schedule",
+          installments: [
+            { id: "1", label: "Payment 1 — Enrolment Fee", amount: 4000, dueDate: new Date().toISOString().split("T")[0], description: "" },
+            { id: "2", label: "Payment 2 — Month 2", amount: 4000, dueDate: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0], description: "" },
+            { id: "3", label: "Payment 3 — Month 3", amount: 4000, dueDate: new Date(Date.now() + 60 * 86400000).toISOString().split("T")[0], description: "" },
+          ],
+        },
         {
           id: "plink_OnlineCourse001",
           title: "Online Course Payment",
@@ -376,7 +397,7 @@ const PaymentLinks = () => {
         },
       ];
       localStorage.setItem("payment_links", JSON.stringify(sampleLinks));
-      localStorage.setItem("payment_links_version", "v4");
+      localStorage.setItem("payment_links_version", "v5");
       setPaymentLinks(sampleLinks);
     }
   }, []);
@@ -567,7 +588,8 @@ const PaymentLinks = () => {
                   const linkUrl = `${window.location.origin}/pay/${link.id}`;
                   return (
                     <tr key={link.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                      <td className="px-3 sm:px-5 py-3 font-medium text-primary cursor-pointer hover:underline text-xs sm:text-sm" onClick={() => setSelectedLink(link)}>
+                      <td className="px-3 sm:px-5 py-3 font-medium text-primary cursor-pointer hover:underline text-xs sm:text-sm"
+                          onClick={() => (link.collectInMultiplePayments && link.multiPaymentMode === "schedule") ? navigate(`/pay/${link.id}`) : setSelectedLink(link)}>
                         <span className="block max-w-[100px] truncate">{link.id}</span>
                       </td>
                       <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm whitespace-nowrap">{link.date}</td>
@@ -606,7 +628,10 @@ const PaymentLinks = () => {
                         <span className={`${statusBadgeClass[displayStatus] || "blade-badge"} text-xs whitespace-nowrap`}>{displayStatus}</span>
                       </td>
                       <td className="px-3 sm:px-5 py-3">
-                        <button className="text-muted-foreground hover:text-primary" onClick={() => setSelectedLink(link)}><Eye className="h-4 w-4" /></button>
+                        <button className="text-muted-foreground hover:text-primary"
+                          onClick={() => (link.collectInMultiplePayments && link.multiPaymentMode === "schedule") ? navigate(`/pay/${link.id}`) : setSelectedLink(link)}>
+                          <Eye className="h-4 w-4" />
+                        </button>
                       </td>
                     </tr>
                   );
@@ -787,7 +812,7 @@ const PaymentLinks = () => {
 
                     {/* Option 1: As per defined schedule */}
                     <div
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "schedule" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-background hover:bg-secondary/30"}`}
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "schedule" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-white hover:bg-secondary/30"}`}
                       onClick={() => setMultiPaymentMode("schedule")}
                     >
                       <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 ${multiPaymentMode === "schedule" ? "border-blue-500 bg-blue-500" : "border-muted-foreground"}`}>
@@ -809,7 +834,7 @@ const PaymentLinks = () => {
 
                     {/* Option 2: Let customer choose */}
                     <div
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "customer_choice" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-background hover:bg-secondary/30"}`}
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "customer_choice" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-white hover:bg-secondary/30"}`}
                       onClick={() => setMultiPaymentMode("customer_choice")}
                     >
                       <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 ${multiPaymentMode === "customer_choice" ? "border-blue-500 bg-blue-500" : "border-muted-foreground"}`}>
@@ -863,7 +888,7 @@ const PaymentLinks = () => {
                       {/* Installments list */}
                       <div className="space-y-3">
                         {installments.map((inst, idx) => (
-                          <div key={inst.id} className="p-3 bg-background border border-border rounded-lg space-y-2">
+                          <div key={inst.id} className="p-3 bg-white border border-border rounded-lg space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-medium text-foreground">Payment {idx + 1}</span>
                               {installments.length > 2 && (
@@ -1190,7 +1215,7 @@ const PaymentLinks = () => {
                       <label className="text-xs text-muted-foreground mb-2 block">Items</label>
                       <div className="space-y-2">
                         {invoiceItems.map((item, idx) => (
-                          <div key={item.id} className="border border-border rounded-md p-3 space-y-2 bg-background">
+                          <div key={item.id} className="border border-border rounded-md p-3 space-y-2 bg-white">
                             <div className="flex items-center justify-between">
                               <span className="text-xs font-medium text-foreground">Item {idx + 1}</span>
                               {invoiceItems.length > 1 && (
@@ -1217,7 +1242,7 @@ const PaymentLinks = () => {
                                 }}
                               />
                               {itemSuggestionOpen === idx && (
-                                <div className="absolute z-50 left-0 right-0 top-full mt-1 border border-border rounded-md bg-background shadow-lg overflow-hidden">
+                                <div className="absolute z-50 left-0 right-0 top-full mt-1 border border-border rounded-md bg-white shadow-lg overflow-hidden">
                                   {SAVED_ITEMS.filter((s) =>
                                     !item.name || s.name.toLowerCase().includes(item.name.toLowerCase())
                                   ).map((s) => (
@@ -1370,7 +1395,7 @@ const PaymentLinks = () => {
                           onChange={(e) => setG80Description(e.target.value)}
                           placeholder="All donations made to us are eligible for tax exemption under 80G of IT act"
                           rows={3}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                          className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                         />
                       </div>
 
@@ -1381,7 +1406,7 @@ const PaymentLinks = () => {
                           <span className="text-muted-foreground font-normal">(Optional)</span>
                         </label>
                         <label
-                          className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-background px-4 py-5 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors"
+                          className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-white px-4 py-5 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors"
                         >
                           <input
                             type="file"
@@ -1445,7 +1470,7 @@ const PaymentLinks = () => {
             </div>
 
           {/* Footer */}
-          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 flex-shrink-0 bg-background">
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 flex-shrink-0 bg-white">
             <Button variant="outline" className="px-6" onClick={() => { setShowCreate(false); resetCreateForm(); }}>
               Cancel
             </Button>
