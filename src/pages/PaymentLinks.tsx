@@ -99,6 +99,7 @@ const PaymentLinks = () => {
   // New form state
   const [notifyEmail, setNotifyEmail] = useState(false);
   const [notifySMS, setNotifySMS] = useState(false);
+  const [notifyWhatsApp, setNotifyWhatsApp] = useState(false);
   const [noExpiry, setNoExpiry] = useState(true);
   const [sendReminders, setSendReminders] = useState(false);
   const [expiryDate, setExpiryDate] = useState("");
@@ -422,6 +423,20 @@ const PaymentLinks = () => {
     setDetailInvoiceItems([{ id: "1", name: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
   }, [selectedLink]);
 
+  // Auto-recalculate equal split when amount changes
+  useEffect(() => {
+    if (collectInMultiplePayments && splitType === "equal" && formData.amount && Number(formData.amount) > 0) {
+      const target = Number(formData.amount);
+      const count = installments.length;
+      const baseAmt = Math.floor(target / count * 100) / 100;
+      const lastAmt = Math.round((target - baseAmt * (count - 1)) * 100) / 100;
+      setInstallments(prev => prev.map((inst, idx) => ({
+        ...inst,
+        amount: idx === count - 1 ? lastAmt.toFixed(2) : baseAmt.toFixed(2),
+      })));
+    }
+  }, [formData.amount, splitType, collectInMultiplePayments, installments.length]);
+
   // Map link status to display status
   const getDisplayStatus = (link: any) => {
     if (link.status === "active") return "Created";
@@ -448,6 +463,7 @@ const PaymentLinks = () => {
     ]);
     setNotifyEmail(false);
     setNotifySMS(false);
+    setNotifyWhatsApp(false);
     setNoExpiry(true);
     setSendReminders(false);
     setExpiryDate("");
@@ -491,6 +507,7 @@ const PaymentLinks = () => {
       createdAt: new Date().toISOString(),
       collectPhone: notifySMS,
       collectEmail: notifyEmail,
+      notifyWhatsApp: notifyWhatsApp,
       collectAddress,
       selectedProducts,
       shiprocketEnabled,
@@ -943,15 +960,27 @@ const PaymentLinks = () => {
                     className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 rounded-none flex-1"
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="notifySMS"
-                    checked={notifySMS}
-                    onCheckedChange={(checked) => setNotifySMS(!!checked)}
-                  />
-                  <label htmlFor="notifySMS" className="text-sm text-foreground cursor-pointer">
-                    Notify via SMS
-                  </label>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="notifyWhatsApp"
+                      checked={notifyWhatsApp}
+                      onCheckedChange={(checked) => setNotifyWhatsApp(!!checked)}
+                    />
+                    <label htmlFor="notifyWhatsApp" className="text-sm text-foreground cursor-pointer">
+                      Notify via WhatsApp
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="notifySMS"
+                      checked={notifySMS}
+                      onCheckedChange={(checked) => setNotifySMS(!!checked)}
+                    />
+                    <label htmlFor="notifySMS" className="text-sm text-foreground cursor-pointer">
+                      Notify via SMS
+                    </label>
+                  </div>
                 </div>
               </div>
 
