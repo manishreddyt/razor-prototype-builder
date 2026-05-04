@@ -513,6 +513,224 @@ const PaymentLinks = () => {
     toast.success("Payment link created successfully!");
   };
 
+  const handleDownloadInvoicePdf = () => {
+    const items = detailInvoiceItems.filter(i => i.name || i.rate);
+    const subtotal = items.reduce((sum, i) => sum + (parseFloat(i.rate) || 0) * (parseFloat(i.qty) || 1), 0);
+    const taxAmt = items.reduce((sum, i) => {
+      const lineAmt = (parseFloat(i.rate) || 0) * (parseFloat(i.qty) || 1);
+      return sum + lineAmt * ((parseFloat(i.taxRate) || 0) / 100);
+    }, 0);
+    const total = subtotal + taxAmt;
+    const invoiceNumber = `INV-${(selectedLink?.id || "000000").slice(-6).toUpperCase()}`;
+    const today = new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+    const dueDate = new Date(Date.now() + 14 * 86400000).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+
+    const shippingAddr = detailShippingSameAsBilling
+      ? { addr: detailBillingAddress, city: detailBillingCity, state: detailBillingState, pin: detailBillingPincode }
+      : { addr: detailShippingAddress, city: detailShippingCity, state: detailShippingState, pin: detailShippingPincode };
+
+    const itemRows = items.map(i => {
+      const lineAmt = (parseFloat(i.rate) || 0) * (parseFloat(i.qty) || 1);
+      return `<tr>
+        <td>
+          <div class="item-name">${i.name || "—"}</div>
+          ${i.hsn ? `<div class="item-hsn">HSN/SAC: ${i.hsn}</div>` : ""}
+        </td>
+        <td>₹ ${(parseFloat(i.rate) || 0).toFixed(2)}</td>
+        <td>${i.qty || 1}</td>
+        <td>${i.taxRate ? `${i.taxRate}%` : "—"}</td>
+        <td>₹ ${lineAmt.toFixed(2)}<div class="amount-note">${(parseFloat(i.rate) || 0).toFixed(2)} × ${i.qty || 1}</div></td>
+      </tr>`;
+    }).join("");
+
+    const taxBreakdownRows = items.filter(i => i.taxRate && parseFloat(i.taxRate) > 0).map(i => {
+      const lineAmt = (parseFloat(i.rate) || 0) * (parseFloat(i.qty) || 1);
+      const halfRate = parseFloat(i.taxRate) / 2;
+      const halfTax = lineAmt * halfRate / 100;
+      return `<div class="total-row tax-indent"><span>CGST ${halfRate}%${i.name ? ` (${i.name})` : ""}</span><span>₹ ${halfTax.toFixed(2)}</span></div>
+      <div class="total-row tax-indent"><span>SGST ${halfRate}%${i.name ? ` (${i.name})` : ""}</span><span>₹ ${halfTax.toFixed(2)}</span></div>`;
+    }).join("");
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Invoice ${invoiceNumber}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #ebebeb; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 48px 20px; color: #000; -webkit-font-smoothing: antialiased; }
+    .invoice-wrapper { width: 100%; max-width: 860px; }
+    .invoice-card { background: #fff; border-radius: 6px; box-shadow: 0 2px 24px rgba(0,0,0,0.07); overflow: hidden; }
+    .header { padding: 40px 52px 32px; }
+    .header-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+    .company-name { font-size: 18px; font-weight: 700; color: #000; letter-spacing: -0.3px; line-height: 1.2; margin-bottom: 10px; }
+    .company-ids { font-size: 11px; color: #666; line-height: 1.75; }
+    .company-ids b { font-weight: 600; color: #333; }
+    .header-right { text-align: right; }
+    .invoice-word { font-size: 32px; font-weight: 700; color: #000; letter-spacing: -0.5px; line-height: 1; margin-bottom: 14px; }
+    .amount-due-block { margin-bottom: 10px; }
+    .amount-due-label { font-size: 10px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 4px; }
+    .amount-due-value { font-size: 28px; font-weight: 700; color: #000; letter-spacing: -0.8px; line-height: 1; }
+    .status-unpaid { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; font-weight: 700; color: #000; border: 1.5px solid #000; padding: 5px 14px; border-radius: 100px; letter-spacing: 0.5px; text-transform: uppercase; margin-top: 8px; }
+    .dot-unpaid { width: 6px; height: 6px; background: #000; border-radius: 50%; }
+    .meta-row { display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+    .meta-left { display: flex; gap: 44px; flex-wrap: wrap; }
+    .meta-label { font-size: 10px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 4px; }
+    .meta-value { font-size: 13.5px; font-weight: 600; color: #000; }
+    .divider { height: 1px; background: #f0f0f0; margin: 0 52px; }
+    .parties-section { display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 28px 52px; gap: 0; }
+    .party-block { padding-right: 32px; }
+    .party-block:last-child { padding-right: 0; }
+    .party-label { font-size: 10px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 8px; }
+    .party-name { font-size: 14px; font-weight: 700; color: #000; margin-bottom: 4px; }
+    .party-detail { font-size: 12.5px; color: #444; line-height: 1.8; }
+    .table-section { padding: 0 52px; }
+    .items-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .items-table thead tr { background: #f8f8f8; }
+    .items-table th { padding: 11px 14px; font-size: 10px; font-weight: 700; color: #666; text-transform: uppercase; letter-spacing: 1.2px; text-align: left; white-space: nowrap; }
+    .items-table th:first-child { border-radius: 4px 0 0 4px; }
+    .items-table th:last-child  { border-radius: 0 4px 4px 0; }
+    .items-table th:not(:first-child) { text-align: right; }
+    .items-table td { padding: 20px 14px; vertical-align: top; color: #222; font-size: 13px; }
+    .items-table td:not(:first-child) { text-align: right; }
+    .item-name { font-weight: 600; color: #000; font-size: 13.5px; margin-bottom: 3px; }
+    .item-hsn  { font-size: 10.5px; color: #999; font-weight: 500; }
+    .amount-note { font-size: 10px; color: #aaa; margin-top: 2px; }
+    .totals-section { padding: 24px 52px 32px; display: flex; justify-content: flex-end; }
+    .totals-box { width: 300px; }
+    .total-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; font-size: 13px; color: #444; }
+    .total-row.subtotal-row { color: #555; }
+    .total-row.tax-row { color: #555; font-size: 12.5px; }
+    .total-row.tax-indent { color: #888; font-size: 12px; padding: 3px 0 3px 14px; }
+    .total-row.grand { font-size: 15px; font-weight: 700; color: #000; padding-top: 14px; margin-top: 6px; border-top: 1.5px solid #000; }
+    .amount-due-row { margin-top: 16px; background: #000; border-radius: 6px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; }
+    .amount-due-row-label { font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 1.2px; }
+    .amount-due-row-value { font-size: 20px; font-weight: 800; color: #fff; letter-spacing: -0.5px; }
+    .total-label { font-weight: 400; }
+    .notes-tc-divider { height: 1px; background: #f0f0f0; margin: 0 52px 28px; }
+    .footer { padding: 18px 52px; background: #f8f8f8; display: flex; align-items: center; justify-content: center; }
+    .rzp-powered { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    .rzp-powered-text { font-size: 11px; color: #aaa; letter-spacing: 0.2px; }
+    .rzp-logo-row { display: flex; align-items: center; gap: 7px; }
+    .rzp-icon { width: 20px; height: 20px; }
+    .rzp-wordmark { font-size: 14px; font-weight: 700; color: #000; letter-spacing: -0.3px; }
+    .print-btn { display: block; margin: 22px auto 0; padding: 11px 28px; background: #000; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; letter-spacing: 0.2px; transition: opacity 0.15s; }
+    .print-btn:hover { opacity: 0.8; }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .print-btn { display: none; }
+      .invoice-card { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="invoice-wrapper">
+  <div class="invoice-card">
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <div class="company-name">Your Business Name</div>
+          <div class="company-ids">
+            ${detailGstNumber ? `<b>GSTIN</b> ${detailGstNumber}<br>` : ""}
+            ${detailGstPlaceOfSupply ? `<b>Place of Supply</b> ${detailGstPlaceOfSupply}` : ""}
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="invoice-word">Invoice</div>
+          <div class="amount-due-block">
+            <div class="amount-due-label">Amount Due</div>
+            <div class="amount-due-value">₹ ${total.toFixed(2)}</div>
+          </div>
+          <div><span class="status-unpaid"><span class="dot-unpaid"></span> Due</span></div>
+        </div>
+      </div>
+      <div class="meta-row">
+        <div class="meta-left">
+          <div><div class="meta-label">Invoice ID</div><div class="meta-value">#${invoiceNumber}</div></div>
+          <div><div class="meta-label">Invoice Date</div><div class="meta-value">${today}</div></div>
+          <div><div class="meta-label">Due Date</div><div class="meta-value">${dueDate}</div></div>
+          ${detailGstPlaceOfSupply ? `<div><div class="meta-label">Place of Supply</div><div class="meta-value">${detailGstPlaceOfSupply}</div></div>` : ""}
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="parties-section">
+      <div class="party-block">
+        <div class="party-label">Customer Details</div>
+        <div class="party-name">${detailGstCustomerName || "—"}</div>
+        ${detailGstNumber ? `<div class="party-detail"><b>GSTIN:</b> ${detailGstNumber}</div>` : ""}
+      </div>
+      <div class="party-block">
+        <div class="party-label">Billing Address</div>
+        <div class="party-detail">
+          ${detailBillingAddress ? `${detailBillingAddress}<br>` : ""}
+          ${(detailBillingCity || detailBillingState) ? `${[detailBillingCity, detailBillingState].filter(Boolean).join(", ")}<br>` : ""}
+          ${detailBillingPincode ? `India – ${detailBillingPincode}` : ""}
+        </div>
+      </div>
+      <div class="party-block">
+        <div class="party-label">Shipping Address</div>
+        <div class="party-detail">
+          ${shippingAddr.addr ? `${shippingAddr.addr}<br>` : ""}
+          ${(shippingAddr.city || shippingAddr.state) ? `${[shippingAddr.city, shippingAddr.state].filter(Boolean).join(", ")}<br>` : ""}
+          ${shippingAddr.pin ? `India – ${shippingAddr.pin}` : ""}
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="table-section" style="padding-top: 28px;">
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th style="width:40%">Item</th>
+            <th>Unit Price</th>
+            <th>Qty</th>
+            <th>Tax Rate</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+    </div>
+    <div class="totals-section">
+      <div class="totals-box">
+        <div class="total-row subtotal-row"><span class="total-label">Sub Total</span><span>₹ ${subtotal.toFixed(2)}</span></div>
+        ${taxAmt > 0 ? `<div class="total-row tax-row"><span class="total-label">Tax</span><span>₹ ${taxAmt.toFixed(2)}</span></div>${taxBreakdownRows}` : ""}
+        <div class="total-row grand"><span>Total</span><span>₹ ${total.toFixed(2)}</span></div>
+        <div class="amount-due-row">
+          <span class="amount-due-row-label">Amount Due</span>
+          <span class="amount-due-row-value">₹ ${total.toFixed(2)}</span>
+        </div>
+      </div>
+    </div>
+    <div class="notes-tc-divider"></div>
+    <div class="footer">
+      <div class="rzp-powered">
+        <div class="rzp-powered-text">Invoicing and payments powered by</div>
+        <div class="rzp-logo-row">
+          <svg class="rzp-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13.5 2L4 14h8l-1.5 8L20 10h-8l1.5-8z" fill="#000"/>
+          </svg>
+          <span class="rzp-wordmark">Razorpay</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>
+</div>
+</body>
+</html>`;
+
+    const newWin = window.open("", "_blank");
+    if (newWin) {
+      newWin.document.write(html);
+      newWin.document.close();
+      newWin.focus();
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="animate-fade-in space-y-5">
@@ -1006,6 +1224,7 @@ const PaymentLinks = () => {
 
             {/* Receipt Settings */}
             <div className="space-y-4">
+                <p className="text-sm font-semibold text-foreground">Receipt</p>
                 {/* Receipt type — mutually exclusive checkboxes */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
@@ -1355,8 +1574,6 @@ const PaymentLinks = () => {
                     </div>
                   </div>
                 )}
-
-                <Separator />
 
                 {/* 80g Details */}
                 <div className="space-y-2">
@@ -1846,7 +2063,7 @@ const PaymentLinks = () => {
 
       {/* GST Receipt Modal */}
       <Dialog open={showGstModal} onOpenChange={setShowGstModal}>
-        <DialogContent className="max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader className="pb-3 border-b border-border flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-blue-600" />
@@ -1854,272 +2071,427 @@ const PaymentLinks = () => {
             </DialogTitle>
           </DialogHeader>
 
-          <div className="overflow-y-auto flex-1 p-1">
-            <div className="space-y-4">
-              {/* Customer Details */}
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-foreground">Customer Details</p>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-foreground">Customer Name *</label>
-                  <Input
-                    className="h-9 text-sm"
-                    placeholder="e.g. Acme Pvt Ltd"
-                    value={detailGstCustomerName}
-                    onChange={(e) => setDetailGstCustomerName(e.target.value)}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-foreground">
-                    GST Number <span className="text-muted-foreground font-normal">(Optional)</span>
-                  </label>
-                  <Input
-                    className="h-9 text-sm"
-                    placeholder="e.g. 29ABCDE1234F1Z5"
-                    value={detailGstNumber}
-                    onChange={(e) => setDetailGstNumber(e.target.value.toUpperCase())}
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-foreground">Place of Supply *</label>
-                  <select
-                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
-                    value={detailGstPlaceOfSupply}
-                    onChange={(e) => setDetailGstPlaceOfSupply(e.target.value)}
-                  >
-                    <option value="">Select state</option>
-                    {["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh","Puducherry","Chandigarh"].map(s => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-foreground">Billing Address *</label>
-                  <Input
-                    className="h-9 text-sm"
-                    placeholder="Street address"
-                    value={detailBillingAddress}
-                    onChange={(e) => {
-                      setDetailBillingAddress(e.target.value);
-                      if (detailShippingSameAsBilling) setDetailShippingAddress(e.target.value);
-                    }}
-                  />
-                  <div className="grid grid-cols-3 gap-2">
+          <div className="flex flex-1 overflow-hidden min-h-0">
+            {/* Left: Form */}
+            <div className="w-1/2 overflow-y-auto border-r border-border p-4">
+              <div className="space-y-4">
+                {/* Customer Details */}
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Customer Details</p>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">Customer Name *</label>
                     <Input
                       className="h-9 text-sm"
-                      placeholder="Pincode"
-                      maxLength={6}
-                      value={detailBillingPincode}
-                      onChange={(e) => {
-                        const pin = e.target.value.replace(/\D/g, "");
-                        setDetailBillingPincode(pin);
-                        if (detailShippingSameAsBilling) setDetailShippingPincode(pin);
-                        if (pin.length === 6 && PINCODE_DB[pin]) {
-                          setDetailBillingCity(PINCODE_DB[pin].city);
-                          setDetailBillingState(PINCODE_DB[pin].state);
-                          if (detailShippingSameAsBilling) {
-                            setDetailShippingCity(PINCODE_DB[pin].city);
-                            setDetailShippingState(PINCODE_DB[pin].state);
-                          }
-                        }
-                      }}
-                    />
-                    <Input
-                      className="h-9 text-sm"
-                      placeholder="City"
-                      value={detailBillingCity}
-                      onChange={(e) => {
-                        setDetailBillingCity(e.target.value);
-                        if (detailShippingSameAsBilling) setDetailShippingCity(e.target.value);
-                      }}
-                    />
-                    <Input
-                      className="h-9 text-sm"
-                      placeholder="State"
-                      value={detailBillingState}
-                      onChange={(e) => {
-                        setDetailBillingState(e.target.value);
-                        if (detailShippingSameAsBilling) setDetailShippingState(e.target.value);
-                      }}
+                      placeholder="e.g. Acme Pvt Ltd"
+                      value={detailGstCustomerName}
+                      onChange={(e) => setDetailGstCustomerName(e.target.value)}
                     />
                   </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-foreground">Shipping Address</label>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Checkbox
-                      id="detailShippingSameAsBilling"
-                      checked={detailShippingSameAsBilling}
-                      onCheckedChange={(checked) => {
-                        setDetailShippingSameAsBilling(!!checked);
-                        if (checked) {
-                          setDetailShippingAddress(detailBillingAddress);
-                          setDetailShippingPincode(detailBillingPincode);
-                          setDetailShippingCity(detailBillingCity);
-                          setDetailShippingState(detailBillingState);
-                        }
-                      }}
-                    />
-                    <label htmlFor="detailShippingSameAsBilling" className="text-xs text-muted-foreground cursor-pointer">
-                      Same as Billing Address
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">
+                      GST Number <span className="text-muted-foreground font-normal">(Optional)</span>
                     </label>
+                    <Input
+                      className="h-9 text-sm"
+                      placeholder="e.g. 29ABCDE1234F1Z5"
+                      value={detailGstNumber}
+                      onChange={(e) => setDetailGstNumber(e.target.value.toUpperCase())}
+                    />
                   </div>
-                  {!detailShippingSameAsBilling && (
-                    <div className="space-y-2">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">Place of Supply *</label>
+                    <select
+                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground"
+                      value={detailGstPlaceOfSupply}
+                      onChange={(e) => setDetailGstPlaceOfSupply(e.target.value)}
+                    >
+                      <option value="">Select state</option>
+                      {["Andhra Pradesh","Arunachal Pradesh","Assam","Bihar","Chhattisgarh","Goa","Gujarat","Haryana","Himachal Pradesh","Jharkhand","Karnataka","Kerala","Madhya Pradesh","Maharashtra","Manipur","Meghalaya","Mizoram","Nagaland","Odisha","Punjab","Rajasthan","Sikkim","Tamil Nadu","Telangana","Tripura","Uttar Pradesh","Uttarakhand","West Bengal","Delhi","Jammu & Kashmir","Ladakh","Puducherry","Chandigarh"].map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">Billing Address *</label>
+                    <Input
+                      className="h-9 text-sm"
+                      placeholder="Street address"
+                      value={detailBillingAddress}
+                      onChange={(e) => {
+                        setDetailBillingAddress(e.target.value);
+                        if (detailShippingSameAsBilling) setDetailShippingAddress(e.target.value);
+                      }}
+                    />
+                    <div className="grid grid-cols-3 gap-2">
                       <Input
                         className="h-9 text-sm"
-                        placeholder="Street address"
-                        value={detailShippingAddress}
-                        onChange={(e) => setDetailShippingAddress(e.target.value)}
-                      />
-                      <div className="grid grid-cols-3 gap-2">
-                        <Input
-                          className="h-9 text-sm"
-                          placeholder="Pincode"
-                          maxLength={6}
-                          value={detailShippingPincode}
-                          onChange={(e) => {
-                            const pin = e.target.value.replace(/\D/g, "");
-                            setDetailShippingPincode(pin);
-                            if (pin.length === 6 && PINCODE_DB[pin]) {
+                        placeholder="Pincode"
+                        maxLength={6}
+                        value={detailBillingPincode}
+                        onChange={(e) => {
+                          const pin = e.target.value.replace(/\D/g, "");
+                          setDetailBillingPincode(pin);
+                          if (detailShippingSameAsBilling) setDetailShippingPincode(pin);
+                          if (pin.length === 6 && PINCODE_DB[pin]) {
+                            setDetailBillingCity(PINCODE_DB[pin].city);
+                            setDetailBillingState(PINCODE_DB[pin].state);
+                            if (detailShippingSameAsBilling) {
                               setDetailShippingCity(PINCODE_DB[pin].city);
                               setDetailShippingState(PINCODE_DB[pin].state);
                             }
-                          }}
-                        />
-                        <Input
-                          className="h-9 text-sm"
-                          placeholder="City"
-                          value={detailShippingCity}
-                          onChange={(e) => setDetailShippingCity(e.target.value)}
-                        />
-                        <Input
-                          className="h-9 text-sm"
-                          placeholder="State"
-                          value={detailShippingState}
-                          onChange={(e) => setDetailShippingState(e.target.value)}
-                        />
-                      </div>
+                          }
+                        }}
+                      />
+                      <Input
+                        className="h-9 text-sm"
+                        placeholder="City"
+                        value={detailBillingCity}
+                        onChange={(e) => {
+                          setDetailBillingCity(e.target.value);
+                          if (detailShippingSameAsBilling) setDetailShippingCity(e.target.value);
+                        }}
+                      />
+                      <Input
+                        className="h-9 text-sm"
+                        placeholder="State"
+                        value={detailBillingState}
+                        onChange={(e) => {
+                          setDetailBillingState(e.target.value);
+                          if (detailShippingSameAsBilling) setDetailShippingState(e.target.value);
+                        }}
+                      />
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Invoice Items */}
-              <div className="space-y-3">
-                <p className="text-sm font-semibold text-foreground">Invoice Items</p>
-                <div className="space-y-3">
-                  {detailInvoiceItems.map((item, idx) => (
-                    <div key={item.id} className="border border-border rounded-md p-3 space-y-2 bg-background">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-foreground">Item {idx + 1}</span>
-                        {detailInvoiceItems.length > 1 && (
-                          <button
-                            onClick={() => setDetailInvoiceItems(detailInvoiceItems.filter((_, i) => i !== idx))}
-                            className="text-muted-foreground hover:text-destructive"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <div className="flex-1">
-                          <Select
-                            value=""
-                            onValueChange={(val) => {
-                              if (val === "__new__") return;
-                              const saved = SAVED_ITEMS.find((s) => s.id === val);
-                              if (saved) {
-                                const updated = [...detailInvoiceItems];
-                                updated[idx] = { ...updated[idx], name: saved.name, rate: saved.rate, hsn: saved.hsn, taxRate: saved.taxRate };
-                                setDetailInvoiceItems(updated);
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-foreground">Shipping Address</label>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Checkbox
+                        id="detailShippingSameAsBilling"
+                        checked={detailShippingSameAsBilling}
+                        onCheckedChange={(checked) => {
+                          setDetailShippingSameAsBilling(!!checked);
+                          if (checked) {
+                            setDetailShippingAddress(detailBillingAddress);
+                            setDetailShippingPincode(detailBillingPincode);
+                            setDetailShippingCity(detailBillingCity);
+                            setDetailShippingState(detailBillingState);
+                          }
+                        }}
+                      />
+                      <label htmlFor="detailShippingSameAsBilling" className="text-xs text-muted-foreground cursor-pointer">
+                        Same as Billing Address
+                      </label>
+                    </div>
+                    {!detailShippingSameAsBilling && (
+                      <div className="space-y-2">
+                        <Input
+                          className="h-9 text-sm"
+                          placeholder="Street address"
+                          value={detailShippingAddress}
+                          onChange={(e) => setDetailShippingAddress(e.target.value)}
+                        />
+                        <div className="grid grid-cols-3 gap-2">
+                          <Input
+                            className="h-9 text-sm"
+                            placeholder="Pincode"
+                            maxLength={6}
+                            value={detailShippingPincode}
+                            onChange={(e) => {
+                              const pin = e.target.value.replace(/\D/g, "");
+                              setDetailShippingPincode(pin);
+                              if (pin.length === 6 && PINCODE_DB[pin]) {
+                                setDetailShippingCity(PINCODE_DB[pin].city);
+                                setDetailShippingState(PINCODE_DB[pin].state);
                               }
                             }}
-                          >
-                            <SelectTrigger className="h-8 text-xs text-muted-foreground border-dashed">
-                              <SelectValue placeholder="Select from saved items" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SAVED_ITEMS.map((s) => (
-                                <SelectItem key={s.id} value={s.id}>{s.name} — ₹{s.rate}</SelectItem>
-                              ))}
-                              <SelectItem value="__new__">+ Create new item</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Input
-                          className="h-8 text-sm flex-1"
-                          placeholder="Item / service name"
-                          value={item.name}
-                          onChange={(e) => {
-                            const updated = [...detailInvoiceItems];
-                            updated[idx] = { ...updated[idx], name: e.target.value };
-                            setDetailInvoiceItems(updated);
-                          }}
-                        />
-                        <div className="w-24">
+                          />
                           <Input
-                            className="h-8 text-sm"
-                            placeholder="Rate (₹)"
-                            type="number"
-                            value={item.rate}
-                            onChange={(e) => {
-                              const updated = [...detailInvoiceItems];
-                              updated[idx] = { ...updated[idx], rate: e.target.value };
-                              setDetailInvoiceItems(updated);
-                            }}
+                            className="h-9 text-sm"
+                            placeholder="City"
+                            value={detailShippingCity}
+                            onChange={(e) => setDetailShippingCity(e.target.value)}
+                          />
+                          <Input
+                            className="h-9 text-sm"
+                            placeholder="State"
+                            value={detailShippingState}
+                            onChange={(e) => setDetailShippingState(e.target.value)}
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <Input
-                          className="h-8 text-sm text-center"
-                          placeholder="Qty"
-                          value={item.qty}
-                          onChange={(e) => {
-                            const updated = [...detailInvoiceItems];
-                            updated[idx] = { ...updated[idx], qty: e.target.value };
-                            setDetailInvoiceItems(updated);
-                          }}
-                        />
-                        <Input
-                          className="h-8 text-sm"
-                          placeholder="HSN/SAC"
-                          value={item.hsn}
-                          onChange={(e) => {
-                            const updated = [...detailInvoiceItems];
-                            updated[idx] = { ...updated[idx], hsn: e.target.value };
-                            setDetailInvoiceItems(updated);
-                          }}
-                        />
-                        <select
-                          className="h-8 text-sm border border-input rounded-md px-2 bg-background"
-                          value={item.taxRate}
-                          onChange={(e) => {
-                            const updated = [...detailInvoiceItems];
-                            updated[idx] = { ...updated[idx], taxRate: e.target.value };
-                            setDetailInvoiceItems(updated);
-                          }}
-                        >
-                          <option value="">Tax %</option>
-                          <option value="0">0%</option>
-                          <option value="5">5%</option>
-                          <option value="12">12%</option>
-                          <option value="18">18%</option>
-                          <option value="28">28%</option>
-                        </select>
+                    )}
+                  </div>
+                </div>
+
+                {/* Invoice Items */}
+                <div className="space-y-3">
+                  <p className="text-sm font-semibold text-foreground">Invoice Items</p>
+                  <div className="space-y-3">
+                    {detailInvoiceItems.map((item, idx) => (
+                      <div key={item.id} className="border border-border rounded-md p-3 space-y-2 bg-background">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-medium text-foreground">Item {idx + 1}</span>
+                          {detailInvoiceItems.length > 1 && (
+                            <button
+                              onClick={() => setDetailInvoiceItems(detailInvoiceItems.filter((_, i) => i !== idx))}
+                              className="text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="flex-1">
+                            <Select
+                              value=""
+                              onValueChange={(val) => {
+                                if (val === "__new__") return;
+                                const saved = SAVED_ITEMS.find((s) => s.id === val);
+                                if (saved) {
+                                  const updated = [...detailInvoiceItems];
+                                  updated[idx] = { ...updated[idx], name: saved.name, rate: saved.rate, hsn: saved.hsn, taxRate: saved.taxRate };
+                                  setDetailInvoiceItems(updated);
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs text-muted-foreground border-dashed">
+                                <SelectValue placeholder="Select from saved items" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {SAVED_ITEMS.map((s) => (
+                                  <SelectItem key={s.id} value={s.id}>{s.name} — ₹{s.rate}</SelectItem>
+                                ))}
+                                <SelectItem value="__new__">+ Create new item</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            className="h-8 text-sm flex-1"
+                            placeholder="Item / service name"
+                            value={item.name}
+                            onChange={(e) => {
+                              const updated = [...detailInvoiceItems];
+                              updated[idx] = { ...updated[idx], name: e.target.value };
+                              setDetailInvoiceItems(updated);
+                            }}
+                          />
+                          <div className="w-24">
+                            <Input
+                              className="h-8 text-sm"
+                              placeholder="Rate (₹)"
+                              type="number"
+                              value={item.rate}
+                              onChange={(e) => {
+                                const updated = [...detailInvoiceItems];
+                                updated[idx] = { ...updated[idx], rate: e.target.value };
+                                setDetailInvoiceItems(updated);
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Input
+                            className="h-8 text-sm text-center"
+                            placeholder="Qty"
+                            value={item.qty}
+                            onChange={(e) => {
+                              const updated = [...detailInvoiceItems];
+                              updated[idx] = { ...updated[idx], qty: e.target.value };
+                              setDetailInvoiceItems(updated);
+                            }}
+                          />
+                          <Input
+                            className="h-8 text-sm"
+                            placeholder="HSN/SAC"
+                            value={item.hsn}
+                            onChange={(e) => {
+                              const updated = [...detailInvoiceItems];
+                              updated[idx] = { ...updated[idx], hsn: e.target.value };
+                              setDetailInvoiceItems(updated);
+                            }}
+                          />
+                          <select
+                            className="h-8 text-sm border border-input rounded-md px-2 bg-background"
+                            value={item.taxRate}
+                            onChange={(e) => {
+                              const updated = [...detailInvoiceItems];
+                              updated[idx] = { ...updated[idx], taxRate: e.target.value };
+                              setDetailInvoiceItems(updated);
+                            }}
+                          >
+                            <option value="">Tax %</option>
+                            <option value="0">0%</option>
+                            <option value="5">5%</option>
+                            <option value="12">12%</option>
+                            <option value="18">18%</option>
+                            <option value="28">28%</option>
+                          </select>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    onClick={() => setDetailInvoiceItems([...detailInvoiceItems, { id: String(Date.now()), name: "", qty: "", rate: "", hsn: "", taxRate: "" }])}
+                  >
+                    + Add Item
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right: PDF Preview */}
+            <div className="w-1/2 overflow-y-auto bg-gray-100 p-4">
+              {(() => {
+                const invoiceNum = `INV-${selectedLink?.id?.slice(-6)?.toUpperCase() ?? "000001"}`;
+                const invoiceDate = new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                const subtotal = detailInvoiceItems.reduce((sum, item) => {
+                  const qty = parseFloat(item.qty) || 1;
+                  const rate = parseFloat(item.rate) || 0;
+                  return sum + qty * rate;
+                }, 0);
+                const taxTotal = detailInvoiceItems.reduce((sum, item) => {
+                  const qty = parseFloat(item.qty) || 1;
+                  const rate = parseFloat(item.rate) || 0;
+                  const taxRate = parseFloat(item.taxRate) || 0;
+                  return sum + (qty * rate * taxRate) / 100;
+                }, 0);
+                const cgst = taxTotal / 2;
+                const sgst = taxTotal / 2;
+                const total = subtotal + taxTotal;
+                const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                return (
+                  <div className="bg-white rounded-lg shadow-sm" style={{ fontFamily: "Georgia, serif" }}>
+                    {/* Invoice Header */}
+                    <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-start">
+                      <div>
+                        <p className="text-base font-bold tracking-wide">WealthJoy</p>
+                        <p className="text-xs opacity-80 mt-0.5">GSTIN: 27AABCU9603R1ZX</p>
+                        <p className="text-xs opacity-80">Maharashtra, India</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold tracking-widest">TAX INVOICE</p>
+                        <p className="text-xs opacity-80 mt-1">{invoiceNum}</p>
+                        <p className="text-xs opacity-80">{invoiceDate}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-                <button
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                  onClick={() => setDetailInvoiceItems([...detailInvoiceItems, { id: String(Date.now()), name: "", qty: "", rate: "", hsn: "", taxRate: "" }])}
-                >
-                  + Add Item
-                </button>
-              </div>
+
+                    <div className="px-6 py-4 space-y-4">
+                      {/* Billed To / Ship To */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Billed To</p>
+                          <p className="text-sm font-semibold text-gray-800">
+                            {detailGstCustomerName || <span className="text-gray-400 italic font-normal">Customer Name</span>}
+                          </p>
+                          {detailGstNumber && <p className="text-xs text-gray-600 mt-0.5">GSTIN: {detailGstNumber}</p>}
+                          {detailBillingAddress && <p className="text-xs text-gray-600 mt-0.5">{detailBillingAddress}</p>}
+                          {(detailBillingCity || detailBillingState || detailBillingPincode) && (
+                            <p className="text-xs text-gray-600">{[detailBillingCity, detailBillingState, detailBillingPincode].filter(Boolean).join(", ")}</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Ship To</p>
+                          {detailShippingSameAsBilling ? (
+                            <p className="text-xs text-gray-500 italic">Same as billing address</p>
+                          ) : (
+                            <>
+                              {detailShippingAddress
+                                ? <p className="text-xs text-gray-600">{detailShippingAddress}</p>
+                                : <p className="text-xs text-gray-400 italic">—</p>
+                              }
+                              {(detailShippingCity || detailShippingState || detailShippingPincode) && (
+                                <p className="text-xs text-gray-600">{[detailShippingCity, detailShippingState, detailShippingPincode].filter(Boolean).join(", ")}</p>
+                              )}
+                            </>
+                          )}
+                          {detailGstPlaceOfSupply && (
+                            <p className="text-xs text-gray-600 mt-1.5">
+                              <span className="font-semibold">Place of Supply:</span> {detailGstPlaceOfSupply}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Payment reference */}
+                      <div className="bg-gray-50 rounded px-3 py-2 flex justify-between items-center text-xs text-gray-600 border border-gray-100">
+                        <span><span className="font-semibold">Ref:</span> {selectedLink?.title || selectedLink?.description || "Payment Link"}</span>
+                        <span><span className="font-semibold">Payment ID:</span> pay_{selectedLink?.id?.slice(-12)}</span>
+                      </div>
+
+                      {/* Items Table */}
+                      <table className="w-full text-xs border-collapse">
+                        <thead>
+                          <tr className="bg-gray-50 border-y border-gray-200">
+                            <th className="text-left py-2 px-2 text-gray-600 font-semibold">Item / Service</th>
+                            <th className="text-center py-2 px-2 text-gray-600 font-semibold">HSN</th>
+                            <th className="text-center py-2 px-2 text-gray-600 font-semibold">Qty</th>
+                            <th className="text-right py-2 px-2 text-gray-600 font-semibold">Rate</th>
+                            <th className="text-right py-2 px-2 text-gray-600 font-semibold">Taxable</th>
+                            <th className="text-right py-2 px-2 text-gray-600 font-semibold">Tax</th>
+                            <th className="text-right py-2 px-2 text-gray-600 font-semibold">Amount</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detailInvoiceItems.map((item) => {
+                            const qty = parseFloat(item.qty) || 1;
+                            const rate = parseFloat(item.rate) || 0;
+                            const taxRate = parseFloat(item.taxRate) || 0;
+                            const taxable = qty * rate;
+                            const tax = (taxable * taxRate) / 100;
+                            return (
+                              <tr key={item.id} className="border-b border-gray-100">
+                                <td className="py-2 px-2 text-gray-800">{item.name || <span className="text-gray-400 italic">Item name</span>}</td>
+                                <td className="py-2 px-2 text-center text-gray-600">{item.hsn || "—"}</td>
+                                <td className="py-2 px-2 text-center text-gray-600">{item.qty || "1"}</td>
+                                <td className="py-2 px-2 text-right text-gray-600">₹{fmt(rate)}</td>
+                                <td className="py-2 px-2 text-right text-gray-600">₹{fmt(taxable)}</td>
+                                <td className="py-2 px-2 text-right text-gray-600">{taxRate ? `${taxRate}%` : "—"}</td>
+                                <td className="py-2 px-2 text-right font-medium text-gray-800">₹{fmt(taxable + tax)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+
+                      {/* Totals */}
+                      <div className="flex justify-end">
+                        <div className="w-52 space-y-1 text-xs">
+                          <div className="flex justify-between text-gray-600">
+                            <span>Subtotal</span>
+                            <span>₹{fmt(subtotal)}</span>
+                          </div>
+                          {taxTotal > 0 && (
+                            <>
+                              <div className="flex justify-between text-gray-600">
+                                <span>CGST</span>
+                                <span>₹{fmt(cgst)}</span>
+                              </div>
+                              <div className="flex justify-between text-gray-600">
+                                <span>SGST</span>
+                                <span>₹{fmt(sgst)}</span>
+                              </div>
+                            </>
+                          )}
+                          <div className="flex justify-between font-bold text-gray-900 border-t border-gray-300 pt-1.5 text-sm">
+                            <span>Total</span>
+                            <span>₹{fmt(total)}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="border-t border-gray-200 pt-3 text-xs text-gray-400 text-center">
+                        <p>This is a computer-generated invoice. No signature required.</p>
+                        <p className="mt-0.5">Generated via Razorpay Payment Links · rzp.io</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
@@ -2132,6 +2504,14 @@ const PaymentLinks = () => {
               onClick={() => setShowGstModal(false)}
             >
               Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={handleDownloadInvoicePdf}
+            >
+              <Download className="h-3.5 w-3.5" /> Download PDF
             </Button>
             <Button
               size="sm"
