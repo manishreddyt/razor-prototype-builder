@@ -64,7 +64,7 @@ const analysisSteps = [
 
 const SmartPageCreate = () => {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = useState("all");
+  const [activeCategory, setActiveCategory] = useState("education");
   const [searchQuery, setSearchQuery] = useState("");
   const [aiPrompt, setAiPrompt] = useState("");
   const [isFocused, setIsFocused] = useState(false);
