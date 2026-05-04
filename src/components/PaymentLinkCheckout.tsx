@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   CheckCircle2,
   ShieldCheck,
@@ -56,7 +55,7 @@ interface PaymentLink {
   createdAt: string;
 }
 
-type Screen = "overview" | "method" | "success";
+type Screen = "overview" | "details" | "method" | "success";
 type PayMethod = "upi" | "card" | "netbanking" | "wallet";
 
 // ── Demo fallback link ───────────────────────────────────────────────
@@ -180,7 +179,12 @@ export function PaymentLinkCheckout() {
     : 0;
 
   // ── Handlers ────────────────────────────────────────────────────────
-  const handleContinue = () => {
+  const handleOverviewContinue = () => {
+    setScreen("details");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleDetailsContinue = () => {
     if (!formData.name.trim()) return;
     setScreen("method");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -235,117 +239,35 @@ export function PaymentLinkCheckout() {
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
       <div className="max-w-5xl mx-auto px-4 py-6 lg:py-10">
-        <div className="grid lg:grid-cols-[360px_1fr] gap-6 items-start">
+        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="grid lg:grid-cols-[3fr_2fr] items-start">
 
           {/* ─── LEFT PANEL ─────────────────────────────────────────── */}
-          <div className="lg:sticky lg:top-8 space-y-4">
-            {/* Merchant card */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5">
-              {/* Merchant identity */}
-              <div className="flex items-center gap-3 mb-4">
-                <div className="h-11 w-11 rounded-xl bg-blue-700 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold text-sm">{MERCHANT_INITIALS}</span>
-                </div>
+          <div className="flex flex-col justify-center lg:min-h-[70vh] py-10 px-8 border-r border-gray-200">
+
+            {/* Merchant + Payment for + Total Amount */}
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Payment Request from</p>
+                <p className="text-2xl font-bold text-gray-900">{MERCHANT_NAME}</p>
+              </div>
+
+              {(link.title || link.description) && (
                 <div>
-                  <p className="text-xs text-gray-400 leading-tight">Payment Request from</p>
-                  <p className="font-semibold text-gray-900 leading-tight">{MERCHANT_NAME}</p>
+                  <p className="text-xs text-gray-400 mb-0.5">Payment for</p>
+                  {link.title && <p className="font-medium text-gray-800">{link.title}</p>}
+                  {link.description && <p className="text-xs text-gray-500 mt-0.5">{link.description}</p>}
                 </div>
-              </div>
-
-              <Separator className="mb-4" />
-
-              {/* Payment title & description */}
-              <div className="mb-4">
-                <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Payment For</p>
-                <p className="font-semibold text-gray-900">{link.title}</p>
-                {link.description && (
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-1">{link.description}</p>
-                )}
-              </div>
-
-              {/* Total amount */}
-              <div className="mb-4">
-                <p className="text-xs text-gray-400 uppercase tracking-wide mb-0.5">Total Amount</p>
-                <p className="text-2xl font-bold text-gray-900">{fmtINR(totalAmount)}</p>
-              </div>
-
-              {/* Payment schedule timeline */}
-              {isSchedule && installments.length > 0 && (
-                <>
-                  <Separator className="mb-4" />
-                  <div>
-                    <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
-                      Payment Schedule
-                    </p>
-                    <div className="space-y-0">
-                      {installments.map((inst, idx) => {
-                        const isDue = idx === 0;
-                        const isLast = idx === installments.length - 1;
-                        return (
-                          <div key={inst.id} className="flex gap-3">
-                            {/* Timeline dot + line */}
-                            <div className="flex flex-col items-center">
-                              <div
-                                className={cn(
-                                  "h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
-                                  isDue
-                                    ? "bg-blue-600"
-                                    : "bg-gray-200"
-                                )}
-                              >
-                                {isDue && <Check className="h-3 w-3 text-white" />}
-                              </div>
-                              {!isLast && (
-                                <div className="w-px flex-1 bg-gray-200 my-1 min-h-[20px]" />
-                              )}
-                            </div>
-                            {/* Content */}
-                            <div className="pb-4 flex-1">
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <p className={cn("text-sm font-medium leading-tight", isDue ? "text-gray-900" : "text-gray-500")}>
-                                    {inst.label || `Payment ${idx + 1}`}
-                                  </p>
-                                  <div className="flex items-center gap-1.5 mt-0.5">
-                                    <Calendar className="h-3 w-3 text-gray-400" />
-                                    <span className="text-xs text-gray-400">
-                                      {fmtRelative(inst.dueDate)}
-                                    </span>
-                                    {isDue && (
-                                      <Badge className="text-[10px] px-1.5 py-0 h-4 bg-blue-100 text-blue-700 border-blue-200">
-                                        Due now
-                                      </Badge>
-                                    )}
-                                  </div>
-                                </div>
-                                <span className={cn("text-sm font-semibold flex-shrink-0", isDue ? "text-gray-900" : "text-gray-400")}>
-                                  {fmtINR(Number(inst.amount))}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </>
               )}
-            </div>
 
-            {/* Security badge */}
-            <div className="flex items-center justify-center gap-4 text-xs text-gray-400 px-2">
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5" />
-                <span>100% Secure</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Lock className="h-3.5 w-3.5" />
-                <span>256-bit Encrypted</span>
+              <div>
+                <p className="text-xs text-gray-400 mb-0.5">Total Amount</p>
+                <p className="text-2xl font-bold text-gray-900">{fmtINR(totalAmount)}</p>
               </div>
             </div>
 
             {/* Contact & policies footer */}
-            <div className="mt-4 pt-4 border-t border-gray-100 text-center space-y-1">
+            <div className="mt-10 pt-5 border-t border-gray-200 space-y-1">
               <p className="text-xs text-gray-400">
                 For any queries, please contact{" "}
                 <span className="font-medium text-gray-600">{MERCHANT_NAME}</span>
@@ -357,24 +279,37 @@ export function PaymentLinkCheckout() {
           </div>
 
           {/* ─── RIGHT PANEL ────────────────────────────────────────── */}
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <div>
 
             {/* ══ SCREEN 1: OVERVIEW ════════════════════════════════ */}
             {screen === "overview" && (
               <div>
-                {/* Header bar */}
-                <div className="bg-blue-700 px-5 py-4">
+                {/* Header bar — logo left, merchant name right */}
+                <div className="bg-blue-700 px-5 py-4 flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-blue-600 border border-blue-500 flex items-center justify-center flex-shrink-0">
+                    <span className="text-white font-bold text-xs">{MERCHANT_INITIALS}</span>
+                  </div>
                   <p className="text-white font-semibold">{MERCHANT_NAME}</p>
-                  <p className="text-blue-200 text-xs mt-0.5">Secure Payment</p>
                 </div>
 
-                <div className="p-5 space-y-5">
-                  {/* Current payment highlight */}
+                <div className="p-5 space-y-4">
+                  {/* Current payment highlight — clickable to deselect payFull */}
                   {isSchedule && currentInst ? (
-                    <div className="rounded-xl border-2 border-blue-600 bg-blue-50 p-4">
+                    <div
+                      className={cn(
+                        "rounded-xl border-2 p-4 transition-all",
+                        !payFull
+                          ? "border-blue-600 bg-blue-50 cursor-default"
+                          : "border-gray-200 bg-gray-50 opacity-60 cursor-pointer hover:opacity-80"
+                      )}
+                      onClick={() => payFull && setPayFull(false)}
+                    >
                       <div className="flex items-start justify-between">
                         <div>
-                          <p className="text-xs font-medium text-blue-600 uppercase tracking-wide mb-0.5">
+                          <p className={cn(
+                            "text-xs font-medium uppercase tracking-wide mb-0.5",
+                            !payFull ? "text-blue-600" : "text-gray-400"
+                          )}>
                             Payment Due Now
                           </p>
                           <p className="font-semibold text-gray-900">
@@ -388,7 +323,10 @@ export function PaymentLinkCheckout() {
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="text-2xl font-bold text-blue-700">
+                          <p className={cn(
+                            "text-2xl font-bold",
+                            !payFull ? "text-blue-700" : "text-gray-400"
+                          )}>
                             {fmtINR(Number(currentInst.amount))}
                           </p>
                           <p className="text-xs text-gray-400 mt-0.5">of {fmtINR(totalAmount)} total</p>
@@ -402,25 +340,87 @@ export function PaymentLinkCheckout() {
                     </div>
                   )}
 
-                  {/* Pay full amount option */}
+                  {/* Payment schedule — shown right below the due payment card */}
+                  {isSchedule && installments.length > 0 && (
+                    <>
+                      <Separator />
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-3">
+                          Payment Schedule
+                        </p>
+                        <div className="space-y-0">
+                          {installments.map((inst, idx) => {
+                            const isDue = idx === 0;
+                            const isLast = idx === installments.length - 1;
+                            return (
+                              <div key={inst.id} className="flex gap-3">
+                                {/* Timeline dot + line */}
+                                <div className="flex flex-col items-center">
+                                  <div
+                                    className={cn(
+                                      "h-5 w-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5",
+                                      isDue ? "bg-blue-600" : "bg-gray-200"
+                                    )}
+                                  >
+                                    {isDue && <Check className="h-3 w-3 text-white" />}
+                                  </div>
+                                  {!isLast && (
+                                    <div className="w-px flex-1 bg-gray-200 my-1 min-h-[20px]" />
+                                  )}
+                                </div>
+                                {/* Content */}
+                                <div className="pb-4 flex-1">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                      <p className={cn("text-sm font-medium leading-tight", isDue ? "text-gray-900" : "text-gray-500")}>
+                                        {inst.label || `Payment ${idx + 1}`}
+                                      </p>
+                                      <div className="flex items-center gap-1.5 mt-0.5">
+                                        <Calendar className="h-3 w-3 text-gray-400" />
+                                        <span className="text-xs text-gray-400">
+                                          {fmtRelative(inst.dueDate)}
+                                        </span>
+                                        {isDue && (
+                                          <Badge className="text-[10px] px-1.5 py-0 h-4 bg-blue-100 text-blue-700 border-blue-200">
+                                            Due now
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <span className={cn("text-sm font-semibold flex-shrink-0", isDue ? "text-gray-900" : "text-gray-400")}>
+                                      {fmtINR(Number(inst.amount))}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Pay full amount option — shown below payment schedule */}
                   {isSchedule && remainingInsts.length > 0 && (
                     <div
                       className={cn(
                         "flex items-start gap-3 rounded-lg border p-3.5 cursor-pointer transition-all",
                         payFull ? "border-blue-300 bg-blue-50" : "border-gray-200 hover:border-gray-300"
                       )}
-                      onClick={() => setPayFull(!payFull)}
+                      onClick={() => setPayFull(true)}
                     >
-                      <Checkbox
-                        id="pay-full"
-                        checked={payFull}
-                        onCheckedChange={(v) => setPayFull(!!v)}
-                        className="mt-0.5 data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
-                      />
+                      <div className={cn(
+                        "mt-0.5 h-4 w-4 rounded flex items-center justify-center flex-shrink-0 border",
+                        payFull
+                          ? "bg-blue-600 border-blue-600"
+                          : "bg-white border-gray-300"
+                      )}>
+                        {payFull && <Check className="h-3 w-3 text-white" />}
+                      </div>
                       <div className="flex-1">
-                        <label htmlFor="pay-full" className="text-sm font-medium text-gray-900 cursor-pointer">
+                        <p className="text-sm font-medium text-gray-900">
                           Pay full amount instead
-                        </label>
+                        </p>
                         <p className="text-xs text-gray-500 mt-0.5">
                           Pay {fmtINR(totalAmount)} now and clear all {installments.length} payments
                         </p>
@@ -430,9 +430,50 @@ export function PaymentLinkCheckout() {
 
                   <Separator />
 
-                  {/* Customer details */}
+                  {/* CTA — no validation needed here, details collected next step */}
+                  <div>
+                    <Button
+                      onClick={handleOverviewContinue}
+                      className="w-full h-11 bg-blue-700 hover:bg-blue-800 text-sm font-semibold"
+                    >
+                      Continue to Pay {fmtINR(payNowAmount)}
+                      <ChevronRight className="ml-1.5 h-4 w-4" />
+                    </Button>
+                    <p className="text-center text-xs text-gray-400 mt-2.5 flex items-center justify-center gap-1">
+                      <Lock className="h-3 w-3" />
+                      Secured by Razorpay
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ══ SCREEN 2: YOUR DETAILS ════════════════════════════ */}
+            {screen === "details" && (
+              <div>
+                {/* Header */}
+                <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
+                  <button
+                    onClick={() => setScreen("overview")}
+                    className="text-gray-400 hover:text-gray-700 transition-colors"
+                  >
+                    <ArrowLeft className="h-4 w-4" />
+                  </button>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-gray-900">Your Details</p>
+                    <p className="text-xs text-gray-400">
+                      Paying {fmtINR(payNowAmount)}
+                      {payFull ? " (full amount)" : isSchedule ? " (first instalment)" : ""}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-base font-bold text-gray-900">{fmtINR(payNowAmount)}</p>
+                  </div>
+                </div>
+
+                <div className="p-5 space-y-5">
+                  {/* Customer details form */}
                   <div className="space-y-3">
-                    <h3 className="text-sm font-semibold text-gray-700">Your Details</h3>
                     <div className="space-y-2.5">
                       <div>
                         <Label htmlFor="name" className="text-xs font-medium text-gray-600 mb-1 block">
@@ -489,11 +530,11 @@ export function PaymentLinkCheckout() {
                   {/* CTA */}
                   <div>
                     <Button
-                      onClick={handleContinue}
+                      onClick={handleDetailsContinue}
                       disabled={!formData.name.trim()}
                       className="w-full h-11 bg-blue-700 hover:bg-blue-800 text-sm font-semibold"
                     >
-                      Continue to Pay {fmtINR(payNowAmount)}
+                      Continue to Payment
                       <ChevronRight className="ml-1.5 h-4 w-4" />
                     </Button>
                     <p className="text-center text-xs text-gray-400 mt-2.5 flex items-center justify-center gap-1">
@@ -505,13 +546,13 @@ export function PaymentLinkCheckout() {
               </div>
             )}
 
-            {/* ══ SCREEN 2: PAYMENT METHOD ══════════════════════════ */}
+            {/* ══ SCREEN 3: PAYMENT METHOD ══════════════════════════ */}
             {screen === "method" && (
               <div>
                 {/* Header */}
                 <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100">
                   <button
-                    onClick={() => setScreen("overview")}
+                    onClick={() => setScreen("details")}
                     className="text-gray-400 hover:text-gray-700 transition-colors"
                   >
                     <ArrowLeft className="h-4 w-4" />
@@ -707,7 +748,7 @@ export function PaymentLinkCheckout() {
               </div>
             )}
 
-            {/* ══ SCREEN 3: SUCCESS ════════════════════════════════ */}
+            {/* ══ SCREEN 4: SUCCESS ════════════════════════════════ */}
             {screen === "success" && (
               <div>
                 {/* Success header */}
@@ -725,7 +766,7 @@ export function PaymentLinkCheckout() {
                   {/* Transaction details */}
                   <div className="rounded-xl border border-gray-200 divide-y divide-gray-100">
                     {[
-                      { label: "Transaction ID", value: txnId },
+                      { label: "Payment ID", value: txnId },
                       { label: "Amount Paid", value: fmtINR(payNowAmount) },
                       {
                         label: "Payment", value: payFull
@@ -797,7 +838,10 @@ export function PaymentLinkCheckout() {
 
           </div>
           {/* end right panel */}
+          </div>
+          {/* end grid */}
         </div>
+        {/* end card */}
       </div>
 
       {/* Footer */}

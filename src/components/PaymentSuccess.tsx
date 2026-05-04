@@ -130,7 +130,7 @@ export function PaymentSuccess() {
               {/* Transaction ID */}
               <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
-                  Transaction ID
+                  Payment ID
                 </p>
                 <div className="flex items-center justify-between">
                   <p className="font-mono font-semibold text-foreground">{transactionId}</p>
@@ -264,7 +264,7 @@ export function PaymentSuccess() {
 PAYMENT RECEIPT
 ================
 
-Transaction ID: ${transactionId}
+Payment ID: ${transactionId}
 Date: ${paymentDate}
 
 Amount Paid: ₹${Number(amount).toLocaleString('en-IN')}
@@ -299,7 +299,7 @@ Thank you for your payment!
               variant="outline"
               className="w-full gap-2"
               onClick={() => {
-                const message = `Payment Successful!\n\nAmount: ₹${Number(amount).toLocaleString('en-IN')}\nTransaction ID: ${transactionId}\nDate: ${paymentDate}`;
+                const message = `Payment Successful!\n\nAmount: ₹${Number(amount).toLocaleString('en-IN')}\nPayment ID: ${transactionId}\nDate: ${paymentDate}`;
                 const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
                 window.open(whatsappUrl, '_blank');
               }}
@@ -339,7 +339,7 @@ Thank you for your payment!
                   </li>
                   <li className="flex items-start gap-2">
                     <ArrowRight className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <span>Save the transaction ID for your records</span>
+                    <span>Save the payment ID for your records</span>
                   </li>
                 </ul>
               </div>
