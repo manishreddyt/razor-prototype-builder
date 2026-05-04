@@ -1,0 +1,12 @@
+.gitignore
+  7be08186-4cfe-40a8-a858-b8a8f4e52e85:2026-05-04T18:06:09.903Z 31-33
+src/components/SitePreview.tsx
+  a550e263-c54d-4f53-ac1f-cf1c52526e00:2026-05-04T15:52:17.277Z 18,120,238
+src/pages/SmartPageCreate.tsx
+  a550e263-c54d-4f53-ac1f-cf1c52526e00:2026-05-04T15:52:43.670Z 29,72,367
+src/pages/SmartPageDetail.tsx
+  a550e263-c54d-4f53-ac1f-cf1c52526e00:2026-05-04T15:52:55.619Z 135,386
+src/pages/SmartPageEditor.tsx
+  a550e263-c54d-4f53-ac1f-cf1c52526e00:2026-05-04T15:53:19.149Z 1014
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"7be08186-4cfe-40a8-a858-b8a8f4e52e85:2026-05-04T18:06:09.903Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 3, "overriden_lines": 0}, "a550e263-c54d-4f53-ac1f-cf1c52526e00:2026-05-04T15:52:17.277Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 3, "overriden_lines": 0}, "a550e263-c54d-4f53-ac1f-cf1c52526e00:2026-05-04T15:52:43.670Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 3, "overriden_lines": 0}, "a550e263-c54d-4f53-ac1f-cf1c52526e00:2026-05-04T15:52:55.619Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 2, "overriden_lines": 0}, "a550e263-c54d-4f53-ac1f-cf1c52526e00:2026-05-04T15:53:19.149Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 1, "overriden_lines": 0}}}
