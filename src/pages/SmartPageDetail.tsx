@@ -132,7 +132,7 @@ const SiteThumbnail = ({ site }: { site: SmartPageSite }) => {
   return (
     <div className="w-full h-full overflow-hidden relative">
       <div className="origin-top-left absolute" style={{ width: 1200, transform: "scale(0.15)", transformOrigin: "top left" }}>
-        <SitePreview template={template} sections={template.sections} />
+        <SitePreview template={template} sections={template.sections} compact />
       </div>
     </div>
   );
@@ -383,7 +383,7 @@ const SmartPageDetail = () => {
                     const t = templates.find(tpl => tpl.id === site.templateId || tpl.title.toLowerCase() === site.type.toLowerCase());
                     return (
                       <div className="origin-top-left absolute" style={{ width: 1200, transform: "scale(0.55)", transformOrigin: "top left" }}>
-                        {t ? <SitePreview template={t} sections={t.sections} /> : (
+                        {t ? <SitePreview template={t} sections={t.sections} compact /> : (
                           <div className="w-full h-96 flex items-center justify-center text-muted-foreground">
                             <Globe className="h-12 w-12" />
                           </div>

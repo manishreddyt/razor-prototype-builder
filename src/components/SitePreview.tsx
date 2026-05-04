@@ -15,6 +15,7 @@ interface SitePreviewProps {
   template: TemplateData;
   sections: SectionData[];
   editable?: boolean;
+  compact?: boolean; // Reduces hero min-height for dialog/thumbnail preview contexts
   activePage?: string;
   onPageChange?: (page: string) => void;
   onUpdateSection?: (id: string, data: Record<string, any>) => void;
@@ -116,7 +117,7 @@ const AddSectionDivider = ({ onAdd }: { onAdd: (type: string) => void }) => {
   );
 };
 
-export const SitePreview = ({ template, sections, editable = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, customPages = [], onOpenProductModal, biolinkConfig, htmlContent }: SitePreviewProps) => {
+export const SitePreview = ({ template, sections, editable = false, compact = false, activePage, onPageChange, onUpdateSection, onUpdateHero, onRemoveSection, onMoveSection, onAddSection, onCtaClick, onProductClick, productsConfig, contactForm, siteId, onLeadCreated, customPages = [], onOpenProductModal, biolinkConfig, htmlContent }: SitePreviewProps) => {
   const templateId = template.id;
   const category = template.category;
   const Text = editable ? EditableText : ({ value, className, tag }: any) => <ReadOnlyText value={value} className={className} tag={tag} />;
@@ -234,7 +235,7 @@ export const SitePreview = ({ template, sections, editable = false, activePage, 
         )}
 
         <div className="container mx-auto px-6 lg:px-12">
-          <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[85vh] py-16">
+          <div className={`grid lg:grid-cols-2 gap-12 items-center ${compact ? "min-h-[480px]" : "min-h-[85vh]"} py-16`}>
             {/* LEFT: Text Content */}
             <div className="space-y-8 lg:pr-12">
               {/* Premium badge */}

@@ -1011,6 +1011,7 @@ const SmartPageEditor = () => {
               <SitePreview
                 template={currentTemplate}
                 sections={currentPage.sections}
+                compact
                 activePage={activePage}
                 onPageChange={setActivePage}
                 onCtaClick={() => {

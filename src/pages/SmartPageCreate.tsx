@@ -26,7 +26,7 @@ const TemplateThumb = ({ template }: { template: TemplateData }) => {
   return (
     <div className="h-52 rounded-t-lg border-b border-border overflow-hidden relative bg-background">
       <div className={`origin-top-left absolute ${isBiolink ? 'left-1/2 -translate-x-1/2' : ''}`} style={{ width, transform: `scale(${scale})${isBiolink ? ' translateX(-50%)' : ''}`, transformOrigin: isBiolink ? "top center" : "top left" }}>
-        <SitePreview template={template} sections={template.sections} biolinkConfig={template.biolinkConfig as any} productsConfig={template.productsConfig} />
+        <SitePreview template={template} sections={template.sections} compact biolinkConfig={template.biolinkConfig as any} productsConfig={template.productsConfig} />
       </div>
       <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent" />
     </div>
@@ -69,7 +69,7 @@ const SmartPageCreate = () => {
   const [aiPrompt, setAiPrompt] = useState("");
   const [isFocused, setIsFocused] = useState(false);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateData | null>(null);
-  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("mobile");
+  const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [previewActivePage, setPreviewActivePage] = useState<string>("Home");
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
@@ -364,6 +364,7 @@ const SmartPageCreate = () => {
                   <SitePreview
                     template={previewPageTemplate}
                     sections={previewPageTemplate.sections}
+                    compact
                     activePage={previewActivePage}
                     onPageChange={(page) => setPreviewActivePage(page)}
                     biolinkConfig={previewPageTemplate.biolinkConfig as any}
