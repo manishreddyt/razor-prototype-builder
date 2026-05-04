@@ -2026,18 +2026,15 @@ const PaymentLinks = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="p-3 rounded-lg border border-amber-200 bg-amber-50 space-y-3">
-                    <div className="flex items-start gap-2">
-                      <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-sm font-medium text-amber-800">Receipt not generated</p>
-                        <p className="text-xs text-amber-700 mt-0.5">Choose the type of receipt to generate for this payment.</p>
-                      </div>
+                  <div className="p-3 rounded-lg border border-border bg-white space-y-2.5">
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Receipt not generated</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Choose the type of receipt to generate for this payment.</p>
                     </div>
                     <Button
                       size="sm"
                       variant="outline"
-                      className="gap-1.5 text-xs h-8 w-full border-amber-300 bg-white hover:bg-amber-50"
+                      className="gap-1.5 text-xs h-8 w-full"
                       onClick={() => {
                         setDetailReceiptGenerated(true);
                         setDetailIncludeGst(false);
