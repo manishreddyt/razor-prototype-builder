@@ -505,7 +505,7 @@ const SmartPageEditor = () => {
   const [settingsTab, setSettingsTab] = useState("page");
   const [publishedPageData, setPublishedPageData] = useState<any>(null);
   const [editorView, setEditorView] = useState<"editor" | "products" | "leads">("editor");
-  const [slug, setSlug] = useState(() => (searchParams.get("title") || "my-page").toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+  const [slug, setSlug] = useState(() => (searchParams.get("title") || "my-page").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/-+$/, "").replace(/^-+/, ""));
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [selectedProduct, setSelectedProduct] = useState<number | null>(null);
   const [checkoutModal, setCheckoutModal] = useState<{
