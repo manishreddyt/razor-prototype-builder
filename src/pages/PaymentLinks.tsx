@@ -2364,7 +2364,7 @@ const PaymentLinks = () => {
                 const fmt = (n: number) => n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
                 return (
-                  <div className="bg-white rounded-lg shadow-sm" style={{ fontFamily: "Georgia, serif" }}>
+                  <div className="bg-white rounded-lg shadow-sm" style={{ fontFamily: "Inter, system-ui, -apple-system, sans-serif" }}>
                     {/* Invoice Header */}
                     <div className="bg-blue-600 text-white px-6 py-4 rounded-t-lg flex justify-between items-start">
                       <div>
