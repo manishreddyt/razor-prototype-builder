@@ -339,7 +339,7 @@ const SmartPageDetail = () => {
                     <Pencil className="h-3 w-3" /> Edit
                   </Button>
                 </div>
-                <div className="h-72 overflow-hidden relative bg-muted/30">
+                <div className="h-[480px] overflow-hidden relative bg-muted/30">
                   {(() => {
                     if (site.pageType === "webinar") {
                       try {
