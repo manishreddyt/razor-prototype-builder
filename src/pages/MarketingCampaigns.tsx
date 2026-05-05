@@ -385,14 +385,21 @@ const triggerOptions = [
 ];
 
 // ─── Helper Functions ───
+const getStoredSites = (): any[] => {
+  return JSON.parse(localStorage.getItem("smart-pages-sites") || "[]");
+};
+
 const getAvailableProducts = (): ProductReference[] => {
-  const smartPages = JSON.parse(localStorage.getItem("smart-pages") || "[]");
-  return smartPages.map((page: any) => ({
+  return getStoredSites().map((page: any) => ({
     id: page.id,
-    type: page.type,
+    type: page.pageType || page.type?.toLowerCase() || "course",
     name: page.name,
-    pageUrl: `/page/${page.id}`,
+    pageUrl: page.url || `/s/${page.slug}`,
   }));
+};
+
+const getSiteById = (id: string): any | null => {
+  return getStoredSites().find((s: any) => s.id === id) || null;
 };
 
 const getActiveOffers = () => {
@@ -647,23 +654,116 @@ const MarketingCampaigns = () => {
   useEffect(() => {
     if (prefilledType && !hasStartedCreate) {
       const product = getAvailableProducts().find(p => p.id === prefilledProductId);
-      startCreateWithPrefill(prefilledType, product);
+      const siteData = prefilledProductId ? getSiteById(prefilledProductId) : null;
+      startCreateWithPrefill(prefilledType, product, siteData);
       setHasStartedCreate(true);
+      if (product || siteData) {
+        toast.success(`Campaign pre-filled for "${product?.name || siteData?.name}"!`);
+      }
     }
   }, [prefilledType, prefilledProductId, hasStartedCreate]);
 
-  const startCreateWithPrefill = (type: CampaignType, product?: ProductReference) => {
+  const buildContextualActions = (
+    type: CampaignType,
+    productName: string,
+    siteData: any | null
+  ): CampaignAction[] => {
+    const price = siteData?.amount ? `₹${siteData.amount.toLocaleString("en-IN")}` : null;
+    const pageUrl = siteData?.url ? `${window.location.origin}${siteData.url}` : "{{product_link}}";
+    const siteType = siteData?.pageType || siteData?.type?.toLowerCase() || "course";
+
+    if (type === "upsell") {
+      const advancedName = `Advanced ${productName}`;
+      return [
+        makeAction("whatsapp", "Send congratulations + upsell offer", {
+          message: `Hi {{name}}! 🎉\n\nCongratulations on completing *${productName}*!\n\nReady to go deeper? Check out our *${advancedName}* — built for students just like you.\n\nUse code UPGRADE25 for 25% off: ${pageUrl}`
+        }),
+        makeAction("wait", "Wait 2 days", { duration: "2 days" }),
+        makeAction("whatsapp", "Send reminder before offer expires", {
+          message: `Hi {{name}}! 👋\n\nYour 25% discount on *${advancedName}* expires tomorrow!\n\nDon't miss out — use UPGRADE25: ${pageUrl}`
+        }),
+        makeAction("email", "Send final upsell email", {
+          subject: `Last chance: Level up with ${advancedName} 🚀`,
+          body: `Hi {{name}},\n\nYou've done amazing work in *${productName}*. We'd love to take you further.\n\n*${advancedName}*${price ? ` (${price})` : ""} — enroll before your exclusive discount expires.\n\n${pageUrl}`
+        }),
+      ];
+    }
+
+    if (type === "webinar_nurture") {
+      return [
+        makeAction("whatsapp", "Send webinar confirmation", {
+          message: `Hi {{name}}! 🎉\n\nYou're registered for *${productName}*.\n\nJoin link: {{meeting_link}}\n\nSee you there! 👋`
+        }),
+        makeAction("wait", "Wait until webinar ends", { duration: "Until webinar ends" }),
+        makeAction("whatsapp", "Send recording + paid course offer", {
+          message: `Thanks for attending *${productName}*, {{name}}! 🙏\n\nHere's the recording: {{recording_link}}\n\nLoved it? Get the full course with 25% off: WEBINAR25\n${pageUrl}`
+        }),
+        makeAction("wait", "Wait 2 days", { duration: "2 days" }),
+        makeAction("email", "Send final nudge email", {
+          subject: `Your discount for ${productName} expires soon ⏰`,
+          body: `Hi {{name}},\n\nDon't miss out on 25% off the full *${productName}* course.\n\nUse code WEBINAR25 at checkout: ${pageUrl}`
+        }),
+      ];
+    }
+
+    if (type === "retarget_dropoff") {
+      return [
+        makeAction("whatsapp", "Send cart reminder", {
+          message: `Hi {{name}}! 🛒\n\nYou were so close to enrolling in *${productName}*!\n\nComplete your purchase here: ${pageUrl}`
+        }),
+        makeAction("wait", "Wait 4 hours", { duration: "4 hours" }),
+        makeAction("whatsapp", "Send discount offer", {
+          message: `{{name}}, get 10% off *${productName}* if you complete your purchase in the next 2 hours! 🎁\n\nUse code SAVE10: ${pageUrl}`
+        }),
+      ];
+    }
+
+    // generic
+    return [
+      makeAction("whatsapp", "Send welcome message", {
+        message: `Hi {{name}}! 👋\n\nThank you for choosing *${productName}*!\n\nWe're excited to have you onboard. 🎉`
+      }),
+    ];
+  };
+
+  const startCreateWithPrefill = (type: CampaignType, product?: ProductReference, siteData?: any | null) => {
     const config = campaignTypeConfig[type];
+    const productName = product?.name || siteData?.name || "your product";
+    const siteType = siteData?.pageType || siteData?.type?.toLowerCase() || product?.type || "course";
+    const price = siteData?.amount ? `₹${siteData.amount.toLocaleString("en-IN")}` : null;
+
+    const contextualActions = buildContextualActions(type, productName, siteData || null);
 
     // Set initial state
     setCurrentCampaignType(type);
     setSelectedProducts(product ? [product] : []);
 
+    const contextLine = siteData
+      ? `I've pulled the details from your **${productName}** page (${siteType}${price ? `, ${price}` : ""}).`
+      : `I'll help you set up a campaign for **${productName}**.`;
+
+    // Pre-populate the editing campaign so the builder uses contextual actions
+    setEditingCampaign({
+      id: Date.now(),
+      name: `${config.label} — ${productName}`,
+      description: config.description,
+      trigger: type === "upsell" ? "Course Completed"
+              : type === "webinar_nurture" ? "Webinar Ended"
+              : type === "retarget_dropoff" ? "Cart Abandoned (30 min)"
+              : "Payment Captured",
+      audienceType: undefined,
+      targetProductId: product?.id || "all",
+      actions: contextualActions,
+      enabled: true,
+      isDefault: false,
+      runs: 0,
+    });
+
     // Start with AI chat pre-filled
     setChatMessages([{
       id: "welcome",
       role: "assistant",
-      content: `I'll help you set up a **${config.label}** for your ${product?.name || 'product'}.\n\n${config.description}\n\n**What I'll create:**\n${config.defaultActions.map((a, i) => `${i + 1}. ${a.label}`).join('\n')}\n\nTell me if you'd like to customize this, or I can generate it now!`,
+      content: `${contextLine}\n\n**Campaign:** ${config.label}\n${config.description}\n\n**What I'll create for ${productName}:**\n${contextualActions.map((a, i) => `${i + 1}. ${a.label}`).join('\n')}\n\nShall I generate this now, or would you like to tweak anything first?`,
       suggestions: [
         "Generate this campaign",
         "Customize the messages",

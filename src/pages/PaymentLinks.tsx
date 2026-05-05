@@ -1736,8 +1736,8 @@ const PaymentLinks = () => {
           <div className="space-y-4">
             <div className="p-4 bg-secondary/50 rounded-lg border border-border">
               <p className="text-xs text-muted-foreground mb-2">Your Payment Link</p>
-              <div className="flex items-center gap-2">
-                <code className="text-sm text-foreground flex-1 truncate">{createdLink}</code>
+              <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+                <code className="text-sm text-foreground flex-1 truncate block min-w-0">{createdLink}</code>
               </div>
             </div>
 
@@ -1774,7 +1774,11 @@ const PaymentLinks = () => {
                     {installments.map((inst, idx) => (
                       <div key={inst.id} className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{inst.label || `Payment ${idx + 1}`}{inst.dueDate ? ` · Due ${new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}</span>
-                        <span className="font-medium text-foreground">₹{Number(inst.amount).toLocaleString("en-IN")}</span>
+                        <span className="font-medium text-foreground">
+                          {inst.amount !== "" && !isNaN(Number(inst.amount))
+                            ? `₹${Number(inst.amount).toLocaleString("en-IN")}`
+                            : <span className="text-muted-foreground italic">TBD</span>}
+                        </span>
                       </div>
                     ))}
                   </div>
