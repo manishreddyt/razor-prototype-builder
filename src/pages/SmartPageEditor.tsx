@@ -1065,20 +1065,6 @@ const SmartPageEditor = () => {
                 </Badge>
               )}
             </Button>
-            <Button
-              variant={editorView === "leads" ? "default" : "ghost"}
-              size="sm"
-              className="text-xs h-7"
-              onClick={() => setEditorView("leads")}
-            >
-              <Mail className="h-3.5 w-3.5 mr-1.5" />
-              Leads
-              {state.leads.filter(l => l.status === "new").length > 0 && (
-                <Badge variant="secondary" className="ml-1.5 px-1 py-0 text-[10px] bg-blue-100 text-blue-700">
-                  {state.leads.filter(l => l.status === "new").length}
-                </Badge>
-              )}
-            </Button>
           </div>
           <div className="h-6 w-px bg-border" />
           <input type="text" value={currentPage.heroTitle} onChange={(e) => updatePageHero({ heroTitle: e.target.value })} className="font-semibold text-foreground text-sm bg-transparent border-none focus:outline-none hover:bg-secondary/50 rounded px-2 py-1" />
