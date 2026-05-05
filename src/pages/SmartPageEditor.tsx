@@ -23,6 +23,7 @@ import { addSite, getStoredSites, storeSites, type SmartPageSite } from "./Websi
 import { templates, availableSectionTypes, createDefaultSection, createCheckoutConfig, getDefaultSectionsForPageName, type TemplateData, type SectionData, type PageData, type CheckoutConfig, type CheckoutFormField, type CustomPage } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
 import { SmartPageCheckout } from "@/components/SmartPageCheckout";
+import { PaymentPageView } from "@/components/PaymentPageView";
 import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
 import { ProductManager } from "@/components/products/ProductManager";
 import { LeadsManager } from "@/components/leads/LeadsManager";
@@ -1016,7 +1017,14 @@ const SmartPageEditor = () => {
         </div>
         <ScrollArea className="flex-1 bg-muted/30 p-6">
           <div className={`mx-auto bg-background rounded-lg shadow-lg border border-border overflow-hidden ${viewMode === "mobile" ? "max-w-sm" : "max-w-4xl"}`}>
-            {selectedProduct !== null ? (
+            {state.template.layout === "payment-page" && state.checkout ? (
+              <PaymentPageView
+                template={currentTemplate}
+                checkout={state.checkout}
+                editable
+                onUpdateCheckout={updateCheckout}
+              />
+            ) : selectedProduct !== null ? (
               <ProductDetailPage
                 product={getProductByIndex(state.productsConfig, selectedProduct)!}
                 onBack={() => setSelectedProduct(null)}
@@ -1181,7 +1189,14 @@ const SmartPageEditor = () => {
         {/* Preview Area */}
         <ScrollArea className="flex-1 bg-muted/30 p-6">
           <div className={`mx-auto bg-background rounded-lg shadow-sm border border-border overflow-hidden transition-all ${viewMode === "mobile" ? "max-w-sm" : "max-w-4xl"}`}>
-            {isCheckoutPage && state.checkout ? (
+            {state.template.layout === "payment-page" && state.checkout ? (
+              <PaymentPageView
+                template={currentTemplate}
+                checkout={state.checkout}
+                editable
+                onUpdateCheckout={updateCheckout}
+              />
+            ) : isCheckoutPage && state.checkout ? (
               <SmartPageCheckout
                 template={currentTemplate}
                 checkout={state.checkout}

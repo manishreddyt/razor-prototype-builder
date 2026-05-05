@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { templates, type TemplateData } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
 import { SmartPageCheckout } from "@/components/SmartPageCheckout";
+import { PaymentPageView } from "@/components/PaymentPageView";
 import { getStoredSites } from "@/pages/WebsiteBuilder";
 import { ArrowLeft } from "lucide-react";
 import WebinarLandingPreview from "@/components/WebinarLandingPreview";
@@ -188,6 +189,19 @@ const SmartPagePublic = () => {
           <p className="text-muted-foreground">This page doesn't exist or has been removed.</p>
           <Button onClick={() => navigate("/")}>Go Home</Button>
         </div>
+      </div>
+    );
+  }
+
+  // ─── Payment Page Layout ───
+  if (template.layout === "payment-page" && template.checkout) {
+    return (
+      <div className="min-h-screen bg-white">
+        <PaymentPageView
+          template={template}
+          checkout={template.checkout}
+          onBack={() => navigate("/")}
+        />
       </div>
     );
   }

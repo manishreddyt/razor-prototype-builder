@@ -70,6 +70,8 @@ export interface TemplateData {
   desc: string;
   category: string;
   icon: any;
+  /** "standard" (default) = multi-page site; "payment-page" = single two-column payment page */
+  layout?: "standard" | "payment-page";
   pages: string[];
   heroTitle: string;
   heroTagline: string;
@@ -1328,6 +1330,215 @@ export const templates: TemplateData[] = [
       "Easy returns within 7 days",
       "Secure payment via Razorpay"
     ]),
+  },
+
+  // ─── Payment Page Templates (two-column single page) ───
+
+  // Education: Course enrollment payment page
+  {
+    id: "pay-edu-course",
+    layout: "payment-page",
+    title: "Course Enrollment Page",
+    desc: "Single-page two-column course enrollment. Left content, right Razorpay checkout — no navigation needed.",
+    category: "education",
+    icon: GraduationCap,
+    pages: ["Home"],
+    heroTitle: "Full Stack Web Development",
+    heroTagline: "12-Week Intensive • Live + Recorded • Next Batch: June 2026",
+    heroDescription: "Go from zero to job-ready in 12 weeks. Learn React, Node.js, PostgreSQL, and DevOps with real-world projects. Mentored by ex-Google and ex-Amazon engineers. 2,000+ alumni placed.",
+    heroCta: "Enroll Now",
+    bannerImage: "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=900&h=300&fit=crop",
+    sections: [
+      statsSection([
+        { value: "2,000+", label: "Alumni placed" },
+        { value: "92%", label: "Completion rate" },
+        { value: "4.9★", label: "Average rating" },
+        { value: "12 wks", label: "Duration" },
+      ]),
+      aboutSection(
+        "Karthik Rajan — Your Lead Instructor",
+        "Ex-Amazon SDE-II with 10 years of full-stack experience. Trained 2,000+ developers. Alumni placed at Google, Microsoft, Flipkart, and top startups across India."
+      ),
+      testimonialsSection([
+        { name: "Rohit Verma", text: "Landed a ₹18 LPA job at a fintech startup 3 months after completing the course. The projects were incredibly practical.", rating: 5, avatar: "RV" },
+        { name: "Divya R.", text: "Best investment of my career. The mentorship and code reviews made all the difference.", rating: 5, avatar: "DR" },
+        { name: "Amit P.", text: "Real projects, real skills. Not just theory. I had a portfolio ready to show on day 1 of interviews.", rating: 5, avatar: "AP" },
+        { name: "Sneha K.", text: "Switched from non-tech to a developer role in 6 months. Forever grateful for this course.", rating: 5, avatar: "SK" },
+      ]),
+    ],
+    checkout: createCheckoutConfig(
+      12999,
+      "Enroll Now — ₹12,999",
+      [
+        "120+ hours of HD video content",
+        "12 weeks of live mentoring sessions",
+        "5 real-world capstone projects",
+        "Code reviews on every assignment",
+        "Verified certificate of completion",
+        "Lifetime access + future updates",
+        "Private Slack community (2,000+ devs)",
+        "Job placement assistance",
+      ],
+      [
+        { id: "f_exp", label: "Experience Level", type: "select", required: true, placeholder: "Select your level", options: ["Beginner (no coding)", "Some experience", "Intermediate"] },
+        { id: "f_goal", label: "Your Goal", type: "textarea", required: false, placeholder: "What do you want to build or achieve?" },
+      ]
+    ),
+  },
+
+  // Education: Workshop enrollment payment page
+  {
+    id: "pay-edu-workshop",
+    layout: "payment-page",
+    title: "Workshop Enrollment Page",
+    desc: "Single-page payment page for a weekend workshop or short course with Razorpay checkout.",
+    category: "education",
+    icon: GraduationCap,
+    pages: ["Home"],
+    heroTitle: "UI/UX Design Intensive",
+    heroTagline: "2-Day Weekend Workshop • 20 Seats Only • June 14–15, 2026",
+    heroDescription: "Hands-on Figma workshop — from wireframes to pixel-perfect prototypes. Build a complete product case study in 2 days. Taught by senior designers from Zomato and Swiggy.",
+    heroCta: "Reserve Your Seat",
+    bannerImage: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=900&h=300&fit=crop",
+    sections: [
+      statsSection([
+        { value: "20", label: "Seats per batch" },
+        { value: "16 hrs", label: "Hands-on practice" },
+        { value: "98%", label: "Satisfaction rate" },
+        { value: "3 Yrs", label: "Running" },
+      ]),
+      aboutSection(
+        "Priya Nair & Sneha Kapoor",
+        "Senior product designers at Zomato and Swiggy respectively. Combined 15 years of designing products used by millions. They bring real problems, real feedback, and no fluff."
+      ),
+      testimonialsSection([
+        { name: "Meera S.", text: "Got my first design job within 3 weeks of the workshop. The portfolio piece we built was the conversation-starter in every interview.", rating: 5, avatar: "MS" },
+        { name: "Arjun T.", text: "Dense, practical, and zero filler. The 2 days felt like 2 weeks worth of learning.", rating: 5, avatar: "AT" },
+        { name: "Pooja R.", text: "The feedback sessions were brutal but incredibly valuable. I redesigned my portfolio right after.", rating: 5, avatar: "PR" },
+        { name: "Vikram J.", text: "Worth every rupee. I've done expensive bootcamps that delivered less.", rating: 5, avatar: "VJ" },
+      ]),
+    ],
+    checkout: createCheckoutConfig(
+      2499,
+      "Reserve My Seat — ₹2,499",
+      [
+        "2 full days of hands-on Figma training",
+        "Real product design case study",
+        "Portfolio-ready project to take home",
+        "1:1 feedback on your designs",
+        "Access to design resources & UI kit",
+        "Certificate of participation",
+        "30-day post-workshop Q&A support",
+      ],
+      [
+        { id: "f_tool", label: "Figma experience", type: "select", required: true, placeholder: "Your Figma level", options: ["Never used it", "Basic (free plan)", "Intermediate", "Advanced"] },
+      ]
+    ),
+  },
+
+  // Services: Consulting session payment page
+  {
+    id: "pay-service-consult",
+    layout: "payment-page",
+    title: "Consultation Booking Page",
+    desc: "Single-page two-column page for booking and paying for a consulting or coaching session.",
+    category: "services",
+    icon: Briefcase,
+    pages: ["Home"],
+    heroTitle: "1:1 Business Strategy Session",
+    heroTagline: "90-Minute Deep Dive • Recorded + Notes • Book Within 5 Days",
+    heroDescription: "Get unstuck. Work with an experienced strategist to cut through the noise, validate your ideas, and walk away with a concrete 30/60/90-day action plan tailored to your business.",
+    heroCta: "Book Session",
+    bannerImage: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=900&h=300&fit=crop",
+    sections: [
+      statsSection([
+        { value: "500+", label: "Sessions delivered" },
+        { value: "4.9★", label: "Average rating" },
+        { value: "12 yrs", label: "Experience" },
+        { value: "48 hr", label: "Response time" },
+      ]),
+      aboutSection(
+        "Ananya Krishnan — Business Strategist",
+        "Ex-McKinsey consultant and founder with 12 years across strategy, product, and growth. Has worked with 200+ startups and SMBs across EdTech, FinTech, and D2C. Featured in Economic Times and YourStory."
+      ),
+      testimonialsSection([
+        { name: "Rahul M.", text: "One session changed how I think about my entire go-to-market. Worth 10x what I paid.", rating: 5, avatar: "RM" },
+        { name: "Nisha P.", text: "She cut through my 3-month mental block in 90 minutes. Actionable, direct, and no fluff.", rating: 5, avatar: "NP" },
+        { name: "Karan S.", text: "I came in with a fuzzy idea. I left with a clear 60-day plan and three quick wins to test.", rating: 5, avatar: "KS" },
+        { name: "Deepa V.", text: "The follow-up notes alone were worth it. Still referring back to them 6 months later.", rating: 5, avatar: "DV" },
+      ]),
+    ],
+    checkout: createCheckoutConfig(
+      8999,
+      "Book My Session — ₹8,999",
+      [
+        "90-minute 1:1 video strategy session",
+        "Full session recording shared after",
+        "Written summary + action plan (PDF)",
+        "30/60/90-day roadmap tailored to you",
+        "2 weeks of follow-up email support",
+        "Resource toolkit (templates, frameworks)",
+        "Booking within 5 business days",
+      ],
+      [
+        { id: "f_biz", label: "Business / Project", type: "text", required: true, placeholder: "What are you working on?" },
+        { id: "f_challenge", label: "Primary challenge", type: "textarea", required: true, placeholder: "What's the main problem you want to solve in this session?" },
+        { id: "f_stage", label: "Business stage", type: "select", required: true, placeholder: "Select stage", options: ["Idea / Pre-revenue", "Early stage (< ₹10L revenue)", "Growth stage (₹10L–1Cr)", "Scale stage (₹1Cr+)"] },
+      ]
+    ),
+  },
+
+  // Services: Membership / subscription payment page
+  {
+    id: "pay-service-membership",
+    layout: "payment-page",
+    title: "Membership Signup Page",
+    desc: "Single-page payment page for recurring memberships, subscriptions, or community access.",
+    category: "services",
+    icon: Briefcase,
+    pages: ["Home"],
+    heroTitle: "The Founders' Inner Circle",
+    heroTagline: "Monthly Membership • Cancel Anytime • Join 800+ Members",
+    heroDescription: "A curated community for ambitious founders and operators. Monthly masterclasses, peer accountability groups, deal flow access, and a network that actually helps you grow — not just network.",
+    heroCta: "Join the Circle",
+    bannerImage: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=900&h=300&fit=crop",
+    sections: [
+      statsSection([
+        { value: "800+", label: "Active members" },
+        { value: "4.8★", label: "Member rating" },
+        { value: "4 yrs", label: "Community age" },
+        { value: "₹0", label: "Cancellation fee" },
+      ]),
+      aboutSection(
+        "Siddharth Rao — Community Founder",
+        "Serial entrepreneur, 3 exits. Built communities that have generated over ₹200Cr in member revenue. Believes your network is your biggest unfair advantage."
+      ),
+      testimonialsSection([
+        { name: "Avni T.", text: "Got my first enterprise client through the community within 3 months. The quality of people here is unmatched.", rating: 5, avatar: "AT" },
+        { name: "Rohan D.", text: "The monthly masterclasses alone are worth the fee. I've stopped buying individual courses.", rating: 5, avatar: "RD" },
+        { name: "Priti M.", text: "I've tried 4 founder communities. This is the only one where people actually show up and help.", rating: 5, avatar: "PM" },
+        { name: "Sahil K.", text: "Closed a co-founder here. Worth every rupee for that alone.", rating: 5, avatar: "SK" },
+      ]),
+    ],
+    checkout: createCheckoutConfig(
+      2999,
+      "Join Now — ₹2,999/month",
+      [
+        "Monthly live masterclass with top operators",
+        "Private Slack — 800+ active founders",
+        "Weekly accountability pods (6–8 people)",
+        "Deal flow & warm intro network",
+        "Resource library (playbooks, templates)",
+        "Monthly hot-seat sessions",
+        "Early access to events & workshops",
+        "Cancel anytime, no questions asked",
+      ],
+      [
+        { id: "f_company", label: "Company / Project", type: "text", required: true, placeholder: "What are you building?" },
+        { id: "f_stage", label: "Stage", type: "select", required: true, placeholder: "Select your stage", options: ["Idea stage", "Pre-revenue", "Revenue generating", "Scaling", "Exited / Investing"] },
+      ],
+      { amountType: "fixed" }
+    ),
   },
 
   // ─── Product-Focused Templates ───

@@ -226,7 +226,54 @@ export const SitePreview = ({ template, sections, editable = false, compact = fa
         </div>
       </nav>
 
-      {/* ─── SPLIT HERO (Razorpay Style) ─── */}
+      {/* ─── PAGE HERO: compact header for non-home pages, full hero for home ─── */}
+      {activePage && activePage !== template.pages[0] && activePage !== "__checkout__" ? (
+        /* Compact page header for About Us, Contact Us, and other inner pages */
+        <div className={`border-b border-gray-100 ${
+          activePage === "Contact Us" || activePage?.toLowerCase().includes("contact")
+            ? "bg-gradient-to-br from-emerald-50 via-white to-teal-50"
+            : activePage === "About Us" || activePage?.toLowerCase().includes("about")
+              ? "bg-gradient-to-br from-violet-50 via-white to-indigo-50"
+              : "bg-gradient-to-br from-gray-50 via-white to-slate-50"
+        }`}>
+          <div className="max-w-4xl mx-auto px-8 py-14">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
+              <span
+                className="cursor-pointer hover:text-primary transition-colors"
+                onClick={() => onPageChange?.(template.pages[0])}
+              >
+                Home
+              </span>
+              <span>/</span>
+              <span className="text-foreground font-medium">{activePage}</span>
+            </div>
+            <div className="max-w-2xl space-y-4">
+              <div className={`inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold mb-2 ${
+                activePage === "Contact Us" || activePage?.toLowerCase().includes("contact")
+                  ? "bg-emerald-100 text-emerald-700"
+                  : "bg-violet-100 text-violet-700"
+              }`}>
+                {activePage === "Contact Us" || activePage?.toLowerCase().includes("contact") ? "✉️" : "👋"} {activePage}
+              </div>
+              <Text
+                value={template.heroTitle}
+                onChange={(v: string) => onUpdateHero?.({ heroTitle: v })}
+                className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight block"
+                tag="h1"
+              />
+              {template.heroDescription && (
+                <Text
+                  value={template.heroDescription}
+                  onChange={(v: string) => onUpdateHero?.({ heroDescription: v })}
+                  className="text-base text-gray-600 leading-relaxed max-w-xl block"
+                  tag="p"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+      /* ─── SPLIT HERO (Razorpay Style) — Home page only ─── */
       <div className="relative bg-gradient-to-br from-blue-50 via-white to-purple-50 overflow-hidden">
         {editable && (
           <div className="absolute top-6 right-6 z-20">
@@ -344,6 +391,7 @@ export const SitePreview = ({ template, sections, editable = false, compact = fa
           </div>
         </div>
       </div>
+      )}
 
       {/* Nav */}
       <div className="sticky top-0 z-30 bg-background/80 backdrop-blur-md border-b border-border">
