@@ -1,0 +1,6 @@
+src/pages/SmartPageDetail.tsx
+  5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T05:34:51.507Z 181-183,185
+src/pages/WebsiteBuilder.tsx
+  5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T05:35:06.063Z 338
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T05:34:51.507Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 4, "overriden_lines": 0}, "5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T05:35:06.063Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 1, "overriden_lines": 0}}}
