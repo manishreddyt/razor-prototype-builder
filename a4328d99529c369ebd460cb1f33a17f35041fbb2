@@ -1,0 +1,4 @@
+src/App.tsx
+  56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T06:18:31.328Z 57,59-65,98
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T06:18:31.328Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 9, "overriden_lines": 0}}}
