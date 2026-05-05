@@ -20,7 +20,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { addSite, getStoredSites, storeSites, type SmartPageSite } from "./WebsiteBuilder";
-import { templates, availableSectionTypes, createDefaultSection, createCheckoutConfig, type TemplateData, type SectionData, type PageData, type CheckoutConfig, type CheckoutFormField, type CustomPage } from "@/data/smartPageTemplates";
+import { templates, availableSectionTypes, createDefaultSection, createCheckoutConfig, getDefaultSectionsForPageName, type TemplateData, type SectionData, type PageData, type CheckoutConfig, type CheckoutFormField, type CustomPage } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
 import { SmartPageCheckout } from "@/components/SmartPageCheckout";
 import { useAIPageBuilder, type AIPageUpdates } from "@/hooks/useAIPageBuilder";
@@ -592,6 +592,21 @@ const SmartPageEditor = () => {
     setState((prev) => ({ ...prev, activePage: pageName }));
   };
 
+  // Auto-seed empty custom pages with default sections based on their name
+  useEffect(() => {
+    if (isCustomPage && customPage && customPage.sections.length === 0) {
+      const defaults = getDefaultSectionsForPageName(customPage.name);
+      if (defaults.length > 0) {
+        setState((prev) => ({
+          ...prev,
+          customPages: prev.customPages.map((p) =>
+            p.slug === activePage ? { ...p, sections: defaults } : p
+          ),
+        }));
+      }
+    }
+  }, [activePage]);
+
   const updateCheckout = (updates: Partial<CheckoutConfig>) => {
     setState((prev) => ({
       ...prev,
@@ -1062,20 +1077,6 @@ const SmartPageEditor = () => {
               {state.productsConfig.products.length > 0 && (
                 <Badge variant="secondary" className="ml-1.5 px-1 py-0 text-[10px] bg-green-100 text-green-700">
                   {state.productsConfig.products.length}
-                </Badge>
-              )}
-            </Button>
-            <Button
-              variant={editorView === "leads" ? "default" : "ghost"}
-              size="sm"
-              className="text-xs h-7"
-              onClick={() => setEditorView("leads")}
-            >
-              <Mail className="h-3.5 w-3.5 mr-1.5" />
-              Leads
-              {state.leads.filter(l => l.status === "new").length > 0 && (
-                <Badge variant="secondary" className="ml-1.5 px-1 py-0 text-[10px] bg-blue-100 text-blue-700">
-                  {state.leads.filter(l => l.status === "new").length}
                 </Badge>
               )}
             </Button>
