@@ -516,37 +516,37 @@ export const templates: TemplateData[] = [
           id: "mc-p1", type: "course", title: "Full Stack Web Development", status: "published", featured: true, badge: "Best Seller",
           description: "Master HTML, CSS, JavaScript, React, Node.js, and MongoDB. Build 10+ real-world projects from scratch.",
           image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop",
-          pricingModels: [{ id: "mc-pm1", type: "one-time", amount: 4999, currency: "INR", label: "Enroll Now" }],
+          pricingModels: [{ id: "mc-pm1", type: "one-time", price: 4999, currency: "INR", label: "Enroll Now" }],
         },
         {
           id: "mc-p2", type: "course", title: "UI/UX Design Mastery", status: "published", featured: false, badge: "Popular",
           description: "Learn Figma, design systems, user research, wireframing, prototyping, and usability testing.",
           image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop",
-          pricingModels: [{ id: "mc-pm2", type: "one-time", amount: 3999, currency: "INR", label: "Enroll Now" }],
+          pricingModels: [{ id: "mc-pm2", type: "one-time", price: 3999, currency: "INR", label: "Enroll Now" }],
         },
         {
           id: "mc-p3", type: "course", title: "Data Science & Machine Learning", status: "published", featured: false, badge: "",
           description: "Python, Pandas, NumPy, Scikit-learn, TensorFlow. Build predictive models and recommendation engines.",
           image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop",
-          pricingModels: [{ id: "mc-pm3", type: "one-time", amount: 5999, currency: "INR", label: "Enroll Now" }],
+          pricingModels: [{ id: "mc-pm3", type: "one-time", price: 5999, currency: "INR", label: "Enroll Now" }],
         },
         {
           id: "mc-p4", type: "course", title: "Digital Marketing Pro", status: "published", featured: false, badge: "New",
           description: "SEO, Google Ads, Facebook Ads, content marketing, email automation, and analytics.",
           image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
-          pricingModels: [{ id: "mc-pm4", type: "one-time", amount: 2999, currency: "INR", label: "Enroll Now" }],
+          pricingModels: [{ id: "mc-pm4", type: "one-time", price: 2999, currency: "INR", label: "Enroll Now" }],
         },
         {
           id: "mc-p5", type: "course", title: "Python Programming", status: "published", featured: false, badge: "",
           description: "Complete Python masterclass from basics to advanced. Covers OOP, file handling, APIs, and automation.",
           image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400&h=300&fit=crop",
-          pricingModels: [{ id: "mc-pm5", type: "one-time", amount: 1999, currency: "INR", label: "Enroll Now" }],
+          pricingModels: [{ id: "mc-pm5", type: "one-time", price: 1999, currency: "INR", label: "Enroll Now" }],
         },
         {
           id: "mc-p6", type: "course", title: "Cloud & DevOps", status: "published", featured: false, badge: "",
           description: "AWS, Docker, Kubernetes, CI/CD, Terraform. Deploy and scale production applications.",
           image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=300&fit=crop",
-          pricingModels: [{ id: "mc-pm6", type: "one-time", amount: 4499, currency: "INR", label: "Enroll Now" }],
+          pricingModels: [{ id: "mc-pm6", type: "one-time", price: 4499, currency: "INR", label: "Enroll Now" }],
         },
       ],
     },
@@ -1394,4 +1394,44 @@ export const createDefaultSection = (type: SectionType): SectionData => {
   const section = (factories[type] || (() => aboutSection()))();
   section.visible = true;
   return section;
+};
+
+export const getDefaultSectionsForPageName = (name: string): SectionData[] => {
+  const lower = name.toLowerCase();
+  if (lower.includes("about")) {
+    return [
+      aboutSection(
+        "Who We Are",
+        "We are a team of passionate educators and industry experts committed to delivering world-class learning experiences. Our mission is to make quality education accessible to everyone — regardless of background or location."
+      ),
+      teamSection([
+        { name: "Founder & CEO", role: "Founder & CEO", avatar: "FC", bio: "10+ years in EdTech. Building the future of online learning." },
+        { name: "Head of Content", role: "Head of Content", avatar: "HC", bio: "Curriculum expert. Ensures every lesson delivers real-world value." },
+        { name: "Student Success Lead", role: "Student Success", avatar: "SS", bio: "Dedicated to helping every student achieve their goals." },
+      ]),
+      statsSection([
+        { value: "15K+", label: "Students Enrolled" },
+        { value: "4.9★", label: "Average Rating" },
+        { value: "100+", label: "Courses Available" },
+        { value: "5 Yrs", label: "In Business" },
+      ]),
+      testimonialsSection([
+        { name: "Rohit V.", text: "This platform completely changed my career trajectory. The instructors are world-class.", rating: 5, avatar: "RV" },
+        { name: "Aditi S.", text: "The community and support team are incredible. I never felt stuck for long.", rating: 5, avatar: "AS" },
+        { name: "Karthik M.", text: "Best investment I've made in my education. Highly recommend to anyone serious about learning.", rating: 5, avatar: "KM" },
+      ]),
+    ];
+  }
+  if (lower.includes("contact")) {
+    return [
+      contactFormSection({ heading: "Get in Touch", submitText: "Send Message" }),
+      faqSection([
+        { q: "How quickly do you respond?", a: "We typically respond within 24 hours on business days." },
+        { q: "Can I speak with someone before enrolling?", a: "Absolutely! Book a free 15-minute call using the form above and we'll be happy to answer all your questions." },
+        { q: "What is your refund policy?", a: "We offer a full refund within 7 days of purchase — no questions asked." },
+        { q: "Do you offer group or corporate discounts?", a: "Yes! For teams of 5 or more, contact us for special pricing and customised learning plans." },
+      ]),
+    ];
+  }
+  return [];
 };
