@@ -106,31 +106,49 @@ const SmartPagePublic = () => {
     };
   }, [template, activePage, site]);
 
-  // Get product if viewing product detail
+  // Normalise price from either pricingModels (number) or legacy price string ("₹4,999")
+  const getProductPrice = (p: any): { display: string; num: number } => {
+    if (p?.pricingModels?.[0]?.price != null) {
+      const num = Number(p.pricingModels[0].price);
+      return { display: `₹${num.toLocaleString("en-IN")}`, num };
+    }
+    const str: string = p?.price || "₹0";
+    const num = parseInt(str.replace(/[^0-9]/g, ""), 10) || 0;
+    return { display: str.startsWith("₹") ? str : `₹${num.toLocaleString("en-IN")}`, num };
+  };
+
+  // Get product — prefer productsConfig (editor-created sites), fall back to template sections
   const product = useMemo(() => {
-    if (!template || selectedProduct < 0) return null;
+    if (selectedProduct < 0) return null;
+    if (site?.productsConfig?.products?.[selectedProduct]) {
+      return site.productsConfig.products[selectedProduct];
+    }
+    if (!template) return null;
     const productsSection = template.sections.find((s) => s.type === "products");
     return productsSection?.data?.items?.[selectedProduct] || null;
-  }, [template, selectedProduct]);
+  }, [template, selectedProduct, site]);
 
   // Build checkout config
   const productCheckout = useMemo(() => {
     if (!template) return null;
     if (!product) return template.checkout || null;
-    const priceNum = parseInt(product.price?.replace(/[^0-9]/g, "") || "0", 10);
+    const { num: priceNum } = getProductPrice(product);
     if (template.checkout) {
-      return { ...template.checkout, amount: priceNum, buttonText: `Pay ₹${priceNum.toLocaleString()}` };
+      return { ...template.checkout, amount: priceNum, buttonText: `Pay ₹${priceNum.toLocaleString("en-IN")}` };
     }
     return {
       enabled: true, amount: priceNum, amountType: "fixed" as const, currency: "INR",
-      buttonText: `Pay ₹${priceNum.toLocaleString()}`, successMessage: "Payment successful! You'll receive a confirmation email shortly.",
+      buttonText: `Pay ₹${priceNum.toLocaleString("en-IN")}`,
+      successMessage: "Payment successful! You'll receive a confirmation email shortly.",
       redirectUrl: "", collectAddress: false, sendReceipt: true, gstEnabled: true,
       formFields: [
         { id: "f_name", label: "Full Name", type: "text" as const, required: true, placeholder: "Enter your full name" },
         { id: "f_email", label: "Email", type: "email" as const, required: true, placeholder: "Enter your email" },
         { id: "f_phone", label: "Phone", type: "phone" as const, required: false, placeholder: "Enter your phone number" },
       ],
-      highlights: ["Access to all materials", "Certificate on completion", "Community access"],
+      highlights: product.pricingModels
+        ? ["Lifetime access", "Certificate on completion", "Expert-led content", "Community access", "Hands-on projects"]
+        : ["Access to all materials", "Certificate on completion", "Community access"],
     };
   }, [product, template]);
 
@@ -223,12 +241,15 @@ const SmartPagePublic = () => {
 
   // ─── Product Detail View ───
   if (currentView === "product-detail" && product) {
-    const priceNum = parseInt(product.price?.replace(/[^0-9]/g, "") || "0", 10);
+    const { display: priceDisplay, num: priceNum } = getProductPrice(product);
+    const productDesc = product.description || product.desc || `Comprehensive ${product.title} program designed to take you from beginner to professional.`;
+    const isEducation = template.category === "education" || product.type === "course";
+
     return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-6 py-8 space-y-8">
+        <div className="container mx-auto px-6 py-8 space-y-8 max-w-4xl">
           <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => { setCurrentView("site"); setSelectedProduct(-1); }}>
-            <ArrowLeft className="h-4 w-4" /> Back to site
+            <ArrowLeft className="h-4 w-4" /> Back
           </Button>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -244,9 +265,7 @@ const SmartPagePublic = () => {
                 <span className="inline-block text-xs font-bold bg-primary/10 text-primary px-3 py-1 rounded-full">{product.badge}</span>
               )}
               <h1 className="text-3xl font-bold text-foreground">{product.title}</h1>
-              <p className="text-muted-foreground leading-relaxed">
-                {product.desc || `Comprehensive ${product.title} program designed to take you from beginner to professional.`}
-              </p>
+              <p className="text-muted-foreground leading-relaxed">{productDesc}</p>
 
               <div className="flex items-center gap-3">
                 <div className="flex gap-0.5">
@@ -257,12 +276,12 @@ const SmartPagePublic = () => {
               </div>
 
               <div className="flex items-baseline gap-3">
-                <span className="text-3xl font-bold text-foreground">{product.price}</span>
-                {priceNum > 0 && <span className="text-lg text-muted-foreground line-through">₹{Math.round(priceNum * 1.5).toLocaleString()}</span>}
+                <span className="text-3xl font-bold text-foreground">{priceDisplay}</span>
+                {priceNum > 0 && <span className="text-lg text-muted-foreground line-through">₹{Math.round(priceNum * 1.5).toLocaleString("en-IN")}</span>}
               </div>
 
               <Button size="lg" className="w-full text-base py-6 rounded-xl shadow-lg shadow-primary/20" onClick={() => setCurrentView("checkout")}>
-                {template.category === "education" ? `Enroll Now — ${product.price}` : `Buy Now — ${product.price}`}
+                {isEducation ? `Enroll Now — ${priceDisplay}` : `Buy Now — ${priceDisplay}`}
               </Button>
 
               <div className="flex items-center gap-4 text-xs text-muted-foreground">
@@ -273,13 +292,13 @@ const SmartPagePublic = () => {
             </div>
           </div>
 
-          {productCheckout && productCheckout.highlights && (
+          {productCheckout?.highlights && (
             <div className="border border-border rounded-xl p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">What's Included</h3>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {productCheckout.highlights.map((h: string, i: number) => (
                   <div key={i} className="flex items-start gap-2">
-                    <span className="text-primary">✓</span>
+                    <span className="text-primary font-bold">✓</span>
                     <span className="text-sm text-foreground">{h}</span>
                   </div>
                 ))}
@@ -287,16 +306,16 @@ const SmartPagePublic = () => {
             </div>
           )}
 
-          {template.category === "education" && (
+          {isEducation && (
             <div className="border border-border rounded-xl p-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">Course Overview</h3>
               <div className="space-y-3">
                 {[
-                  { module: "Module 1: Getting Started", lessons: 5, duration: "3 hours" },
-                  { module: "Module 2: Core Concepts", lessons: 8, duration: "5 hours" },
-                  { module: "Module 3: Hands-on Projects", lessons: 6, duration: "8 hours" },
-                  { module: "Module 4: Advanced Topics", lessons: 7, duration: "6 hours" },
-                  { module: "Module 5: Capstone & Certification", lessons: 4, duration: "4 hours" },
+                  { module: "Module 1: Getting Started", lessons: 5, duration: "3 hrs" },
+                  { module: "Module 2: Core Concepts", lessons: 8, duration: "5 hrs" },
+                  { module: "Module 3: Hands-on Projects", lessons: 6, duration: "8 hrs" },
+                  { module: "Module 4: Advanced Topics", lessons: 7, duration: "6 hrs" },
+                  { module: "Module 5: Capstone & Certification", lessons: 4, duration: "4 hrs" },
                 ].map((m, i) => (
                   <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                     <div className="flex items-center gap-3">
@@ -315,7 +334,7 @@ const SmartPagePublic = () => {
 
           <div className="text-center pb-8">
             <Button size="lg" className="text-base px-12 py-6 rounded-xl shadow-lg shadow-primary/20" onClick={() => setCurrentView("checkout")}>
-              {template.category === "education" ? `Enroll Now — ${product.price}` : `Buy Now — ${product.price}`}
+              {isEducation ? `Enroll Now — ${priceDisplay}` : `Buy Now — ${priceDisplay}`}
             </Button>
             <p className="text-xs text-muted-foreground mt-3">Secure payment powered by Razorpay</p>
           </div>
