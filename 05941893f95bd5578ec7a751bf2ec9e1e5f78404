@@ -1,0 +1,4 @@
+src/pages/SmartPagePublic.tsx
+  5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T05:29:45.479Z 109-118,120,122-126,129,135,137,141-142,149-151,244-246,250,252,268,279-280,284,295,301,309,314-318,337
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T05:29:45.479Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 42, "overriden_lines": 0}}}
