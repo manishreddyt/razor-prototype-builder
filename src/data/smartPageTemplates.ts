@@ -397,7 +397,7 @@ export const templates: TemplateData[] = [
   // 1. MULTI-COURSE PLATFORM
   {
     id: "multi-course", title: "Online Courses (Multi)", desc: "Course marketplace with catalog, categories, and student dashboard.", category: "education", icon: BookOpen,
-    pages: ["Home", "About Us", "Contact Us"],
+    pages: ["Home", "Courses", "Instructors", "Pricing"],
     heroTitle: "Learn Without Limits", heroTagline: "100+ courses by industry experts",
     heroDescription: "From programming to design, marketing to data science — master new skills with hands-on courses and expert mentors. Join 15,000+ learners already building their future.",
     heroCta: "Browse Courses", bannerImage: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&h=300&fit=crop",
@@ -506,6 +506,50 @@ export const templates: TemplateData[] = [
         ],
       },
     },
+    productsConfig: {
+      enabled: true,
+      displayMode: "grid",
+      showPricing: true,
+      categoriesEnabled: false,
+      products: [
+        {
+          id: "mc-p1", type: "course", title: "Full Stack Web Development", status: "published", featured: true, badge: "Best Seller",
+          description: "Master HTML, CSS, JavaScript, React, Node.js, and MongoDB. Build 10+ real-world projects from scratch.",
+          image: "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=300&fit=crop",
+          pricingModels: [{ id: "mc-pm1", type: "one-time", amount: 4999, currency: "INR", label: "Enroll Now" }],
+        },
+        {
+          id: "mc-p2", type: "course", title: "UI/UX Design Mastery", status: "published", featured: false, badge: "Popular",
+          description: "Learn Figma, design systems, user research, wireframing, prototyping, and usability testing.",
+          image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=400&h=300&fit=crop",
+          pricingModels: [{ id: "mc-pm2", type: "one-time", amount: 3999, currency: "INR", label: "Enroll Now" }],
+        },
+        {
+          id: "mc-p3", type: "course", title: "Data Science & Machine Learning", status: "published", featured: false, badge: "",
+          description: "Python, Pandas, NumPy, Scikit-learn, TensorFlow. Build predictive models and recommendation engines.",
+          image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=300&fit=crop",
+          pricingModels: [{ id: "mc-pm3", type: "one-time", amount: 5999, currency: "INR", label: "Enroll Now" }],
+        },
+        {
+          id: "mc-p4", type: "course", title: "Digital Marketing Pro", status: "published", featured: false, badge: "New",
+          description: "SEO, Google Ads, Facebook Ads, content marketing, email automation, and analytics.",
+          image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop",
+          pricingModels: [{ id: "mc-pm4", type: "one-time", amount: 2999, currency: "INR", label: "Enroll Now" }],
+        },
+        {
+          id: "mc-p5", type: "course", title: "Python Programming", status: "published", featured: false, badge: "",
+          description: "Complete Python masterclass from basics to advanced. Covers OOP, file handling, APIs, and automation.",
+          image: "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=400&h=300&fit=crop",
+          pricingModels: [{ id: "mc-pm5", type: "one-time", amount: 1999, currency: "INR", label: "Enroll Now" }],
+        },
+        {
+          id: "mc-p6", type: "course", title: "Cloud & DevOps", status: "published", featured: false, badge: "",
+          description: "AWS, Docker, Kubernetes, CI/CD, Terraform. Deploy and scale production applications.",
+          image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=300&fit=crop",
+          pricingModels: [{ id: "mc-pm6", type: "one-time", amount: 4499, currency: "INR", label: "Enroll Now" }],
+        },
+      ],
+    },
     checkout: createCheckoutConfig(4999, "Enroll Now — ₹4,999", [
       "Lifetime access to all course materials",
       "Expert-led HD video lessons",
@@ -519,7 +563,7 @@ export const templates: TemplateData[] = [
   // 2. SINGLE COURSE
   {
     id: "single-course", title: "Single Online Course", desc: "High-converting sales page for one course with modules, instructor bio, and enrollment.", category: "education", icon: GraduationCap,
-    pages: ["Home", "About Us", "Contact Us"],
+    pages: ["Home", "Curriculum"],
     heroTitle: "Master Full Stack Development", heroTagline: "12-Week Intensive Bootcamp • Next Batch: March 2026",
     heroDescription: "Go from zero to job-ready full stack developer. Learn React, Node.js, databases, and deployment with real-world projects. 2000+ alumni placed.",
     heroCta: "Enroll Now — ₹12,999", bannerImage: "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=900&h=300&fit=crop",

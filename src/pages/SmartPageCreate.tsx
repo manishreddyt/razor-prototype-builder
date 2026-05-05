@@ -364,9 +364,9 @@ const SmartPageCreate = () => {
                   <SitePreview
                     template={previewPageTemplate}
                     sections={previewPageTemplate.sections}
-                    compact
                     activePage={previewActivePage}
                     onPageChange={(page) => setPreviewActivePage(page)}
+                    onCtaClick={() => previewTemplate && handleUseTemplate(previewTemplate)}
                     biolinkConfig={previewPageTemplate.biolinkConfig as any}
                     productsConfig={previewPageTemplate.productsConfig}
                   />
