@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { generateStructuredContent } from "@/services/geminiService";
 
 export interface AIPageUpdates {
   name?: string;
@@ -76,28 +76,14 @@ export function useAIPageBuilder({ pageType, getCurrentData, onUpdates }: UseAIP
     try {
       const currentData = getCurrentData();
 
-      if (!supabase) {
-        throw new Error("Backend not configured. Please check your project setup.");
-      }
-
-      const { data, error } = await supabase.functions.invoke("ai-page-builder", {
-        body: { prompt, pageType, currentData },
-      });
-
-      if (error) {
-        throw new Error(error.message || "AI service error");
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      const updates = data?.updates || {};
+      const systemInstruction = `You are an AI page builder assistant for a ${pageType} page. Current page data: ${JSON.stringify(currentData)}. Return ONLY a JSON object with fields from AIPageUpdates that should be updated. Include a "message" field describing what you changed.`;
+      const schema = `AIPageUpdates JSON object with optional fields matching the AIPageUpdates interface`;
+      const updates = await generateStructuredContent<AIPageUpdates & { message?: string }>(prompt, schema, systemInstruction);
       const message = updates.message || "Changes applied!";
       const { message: _, ...contentUpdates } = updates;
 
       if (Object.keys(contentUpdates).length > 0) {
-        onUpdates(contentUpdates);
+        onUpdates(contentUpdates as AIPageUpdates);
       }
 
       return message;
