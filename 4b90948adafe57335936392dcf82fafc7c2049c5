@@ -1,0 +1,6 @@
+src/pages/MarketingCampaigns.tsx
+  5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T04:54:42.475Z 388-390,393,395,397,401-403,657-658,660-662,666-673,675-690,692-707,709-719,721-727,729,731-733,735,741-743,745-760,766
+src/pages/PaymentLinks.tsx
+  5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T05:00:08.089Z 1739-1740,1777-1781
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T04:54:42.475Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 97, "overriden_lines": 0}, "5a83bafb-e5b9-4a46-ac40-cdc5b5809c83:2026-05-05T05:00:08.089Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 7, "overriden_lines": 0}}}
