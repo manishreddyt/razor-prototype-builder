@@ -399,7 +399,7 @@ export const templates: TemplateData[] = [
   // 1. MULTI-COURSE PLATFORM
   {
     id: "multi-course", title: "Online Courses (Multi)", desc: "Course marketplace with catalog, categories, and student dashboard.", category: "education", icon: BookOpen,
-    pages: ["Home", "Courses", "Instructors", "Pricing"],
+    pages: ["Home", "Courses", "Instructors"],
     heroTitle: "Learn Without Limits", heroTagline: "100+ courses by industry experts",
     heroDescription: "From programming to design, marketing to data science — master new skills with hands-on courses and expert mentors. Join 15,000+ learners already building their future.",
     heroCta: "Browse Courses", bannerImage: "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=900&h=300&fit=crop",

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { categories, templates, type TemplateData } from "@/data/smartPageTemplates";
 import { SitePreview } from "@/components/SitePreview";
+import { SmartPageCheckout } from "@/components/SmartPageCheckout";
 
 const promptSuggestions = [
   "Online yoga classes with 3 months, 6 months, yearly plans",
@@ -71,6 +72,8 @@ const SmartPageCreate = () => {
   const [previewTemplate, setPreviewTemplate] = useState<TemplateData | null>(null);
   const [previewDevice, setPreviewDevice] = useState<"desktop" | "mobile">("desktop");
   const [previewActivePage, setPreviewActivePage] = useState<string>("Home");
+  const [previewView, setPreviewView] = useState<"site" | "product-detail" | "checkout">("site");
+  const [previewSelectedProduct, setPreviewSelectedProduct] = useState<number>(-1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [detectedType, setDetectedType] = useState("");
@@ -341,7 +344,7 @@ const SmartPageCreate = () => {
         </div>
 
         {/* Template Preview Dialog */}
-        <Dialog open={!!previewTemplate} onOpenChange={() => { setPreviewTemplate(null); setPreviewActivePage("Home"); }}>
+        <Dialog open={!!previewTemplate} onOpenChange={() => { setPreviewTemplate(null); setPreviewActivePage("Home"); setPreviewView("site"); setPreviewSelectedProduct(-1); }}>
           <DialogContent className="max-w-5xl h-[90vh] p-0 gap-0 flex flex-col [&>button]:z-50 [&>button]:bg-card [&>button]:border [&>button]:border-border [&>button]:rounded-full [&>button]:shadow-sm [&>button]:h-8 [&>button]:w-8 [&>button]:-top-3 [&>button]:-right-3">
             <div className="flex items-center justify-between px-5 py-3 border-b border-border flex-shrink-0">
               <div>
