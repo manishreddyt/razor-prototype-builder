@@ -54,6 +54,15 @@ import NotFound from "./pages/NotFound";
 import { PaymentLinkCheckout } from "./components/PaymentLinkCheckout";
 import { PaymentSuccess } from "./components/PaymentSuccess";
 import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [pathname]);
+  return null;
+};
 import { seedOrderData } from "./lib/orderSeedData";
 import { seedDemoStore, seedBiolinkShop } from "./lib/storeSeedData";
 import { seedCoachingPage } from "./lib/coachingSeedData";
@@ -86,6 +95,7 @@ const App = () => {
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/transactions" element={<Transactions />} />
