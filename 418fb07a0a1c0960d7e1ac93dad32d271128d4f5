@@ -1,0 +1,12 @@
+src/components/PaymentPageView.tsx
+  56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:28:17.739Z 1-8,10-16,18-23,25-33,35-44,46-49,51-54,56-65,67-68,70-74,76-104,106-112,114-120,122-145,147,149-150,152-167,169-179,181-196,198-216,218-241,243-261,263-276,278-293,295-311,313-332,334-380,382-422,424-440,442-448,450-460,462
+src/components/SitePreview.tsx
+  56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:21:55.929Z 229-276,394
+src/data/smartPageTemplates.ts
+  56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:29:58.369Z 73-74,1335,1337-1387,1389-1437,1439-1489,1491-1542
+src/pages/SmartPageEditor.tsx
+  56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:31:55.953Z 26,1020-1027,1192-1199
+src/pages/SmartPagePublic.tsx
+  56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:33:57.460Z 7,196-207
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:28:17.739Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 431, "overriden_lines": 0}, "56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:21:55.929Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 49, "overriden_lines": 0}, "56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:29:58.369Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 206, "overriden_lines": 0}, "56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:31:55.953Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 17, "overriden_lines": 0}, "56c81bd0-459a-4b37-9d50-6a992ad7498e:2026-05-05T05:33:57.460Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 13, "overriden_lines": 0}}}
