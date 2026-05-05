@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, FileText, Info, Trash2, Download, Send, Receipt } from "lucide-react";
+import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, FileText, Info, Trash2, Download, Send, Receipt, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -2109,7 +2109,18 @@ const PaymentLinks = () => {
                 <div className="space-y-3">
                   <p className="text-sm font-semibold text-foreground">Customer Details</p>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-foreground">Customer Name *</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-medium text-foreground">Customer Name *</label>
+                      {selectedLink?.customer && (
+                        <button
+                          type="button"
+                          onClick={() => setDetailGstCustomerName(selectedLink.customer)}
+                          className="flex items-center gap-1 text-[10px] text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          <Wand2 className="h-3 w-3" /> Prefill from payment
+                        </button>
+                      )}
+                    </div>
                     <Input
                       className="h-9 text-sm"
                       placeholder="e.g. Acme Pvt Ltd"
@@ -2119,7 +2130,7 @@ const PaymentLinks = () => {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-medium text-foreground">
-                      GST Number <span className="text-muted-foreground font-normal">(Optional)</span>
+                      Customer GST Number <span className="text-muted-foreground font-normal">(Optional)</span>
                     </label>
                     <Input
                       className="h-9 text-sm"
