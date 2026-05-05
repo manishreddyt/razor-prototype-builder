@@ -335,6 +335,7 @@ const WebsiteBuilder = () => {
     setSites(updated);
     storeSites(updated);
     toast.success("Site deleted");
+    if (location.pathname.includes(id)) navigate("/website-builder", { replace: true });
   };
 
   const duplicateSite = (site: SmartPageSite) => {

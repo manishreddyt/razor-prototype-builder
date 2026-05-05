@@ -178,16 +178,11 @@ const SmartPageDetail = () => {
     }
   }, [isEcommerce, site]);
 
-  if (!site) {
-    return (
-      <DashboardLayout>
-        <div className="text-center py-20">
-          <p className="text-muted-foreground">Site not found.</p>
-          <Button variant="outline" className="mt-4" onClick={() => navigate("/website-builder")}>Go Back</Button>
-        </div>
-      </DashboardLayout>
-    );
-  }
+  useEffect(() => {
+    if (!site) navigate("/website-builder", { replace: true });
+  }, [site, navigate]);
+
+  if (!site) return null;
 
   const conversionRate = site.views > 0 ? ((site.conversions / site.views) * 100).toFixed(1) : "0";
   const totalRevenue = mockTransactions.filter(t => t.status === "Success").reduce((a, t) => a + t.amount, 0);
