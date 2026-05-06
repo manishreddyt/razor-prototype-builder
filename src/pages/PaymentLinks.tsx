@@ -1067,7 +1067,7 @@ const PaymentLinks = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-medium text-foreground">Pre-Configured</span>
+                          <span className="text-sm font-medium text-foreground">As per defined schedule</span>
                           <div className="relative group">
                             <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2 bg-popover border border-border rounded-md shadow-lg text-xs text-muted-foreground hidden group-hover:block z-50">
@@ -1088,7 +1088,7 @@ const PaymentLinks = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-medium text-foreground">Flexible</span>
+                          <span className="text-sm font-medium text-foreground">Let customer choose and pay</span>
                           <div className="relative group">
                             <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2 bg-popover border border-border rounded-md shadow-lg text-xs text-muted-foreground hidden group-hover:block z-50">
