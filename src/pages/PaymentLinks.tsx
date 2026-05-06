@@ -1040,15 +1040,15 @@ const PaymentLinks = () => {
               </div>
             </div>
 
-            {/* Collect in Multiple Payments */}
+            {/* Partial Payments */}
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">Collect in Multiple Payments</label>
+              <label className="text-sm text-muted-foreground mb-2 block">Partial Payments</label>
               <div className="flex items-center gap-2 mb-3">
                 <Switch
                   checked={collectInMultiplePayments}
                   onCheckedChange={setCollectInMultiplePayments}
                 />
-                <span className="text-sm text-foreground">Enable multiple payment collection</span>
+                <span className="text-sm text-foreground">Enable partial payment collection</span>
               </div>
 
               {collectInMultiplePayments && (
@@ -1057,7 +1057,7 @@ const PaymentLinks = () => {
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-foreground mb-2">How should the customer pay?</p>
 
-                    {/* Option 1: As per defined schedule */}
+                    {/* Option 1: Pre-Configured */}
                     <div
                       className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "schedule" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-white hover:bg-secondary/30"}`}
                       onClick={() => setMultiPaymentMode("schedule")}
@@ -1067,7 +1067,7 @@ const PaymentLinks = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-medium text-foreground">As per defined schedule</span>
+                          <span className="text-sm font-medium text-foreground">Pre-Configured</span>
                           <div className="relative group">
                             <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2 bg-popover border border-border rounded-md shadow-lg text-xs text-muted-foreground hidden group-hover:block z-50">
@@ -1075,11 +1075,10 @@ const PaymentLinks = () => {
                             </div>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">You set the installment amounts and due dates</p>
                       </div>
                     </div>
 
-                    {/* Option 2: Let customer choose */}
+                    {/* Option 2: Flexible */}
                     <div
                       className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "customer_choice" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-white hover:bg-secondary/30"}`}
                       onClick={() => setMultiPaymentMode("customer_choice")}
@@ -1089,7 +1088,7 @@ const PaymentLinks = () => {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-medium text-foreground">Let customer choose and pay</span>
+                          <span className="text-sm font-medium text-foreground">Flexible</span>
                           <div className="relative group">
                             <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                             <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2 bg-popover border border-border rounded-md shadow-lg text-xs text-muted-foreground hidden group-hover:block z-50">
@@ -1097,7 +1096,6 @@ const PaymentLinks = () => {
                             </div>
                           </div>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">Customer pays any amount, balance remains open</p>
                       </div>
                     </div>
                   </div>
@@ -1172,12 +1170,44 @@ const PaymentLinks = () => {
                             <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <label className="text-xs text-muted-foreground mb-1 block">{idx === 0 ? "Due Date" : "Due Date (optional)"}</label>
-                                <Input
-                                  type="date"
-                                  value={inst.dueDate}
-                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: e.target.value } : i))}
-                                  className="h-8 text-xs"
-                                />
+                                <div className="flex flex-wrap gap-1 mb-1">
+                                  {[
+                                    { label: "Today", days: 0 },
+                                    { label: "7 days", days: 7 },
+                                    { label: "1 month", days: 30 },
+                                    { label: "Custom", days: -1 },
+                                  ].map((chip) => {
+                                    const chipDate = chip.days >= 0 ? new Date(Date.now() + chip.days * 86400000).toISOString().split("T")[0] : null;
+                                    const isSelected = chip.days === -1
+                                      ? (inst.dueDate !== "" && inst.dueDate !== new Date(Date.now()).toISOString().split("T")[0] && inst.dueDate !== new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0] && inst.dueDate !== new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0])
+                                      : inst.dueDate === chipDate;
+                                    return (
+                                      <button
+                                        key={chip.label}
+                                        type="button"
+                                        onClick={() => {
+                                          if (chip.days === -1) {
+                                            setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: "__custom__" } : i));
+                                          } else {
+                                            setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: chipDate! } : i));
+                                          }
+                                        }}
+                                        className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${isSelected ? "bg-blue-600 text-white border-blue-600" : "border-border text-muted-foreground hover:bg-secondary/50"}`}
+                                      >
+                                        {chip.label}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                                {(inst.dueDate === "__custom__" || (inst.dueDate !== "" && inst.dueDate !== new Date(Date.now()).toISOString().split("T")[0] && inst.dueDate !== new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0] && inst.dueDate !== new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0])) && (
+                                  <Input
+                                    type="date"
+                                    value={inst.dueDate === "__custom__" ? "" : inst.dueDate}
+                                    onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: e.target.value } : i))}
+                                    className="h-8 text-xs mt-1"
+                                    autoFocus={inst.dueDate === "__custom__"}
+                                  />
+                                )}
                               </div>
                               <div>
                                 <label className="text-xs text-muted-foreground mb-1 block">Description (optional)</label>
