@@ -2065,20 +2065,20 @@ const PaymentLinks = () => {
                               </div>
                             </div>
                             {/* Transactions */}
-                            {inst.transactions?.length > 0 && (
+                            {inst.transactions?.filter((tx: any) => tx.status === "Success").length > 0 && (
                               <div className="divide-y divide-border">
-                                {inst.transactions.map((tx: any) => (
+                                {inst.transactions.filter((tx: any) => tx.status === "Success").map((tx: any) => (
                                   <div key={tx.id} className="flex items-center justify-between px-3 py-2 bg-white">
                                     <div className="flex items-center gap-2">
-                                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${tx.status === "Success" ? "bg-green-500" : "bg-red-400"}`} />
+                                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-green-500" />
                                       <div>
                                         <p className="text-[10px] font-mono text-muted-foreground">{tx.id}</p>
                                         <p className="text-[10px] text-muted-foreground">{tx.date} · {tx.method}</p>
                                       </div>
                                     </div>
                                     <div className="text-right flex-shrink-0">
-                                      <p className={`text-xs font-medium ${txStatusColor[tx.status] || "text-foreground"}`}>₹{Number(tx.amount).toLocaleString("en-IN")}</p>
-                                      <p className={`text-[10px] ${txStatusColor[tx.status] || "text-muted-foreground"}`}>{tx.status}</p>
+                                      <p className="text-xs font-medium text-green-600">₹{Number(tx.amount).toLocaleString("en-IN")}</p>
+                                      <p className="text-[10px] text-green-600">Success</p>
                                     </div>
                                   </div>
                                 ))}
