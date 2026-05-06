@@ -1123,8 +1123,8 @@ const PaymentLinks = () => {
               <label className="text-sm text-muted-foreground mb-2 block">Reminders</label>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Switch checked={sendReminders} onCheckedChange={setSendReminders} />
-                  <span className="text-sm text-foreground">Send auto reminders</span>
+                  <Checkbox id="sendReminders" checked={sendReminders} onCheckedChange={(v) => setSendReminders(!!v)} />
+                  <label htmlFor="sendReminders" className="text-sm text-foreground cursor-pointer">Send auto reminders</label>
                 </div>
                 {sendReminders && (
                   <p className="text-xs text-muted-foreground pl-1">
@@ -1138,11 +1138,8 @@ const PaymentLinks = () => {
             <div>
               <label className="text-sm text-muted-foreground mb-2 block">Partial Payments</label>
               <div className="flex items-center gap-2 mb-3">
-                <Switch
-                  checked={collectInMultiplePayments}
-                  onCheckedChange={setCollectInMultiplePayments}
-                />
-                <span className="text-sm text-foreground">Enable partial payment collection</span>
+                <Checkbox id="collectInMultiplePayments" checked={collectInMultiplePayments} onCheckedChange={(v) => setCollectInMultiplePayments(!!v)} />
+                <label htmlFor="collectInMultiplePayments" className="text-sm text-foreground cursor-pointer">Enable Partial Payment</label>
               </div>
 
               {collectInMultiplePayments && (
