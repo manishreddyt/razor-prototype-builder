@@ -168,7 +168,7 @@ const PaymentLinks = () => {
     // Load existing payment links or create sample ones (v3 forces refresh with paid examples)
     const stored = localStorage.getItem("payment_links");
     const storedVersion = localStorage.getItem("payment_links_version");
-    if (stored && storedVersion === "v5") {
+    if (stored && storedVersion === "v6") {
       setPaymentLinks(JSON.parse(stored));
     } else {
       const sampleLinks = [
@@ -397,8 +397,100 @@ const PaymentLinks = () => {
           image: "https://images.unsplash.com/photo-1584917865442-de89df76afd3?w=800",
         },
       ];
+      // Partially paid links
+      sampleLinks.unshift(
+        {
+          id: "plink_PartialEdu001",
+          title: "Full Stack Bootcamp — 3-Month Fee Plan",
+          description: "Partial payment plan for Full Stack Web Dev Bootcamp",
+          date: "02 May 2026, 10:00:00 am",
+          amount: 15000,
+          amountPaid: 5000,
+          currency: "INR",
+          refId: "BOOT-2026-001",
+          customer: "Rohit Verma",
+          status: "Partially Paid",
+          createdAt: new Date().toISOString(),
+          collectPhone: true,
+          collectEmail: true,
+          collectAddress: false,
+          sendReceiptAuto: false,
+          collectInMultiplePayments: true,
+          multiPaymentMode: "schedule",
+          installments: [
+            {
+              id: "i1", label: "Enrolment Fee", amount: 5000,
+              dueDate: "2026-05-02", status: "Paid",
+              transactions: [
+                { id: "pay_boot001a", amount: 5000, status: "Success", date: "02 May 2026, 10:14:32 am", method: "UPI" },
+              ],
+            },
+            {
+              id: "i2", label: "Month 2 Fee", amount: 5000,
+              dueDate: "2026-06-02", status: "Pending",
+              transactions: [
+                { id: "pay_boot002a", amount: 5000, status: "Failed", date: "02 Jun 2026, 09:45:10 am", method: "Card" },
+              ],
+            },
+            {
+              id: "i3", label: "Month 3 Fee", amount: 5000,
+              dueDate: "2026-07-02", status: "Upcoming",
+              transactions: [],
+            },
+          ],
+        } as any,
+        {
+          id: "plink_PartialConsult002",
+          title: "Website Redesign Project",
+          description: "Milestone-based payment for full website redesign",
+          date: "28 Apr 2026, 03:30:00 pm",
+          amount: 40000,
+          amountPaid: 20000,
+          currency: "INR",
+          refId: "WEB-REDESIGN-042",
+          customer: "Divya Menon",
+          status: "Partially Paid",
+          createdAt: new Date().toISOString(),
+          collectPhone: true,
+          collectEmail: true,
+          collectAddress: false,
+          sendReceiptAuto: false,
+          collectInMultiplePayments: true,
+          multiPaymentMode: "schedule",
+          installments: [
+            {
+              id: "i1", label: "Advance / Token", amount: 10000,
+              dueDate: "2026-04-28", status: "Paid",
+              transactions: [
+                { id: "pay_web001a", amount: 5000, status: "Failed", date: "28 Apr 2026, 03:12:00 pm", method: "NetBanking" },
+                { id: "pay_web001b", amount: 10000, status: "Success", date: "28 Apr 2026, 03:35:44 pm", method: "UPI" },
+              ],
+            },
+            {
+              id: "i2", label: "Design Milestone", amount: 10000,
+              dueDate: "2026-05-15", status: "Paid",
+              transactions: [
+                { id: "pay_web002a", amount: 10000, status: "Success", date: "15 May 2026, 11:02:17 am", method: "UPI" },
+              ],
+            },
+            {
+              id: "i3", label: "Development Milestone", amount: 15000,
+              dueDate: "2026-06-10", status: "Pending",
+              transactions: [
+                { id: "pay_web003a", amount: 15000, status: "Failed", date: "10 Jun 2026, 10:20:05 am", method: "Card" },
+                { id: "pay_web003b", amount: 15000, status: "Failed", date: "11 Jun 2026, 08:55:30 am", method: "Card" },
+              ],
+            },
+            {
+              id: "i4", label: "Final Delivery", amount: 5000,
+              dueDate: "2026-07-01", status: "Upcoming",
+              transactions: [],
+            },
+          ],
+        } as any
+      );
       localStorage.setItem("payment_links", JSON.stringify(sampleLinks));
-      localStorage.setItem("payment_links_version", "v5");
+      localStorage.setItem("payment_links_version", "v6");
       setPaymentLinks(sampleLinks);
     }
   }, []);
@@ -810,6 +902,7 @@ const PaymentLinks = () => {
                   <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Payment Link Id</th>
                   <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Created At</th>
                   <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Amount</th>
+                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Amount Paid</th>
                   <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Reference Id</th>
                   <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Customer</th>
                   <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Payment Link</th>
@@ -829,6 +922,14 @@ const PaymentLinks = () => {
                       </td>
                       <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm whitespace-nowrap">{link.date}</td>
                       <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm whitespace-nowrap">₹{link.amount.toLocaleString('en-IN')}</td>
+                      <td className="px-3 sm:px-5 py-3 text-xs sm:text-sm whitespace-nowrap hidden md:table-cell">
+                        {link.amountPaid != null
+                          ? <span className="text-green-700 font-medium">₹{link.amountPaid.toLocaleString('en-IN')}</span>
+                          : link.status === "Paid"
+                            ? <span className="text-green-700 font-medium">₹{link.amount.toLocaleString('en-IN')}</span>
+                            : <span className="text-muted-foreground">—</span>
+                        }
+                      </td>
                       <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden md:table-cell">{link.refId || "—"}</td>
                       <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">{link.customer || "—"}</td>
                       <td className="px-3 sm:px-5 py-3">
@@ -1923,7 +2024,7 @@ const PaymentLinks = () => {
                 <span className="text-sm font-medium">{selectedLink.collectInMultiplePayments ? "Enabled" : "Disabled"}</span>
               </div>
 
-              {/* Partial Payment Details */}
+              {/* Partial Payment Type + Schedule */}
               {selectedLink.collectInMultiplePayments && (
                 <>
                   <div className="flex justify-between items-start py-3">
@@ -1934,24 +2035,61 @@ const PaymentLinks = () => {
                   </div>
 
                   {selectedLink.multiPaymentMode === "schedule" && selectedLink.installments?.length > 0 && (
-                    <div className="py-3 space-y-2">
-                      <span className="text-xs text-muted-foreground block mb-2">Payment Plan</span>
-                      <div className="space-y-2">
-                        {selectedLink.installments.map((inst: any, idx: number) => (
-                          <div key={inst.id || idx} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/40 border border-border">
-                            <div className="flex items-center gap-2.5">
-                              <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">{idx + 1}</div>
-                              <div>
-                                <p className="text-xs font-medium text-foreground">{inst.label || `Payment ${idx + 1}`}</p>
-                                {inst.dueDate && <p className="text-[10px] text-muted-foreground mt-0.5">Due: {new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>}
+                    <div className="py-3 space-y-2.5">
+                      <span className="text-xs font-medium text-foreground block">Payment Schedule</span>
+                      {selectedLink.installments.map((inst: any, idx: number) => {
+                        const instStatusColor: Record<string, string> = {
+                          Paid: "bg-green-100 text-green-700",
+                          Pending: "bg-yellow-100 text-yellow-700",
+                          Upcoming: "bg-secondary text-muted-foreground",
+                          Failed: "bg-red-100 text-red-700",
+                        };
+                        const txStatusColor: Record<string, string> = {
+                          Success: "text-green-600",
+                          Failed: "text-red-500",
+                        };
+                        return (
+                          <div key={inst.id || idx} className="rounded-lg border border-border overflow-hidden">
+                            {/* Installment header */}
+                            <div className="flex items-center justify-between px-3 py-2.5 bg-secondary/30">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">{idx + 1}</div>
+                                <div>
+                                  <p className="text-xs font-medium text-foreground">{inst.label || `Payment ${idx + 1}`}</p>
+                                  {inst.dueDate && <p className="text-[10px] text-muted-foreground">Due: {new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className="text-sm font-semibold text-foreground">{inst.amount ? `₹${Number(inst.amount).toLocaleString("en-IN")}` : "—"}</span>
+                                {inst.status && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${instStatusColor[inst.status] || "bg-secondary text-muted-foreground"}`}>{inst.status}</span>}
                               </div>
                             </div>
-                            <span className="text-sm font-semibold text-foreground">
-                              {inst.amount ? `₹${Number(inst.amount).toLocaleString("en-IN")}` : "—"}
-                            </span>
+                            {/* Transactions */}
+                            {inst.transactions?.length > 0 && (
+                              <div className="divide-y divide-border">
+                                {inst.transactions.map((tx: any) => (
+                                  <div key={tx.id} className="flex items-center justify-between px-3 py-2 bg-white">
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${tx.status === "Success" ? "bg-green-500" : "bg-red-400"}`} />
+                                      <div>
+                                        <p className="text-[10px] font-mono text-muted-foreground">{tx.id}</p>
+                                        <p className="text-[10px] text-muted-foreground">{tx.date} · {tx.method}</p>
+                                      </div>
+                                    </div>
+                                    <div className="text-right flex-shrink-0">
+                                      <p className={`text-xs font-medium ${txStatusColor[tx.status] || "text-foreground"}`}>₹{Number(tx.amount).toLocaleString("en-IN")}</p>
+                                      <p className={`text-[10px] ${txStatusColor[tx.status] || "text-muted-foreground"}`}>{tx.status}</p>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {(!inst.transactions || inst.transactions.length === 0) && inst.status !== "Upcoming" && (
+                              <p className="text-[10px] text-muted-foreground px-3 py-2 bg-white">No transactions yet</p>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
                   )}
                 </>
@@ -1963,8 +2101,20 @@ const PaymentLinks = () => {
                 <span className="text-sm font-medium">₹ {selectedLink.amount.toLocaleString('en-IN')}</span>
               </div>
 
-              {/* Amount Paid — only when Paid */}
-              {getDisplayStatus(selectedLink) === "Paid" && (
+              {/* Amount Paid */}
+              {(selectedLink.amountPaid != null || getDisplayStatus(selectedLink) === "Paid") && (
+                <div className="flex justify-between items-start py-3">
+                  <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Amount Paid</span>
+                  <div className="text-right">
+                    <p className="text-sm font-medium text-green-700">₹ {(selectedLink.amountPaid ?? selectedLink.amount).toLocaleString('en-IN')}</p>
+                    {getDisplayStatus(selectedLink) === "Paid" && <p className="text-xs text-blue-600 mt-0.5">pay_{selectedLink.id.slice(-12)}</p>}
+                    {getDisplayStatus(selectedLink) === "Paid" && <p className="text-xs text-muted-foreground mt-0.5">Paid on {selectedLink.date}</p>}
+                  </div>
+                </div>
+              )}
+
+              {/* Amount Paid (legacy full-paid block kept for non-partial paid links) */}
+              {getDisplayStatus(selectedLink) === "Paid" && selectedLink.amountPaid == null && (
                 <div className="flex justify-between items-start py-3">
                   <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Amount Paid</span>
                   <div className="text-right">
