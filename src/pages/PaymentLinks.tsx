@@ -1170,44 +1170,12 @@ const PaymentLinks = () => {
                             <div className="grid grid-cols-2 gap-2">
                               <div>
                                 <label className="text-xs text-muted-foreground mb-1 block">{idx === 0 ? "Due Date" : "Due Date (optional)"}</label>
-                                <div className="flex flex-wrap gap-1 mb-1">
-                                  {[
-                                    { label: "Today", days: 0 },
-                                    { label: "7 days", days: 7 },
-                                    { label: "1 month", days: 30 },
-                                    { label: "Custom", days: -1 },
-                                  ].map((chip) => {
-                                    const chipDate = chip.days >= 0 ? new Date(Date.now() + chip.days * 86400000).toISOString().split("T")[0] : null;
-                                    const isSelected = chip.days === -1
-                                      ? (inst.dueDate !== "" && inst.dueDate !== new Date(Date.now()).toISOString().split("T")[0] && inst.dueDate !== new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0] && inst.dueDate !== new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0])
-                                      : inst.dueDate === chipDate;
-                                    return (
-                                      <button
-                                        key={chip.label}
-                                        type="button"
-                                        onClick={() => {
-                                          if (chip.days === -1) {
-                                            setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: "__custom__" } : i));
-                                          } else {
-                                            setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: chipDate! } : i));
-                                          }
-                                        }}
-                                        className={`px-2 py-0.5 text-[10px] rounded-full border transition-colors ${isSelected ? "bg-blue-600 text-white border-blue-600" : "border-border text-muted-foreground hover:bg-secondary/50"}`}
-                                      >
-                                        {chip.label}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                                {(inst.dueDate === "__custom__" || (inst.dueDate !== "" && inst.dueDate !== new Date(Date.now()).toISOString().split("T")[0] && inst.dueDate !== new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0] && inst.dueDate !== new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0])) && (
-                                  <Input
-                                    type="date"
-                                    value={inst.dueDate === "__custom__" ? "" : inst.dueDate}
-                                    onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: e.target.value } : i))}
-                                    className="h-8 text-xs mt-1"
-                                    autoFocus={inst.dueDate === "__custom__"}
-                                  />
-                                )}
+                                <Input
+                                  type="date"
+                                  value={inst.dueDate}
+                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: e.target.value } : i))}
+                                  className="h-8 text-xs"
+                                />
                               </div>
                               <div>
                                 <label className="text-xs text-muted-foreground mb-1 block">Description (optional)</label>
