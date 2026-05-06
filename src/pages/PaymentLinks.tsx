@@ -824,7 +824,7 @@ const PaymentLinks = () => {
                   return (
                     <tr key={link.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
                       <td className="px-3 sm:px-5 py-3 font-medium text-primary cursor-pointer hover:underline text-xs sm:text-sm"
-                          onClick={() => (link.collectInMultiplePayments && link.multiPaymentMode === "schedule") ? navigate(`/pay/${link.id}`) : setSelectedLink(link)}>
+                          onClick={() => setSelectedLink(link)}>
                         <span className="block max-w-[100px] truncate">{link.id}</span>
                       </td>
                       <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm whitespace-nowrap">{link.date}</td>
@@ -834,25 +834,19 @@ const PaymentLinks = () => {
                       <td className="px-3 sm:px-5 py-3">
                         <div className="flex items-center gap-1.5">
                           <button
-                            onClick={() => navigate(`/pay/${link.id}`)}
+                            onClick={(e) => { e.stopPropagation(); window.open(`/pay/${link.id}`, '_blank'); }}
                             className="text-xs sm:text-sm text-primary hover:underline cursor-pointer truncate max-w-[120px] sm:max-w-[200px]"
                           >
                             {linkUrl}
                           </button>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              copyLink(linkUrl);
-                            }}
+                            onClick={(e) => { e.stopPropagation(); copyLink(linkUrl); }}
                             className="hover:text-primary text-muted-foreground flex-shrink-0"
                           >
                             <Copy className="h-3 w-3" />
                           </button>
                           <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              window.open(`/pay/${link.id}`, '_blank');
-                            }}
+                            onClick={(e) => { e.stopPropagation(); window.open(`/pay/${link.id}`, '_blank'); }}
                             className="hover:text-primary text-muted-foreground flex-shrink-0 hidden sm:block"
                           >
                             <ExternalLink className="h-3 w-3" />
@@ -863,8 +857,7 @@ const PaymentLinks = () => {
                         <span className={`${statusBadgeClass[displayStatus] || "blade-badge"} text-xs whitespace-nowrap`}>{displayStatus}</span>
                       </td>
                       <td className="px-3 sm:px-5 py-3">
-                        <button className="text-muted-foreground hover:text-primary"
-                          onClick={() => (link.collectInMultiplePayments && link.multiPaymentMode === "schedule") ? navigate(`/pay/${link.id}`) : setSelectedLink(link)}>
+                        <button className="text-muted-foreground hover:text-primary" onClick={() => setSelectedLink(link)}>
                           <Eye className="h-4 w-4" />
                         </button>
                       </td>
