@@ -1918,10 +1918,44 @@ const PaymentLinks = () => {
               </div>
 
               {/* Partial Payment */}
-              <div className="flex justify-between items-center py-3">
+              <div className="flex justify-between items-start py-3">
                 <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Partial Payment</span>
-                <span className="text-sm font-medium">{selectedLink.acceptPartialPayment ? "Enabled" : "Disabled"}</span>
+                <span className="text-sm font-medium">{selectedLink.collectInMultiplePayments ? "Enabled" : "Disabled"}</span>
               </div>
+
+              {/* Partial Payment Details */}
+              {selectedLink.collectInMultiplePayments && (
+                <>
+                  <div className="flex justify-between items-start py-3">
+                    <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Payment Type</span>
+                    <span className="text-sm font-medium text-right">
+                      {selectedLink.multiPaymentMode === "schedule" ? "As per defined schedule" : "Let customer choose and pay"}
+                    </span>
+                  </div>
+
+                  {selectedLink.multiPaymentMode === "schedule" && selectedLink.installments?.length > 0 && (
+                    <div className="py-3 space-y-2">
+                      <span className="text-xs text-muted-foreground block mb-2">Payment Plan</span>
+                      <div className="space-y-2">
+                        {selectedLink.installments.map((inst: any, idx: number) => (
+                          <div key={inst.id || idx} className="flex items-center justify-between p-2.5 rounded-lg bg-secondary/40 border border-border">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">{idx + 1}</div>
+                              <div>
+                                <p className="text-xs font-medium text-foreground">{inst.label || `Payment ${idx + 1}`}</p>
+                                {inst.dueDate && <p className="text-[10px] text-muted-foreground mt-0.5">Due: {new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>}
+                              </div>
+                            </div>
+                            <span className="text-sm font-semibold text-foreground">
+                              {inst.amount ? `₹${Number(inst.amount).toLocaleString("en-IN")}` : "—"}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
 
               {/* Amount */}
               <div className="flex justify-between items-center py-3">
