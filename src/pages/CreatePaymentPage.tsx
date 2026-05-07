@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Eye, Link2, GraduationCap, Calendar, ShoppingBag, Heart, Monitor, Smartphone, ChevronLeft } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, Link2, GraduationCap, Calendar, ShoppingBag, Heart, Monitor, Smartphone, ChevronLeft, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
@@ -143,28 +143,32 @@ const CreatePaymentPage = () => {
 
       {/* Template Preview Dialog */}
       <Dialog open={!!previewTemplate} onOpenChange={() => setPreviewTemplate(null)}>
-        <DialogContent className="max-w-5xl h-[90vh] p-0 gap-0 flex flex-col [&>button]:z-50 [&>button]:bg-card [&>button]:border [&>button]:border-border [&>button]:rounded-full [&>button]:shadow-sm [&>button]:h-8 [&>button]:w-8 [&>button]:-top-3 [&>button]:-right-3">
+        {/* Hide the default shadcn close button */}
+        <DialogContent className="max-w-5xl h-[90vh] p-0 gap-0 flex flex-col [&>button.absolute]:hidden">
           {/* Dialog header */}
-          <div className="flex items-center justify-between px-5 py-3 border-b border-border flex-shrink-0">
+          <div className="relative flex items-center justify-between px-5 py-3 border-b border-border flex-shrink-0">
+            {/* Left: title */}
             <div>
               <h2 className="font-semibold text-foreground text-sm">{previewTemplate?.title}</h2>
               <p className="text-xs text-muted-foreground">{previewTemplate?.category}</p>
             </div>
+            {/* Centre: device toggle */}
+            <div className="absolute left-1/2 -translate-x-1/2 flex items-center border border-border rounded-md overflow-hidden bg-background">
+              <button
+                onClick={() => setPreviewDevice("desktop")}
+                className={`p-1.5 transition-colors ${previewDevice === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"}`}
+              >
+                <Monitor className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => { setPreviewDevice("mobile"); setMobileStep("details"); }}
+                className={`p-1.5 transition-colors ${previewDevice === "mobile" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"}`}
+              >
+                <Smartphone className="h-4 w-4" />
+              </button>
+            </div>
+            {/* Right: actions */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center border border-border rounded-md overflow-hidden">
-                <button
-                  onClick={() => setPreviewDevice("desktop")}
-                  className={`p-1.5 transition-colors ${previewDevice === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"}`}
-                >
-                  <Monitor className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => { setPreviewDevice("mobile"); setMobileStep("details"); }}
-                  className={`p-1.5 transition-colors ${previewDevice === "mobile" ? "bg-secondary text-foreground" : "text-muted-foreground hover:bg-secondary/50"}`}
-                >
-                  <Smartphone className="h-4 w-4" />
-                </button>
-              </div>
               <Button
                 size="sm"
                 className="gap-1.5 text-xs"
@@ -172,6 +176,12 @@ const CreatePaymentPage = () => {
               >
                 Use Template <ArrowRight className="h-3.5 w-3.5" />
               </Button>
+              <button
+                onClick={() => setPreviewTemplate(null)}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
           </div>
 
@@ -181,15 +191,6 @@ const CreatePaymentPage = () => {
               previewDevice === "desktop" ? (
                 /* ── Desktop: full-width two-column ── */
                 <div className="w-full bg-white min-h-full flex flex-col">
-                  {/* Browser chrome */}
-                  <div className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 border-b border-gray-200 flex-shrink-0">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                    <div className="w-48 mx-auto bg-white rounded text-[10px] text-gray-400 px-3 py-0.5 text-center border border-gray-200">
-                      rzp.io/rzp/company-page
-                    </div>
-                  </div>
                   {/* Company nav bar */}
                   <div className="border-b border-gray-100 bg-white px-6 h-12 flex items-center justify-between flex-shrink-0">
                     <div className="flex items-center gap-2.5">
