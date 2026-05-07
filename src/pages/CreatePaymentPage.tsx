@@ -196,75 +196,140 @@ const CreatePaymentPage = () => {
           </div>
 
           {/* Preview area */}
-          <div className="flex-1 bg-muted/30 overflow-auto flex items-start justify-center py-6 px-4">
+          <div className="flex-1 bg-muted/30 overflow-auto">
             {previewTemplate && (
               previewDevice === "desktop" ? (
-                <div className="w-full max-w-3xl bg-background rounded-xl border border-border shadow-lg overflow-hidden">
-                  {/* Mock browser chrome */}
-                  <div className="flex items-center gap-1.5 px-3 py-2 bg-secondary/60 border-b border-border">
+                /* ── Desktop: full-width two-column payment page ── */
+                <div className="w-full bg-background min-h-full">
+                  {/* Browser chrome */}
+                  <div className="flex items-center gap-1.5 px-4 py-2 bg-secondary/60 border-b border-border sticky top-0 z-10">
                     <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
                     <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
                     <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
-                    <div className="flex-1 mx-3 bg-background rounded text-[10px] text-muted-foreground px-2 py-0.5 text-center truncate">
+                    <div className="flex-1 mx-4 bg-background rounded text-[10px] text-muted-foreground px-3 py-0.5 text-center max-w-xs mx-auto">
                       rzp.io/l/payment-page
                     </div>
                   </div>
-                  {/* Page content mockup */}
-                  <div>
-                    <img src={previewTemplate.image} alt={previewTemplate.title} className="w-full object-cover" style={{ maxHeight: 480 }} />
-                    <div className="p-6 space-y-4">
-                      <div className="flex items-start justify-between">
+
+                  {/* Two-column payment page layout */}
+                  <div className="grid grid-cols-2 min-h-[calc(100%-36px)]">
+                    {/* Left — product/page details */}
+                    <div className="border-r border-border overflow-hidden">
+                      <img src={previewTemplate.image} alt={previewTemplate.title} className="w-full h-52 object-cover" />
+                      <div className="p-7 space-y-5">
                         <div>
-                          <h2 className="text-lg font-bold text-foreground">{previewTemplate.title}</h2>
-                          <p className="text-sm text-muted-foreground mt-1">{previewTemplate.desc}</p>
+                          <span className={`text-xs font-semibold uppercase tracking-wide ${previewTemplate.categoryColor}`}>{previewTemplate.category}</span>
+                          <h2 className="text-xl font-bold text-foreground mt-1">{previewTemplate.title}</h2>
+                          <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{previewTemplate.desc}</p>
                         </div>
-                        <span className="text-xl font-bold text-foreground ml-4 flex-shrink-0">{previewTemplate.price}</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {previewTemplate.features.map((f) => (
-                          <div key={f} className="flex items-center gap-2 text-xs text-foreground">
-                            <div className="w-4 h-4 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                              <span className="text-primary text-[9px] font-bold">✓</span>
+                        <div className="space-y-2.5">
+                          <p className="text-xs font-semibold text-foreground uppercase tracking-wide">What's included</p>
+                          {previewTemplate.features.map((f) => (
+                            <div key={f} className="flex items-center gap-2.5 text-sm text-foreground">
+                              <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                <span className="text-primary text-[10px] font-bold">✓</span>
+                              </div>
+                              {f}
                             </div>
-                            {f}
+                          ))}
+                        </div>
+                        <div className="pt-2 border-t border-border">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-bold text-foreground">{previewTemplate.price}</span>
+                            {previewTemplate.price !== "Custom" && <span className="text-xs text-muted-foreground">one-time payment</span>}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Right — payment form */}
+                    <div className="p-7 space-y-5">
+                      <div>
+                        <h3 className="text-base font-semibold text-foreground">Payment Details</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">Fill in your details to complete the payment</p>
+                      </div>
+                      <div className="space-y-4">
+                        {[
+                          { label: "Full Name", placeholder: "Enter your full name", type: "text" },
+                          { label: "Email Address", placeholder: "Enter your email", type: "email" },
+                          { label: "Phone Number", placeholder: "+91 98765 43210", type: "tel" },
+                        ].map((field) => (
+                          <div key={field.label} className="space-y-1.5">
+                            <label className="text-xs font-medium text-foreground">{field.label}</label>
+                            <div className="h-9 rounded-md border border-border bg-secondary/30 px-3 flex items-center">
+                              <span className="text-xs text-muted-foreground">{field.placeholder}</span>
+                            </div>
                           </div>
                         ))}
+                        <div className="space-y-1.5">
+                          <label className="text-xs font-medium text-foreground">Amount</label>
+                          <div className="h-9 rounded-md border border-primary bg-primary/5 px-3 flex items-center justify-between">
+                            <span className="text-sm font-semibold text-foreground">{previewTemplate.price}</span>
+                            {previewTemplate.price !== "Custom" && <span className="text-xs text-muted-foreground">INR</span>}
+                          </div>
+                        </div>
                       </div>
-                      <div className="pt-2">
-                        <div className="h-10 bg-primary rounded-lg flex items-center justify-center text-primary-foreground text-sm font-semibold">
+
+                      {/* Payment methods */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-foreground">Pay via</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {["UPI", "Card", "Net Banking"].map((m) => (
+                            <div key={m} className="h-8 rounded-md border border-border bg-secondary/30 flex items-center justify-center text-xs text-muted-foreground font-medium">{m}</div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="pt-2 space-y-3">
+                        <div className="h-10 bg-primary rounded-lg flex items-center justify-center text-primary-foreground text-sm font-semibold shadow-sm">
                           Pay {previewTemplate.price}
                         </div>
-                        <p className="text-[10px] text-center text-muted-foreground mt-2">Secured by Razorpay</p>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <div className="w-3 h-3 rounded-full bg-green-500 flex items-center justify-center">
+                            <span className="text-white text-[7px]">✓</span>
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">100% secure · Powered by Razorpay</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="w-[320px] bg-background rounded-[2rem] border-4 border-foreground/20 shadow-xl overflow-hidden flex flex-col">
-                  {/* Mock phone notch */}
-                  <div className="bg-foreground/10 h-6 flex items-center justify-center">
-                    <div className="w-16 h-1.5 rounded-full bg-foreground/30" />
-                  </div>
-                  <div className="overflow-y-auto flex-1" style={{ maxHeight: 560 }}>
-                    <img src={previewTemplate.mobileImage} alt={previewTemplate.title} className="w-full object-cover h-48" />
-                    <div className="p-4 space-y-3">
-                      <div>
-                        <h2 className="text-base font-bold text-foreground">{previewTemplate.title}</h2>
-                        <p className="text-xs text-muted-foreground mt-1">{previewTemplate.desc}</p>
-                      </div>
-                      <span className="text-lg font-bold text-foreground block">{previewTemplate.price}</span>
-                      <div className="space-y-1.5">
-                        {previewTemplate.features.map((f) => (
-                          <div key={f} className="flex items-center gap-2 text-xs text-foreground">
-                            <span className="text-primary font-bold">✓</span>
-                            {f}
+                /* ── Mobile: phone frame ── */
+                <div className="flex items-start justify-center py-6">
+                  <div className="w-[320px] bg-background rounded-[2rem] border-4 border-foreground/20 shadow-xl overflow-hidden flex flex-col">
+                    <div className="bg-foreground/10 h-6 flex items-center justify-center flex-shrink-0">
+                      <div className="w-16 h-1.5 rounded-full bg-foreground/30" />
+                    </div>
+                    <div className="overflow-y-auto" style={{ maxHeight: 580 }}>
+                      <img src={previewTemplate.mobileImage} alt={previewTemplate.title} className="w-full object-cover h-44" />
+                      <div className="p-4 space-y-4">
+                        <div>
+                          <span className={`text-[10px] font-semibold uppercase ${previewTemplate.categoryColor}`}>{previewTemplate.category}</span>
+                          <h2 className="text-base font-bold text-foreground mt-0.5">{previewTemplate.title}</h2>
+                          <p className="text-xs text-muted-foreground mt-1">{previewTemplate.desc}</p>
+                        </div>
+                        <div className="space-y-1.5">
+                          {previewTemplate.features.map((f) => (
+                            <div key={f} className="flex items-center gap-2 text-xs text-foreground">
+                              <span className="text-primary font-bold text-[10px]">✓</span>{f}
+                            </div>
+                          ))}
+                        </div>
+                        <div className="border-t border-border pt-3 space-y-2">
+                          {["Full Name", "Email", "Phone"].map((lbl) => (
+                            <div key={lbl} className="h-8 rounded-md border border-border bg-secondary/30 px-2.5 flex items-center">
+                              <span className="text-[10px] text-muted-foreground">{lbl}</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="space-y-2">
+                          <div className="h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground text-xs font-semibold">
+                            Pay {previewTemplate.price}
                           </div>
-                        ))}
+                          <p className="text-[9px] text-center text-muted-foreground">100% secure · Powered by Razorpay</p>
+                        </div>
                       </div>
-                      <div className="h-9 bg-primary rounded-lg flex items-center justify-center text-primary-foreground text-sm font-semibold">
-                        Pay {previewTemplate.price}
-                      </div>
-                      <p className="text-[10px] text-center text-muted-foreground">Secured by Razorpay</p>
                     </div>
                   </div>
                 </div>
