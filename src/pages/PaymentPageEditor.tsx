@@ -479,6 +479,7 @@ const PaymentPageEditor = () => {
   const [postPublishDialogOpen, setPostPublishDialogOpen] = useState(false);
   const [receiptsDialogOpen,    setReceiptsDialogOpen]    = useState(false);
   const [settingsDialogOpen,    setSettingsDialogOpen]    = useState(false);
+  const [shareDialogOpen,       setShareDialogOpen]       = useState(false);
   const [publishing,            setPublishing]            = useState(false);
   const [unsavedChanges,        setUnsavedChanges]        = useState(false);
 
