@@ -859,7 +859,6 @@ const PaymentPageEditor = () => {
                 <Button variant="outline" size="sm" className="flex-shrink-0">Enable</Button>
               </div>
             </div>
-          </div>
             {/* Brand Colors */}
             <div className="pt-4 space-y-4">
               <p className="text-sm font-medium text-foreground">Brand Colors</p>
