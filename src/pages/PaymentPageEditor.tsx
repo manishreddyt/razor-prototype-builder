@@ -8,6 +8,8 @@ import {
   Receipt, Image as ImageIcon, MoreVertical, Package, DollarSign,
   AlignLeft, Hash, Mail, Phone, Type, Link, CalendarDays, List,
   Share2, Sparkles, Shield, Star, Check, CreditCard, Settings2,
+  BarChart2, User, HelpCircle, Play, LayoutGrid, MousePointer, Pencil,
+  Calendar, Tag, MapPin, Clock, Users, Minus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +19,9 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
@@ -63,7 +66,11 @@ interface AmountField extends BaseField {
 
 type FormField = InputField | AmountField;
 
-type SectionType = "hero" | "stats" | "highlights" | "about" | "testimonials" | "faq";
+type SectionType =
+  | "hero" | "description" | "highlights" | "instructor" | "schedule"
+  | "testimonials" | "event" | "gallery" | "faq" | "social_proof"
+  | "pricing" | "richtext" | "video" | "image" | "cta"
+  | "stats" | "about"; // legacy aliases
 
 interface ContentSection {
   id: string;
@@ -77,6 +84,8 @@ interface PageData {
   logoInitial: string;
   logoUrl?: string;
   brandColor: string;
+  primaryColor: string;
+  secondaryColor: string;
   category: "education" | "services" | "ecommerce" | "events";
   buttonText: string;
   successMessage: string;
@@ -137,7 +146,7 @@ const defaultSections: ContentSection[] = [
   },
   {
     id: "s_stats",
-    type: "stats",
+    type: "social_proof",
     visible: true,
     data: {
       items: [
@@ -165,14 +174,15 @@ const defaultSections: ContentSection[] = [
     },
   },
   {
-    id: "s_about",
-    type: "about",
+    id: "s_instructor",
+    type: "instructor",
     visible: true,
     data: {
       image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face",
       name: "Rahul Sharma",
       role: "Lead Instructor",
-      bio: "Senior engineer with 12 years of experience at Flipkart and Razorpay. Has trained 3,000+ developers.",
+      credentials: "12 yrs at Flipkart & Razorpay",
+      bio: "Senior engineer with 12 years of experience. Has trained 3,000+ developers across India.",
     },
   },
   {
@@ -204,11 +214,60 @@ const defaultSections: ContentSection[] = [
 
 const SECTION_META: Record<SectionType, { label: string }> = {
   hero:         { label: "Hero / Title" },
-  stats:        { label: "Stats Bar" },
-  highlights:   { label: "What's Included" },
-  about:        { label: "Instructor / About" },
+  description:  { label: "About / Description" },
+  highlights:   { label: "Features / Includes" },
+  instructor:   { label: "Instructor / Seller" },
+  schedule:     { label: "Schedule / Curriculum" },
   testimonials: { label: "Testimonials" },
+  event:        { label: "Event Details" },
+  gallery:      { label: "Gallery / Media" },
   faq:          { label: "FAQs" },
+  social_proof: { label: "Social Proof Bar" },
+  pricing:      { label: "Pricing Breakdown" },
+  richtext:     { label: "Text Block" },
+  video:        { label: "Video" },
+  image:        { label: "Image" },
+  cta:          { label: "CTA Button" },
+  stats:        { label: "Stats Bar" },
+  about:        { label: "Instructor / About" },
+};
+
+const WIDGET_CATALOG: { type: SectionType; label: string; desc: string; icon: React.ElementType; preview: string }[] = [
+  { type: "description",  label: "About / Description",  desc: "2-4 sentences about the offering",      icon: AlignLeft,    preview: "Learn the skills that top companies need..." },
+  { type: "highlights",   label: "Features / Includes",  desc: "Icon + text bullet list",               icon: CheckCircle2, preview: "✓ Lifetime access  ✓ Certificate  ✓ Mentorship" },
+  { type: "instructor",   label: "Instructor / Seller",  desc: "Bio card with photo and credentials",   icon: User,         preview: "Rahul Sharma — Lead Instructor, 12 yrs exp" },
+  { type: "testimonials", label: "Testimonials",          desc: "Quotes + attribution cards",            icon: Star,         preview: "⭐⭐⭐⭐⭐ \"This changed my career!\" — Priya" },
+  { type: "social_proof", label: "Social Proof Bar",      desc: "Student count, ratings, trust badges",  icon: BarChart2,    preview: "1,200+ Students • 4.9★ • 94% Placement" },
+  { type: "schedule",     label: "Schedule / Curriculum", desc: "Session list, modules or agenda",       icon: Calendar,     preview: "Week 1: Foundations  Week 2: Core Concepts…" },
+  { type: "pricing",      label: "Pricing Breakdown",     desc: "What's included vs not",                icon: Tag,          preview: "✓ Live sessions  ✓ Recording  ✗ 1:1 coaching" },
+  { type: "faq",          label: "FAQ",                   desc: "Collapsible Q&A pairs",                 icon: HelpCircle,   preview: "Q: Do I need prior experience? A: No..." },
+  { type: "richtext",     label: "Text Block",            desc: "Free-form heading + body text",         icon: Type,         preview: "Heading\nYour text content here…" },
+  { type: "event",        label: "Event Details",         desc: "Date, time, venue, capacity",           icon: CalendarDays, preview: "📅 15 Jun 2025  🕒 10am–1pm  📍 Zoom" },
+  { type: "video",        label: "Video",                 desc: "Embed YouTube or Vimeo URL",            icon: Play,         preview: "▶ Embedded video player" },
+  { type: "image",        label: "Image",                 desc: "Single image with caption",             icon: ImageIcon,    preview: "📷 Full-width image block" },
+  { type: "gallery",      label: "Gallery / Media",       desc: "Grid of images",                       icon: LayoutGrid,   preview: "🖼 🖼 🖼 Three-column image grid" },
+  { type: "cta",          label: "CTA Button",            desc: "Standalone call-to-action button",      icon: MousePointer, preview: "[ Get Started Today → ]" },
+];
+
+const createDefaultSection = (type: SectionType): ContentSection => {
+  const id = `s_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+  const dataMap: Record<string, any> = {
+    description:  { body: "A comprehensive program designed for aspiring professionals. Learn from industry experts and build real-world skills." },
+    highlights:   { title: "What's included", items: ["Lifetime access to all materials", "Certificate on completion", "Community access", "Hands-on projects"] },
+    instructor:   { image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face", name: "Rahul Sharma", role: "Lead Instructor", credentials: "12 yrs at Flipkart & Razorpay", bio: "Has trained 3,000+ developers across India." },
+    schedule:     { title: "Curriculum", items: [{ label: "Week 1: Foundations", detail: "5 sessions · 6 hrs" }, { label: "Week 2: Core Concepts", detail: "8 sessions · 10 hrs" }, { label: "Week 3: Projects", detail: "6 sessions · 8 hrs" }, { label: "Week 4: Certification", detail: "4 sessions · 4 hrs" }] },
+    testimonials: { items: [{ name: "Priya S.", rating: 5, text: "This completely changed my career. Got a job within 3 weeks of completing!" }, { name: "Arjun M.", rating: 5, text: "Best investment I've made. The mentorship is incredible." }] },
+    event:        { date: "15 Jun 2025", time: "10:00 AM – 1:00 PM IST", venue: "Online (Zoom)", capacity: "50 seats", registrationDeadline: "" },
+    gallery:      { title: "Gallery", images: [] },
+    faq:          { items: [{ q: "Do I need prior experience?", a: "No prior experience needed. We start from the very basics." }, { q: "Can I get a refund?", a: "Full refund within 7 days of joining." }] },
+    social_proof: { items: [{ value: "500+", label: "Happy customers" }, { value: "4.8★", label: "Average rating" }, { value: "2 yrs", label: "In business" }] },
+    pricing:      { title: "What's included", included: ["Live sessions", "Recording access", "Certificate"], notIncluded: ["1:1 coaching"] },
+    richtext:     { heading: "About this offering", body: "Add your content here…" },
+    video:        { url: "", title: "Watch this video" },
+    image:        { url: "", caption: "" },
+    cta:          { text: "Get started today", url: "", style: "primary" },
+  };
+  return { id, type, visible: true, data: dataMap[type] ?? {} };
 };
 
 const INPUT_TYPES: { type: InputFieldType; label: string; icon: React.ElementType }[] = [
@@ -438,10 +497,12 @@ const PaymentPageEditor = () => {
   const templateConfig = TEMPLATE_CONFIGS[templateName] || {};
 
   const [pageData, setPageData] = useState<PageData>({
-    merchantName: "Company",
-    logoInitial: "C",
+    merchantName: searchParams.get("title") || searchParams.get("template") || "XYZ Company",
+    logoInitial: (searchParams.get("title") || searchParams.get("template") || "X")[0].toUpperCase(),
     logoUrl: COMPANY_LOGO,
     brandColor: "#0066FF",
+    primaryColor: "#0066FF",
+    secondaryColor: "#EEF3FF",
     category: "education",
     buttonText: "Pay Now",
     successMessage: "Thank you! You'll receive a confirmation shortly.",
@@ -451,12 +512,14 @@ const PaymentPageEditor = () => {
     sections: defaultSections,
     formFields: defaultFormFields,
     status: "draft",
-    slug: "company-page",
-    pageUrl: "https://rzp.io/rzp/company-page",
+    slug: "xyz-company-page",
+    pageUrl: "https://rzp.io/rzp/xyz-company-page",
     supportEmail: "",
     supportPhone: "",
     termsText: "",
     ...templateConfig,
+    primaryColor: (templateConfig as any)?.brandColor || "#0066FF",
+    secondaryColor: "#EEF3FF",
   });
 
   const updatePage = (updates: Partial<PageData>) => {
@@ -472,6 +535,19 @@ const PaymentPageEditor = () => {
 
   const removeSection = (id: string) =>
     updatePage({ sections: pageData.sections.map((s) => s.id === id ? { ...s, visible: false } : s) });
+
+  const addSection = (type: SectionType) => {
+    const newSection = createDefaultSection(type);
+    updatePage({ sections: [...pageData.sections, newSection] });
+    toast.success(`${SECTION_META[type]?.label ?? type} added`);
+  };
+
+  const reorderSections = (orderedIds: string[]) => {
+    const map = Object.fromEntries(pageData.sections.map((s) => [s.id, s]));
+    const visible = orderedIds.map((id) => map[id]).filter(Boolean) as ContentSection[];
+    const hidden  = pageData.sections.filter((s) => !s.visible);
+    updatePage({ sections: [...visible, ...hidden] });
+  };
 
   const updateField = (id: string, patch: Partial<FormField>) =>
     updatePage({ formFields: pageData.formFields.map((f) => f.id === id ? ({ ...f, ...patch } as FormField) : f) });
@@ -629,6 +705,8 @@ const PaymentPageEditor = () => {
               onDragStart={handleDragStart}
               onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
+              onAddSection={addSection}
+              onReorderSections={reorderSections}
               totalAmount={totalAmount}
             />
           </div>
@@ -782,6 +860,38 @@ const PaymentPageEditor = () => {
               </div>
             </div>
           </div>
+            {/* Brand Colors */}
+            <div className="pt-4 space-y-4">
+              <p className="text-sm font-medium text-foreground">Brand Colors</p>
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1.5">Primary Color</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={pageData.primaryColor} onChange={(e) => updatePage({ primaryColor: e.target.value })}
+                      className="w-10 h-10 rounded-lg cursor-pointer border border-border p-0.5 flex-shrink-0" />
+                    <Input value={pageData.primaryColor} onChange={(e) => updatePage({ primaryColor: e.target.value })}
+                      className="font-mono text-sm flex-1" placeholder="#0066FF" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1.5">Secondary / Background Color</label>
+                  <div className="flex items-center gap-2">
+                    <input type="color" value={pageData.secondaryColor} onChange={(e) => updatePage({ secondaryColor: e.target.value })}
+                      className="w-10 h-10 rounded-lg cursor-pointer border border-border p-0.5 flex-shrink-0" />
+                    <Input value={pageData.secondaryColor} onChange={(e) => updatePage({ secondaryColor: e.target.value })}
+                      className="font-mono text-sm flex-1" placeholder="#EEF3FF" />
+                  </div>
+                </div>
+                <div className="rounded-lg p-4 flex items-center gap-3 border border-border" style={{ backgroundColor: pageData.secondaryColor }}>
+                  <div className="w-8 h-8 rounded-lg flex-shrink-0" style={{ backgroundColor: pageData.primaryColor }} />
+                  <div>
+                    <p className="text-xs font-semibold" style={{ color: pageData.primaryColor }}>Live preview</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Colors applied to the page in real time</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
           <div className="flex justify-end gap-2 pt-2 border-t border-border">
             <Button variant="outline" onClick={() => setSettingsDialogOpen(false)}>Cancel</Button>
             <Button onClick={() => setSettingsDialogOpen(false)}>Save</Button>
@@ -889,6 +999,8 @@ interface EditorCanvasProps {
   onDragStart?: (index: number) => void;
   onDragOver?: (e: React.DragEvent, index: number) => void;
   onDragEnd?: () => void;
+  onAddSection?: (type: SectionType) => void;
+  onReorderSections?: (orderedIds: string[]) => void;
   totalAmount: number;
 }
 
@@ -897,22 +1009,43 @@ const EditorCanvas = ({
   onUpdatePage, onUpdateSectionData, onRemoveSection,
   hiddenSections = [], onRestoreSection,
   onUpdateField, onRemoveField, onAddInputField, onAddAmountField,
-  onDragStart, onDragOver, onDragEnd, totalAmount,
+  onDragStart, onDragOver, onDragEnd,
+  onAddSection, onReorderSections,
+  totalAmount,
 }: EditorCanvasProps) => {
   const visibleSections = pageData.sections.filter((s) => s.visible);
   const [mobileStep, setMobileStep] = useState<"content" | "payment">("content");
+  const [addWidgetOpen, setAddWidgetOpen] = useState(false);
+  const [editingSection, setEditingSection] = useState<ContentSection | null>(null);
+  const sectionDragRef = useRef<number | null>(null);
+
+  const primaryColor = pageData.primaryColor || "#0066FF";
+  const secondaryColor = pageData.secondaryColor || "#EEF3FF";
+
+  const handleSectionDragStart = (i: number) => { sectionDragRef.current = i; };
+  const handleSectionDragOver = (e: React.DragEvent, i: number) => {
+    e.preventDefault();
+    const from = sectionDragRef.current;
+    if (from === null || from === i || from === 0 || i === 0) return;
+    const arr = [...visibleSections];
+    const [moved] = arr.splice(from, 1);
+    arr.splice(i, 0, moved);
+    sectionDragRef.current = i;
+    onReorderSections?.(arr.map((s) => s.id));
+  };
+  const handleSectionDragEnd = () => { sectionDragRef.current = null; };
 
   return (
     <div className="bg-white min-h-screen">
       {/* Merchant nav */}
-      <div className="bg-white/95 backdrop-blur-md sticky top-0 z-20">
+      <div className="bg-white/95 backdrop-blur-md sticky top-0 z-20 shadow-sm">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
           <div className="flex items-center gap-3">
             {pageData.logoUrl ? (
-              <img src={pageData.logoUrl} alt="logo" className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-gray-100" />
+              <img src={pageData.logoUrl} alt="logo" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 border border-gray-100" />
             ) : (
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0"
-                style={{ backgroundColor: pageData.brandColor }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0"
+                style={{ backgroundColor: primaryColor }}>
                 {pageData.logoInitial}
               </div>
             )}
@@ -920,10 +1053,10 @@ const EditorCanvas = ({
               <input
                 value={pageData.merchantName}
                 onChange={(e) => onUpdatePage?.({ merchantName: e.target.value })}
-                className="font-bold text-lg text-gray-900 bg-transparent border-none focus:outline-none focus:bg-gray-50 rounded px-1 hover:bg-gray-50 max-w-xs"
+                className="font-bold text-base text-gray-900 bg-transparent border-none focus:outline-none focus:bg-gray-50 rounded px-1 hover:bg-gray-50 max-w-xs"
               />
             ) : (
-              <span className="font-bold text-lg text-gray-900">{pageData.merchantName}</span>
+              <span className="font-bold text-base text-gray-900">{pageData.merchantName}</span>
             )}
           </div>
         </div>
@@ -936,16 +1069,27 @@ const EditorCanvas = ({
           {mobileStep === "content" ? (
             <>
               <div className="flex-1 px-4 py-8 pb-24 space-y-8">
-                {visibleSections.map((section) => (
-                  <SectionBlock
-                    key={section.id}
-                    section={section}
-                    pageData={pageData}
-                    editable={editable}
-                    onUpdate={(data) => onUpdateSectionData?.(section.id, data)}
-                    onRemove={() => onRemoveSection?.(section.id)}
-                  />
+                {visibleSections.map((section, i) => (
+                  <div key={section.id} draggable={editable && i !== 0}
+                    onDragStart={() => handleSectionDragStart(i)}
+                    onDragOver={(e) => handleSectionDragOver(e, i)}
+                    onDragEnd={handleSectionDragEnd}>
+                    <SectionBlock
+                      section={section} pageData={pageData} editable={editable}
+                      primaryColor={primaryColor} secondaryColor={secondaryColor}
+                      isHero={i === 0}
+                      onUpdate={(data) => onUpdateSectionData?.(section.id, data)}
+                      onRemove={() => onRemoveSection?.(section.id)}
+                      onEdit={() => setEditingSection(section)}
+                    />
+                  </div>
                 ))}
+                {editable && (
+                  <button onClick={() => setAddWidgetOpen(true)}
+                    className="flex items-center gap-2 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 transition-colors justify-center">
+                    <Plus className="h-4 w-4" /> Add Widget
+                  </button>
+                )}
                 {editable && hiddenSections.length > 0 && (
                   <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-gray-200">
                     {hiddenSections.map((s) => (
@@ -961,13 +1105,13 @@ const EditorCanvas = ({
                   <div className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-blue-400" />Razorpay Protected</div>
                   <div className="flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /><span className="ml-0.5">4.9 / 5 rating</span></div>
                 </div>
+                <PageContactFooter merchantName={pageData.merchantName} supportEmail={pageData.supportEmail} supportPhone={pageData.supportPhone} termsText={pageData.termsText} editable={editable} onUpdate={(p) => onUpdatePage?.(p)} />
               </div>
               {/* Sticky proceed button */}
               <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-10">
-                <button
-                  onClick={() => setMobileStep("payment")}
-                  className="w-full bg-primary text-white rounded-xl py-3.5 text-sm font-semibold shadow-lg shadow-primary/20"
-                >
+                <button onClick={() => setMobileStep("payment")}
+                  className="w-full text-white rounded-xl py-3.5 text-sm font-semibold shadow-lg"
+                  style={{ backgroundColor: primaryColor }}>
                   Proceed to Payment →
                 </button>
               </div>
@@ -982,6 +1126,7 @@ const EditorCanvas = ({
                 onUpdateField={onUpdateField} onRemoveField={onRemoveField}
                 onAddInputField={onAddInputField} onAddAmountField={onAddAmountField}
                 onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
+                primaryColor={primaryColor}
               />
             </div>
           )}
@@ -991,12 +1136,26 @@ const EditorCanvas = ({
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-10 items-start">
           {/* LEFT: content sections */}
           <div className="space-y-8">
-            {visibleSections.map((section) => (
-              <SectionBlock key={section.id} section={section} pageData={pageData} editable={editable}
-                onUpdate={(data) => onUpdateSectionData?.(section.id, data)}
-                onRemove={() => onRemoveSection?.(section.id)}
-              />
+            {visibleSections.map((section, i) => (
+              <div key={section.id} draggable={editable && i !== 0}
+                onDragStart={() => handleSectionDragStart(i)}
+                onDragOver={(e) => handleSectionDragOver(e, i)}
+                onDragEnd={handleSectionDragEnd}>
+                <SectionBlock section={section} pageData={pageData} editable={editable}
+                  primaryColor={primaryColor} secondaryColor={secondaryColor}
+                  isHero={i === 0}
+                  onUpdate={(data) => onUpdateSectionData?.(section.id, data)}
+                  onRemove={() => onRemoveSection?.(section.id)}
+                  onEdit={() => setEditingSection(section)}
+                />
+              </div>
             ))}
+            {editable && (
+              <button onClick={() => setAddWidgetOpen(true)}
+                className="flex items-center gap-2 w-full py-3 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 transition-colors justify-center">
+                <Plus className="h-4 w-4" /> Add Widget
+              </button>
+            )}
             {editable && hiddenSections.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-gray-200">
                 {hiddenSections.map((s) => (
@@ -1012,6 +1171,7 @@ const EditorCanvas = ({
               <div className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-blue-400" />Razorpay Protected</div>
               <div className="flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /><span className="ml-0.5">4.9 / 5 rating</span></div>
             </div>
+            <PageContactFooter merchantName={pageData.merchantName} supportEmail={pageData.supportEmail} supportPhone={pageData.supportPhone} termsText={pageData.termsText} editable={editable} onUpdate={(p) => onUpdatePage?.(p)} />
           </div>
           {/* RIGHT: payment panel */}
           <div className="lg:sticky lg:top-20">
@@ -1019,9 +1179,48 @@ const EditorCanvas = ({
               onUpdateField={onUpdateField} onRemoveField={onRemoveField}
               onAddInputField={onAddInputField} onAddAmountField={onAddAmountField}
               onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
+              primaryColor={primaryColor}
             />
           </div>
         </div>
+      )}
+      {/* Add Widget Dialog */}
+      <Dialog open={addWidgetOpen} onOpenChange={setAddWidgetOpen}>
+        <DialogContent className="max-w-2xl flex flex-col max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Add Widget</DialogTitle>
+          </DialogHeader>
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pb-4">
+              {WIDGET_CATALOG.map(({ type, label, desc, icon: Icon, preview }) => (
+                <button key={type} onClick={() => { onAddSection?.(type as SectionType); setAddWidgetOpen(false); }}
+                  className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50/40 text-left transition-colors">
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: `${primaryColor}18` }}>
+                    <Icon className="h-4 w-4" style={{ color: primaryColor }} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900">{label}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                    <p className="text-[11px] text-gray-400 font-mono mt-1 truncate">{preview}</p>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </ScrollArea>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Widget Dialog */}
+      {editingSection && (
+        <WidgetEditDialog
+          section={editingSection}
+          onClose={() => setEditingSection(null)}
+          onSave={(data) => {
+            onUpdateSectionData?.(editingSection.id, data);
+            setEditingSection(null);
+          }}
+          primaryColor={primaryColor}
+        />
       )}
     </div>
   );
@@ -1041,12 +1240,14 @@ interface PaymentPanelProps {
   onDragStart?: (index: number) => void;
   onDragOver?: (e: React.DragEvent, index: number) => void;
   onDragEnd?: () => void;
+  primaryColor?: string;
 }
 
 const PaymentPanel = ({
   editable, pageData, totalAmount,
   onUpdateField, onRemoveField, onAddInputField, onAddAmountField,
   onDragStart, onDragOver, onDragEnd,
+  primaryColor = "#0066FF",
 }: PaymentPanelProps) => (
   editable ? (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
@@ -1340,28 +1541,37 @@ interface SectionBlockProps {
   section: ContentSection;
   pageData: PageData;
   editable: boolean;
+  primaryColor: string;
+  secondaryColor: string;
+  isHero: boolean;
   onUpdate: (data: Record<string, any>) => void;
   onRemove: () => void;
+  onEdit: () => void;
 }
 
-const SectionBlock = ({ section, pageData, editable, onUpdate, onRemove }: SectionBlockProps) => {
+const SectionBlock = ({ section, pageData, editable, primaryColor, secondaryColor, isHero, onUpdate, onRemove, onEdit }: SectionBlockProps) => {
   const wrap = (children: React.ReactNode) =>
     editable ? (
       <div className="relative group/section">
         {children}
-        <button onClick={onRemove}
-          className="absolute -top-1 -right-1 p-1 rounded-full bg-white border border-gray-200 shadow-sm text-gray-300 hover:text-red-500 hover:border-red-200 opacity-0 group-hover/section:opacity-100 transition-all z-10"
-          title="Remove section">
-          <X className="h-3.5 w-3.5" />
-        </button>
+        {!isHero && (
+          <div className="absolute -top-1 -right-1 flex items-center gap-1 opacity-0 group-hover/section:opacity-100 transition-all z-10">
+            <button onClick={onEdit} className="p-1.5 rounded-full bg-white border border-gray-200 shadow-sm text-gray-400 hover:text-blue-500 transition-colors" title="Edit"><Pencil className="h-3 w-3" /></button>
+            <button onClick={onRemove} className="p-1.5 rounded-full bg-white border border-gray-200 shadow-sm text-gray-300 hover:text-red-500 hover:border-red-200 transition-colors" title="Remove"><X className="h-3 w-3" /></button>
+          </div>
+        )}
+        {!isHero && editable && (
+          <div className="absolute -left-5 top-1/2 -translate-y-1/2 opacity-0 group-hover/section:opacity-100 transition-all cursor-grab active:cursor-grabbing">
+            <GripVertical className="h-4 w-4 text-gray-300" />
+          </div>
+        )}
       </div>
     ) : <>{children}</>;
 
   const ET = ({ value, onChange, className, tag: Tag = "p" }: { value: string; onChange: (v: string) => void; className?: string; tag?: any }) => {
     if (!editable) return <Tag className={className}>{value}</Tag>;
     return (
-      <Tag
-        className={`${className} focus:outline-none hover:bg-blue-50/50 focus:bg-blue-50/60 rounded-sm transition-colors cursor-text`}
+      <Tag className={`${className} focus:outline-none hover:bg-blue-50/50 focus:bg-blue-50/60 rounded-sm transition-colors cursor-text`}
         contentEditable suppressContentEditableWarning
         onBlur={(e: any) => onChange(e.currentTarget.textContent || "")}
       >{value}</Tag>
@@ -1370,20 +1580,20 @@ const SectionBlock = ({ section, pageData, editable, onUpdate, onRemove }: Secti
 
   if (section.type === "hero") return wrap(
     <div className="space-y-4">
-      <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary text-xs font-semibold px-3 py-1 rounded-full">
+      <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: `${primaryColor}18`, color: primaryColor }}>
         <Sparkles className="h-3 w-3" />{categoryLabel(pageData.category)}
       </span>
       <ET tag="h1" value={section.data.title} onChange={(v) => onUpdate({ title: v })} className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight" />
-      {section.data.tagline && <ET value={section.data.tagline} onChange={(v) => onUpdate({ tagline: v })} className="text-base font-medium text-primary" />}
+      {section.data.tagline && <ET value={section.data.tagline} onChange={(v) => onUpdate({ tagline: v })} className="text-base font-medium" style={{ color: primaryColor } as any} />}
       <ET value={section.data.description} onChange={(v) => onUpdate({ description: v })} className="text-gray-600 leading-relaxed max-w-xl" />
     </div>
   );
 
-  if (section.type === "stats") return wrap(
+  if (section.type === "stats" || section.type === "social_proof") return wrap(
     <div className="flex flex-wrap gap-6 py-4 border-y border-gray-100">
       {(section.data.items as any[]).map((item, i) => (
         <div key={i} className="text-center">
-          <div className="text-xl font-bold text-gray-900">{item.value}</div>
+          <div className="text-xl font-bold" style={{ color: primaryColor }}>{item.value}</div>
           <div className="text-xs text-gray-500 mt-0.5">{item.label}</div>
         </div>
       ))}
@@ -1396,8 +1606,8 @@ const SectionBlock = ({ section, pageData, editable, onUpdate, onRemove }: Secti
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(section.data.items as string[]).map((h, i) => (
           <div key={i} className="flex items-start gap-3">
-            <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-              <Check className="h-3 w-3 text-emerald-600" />
+            <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5" style={{ backgroundColor: `${primaryColor}18` }}>
+              <Check className="h-3 w-3" style={{ color: primaryColor }} />
             </div>
             <span className="text-sm text-gray-700">{h}</span>
           </div>
@@ -1406,15 +1616,16 @@ const SectionBlock = ({ section, pageData, editable, onUpdate, onRemove }: Secti
     </div>
   );
 
-  if (section.type === "about") return wrap(
-    <div className="bg-gray-50 rounded-2xl p-6 flex items-start gap-5">
+  if (section.type === "about" || section.type === "instructor") return wrap(
+    <div className="rounded-2xl p-6 flex items-start gap-5" style={{ backgroundColor: secondaryColor }}>
       {section.data.image && <img src={section.data.image} alt={section.data.name} className="w-16 h-16 rounded-full object-cover flex-shrink-0 shadow" />}
       <div>
-        <p className="text-xs font-semibold text-primary uppercase tracking-wider mb-1">
+        <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: primaryColor }}>
           {pageData.category === "education" ? "Your Instructor" : "Your Provider"}
         </p>
         <h3 className="text-base font-semibold text-gray-900">{section.data.name}</h3>
-        <p className="text-xs text-gray-500 mb-1">{section.data.role}</p>
+        <p className="text-xs text-gray-500 mb-0.5">{section.data.role}</p>
+        {section.data.credentials && <p className="text-xs font-medium mb-1" style={{ color: primaryColor }}>{section.data.credentials}</p>}
         <p className="text-sm text-gray-600 leading-relaxed">{section.data.bio}</p>
       </div>
     </div>
@@ -1431,7 +1642,7 @@ const SectionBlock = ({ section, pageData, editable, onUpdate, onRemove }: Secti
             </div>
             <p className="text-sm text-gray-700 leading-relaxed mb-3">"{t.text}"</p>
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">{t.name?.charAt(0)}</div>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: primaryColor }}>{t.name?.charAt(0)}</div>
               <span className="text-xs font-medium text-gray-700">{t.name}</span>
             </div>
           </div>
@@ -1455,7 +1666,340 @@ const SectionBlock = ({ section, pageData, editable, onUpdate, onRemove }: Secti
     </div>
   );
 
+  if (section.type === "description") return wrap(
+    <p className="text-gray-600 leading-relaxed">{section.data.body}</p>
+  );
+
+  if (section.type === "schedule") return wrap(
+    <div className="space-y-3">
+      {section.data.title && <h2 className="text-lg font-semibold text-gray-900">{section.data.title}</h2>}
+      <div className="space-y-2">
+        {(section.data.items as any[] || []).map((item, i) => (
+          <div key={i} className="flex items-center justify-between p-3 rounded-xl border border-gray-100 bg-gray-50">
+            <div className="flex items-center gap-3">
+              <span className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ backgroundColor: primaryColor }}>{i + 1}</span>
+              <span className="text-sm font-medium text-gray-900">{item.label}</span>
+            </div>
+            <span className="text-xs text-gray-400">{item.detail}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  if (section.type === "event") return wrap(
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {[
+        { icon: CalendarDays, label: "Date", value: section.data.date },
+        { icon: Clock, label: "Time", value: section.data.time },
+        { icon: MapPin, label: "Venue", value: section.data.venue },
+        { icon: Users, label: "Capacity", value: section.data.capacity },
+      ].filter(e => e.value).map((e, i) => (
+        <div key={i} className="rounded-xl p-4 border border-gray-100 space-y-1" style={{ backgroundColor: secondaryColor }}>
+          <e.icon className="h-4 w-4 mb-1" style={{ color: primaryColor }} />
+          <p className="text-[11px] text-gray-400 uppercase tracking-wide">{e.label}</p>
+          <p className="text-sm font-semibold text-gray-900">{e.value}</p>
+        </div>
+      ))}
+    </div>
+  );
+
+  if (section.type === "pricing") return wrap(
+    <div className="space-y-3">
+      {section.data.title && <h2 className="text-lg font-semibold text-gray-900">{section.data.title}</h2>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="space-y-2">
+          {(section.data.included as string[] || []).map((item, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm text-gray-700">
+              <Check className="h-4 w-4 text-emerald-500 flex-shrink-0" />{item}
+            </div>
+          ))}
+        </div>
+        <div className="space-y-2">
+          {(section.data.notIncluded as string[] || []).map((item, i) => (
+            <div key={i} className="flex items-center gap-2 text-sm text-gray-400">
+              <Minus className="h-4 w-4 flex-shrink-0" />{item}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  if (section.type === "richtext") return wrap(
+    <div className="space-y-2">
+      {section.data.heading && <h2 className="text-lg font-semibold text-gray-900">{section.data.heading}</h2>}
+      <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">{section.data.body}</p>
+    </div>
+  );
+
+  if (section.type === "video") return wrap(
+    <div className="space-y-2">
+      {section.data.title && <h2 className="text-lg font-semibold text-gray-900">{section.data.title}</h2>}
+      <div className="rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 aspect-video">
+        {section.data.url ? (
+          <iframe src={section.data.url} className="w-full h-full" allow="autoplay; encrypted-media" allowFullScreen />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center gap-2 text-gray-400">
+            <Play className="h-8 w-8" />
+            <span className="text-sm">{editable ? "Click Edit to add a video URL" : "No video set"}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  if (section.type === "image") return wrap(
+    <div className="space-y-2">
+      {section.data.url
+        ? <img src={section.data.url} className="w-full rounded-2xl object-cover max-h-96" alt={section.data.caption || ""} />
+        : <div className="w-full h-48 rounded-2xl border-2 border-dashed border-gray-200 flex items-center justify-center gap-2 text-gray-400">
+            <ImageIcon className="h-6 w-6" />
+            <span className="text-sm">{editable ? "Click Edit to add an image" : "No image set"}</span>
+          </div>
+      }
+      {section.data.caption && <p className="text-sm text-gray-500 text-center">{section.data.caption}</p>}
+    </div>
+  );
+
+  if (section.type === "gallery") return wrap(
+    <div className="space-y-3">
+      {section.data.title && <h2 className="text-lg font-semibold text-gray-900">{section.data.title}</h2>}
+      {(section.data.images as string[] || []).length > 0 ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {(section.data.images as string[]).map((src, i) => (
+            <img key={i} src={src} className="w-full h-32 object-cover rounded-xl" alt="" />
+          ))}
+        </div>
+      ) : (
+        <div className="h-32 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center gap-2 text-gray-400">
+          <LayoutGrid className="h-5 w-5" />
+          <span className="text-sm">{editable ? "Click Edit to add images" : "No images"}</span>
+        </div>
+      )}
+    </div>
+  );
+
+  if (section.type === "cta") return wrap(
+    <div className="flex justify-center py-4">
+      <button className="px-8 py-3 rounded-xl font-semibold text-sm transition-colors"
+        style={section.data.style === "outline"
+          ? { border: `2px solid ${primaryColor}`, color: primaryColor, backgroundColor: "transparent" }
+          : { backgroundColor: primaryColor, color: "white" }}>
+        {section.data.text || "Click here"}
+      </button>
+    </div>
+  );
+
   return null;
+};
+
+// ─── WidgetEditDialog ─────────────────────────────────────────────────────────
+
+const WidgetEditDialog = ({ section, onClose, onSave, primaryColor }: {
+  section: ContentSection; onClose: () => void;
+  onSave: (data: Record<string, any>) => void; primaryColor: string;
+}) => {
+  const [draft, setDraft] = useState<Record<string, any>>({ ...section.data });
+  const patch = (key: string, value: any) => setDraft((d) => ({ ...d, [key]: value }));
+  const patchListItem = (key: string, i: number, itemPatch: any) =>
+    setDraft((d) => { const arr = [...(d[key] || [])]; arr[i] = typeof itemPatch === "object" ? { ...arr[i], ...itemPatch } : itemPatch; return { ...d, [key]: arr }; });
+  const addListItem = (key: string, blank: any) =>
+    setDraft((d) => ({ ...d, [key]: [...(d[key] || []), blank] }));
+  const removeListItem = (key: string, i: number) =>
+    setDraft((d) => { const arr = [...(d[key] || [])]; arr.splice(i, 1); return { ...d, [key]: arr }; });
+
+  const label = SECTION_META[section.type]?.label ?? section.type;
+
+  const renderForm = () => {
+    switch (section.type) {
+      case "description":
+        return <Textarea value={draft.body || ""} onChange={(e) => patch("body", e.target.value)} rows={5} placeholder="Enter description…" />;
+
+      case "richtext":
+        return <div className="space-y-3">
+          <Input value={draft.heading || ""} onChange={(e) => patch("heading", e.target.value)} placeholder="Heading (optional)" />
+          <Textarea value={draft.body || ""} onChange={(e) => patch("body", e.target.value)} rows={6} placeholder="Body text…" />
+        </div>;
+
+      case "video":
+        return <div className="space-y-3">
+          <Input value={draft.title || ""} onChange={(e) => patch("title", e.target.value)} placeholder="Video title (optional)" />
+          <Input value={draft.url || ""} onChange={(e) => patch("url", e.target.value)} placeholder="YouTube/Vimeo embed URL (e.g. https://www.youtube.com/embed/...)" />
+          {draft.url && <div className="rounded-xl overflow-hidden border border-gray-200 aspect-video"><iframe src={draft.url} className="w-full h-full" allowFullScreen /></div>}
+        </div>;
+
+      case "image":
+        return <div className="space-y-3">
+          <Input value={draft.url || ""} onChange={(e) => patch("url", e.target.value)} placeholder="Image URL" />
+          {draft.url && <img src={draft.url} className="w-full rounded-xl object-cover max-h-60" alt="" />}
+          <Input value={draft.caption || ""} onChange={(e) => patch("caption", e.target.value)} placeholder="Caption (optional)" />
+        </div>;
+
+      case "gallery":
+        return <div className="space-y-3">
+          <Input value={draft.title || ""} onChange={(e) => patch("title", e.target.value)} placeholder="Gallery title (optional)" />
+          <div className="space-y-2">
+            {(draft.images as string[] || []).map((url, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <Input value={url} onChange={(e) => patchListItem("images", i, e.target.value)} placeholder="Image URL" className="flex-1" />
+                <button onClick={() => removeListItem("images", i)} className="p-1.5 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+              </div>
+            ))}
+            <button onClick={() => addListItem("images", "")} className="flex items-center gap-1.5 text-xs text-blue-500 hover:underline"><Plus className="h-3.5 w-3.5" /> Add image URL</button>
+          </div>
+        </div>;
+
+      case "cta":
+        return <div className="space-y-3">
+          <Input value={draft.text || ""} onChange={(e) => patch("text", e.target.value)} placeholder="Button text" />
+          <Input value={draft.url || ""} onChange={(e) => patch("url", e.target.value)} placeholder="Link URL (optional)" />
+          <div className="flex gap-2">
+            {["primary", "outline"].map((s) => (
+              <button key={s} onClick={() => patch("style", s)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${draft.style === s ? "border-blue-500 bg-blue-50 text-blue-600" : "border-gray-200 text-gray-600"}`}>
+                {s === "primary" ? "Filled" : "Outline"}
+              </button>
+            ))}
+          </div>
+        </div>;
+
+      case "social_proof":
+      case "stats":
+        return <div className="space-y-2">
+          {(draft.items as any[] || []).map((item, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <Input value={item.value} onChange={(e) => patchListItem("items", i, { value: e.target.value })} placeholder="Value (e.g. 1,200+)" className="w-28" />
+              <Input value={item.label} onChange={(e) => patchListItem("items", i, { label: e.target.value })} placeholder="Label" className="flex-1" />
+              <button onClick={() => removeListItem("items", i)} className="p-1.5 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+            </div>
+          ))}
+          <button onClick={() => addListItem("items", { value: "", label: "" })} className="flex items-center gap-1.5 text-xs text-blue-500 hover:underline"><Plus className="h-3.5 w-3.5" /> Add stat</button>
+        </div>;
+
+      case "highlights":
+        return <div className="space-y-2">
+          <Input value={draft.title || ""} onChange={(e) => patch("title", e.target.value)} placeholder="Section heading (e.g. What's included)" />
+          {(draft.items as string[] || []).map((item, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <Input value={item} onChange={(e) => patchListItem("items", i, e.target.value)} placeholder="Feature item" className="flex-1" />
+              <button onClick={() => removeListItem("items", i)} className="p-1.5 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+            </div>
+          ))}
+          <button onClick={() => addListItem("items", "")} className="flex items-center gap-1.5 text-xs text-blue-500 hover:underline"><Plus className="h-3.5 w-3.5" /> Add item</button>
+        </div>;
+
+      case "testimonials":
+        return <div className="space-y-3">
+          {(draft.items as any[] || []).map((t, i) => (
+            <div key={i} className="border border-gray-200 rounded-xl p-3 space-y-2">
+              <div className="flex gap-2">
+                <Input value={t.name} onChange={(e) => patchListItem("items", i, { name: e.target.value })} placeholder="Name" className="flex-1" />
+                <select value={t.rating} onChange={(e) => patchListItem("items", i, { rating: Number(e.target.value) })}
+                  className="border border-gray-200 rounded-lg px-2 text-sm w-20">
+                  {[5,4,3].map(n => <option key={n} value={n}>{n}★</option>)}
+                </select>
+                <button onClick={() => removeListItem("items", i)} className="p-1.5 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+              </div>
+              <Textarea value={t.text} onChange={(e) => patchListItem("items", i, { text: e.target.value })} placeholder="Review text" rows={2} />
+            </div>
+          ))}
+          <button onClick={() => addListItem("items", { name: "", rating: 5, text: "" })} className="flex items-center gap-1.5 text-xs text-blue-500 hover:underline"><Plus className="h-3.5 w-3.5" /> Add testimonial</button>
+        </div>;
+
+      case "faq":
+        return <div className="space-y-3">
+          {(draft.items as any[] || []).map((faq, i) => (
+            <div key={i} className="border border-gray-200 rounded-xl p-3 space-y-2">
+              <div className="flex gap-2 items-start">
+                <Input value={faq.q} onChange={(e) => patchListItem("items", i, { q: e.target.value })} placeholder="Question" className="flex-1" />
+                <button onClick={() => removeListItem("items", i)} className="p-1.5 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+              </div>
+              <Textarea value={faq.a} onChange={(e) => patchListItem("items", i, { a: e.target.value })} placeholder="Answer" rows={2} />
+            </div>
+          ))}
+          <button onClick={() => addListItem("items", { q: "", a: "" })} className="flex items-center gap-1.5 text-xs text-blue-500 hover:underline"><Plus className="h-3.5 w-3.5" /> Add Q&A</button>
+        </div>;
+
+      case "instructor":
+      case "about":
+        return <div className="space-y-3">
+          <Input value={draft.image || ""} onChange={(e) => patch("image", e.target.value)} placeholder="Photo URL" />
+          {draft.image && <img src={draft.image} className="w-16 h-16 rounded-full object-cover border" alt="" />}
+          <Input value={draft.name || ""} onChange={(e) => patch("name", e.target.value)} placeholder="Name" />
+          <Input value={draft.role || ""} onChange={(e) => patch("role", e.target.value)} placeholder="Role / Title" />
+          <Input value={draft.credentials || ""} onChange={(e) => patch("credentials", e.target.value)} placeholder="Credentials (e.g. 12 yrs at Razorpay)" />
+          <Textarea value={draft.bio || ""} onChange={(e) => patch("bio", e.target.value)} placeholder="Bio" rows={3} />
+        </div>;
+
+      case "schedule":
+        return <div className="space-y-3">
+          <Input value={draft.title || ""} onChange={(e) => patch("title", e.target.value)} placeholder="Section title (e.g. Curriculum)" />
+          {(draft.items as any[] || []).map((item, i) => (
+            <div key={i} className="flex gap-2 items-center">
+              <Input value={item.label} onChange={(e) => patchListItem("items", i, { label: e.target.value })} placeholder="Module / session name" className="flex-1" />
+              <Input value={item.detail} onChange={(e) => patchListItem("items", i, { detail: e.target.value })} placeholder="Duration / detail" className="w-36" />
+              <button onClick={() => removeListItem("items", i)} className="p-1.5 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+            </div>
+          ))}
+          <button onClick={() => addListItem("items", { label: "", detail: "" })} className="flex items-center gap-1.5 text-xs text-blue-500 hover:underline"><Plus className="h-3.5 w-3.5" /> Add item</button>
+        </div>;
+
+      case "event":
+        return <div className="grid grid-cols-2 gap-3">
+          <div><label className="text-xs text-gray-500 mb-1 block">Date</label><Input value={draft.date || ""} onChange={(e) => patch("date", e.target.value)} placeholder="e.g. 15 Jun 2025" /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Time</label><Input value={draft.time || ""} onChange={(e) => patch("time", e.target.value)} placeholder="e.g. 10:00 AM – 1:00 PM IST" /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Venue</label><Input value={draft.venue || ""} onChange={(e) => patch("venue", e.target.value)} placeholder="e.g. Online (Zoom)" /></div>
+          <div><label className="text-xs text-gray-500 mb-1 block">Capacity</label><Input value={draft.capacity || ""} onChange={(e) => patch("capacity", e.target.value)} placeholder="e.g. 50 seats" /></div>
+          <div className="col-span-2"><label className="text-xs text-gray-500 mb-1 block">Registration Deadline</label><Input value={draft.registrationDeadline || ""} onChange={(e) => patch("registrationDeadline", e.target.value)} placeholder="e.g. 10 Jun 2025" /></div>
+        </div>;
+
+      case "pricing":
+        return <div className="space-y-4">
+          <Input value={draft.title || ""} onChange={(e) => patch("title", e.target.value)} placeholder="Section title (e.g. What's included)" />
+          <div>
+            <p className="text-xs font-semibold text-gray-700 mb-2">Included ✓</p>
+            {(draft.included as string[] || []).map((item, i) => (
+              <div key={i} className="flex gap-2 items-center mb-2">
+                <Input value={item} onChange={(e) => patchListItem("included", i, e.target.value)} placeholder="Included item" className="flex-1" />
+                <button onClick={() => removeListItem("included", i)} className="p-1.5 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+              </div>
+            ))}
+            <button onClick={() => addListItem("included", "")} className="flex items-center gap-1.5 text-xs text-blue-500 hover:underline mb-3"><Plus className="h-3.5 w-3.5" /> Add item</button>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-gray-700 mb-2">Not Included ✗</p>
+            {(draft.notIncluded as string[] || []).map((item, i) => (
+              <div key={i} className="flex gap-2 items-center mb-2">
+                <Input value={item} onChange={(e) => patchListItem("notIncluded", i, e.target.value)} placeholder="Not included item" className="flex-1" />
+                <button onClick={() => removeListItem("notIncluded", i)} className="p-1.5 text-gray-400 hover:text-red-500"><X className="h-4 w-4" /></button>
+              </div>
+            ))}
+            <button onClick={() => addListItem("notIncluded", "")} className="flex items-center gap-1.5 text-xs text-blue-500 hover:underline"><Plus className="h-3.5 w-3.5" /> Add item</button>
+          </div>
+        </div>;
+
+      default:
+        return <p className="text-sm text-gray-500">No editable fields for this widget type.</p>;
+    }
+  };
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-lg flex flex-col max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle>Edit: {label}</DialogTitle>
+        </DialogHeader>
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="py-2 space-y-3">{renderForm()}</div>
+        </ScrollArea>
+        <DialogFooter className="pt-4 border-t border-gray-100">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => onSave(draft)} style={{ backgroundColor: primaryColor }}>Save changes</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 // ─── PreviewField ─────────────────────────────────────────────────────────────
