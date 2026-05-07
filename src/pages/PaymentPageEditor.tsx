@@ -541,20 +541,18 @@ const PaymentPageEditor = () => {
   if (previewMode) {
     return (
       <div className="h-screen flex flex-col bg-background">
-        <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background">
+        <div className="relative flex items-center justify-between border-b border-border px-4 py-2.5 bg-background">
           <div className="flex items-center gap-3">
             <Button variant="outline" size="sm" onClick={() => setPreviewMode(false)} className="gap-2">
               <ArrowLeft className="h-4 w-4" /> Exit Preview
             </Button>
             <span className="text-sm text-muted-foreground hidden sm:block">Previewing as customers see it</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center border border-border rounded-md overflow-hidden">
-              <button onClick={() => setViewMode("desktop")} className={`p-2 ${viewMode === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground"}`}><Monitor className="h-4 w-4" /></button>
-              <button onClick={() => setViewMode("mobile")}  className={`p-2 ${viewMode === "mobile"  ? "bg-secondary text-foreground" : "text-muted-foreground"}`}><Smartphone className="h-4 w-4" /></button>
-            </div>
-            <Button size="sm" onClick={() => { setPreviewMode(false); setPublishDialogOpen(true); }}>Publish</Button>
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center border border-border rounded-md overflow-hidden bg-background">
+            <button onClick={() => setViewMode("desktop")} className={`p-2 ${viewMode === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}><Monitor className="h-4 w-4" /></button>
+            <button onClick={() => setViewMode("mobile")}  className={`p-2 ${viewMode === "mobile"  ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}><Smartphone className="h-4 w-4" /></button>
           </div>
+          <Button size="sm" onClick={() => { setPreviewMode(false); setPublishDialogOpen(true); }}>Publish</Button>
         </div>
         <div className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6">
           <div className={`mx-auto bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${viewMode === "mobile" ? "max-w-sm" : "max-w-5xl"}`}>
@@ -570,7 +568,7 @@ const PaymentPageEditor = () => {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-border px-3 sm:px-4 py-2.5 bg-background z-10 flex-wrap gap-2">
+      <div className="relative flex items-center justify-between border-b border-border px-3 sm:px-4 py-2.5 bg-background z-10">
         <div className="flex items-center gap-2 min-w-0">
           <Button variant="outline" size="sm" onClick={() => navigate("/payment-pages")} className="gap-1.5 flex-shrink-0">
             <ArrowLeft className="h-4 w-4" /><span className="hidden sm:inline">Back</span>
@@ -583,16 +581,17 @@ const PaymentPageEditor = () => {
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+        {/* Centered toggle */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center border border-border rounded-md overflow-hidden bg-background">
+          <button onClick={() => setViewMode("desktop")} className={`p-2 ${viewMode === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}><Monitor className="h-4 w-4" /></button>
+          <button onClick={() => setViewMode("mobile")}  className={`p-2 ${viewMode === "mobile"  ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}><Smartphone className="h-4 w-4" /></button>
+        </div>
+        <div className="flex items-center gap-1.5 sm:gap-2">
           {unsavedChanges && (
             <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hidden sm:flex" onClick={handleSave}>
               <Save className="h-3.5 w-3.5" /> Save Draft
             </Button>
           )}
-          <div className="flex items-center border border-border rounded-md overflow-hidden">
-            <button onClick={() => setViewMode("desktop")} className={`p-2 ${viewMode === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}><Monitor className="h-4 w-4" /></button>
-            <button onClick={() => setViewMode("mobile")}  className={`p-2 ${viewMode === "mobile"  ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}><Smartphone className="h-4 w-4" /></button>
-          </div>
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPreviewMode(true)}>
             <Eye className="h-4 w-4" /><span className="hidden sm:inline">Preview</span>
           </Button>
@@ -887,165 +886,204 @@ const EditorCanvas = ({
       </div>
 
       {/* Two-column grid — mobile becomes single-column with step navigation */}
-      <div className={`max-w-6xl mx-auto px-4 sm:px-6 py-8 ${isMobile ? "flex flex-col" : "grid grid-cols-1 lg:grid-cols-[1fr_420px]"} gap-10 items-start`}>
-
-        {/* ── LEFT: Content ── (hidden on mobile when on payment step) */}
-        {(!isMobile || mobileStep === "content") && (
-        <div className="space-y-8">
-          {visibleSections.map((section) => (
-            <SectionBlock
-              key={section.id}
-              section={section}
-              pageData={pageData}
-              editable={editable}
-              onUpdate={(data) => onUpdateSectionData?.(section.id, data)}
-              onRemove={() => onRemoveSection?.(section.id)}
-            />
-          ))}
-
-          {/* Restore hidden sections */}
-          {editable && hiddenSections.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-gray-200">
-              {hiddenSections.map((s) => (
-                <button key={s.id} onClick={() => onRestoreSection?.(s.id)}
-                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-dashed border-gray-300 text-gray-500 hover:border-primary hover:text-primary transition-colors">
-                  <Plus className="h-3 w-3" />{SECTION_META[s.type]?.label}
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* Trust row */}
-          <div className="flex flex-wrap items-center gap-5 pt-2 border-t border-gray-100 text-xs text-gray-400">
-            <div className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-emerald-500" />100% Secure</div>
-            <div className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-blue-400" />Razorpay Protected</div>
-            <div className="flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /><span className="ml-0.5">4.9 / 5 rating</span></div>
-          </div>
-
-          {/* Mobile: Proceed button */}
-          {isMobile && (
-            <button
-              onClick={() => setMobileStep("payment")}
-              className="w-full bg-primary text-white rounded-xl py-3.5 text-sm font-semibold shadow-lg shadow-primary/20"
-            >
-              Proceed to Payment →
-            </button>
-          )}
-        </div>
-        )}
-
-        {/* ── RIGHT: Payment Details ── (full width on mobile payment step) */}
-        {(!isMobile || mobileStep === "payment") && (
-        <div className={isMobile ? "w-full" : "lg:sticky lg:top-20"}>
-          {editable ? (
-            /* Editor payment panel */
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              {/* Heading */}
-              <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-                {isMobile && mobileStep === "payment" && (
-                  <button onClick={() => setMobileStep("content")} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary mb-3 transition-colors">
-                    <ArrowLeft className="h-3.5 w-3.5" /> Back to details
-                  </button>
-                )}
-                <h3 className="text-xl font-bold text-gray-900">Payment Details</h3>
-                <div className="w-8 h-0.5 bg-primary mt-1.5" />
-              </div>
-
-              {/* Fields */}
-              <div className="px-6 py-4 space-y-1">
-                {pageData.formFields.map((field, index) => (
-                  <InlineFieldRow
-                    key={field.id}
-                    field={field}
-                    index={index}
-                    onUpdate={(patch) => onUpdateField?.(field.id, patch)}
-                    onRemove={() => onRemoveField?.(field.id)}
-                    onDragStart={() => onDragStart?.(index)}
-                    onDragOver={(e) => onDragOver?.(e, index)}
-                    onDragEnd={() => onDragEnd?.()}
+      {isMobile ? (
+        /* ── Mobile: stepped layout ── */
+        <div className="flex flex-col min-h-[calc(100vh-56px)]">
+          {mobileStep === "content" ? (
+            <>
+              <div className="flex-1 px-4 py-8 pb-24 space-y-8">
+                {visibleSections.map((section) => (
+                  <SectionBlock
+                    key={section.id}
+                    section={section}
+                    pageData={pageData}
+                    editable={editable}
+                    onUpdate={(data) => onUpdateSectionData?.(section.id, data)}
+                    onRemove={() => onRemoveSection?.(section.id)}
                   />
                 ))}
-
-                {/* Add new */}
-                <div className="pt-3 pb-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm text-gray-400">+ Add new</span>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="text-xs text-primary border border-primary/30 rounded px-2.5 py-1 hover:bg-primary/5 transition-colors font-medium">
-                          Input field
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-52">
-                        {INPUT_TYPES.map(({ type, label, icon: Icon }) => (
-                          <DropdownMenuItem key={type} onClick={() => onAddInputField?.(type)} className="gap-2 text-sm">
-                            <Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <button className="text-xs text-primary border border-primary/30 rounded px-2.5 py-1 hover:bg-primary/5 transition-colors font-medium">
-                          Price field
-                        </button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="start" className="w-60">
-                        {AMOUNT_TYPES.map(({ type, label, desc }) => (
-                          <DropdownMenuItem key={type} onClick={() => onAddAmountField?.(type)} className="flex-col items-start py-2.5">
-                            <span className="text-sm font-medium text-foreground">{label}</span>
-                            <span className="text-xs text-muted-foreground mt-0.5">{desc}</span>
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                {editable && hiddenSections.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-gray-200">
+                    {hiddenSections.map((s) => (
+                      <button key={s.id} onClick={() => onRestoreSection?.(s.id)}
+                        className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-dashed border-gray-300 text-gray-500 hover:border-primary hover:text-primary transition-colors">
+                        <Plus className="h-3 w-3" />{SECTION_META[s.type]?.label}
+                      </button>
+                    ))}
                   </div>
+                )}
+                <div className="flex flex-wrap items-center gap-5 pt-2 border-t border-gray-100 text-xs text-gray-400">
+                  <div className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-emerald-500" />100% Secure</div>
+                  <div className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-blue-400" />Razorpay Protected</div>
+                  <div className="flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /><span className="ml-0.5">4.9 / 5 rating</span></div>
                 </div>
               </div>
-
-              {/* Footer */}
-              <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-4">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {["UPI", "Visa", "Mastercard", "RuPay", "Net Banking"].map((l) => (
-                    <span key={l} className="text-[10px] text-gray-400 border border-gray-200 rounded px-2 py-0.5 font-medium">{l}</span>
-                  ))}
-                </div>
-                <button className="w-full bg-primary text-white rounded-lg py-3 text-sm font-semibold opacity-60 cursor-not-allowed" disabled>
-                  {pageData.buttonText}{totalAmount > 0 ? ` — ₹${totalAmount.toLocaleString("en-IN")}` : ""}
+              {/* Sticky proceed button */}
+              <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] z-10">
+                <button
+                  onClick={() => setMobileStep("payment")}
+                  className="w-full bg-primary text-white rounded-xl py-3.5 text-sm font-semibold shadow-lg shadow-primary/20"
+                >
+                  Proceed to Payment →
                 </button>
-                <p className="text-center text-[11px] text-gray-400">
-                  Powered by <span className="font-semibold" style={{ color: "#0066FF" }}>Razorpay</span>
-                </p>
               </div>
-            </div>
+            </>
           ) : (
-            /* Preview payment card */
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-                <h3 className="text-xl font-bold text-gray-900">Payment Details</h3>
-                <div className="w-8 h-0.5 bg-primary mt-1.5" />
-              </div>
-              <div className="px-6 py-4 space-y-4">
-                {pageData.formFields.map((field) => <PreviewField key={field.id} field={field} />)}
-                <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                  {["UPI", "Visa", "Mastercard", "RuPay"].map((l) => (
-                    <span key={l} className="text-[10px] text-gray-400 border border-gray-200 rounded px-2 py-0.5 font-medium">{l}</span>
-                  ))}
-                </div>
-                <button className="w-full bg-primary text-white rounded-lg py-3 text-sm font-semibold">
-                  {pageData.buttonText}{totalAmount > 0 ? ` — ₹${totalAmount.toLocaleString("en-IN")}` : ""}
-                </button>
-                <p className="text-center text-[11px] text-gray-400">Powered by <span className="font-semibold" style={{ color: "#0066FF" }}>Razorpay</span></p>
-              </div>
+            /* Mobile payment step */
+            <div className="flex-1 px-4 pt-4 pb-8">
+              <button onClick={() => setMobileStep("content")} className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-primary mb-4 transition-colors">
+                <ArrowLeft className="h-3.5 w-3.5" /> Back to details
+              </button>
+              <PaymentPanel editable={editable} pageData={pageData} totalAmount={totalAmount}
+                onUpdateField={onUpdateField} onRemoveField={onRemoveField}
+                onAddInputField={onAddInputField} onAddAmountField={onAddAmountField}
+                onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
+              />
             </div>
           )}
         </div>
-        )}
-      </div>
+      ) : (
+        /* Desktop: two-column grid */
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-10 items-start">
+          {/* LEFT: content sections */}
+          <div className="space-y-8">
+            {visibleSections.map((section) => (
+              <SectionBlock key={section.id} section={section} pageData={pageData} editable={editable}
+                onUpdate={(data) => onUpdateSectionData?.(section.id, data)}
+                onRemove={() => onRemoveSection?.(section.id)}
+              />
+            ))}
+            {editable && hiddenSections.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-dashed border-gray-200">
+                {hiddenSections.map((s) => (
+                  <button key={s.id} onClick={() => onRestoreSection?.(s.id)}
+                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border border-dashed border-gray-300 text-gray-500 hover:border-primary hover:text-primary transition-colors">
+                    <Plus className="h-3 w-3" />{SECTION_META[s.type]?.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div className="flex flex-wrap items-center gap-5 pt-2 border-t border-gray-100 text-xs text-gray-400">
+              <div className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5 text-emerald-500" />100% Secure</div>
+              <div className="flex items-center gap-1.5"><CreditCard className="h-3.5 w-3.5 text-blue-400" />Razorpay Protected</div>
+              <div className="flex items-center gap-1"><Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" /><span className="ml-0.5">4.9 / 5 rating</span></div>
+            </div>
+          </div>
+          {/* RIGHT: payment panel */}
+          <div className="lg:sticky lg:top-20">
+            <PaymentPanel editable={editable} pageData={pageData} totalAmount={totalAmount}
+              onUpdateField={onUpdateField} onRemoveField={onRemoveField}
+              onAddInputField={onAddInputField} onAddAmountField={onAddAmountField}
+              onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+// ─── PaymentPanel ─────────────────────────────────────────────────────────────
+// Shared payment fields panel used in both desktop and mobile payment step.
+
+interface PaymentPanelProps {
+  editable: boolean;
+  pageData: PageData;
+  totalAmount: number;
+  onUpdateField?: (id: string, patch: Partial<FormField>) => void;
+  onRemoveField?: (id: string) => void;
+  onAddInputField?: (type: InputFieldType) => void;
+  onAddAmountField?: (type: AmountFieldType) => void;
+  onDragStart?: (index: number) => void;
+  onDragOver?: (e: React.DragEvent, index: number) => void;
+  onDragEnd?: () => void;
+}
+
+const PaymentPanel = ({
+  editable, pageData, totalAmount,
+  onUpdateField, onRemoveField, onAddInputField, onAddAmountField,
+  onDragStart, onDragOver, onDragEnd,
+}: PaymentPanelProps) => (
+  editable ? (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+        <h3 className="text-xl font-bold text-gray-900">Payment Details</h3>
+        <div className="w-8 h-0.5 bg-primary mt-1.5" />
+      </div>
+      <div className="px-6 py-4 space-y-1">
+        {pageData.formFields.map((field, index) => (
+          <InlineFieldRow key={field.id} field={field} index={index}
+            onUpdate={(patch) => onUpdateField?.(field.id, patch)}
+            onRemove={() => onRemoveField?.(field.id)}
+            onDragStart={() => onDragStart?.(index)}
+            onDragOver={(e) => onDragOver?.(e, index)}
+            onDragEnd={() => onDragEnd?.()}
+          />
+        ))}
+        <div className="pt-3 pb-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm text-gray-400">+ Add new</span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-xs text-primary border border-primary/30 rounded px-2.5 py-1 hover:bg-primary/5 transition-colors font-medium">Input field</button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-52">
+                {INPUT_TYPES.map(({ type, label, icon: Icon }) => (
+                  <DropdownMenuItem key={type} onClick={() => onAddInputField?.(type)} className="gap-2 text-sm">
+                    <Icon className="h-3.5 w-3.5 text-muted-foreground" />{label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="text-xs text-primary border border-primary/30 rounded px-2.5 py-1 hover:bg-primary/5 transition-colors font-medium">Price field</button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-60">
+                {AMOUNT_TYPES.map(({ type, label, desc }) => (
+                  <DropdownMenuItem key={type} onClick={() => onAddAmountField?.(type)} className="flex-col items-start py-2.5">
+                    <span className="text-sm font-medium text-foreground">{label}</span>
+                    <span className="text-xs text-muted-foreground mt-0.5">{desc}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+      <div className="px-6 pb-6 pt-2 border-t border-gray-100 space-y-4">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {["UPI", "Visa", "Mastercard", "RuPay", "Net Banking"].map((l) => (
+            <span key={l} className="text-[10px] text-gray-400 border border-gray-200 rounded px-2 py-0.5 font-medium">{l}</span>
+          ))}
+        </div>
+        <button className="w-full bg-primary text-white rounded-lg py-3 text-sm font-semibold opacity-60 cursor-not-allowed" disabled>
+          {pageData.buttonText}{totalAmount > 0 ? ` — ₹${totalAmount.toLocaleString("en-IN")}` : ""}
+        </button>
+        <p className="text-center text-[11px] text-gray-400">Powered by <span className="font-semibold" style={{ color: "#0066FF" }}>Razorpay</span></p>
+      </div>
+    </div>
+  ) : (
+    <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+      <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+        <h3 className="text-xl font-bold text-gray-900">Payment Details</h3>
+        <div className="w-8 h-0.5 bg-primary mt-1.5" />
+      </div>
+      <div className="px-6 py-4 space-y-4">
+        {pageData.formFields.map((field) => <PreviewField key={field.id} field={field} />)}
+        <div className="flex items-center gap-1.5 flex-wrap pt-1">
+          {["UPI", "Visa", "Mastercard", "RuPay"].map((l) => (
+            <span key={l} className="text-[10px] text-gray-400 border border-gray-200 rounded px-2 py-0.5 font-medium">{l}</span>
+          ))}
+        </div>
+        <button className="w-full bg-primary text-white rounded-lg py-3 text-sm font-semibold">
+          {pageData.buttonText}{totalAmount > 0 ? ` — ₹${totalAmount.toLocaleString("en-IN")}` : ""}
+        </button>
+        <p className="text-center text-[11px] text-gray-400">Powered by <span className="font-semibold" style={{ color: "#0066FF" }}>Razorpay</span></p>
+      </div>
+    </div>
+  )
+);
 
 // ─── InlineFieldRow ───────────────────────────────────────────────────────────
 // Renders each payment field as an actual inline input control, Razorpay-style.
