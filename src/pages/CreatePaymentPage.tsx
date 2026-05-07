@@ -124,11 +124,9 @@ const CreatePaymentPage = () => {
                 <img src={t.image} alt={t.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
               </div>
               <div className="p-4 flex flex-col flex-1">
-                <div className="mb-1">
-                  <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{t.category}</span>
-                  <h3 className="font-semibold text-foreground text-sm mt-0.5">{t.title}</h3>
-                </div>
-                <p className="text-xs text-muted-foreground mb-4 line-clamp-2 flex-1">{t.desc}</p>
+                <h3 className="font-semibold text-foreground text-sm mb-1">{t.title}</h3>
+                <p className="text-xs text-muted-foreground mb-3 line-clamp-2 flex-1">{t.desc}</p>
+                <span className="inline-block self-start px-2 py-0.5 rounded-full bg-muted text-[10px] font-medium text-muted-foreground mb-3">{t.category}</span>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => openPreview(t)}>
                     <Eye className="h-3.5 w-3.5" /> Preview
