@@ -239,6 +239,7 @@ const categoryLabel = (cat: PageData["category"]) =>
 
 const COMPANY_LOGO = "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=64&h=64&fit=crop";
 
+
 const TEMPLATE_CONFIGS: Record<string, Partial<PageData>> = {
   "School / College Fee Collection": {
     merchantName: "Company",
@@ -414,14 +415,17 @@ const PaymentPageEditor = () => {
   const [searchParams] = useSearchParams();
 
   const [viewMode,              setViewMode]              = useState<"desktop" | "mobile">("desktop");
-  const [rightPanel,            setRightPanel]            = useState<"settings" | "receipts" | null>(null);
   const [previewMode,           setPreviewMode]           = useState(false);
   const [publishDialogOpen,     setPublishDialogOpen]     = useState(false);
   const [postPublishDialogOpen, setPostPublishDialogOpen] = useState(false);
-  const [shareDialogOpen,       setShareDialogOpen]       = useState(false);
+  const [receiptsDialogOpen,    setReceiptsDialogOpen]    = useState(false);
+  const [settingsDialogOpen,    setSettingsDialogOpen]    = useState(false);
   const [publishing,            setPublishing]            = useState(false);
-  const [settingsTab,           setSettingsTab]           = useState("page");
   const [unsavedChanges,        setUnsavedChanges]        = useState(false);
+
+  // Settings modal state
+  const [pageExpiry,            setPageExpiry]            = useState("no-expiry");
+  const [successAction,         setSuccessAction]         = useState<"message" | "redirect" | null>(null);
 
   const [receiptDeliveryMode, setReceiptDeliveryMode] = useState<"auto" | "manual">("auto");
   const [receiptChannel,      setReceiptChannel]       = useState<"email" | "whatsapp" | "both">("email");
@@ -595,14 +599,11 @@ const PaymentPageEditor = () => {
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPreviewMode(true)}>
             <Eye className="h-4 w-4" /><span className="hidden sm:inline">Preview</span>
           </Button>
-          <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "receipts" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "receipts" ? null : "receipts")}>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setReceiptsDialogOpen(true)}>
             <Receipt className="h-4 w-4" /><span className="hidden sm:inline">Receipts</span>
           </Button>
-          <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "settings" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}>
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSettingsDialogOpen(true)}>
             <Settings className="h-4 w-4" /><span className="hidden sm:inline">Settings</span>
-          </Button>
-          <Button variant="outline" size="sm" className="hidden sm:flex gap-1.5" onClick={() => setShareDialogOpen(true)}>
-            <Share2 className="h-4 w-4" /> Share
           </Button>
           <Button size="sm" onClick={() => setPublishDialogOpen(true)}>Publish</Button>
         </div>
@@ -633,113 +634,160 @@ const PaymentPageEditor = () => {
           </div>
         </div>
 
-        {/* Settings panel */}
-        {rightPanel === "settings" && (
-          <div className="w-80 border-l border-border flex flex-col bg-background overflow-y-auto flex-shrink-0">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-              <span className="text-sm font-semibold">Page Settings</span>
-              <button onClick={() => setRightPanel(null)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
-            </div>
-            <Tabs value={settingsTab} onValueChange={setSettingsTab} className="flex-1">
-              <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-4">
-                <TabsTrigger value="page" className="text-xs">Page</TabsTrigger>
-                <TabsTrigger value="payment" className="text-xs">Payment</TabsTrigger>
-                <TabsTrigger value="seo" className="text-xs">SEO</TabsTrigger>
-              </TabsList>
-              <TabsContent value="page" className="p-4 space-y-4">
-                <div><label className="text-xs font-medium">Merchant / Business Name</label>
-                  <Input value={pageData.merchantName} onChange={(e) => updatePage({ merchantName: e.target.value })} className="mt-1.5" /></div>
-                <div><label className="text-xs font-medium">Logo Initial</label>
-                  <Input value={pageData.logoInitial} onChange={(e) => updatePage({ logoInitial: e.target.value })} className="mt-1.5 w-20" maxLength={2} /></div>
-                <div><label className="text-xs font-medium">Category</label>
-                  <Select value={pageData.category} onValueChange={(v) => updatePage({ category: v as PageData["category"] })}>
-                    <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="education">Education / Course</SelectItem>
-                      <SelectItem value="services">Professional Service</SelectItem>
-                      <SelectItem value="ecommerce">E-commerce / Product</SelectItem>
-                      <SelectItem value="events">Events</SelectItem>
-                    </SelectContent>
-                  </Select></div>
-                <div><label className="text-xs font-medium">Success Message</label>
-                  <Textarea value={pageData.successMessage} onChange={(e) => updatePage({ successMessage: e.target.value })} rows={2} className="mt-1.5" /></div>
-                <div><label className="text-xs font-medium">Redirect URL (after payment)</label>
-                  <Input value={pageData.redirectUrl} onChange={(e) => updatePage({ redirectUrl: e.target.value })} placeholder="https://example.com/thank-you" className="mt-1.5" /></div>
-              </TabsContent>
-              <TabsContent value="payment" className="p-4 space-y-4">
-                <div><label className="text-xs font-medium">Button Text</label>
-                  <Input value={pageData.buttonText} onChange={(e) => updatePage({ buttonText: e.target.value })} className="mt-1.5" /></div>
-              </TabsContent>
-              <TabsContent value="seo" className="p-4 space-y-4">
-                <div><label className="text-xs font-medium">Page Slug</label>
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <span className="text-xs text-muted-foreground whitespace-nowrap">rzp.io/rzp/</span>
-                    <Input value={pageData.slug} onChange={(e) => updatePage({ slug: e.target.value })} className="flex-1" />
-                  </div></div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        )}
+      </div>
 
-        {/* Receipts panel */}
-        {rightPanel === "receipts" && (
-          <div className="w-80 border-l border-border flex flex-col bg-background overflow-y-auto flex-shrink-0">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-2"><Receipt className="h-4 w-4" /><span className="text-sm font-semibold">Payment Receipts</span></div>
-              <button onClick={() => setRightPanel(null)} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
+      {/* ── Receipts Modal ───────────────────────────────────────────────────── */}
+      <Dialog open={receiptsDialogOpen} onOpenChange={setReceiptsDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-foreground" />
+              <DialogTitle>Payment Receipts Settings</DialogTitle>
             </div>
-            <div className="p-4 space-y-5">
-              <div className="flex items-center justify-between">
-                <div><p className="text-sm font-medium">Enable receipts</p><p className="text-xs text-muted-foreground mt-0.5">Send receipt after payment</p></div>
-                <Switch checked={pageData.sendReceipt} onCheckedChange={(v) => updatePage({ sendReceipt: v })} />
+          </DialogHeader>
+          <div className="space-y-5 py-1">
+            {/* Send automatically */}
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input type="radio" name="receiptMode" checked={pageData.sendReceipt} onChange={() => updatePage({ sendReceipt: true })}
+                className="mt-0.5 accent-primary" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Send Receipts Automatically</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Receipts are emailed to customers immediately after payment.</p>
               </div>
-              {pageData.sendReceipt && (
-                <>
-                  <div className="space-y-2"><p className="text-xs font-medium">Receipt Type</p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[{ label: "Standard", gst: false, sub: "Basic receipt" }, { label: "GST Receipt", gst: true, sub: "GST-compliant" }].map(({ label, gst, sub }) => (
-                        <button key={label} onClick={() => updatePage({ gstEnabled: gst })}
-                          className={`p-3 rounded-md border text-left ${pageData.gstEnabled === gst ? "border-primary bg-primary/5" : "border-border"}`}>
-                          <p className={`text-xs font-medium ${pageData.gstEnabled === gst ? "text-primary" : "text-foreground"}`}>{label}</p>
-                          <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="space-y-2"><p className="text-xs font-medium">Delivery</p>
-                    <Select value={receiptDeliveryMode} onValueChange={(v) => setReceiptDeliveryMode(v as any)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="auto">Automatic (on payment)</SelectItem>
-                        <SelectItem value="manual">Manual (from transactions)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2"><p className="text-xs font-medium">Send via</p>
-                    <Select value={receiptChannel} onValueChange={(v) => setReceiptChannel(v as any)}>
-                      <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="email">Email only</SelectItem>
-                        <SelectItem value="whatsapp">WhatsApp only</SelectItem>
-                        <SelectItem value="both">Email + WhatsApp</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2"><p className="text-xs font-medium">Receipt Numbering</p>
-                    <div className="flex gap-2">
-                      <div className="flex-1"><p className="text-[10px] text-muted-foreground mb-1">Prefix</p>
-                        <Input value={receiptPrefix} onChange={(e) => setReceiptPrefix(e.target.value.toUpperCase())} className="h-8 text-xs font-mono" maxLength={6} /></div>
-                      <div className="flex-1"><p className="text-[10px] text-muted-foreground mb-1">Start from</p>
-                        <Input value={receiptStartNumber} onChange={(e) => setReceiptStartNumber(e.target.value)} className="h-8 text-xs font-mono" /></div>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground">Preview: <span className="font-mono text-foreground">{receiptPrefix}-{receiptStartNumber}</span></p>
-                  </div>
-                </>
+            </label>
+            {/* Don't send */}
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input type="radio" name="receiptMode" checked={!pageData.sendReceipt} onChange={() => updatePage({ sendReceipt: false })}
+                className="mt-0.5 accent-primary" />
+              <div>
+                <p className="text-sm font-semibold text-foreground">Don't Send Receipts Automatically</p>
+                <p className="text-xs text-muted-foreground mt-0.5">You may send receipts later from dashboard. Your own reference ID may be added too.</p>
+              </div>
+            </label>
+            <div className="flex items-center gap-4 text-xs">
+              <a href="#" className="text-primary hover:underline">Sample Receipt ↗</a>
+              <a href="#" className="text-primary hover:underline">Learn More ↗</a>
+            </div>
+            <div className="border-t border-border pt-4 space-y-3">
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" className="accent-primary w-4 h-4" />
+                <span className="text-sm text-foreground">Show Customer's Information on Receipt</span>
+              </label>
+              <div className="space-y-1">
+                <label className="flex items-center gap-2.5 cursor-not-allowed opacity-50">
+                  <input type="checkbox" disabled className="w-4 h-4" />
+                  <span className="text-sm text-foreground">Show 80g Details on Receipt</span>
+                  <span className="w-4 h-4 rounded-full border border-gray-400 text-gray-400 text-[10px] flex items-center justify-center flex-shrink-0">?</span>
+                </label>
+                <button className="text-xs text-primary hover:underline pl-7">+ Add your 80g details</button>
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button variant="outline" onClick={() => setReceiptsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => setReceiptsDialogOpen(false)}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Settings Modal ───────────────────────────────────────────────────── */}
+      <Dialog open={settingsDialogOpen} onOpenChange={setSettingsDialogOpen}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-2">
+              <Settings className="h-5 w-5 text-foreground" />
+              <DialogTitle>Page Settings</DialogTitle>
+            </div>
+          </DialogHeader>
+          <div className="space-y-5 py-1 divide-y divide-border">
+            {/* URL */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground">URL of this page</label>
+              <Input value={pageData.pageUrl} readOnly className="text-sm text-muted-foreground bg-muted" />
+            </div>
+
+            {/* Theme */}
+            <div className="pt-4 space-y-2">
+              <p className="text-sm font-medium text-foreground">Theme</p>
+              <div className="flex items-center gap-5">
+                {["Dark", "Light"].map((t) => (
+                  <label key={t} className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="theme" defaultChecked={t === "Light"} className="accent-primary" />
+                    <span className="text-sm">{t}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Page Expiry */}
+            <div className="pt-4 space-y-2">
+              <p className="text-sm font-medium text-foreground">Page Expiry Date</p>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" defaultChecked className="accent-primary w-4 h-4" />
+                <span className="text-sm">No Expiry</span>
+              </label>
+              <Input type="text" placeholder="DD-MM-YYYY" className="text-sm w-40" disabled />
+            </div>
+
+            {/* Action after payment */}
+            <div className="pt-4 space-y-2">
+              <p className="text-sm font-medium text-foreground">Action after successful payment?</p>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={successAction === "message"} onChange={() => setSuccessAction(successAction === "message" ? null : "message")}
+                  className="accent-primary w-4 h-4" />
+                <span className="text-sm">Show custom message</span>
+              </label>
+              {successAction === "message" && (
+                <Textarea value={pageData.successMessage} onChange={(e) => updatePage({ successMessage: e.target.value })} rows={2} className="text-sm mt-1" placeholder="Your payment was successful!" />
+              )}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={successAction === "redirect"} onChange={() => setSuccessAction(successAction === "redirect" ? null : "redirect")}
+                  className="accent-primary w-4 h-4" />
+                <span className="text-sm">Redirect to your website</span>
+              </label>
+              {successAction === "redirect" && (
+                <Input value={pageData.redirectUrl} onChange={(e) => updatePage({ redirectUrl: e.target.value })} placeholder="https://example.com/thank-you" className="text-sm mt-1" />
               )}
             </div>
+
+            {/* Hyperlink Button */}
+            <div className="pt-4 space-y-2">
+              <p className="text-sm font-medium text-foreground">Get Hyperlink Button</p>
+              <p className="text-xs text-muted-foreground">Put a hyperlink button on your website. Your customers can pay from your website by clicking on this Payment Button.</p>
+              <Button variant="outline" size="sm" disabled className="opacity-50">Create</Button>
+              <p className="text-[11px] text-muted-foreground">You can customize Embed Button after creating Payment Page</p>
+            </div>
+
+            {/* Plugins */}
+            <div className="pt-4 space-y-4">
+              <p className="text-sm font-medium text-foreground">Plugins and Add-ons</p>
+              {/* Tracking */}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm text-foreground">Facebook Pixel or Google Tracking</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Track your page metrics with analytics IDs</p>
+                </div>
+                <Button variant="outline" size="sm" className="flex-shrink-0">Configure</Button>
+              </div>
+              {/* Shiprocket */}
+              <div className="flex items-start justify-between gap-3 border border-border rounded-xl p-3">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-medium text-foreground">Shiprocket</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-700 font-semibold px-1.5 py-0.5 rounded-full">New</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Auto-create orders on Shiprocket after payment. eCommerce shipping with low rates and wide reach.</p>
+                </div>
+                <Button variant="outline" size="sm" className="flex-shrink-0">Enable</Button>
+              </div>
+            </div>
           </div>
-        )}
-      </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <Button variant="outline" onClick={() => setSettingsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={() => setSettingsDialogOpen(false)}>Save</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Publish Dialog */}
       <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
@@ -857,13 +905,13 @@ const EditorCanvas = ({
   return (
     <div className="bg-white min-h-screen">
       {/* Merchant nav */}
-      <div className="border-b border-gray-100 bg-white/95 backdrop-blur-md sticky top-0 z-20">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+      <div className="bg-white/95 backdrop-blur-md sticky top-0 z-20">
+        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
           <div className="flex items-center gap-3">
             {pageData.logoUrl ? (
-              <img src={pageData.logoUrl} alt="logo" className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-gray-100" />
+              <img src={pageData.logoUrl} alt="logo" className="w-12 h-12 rounded-xl object-cover flex-shrink-0 border border-gray-100" />
             ) : (
-              <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0"
                 style={{ backgroundColor: pageData.brandColor }}>
                 {pageData.logoInitial}
               </div>
@@ -872,15 +920,11 @@ const EditorCanvas = ({
               <input
                 value={pageData.merchantName}
                 onChange={(e) => onUpdatePage?.({ merchantName: e.target.value })}
-                className="font-semibold text-sm text-gray-900 bg-transparent border-none focus:outline-none focus:bg-gray-50 rounded px-1 hover:bg-gray-50 max-w-xs"
+                className="font-bold text-lg text-gray-900 bg-transparent border-none focus:outline-none focus:bg-gray-50 rounded px-1 hover:bg-gray-50 max-w-xs"
               />
             ) : (
-              <span className="font-semibold text-sm text-gray-900">{pageData.merchantName}</span>
+              <span className="font-bold text-lg text-gray-900">{pageData.merchantName}</span>
             )}
-          </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-400">
-            <Shield className="h-3.5 w-3.5 text-emerald-500" />
-            Secured by Razorpay
           </div>
         </div>
       </div>
