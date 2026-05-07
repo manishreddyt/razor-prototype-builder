@@ -477,7 +477,6 @@ const PaymentPageEditor = () => {
 
   const [viewMode,              setViewMode]              = useState<"desktop" | "mobile">("desktop");
   const [previewMode,           setPreviewMode]           = useState(false);
-  const [publishDialogOpen,     setPublishDialogOpen]     = useState(false);
   const [postPublishDialogOpen, setPostPublishDialogOpen] = useState(false);
   const [receiptsDialogOpen,    setReceiptsDialogOpen]    = useState(false);
   const [settingsDialogOpen,    setSettingsDialogOpen]    = useState(false);
@@ -933,36 +932,70 @@ const PaymentPageEditor = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Post-Publish Dialog */}
-      <Dialog open={postPublishDialogOpen} onOpenChange={setPostPublishDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="h-12 w-12 rounded-full bg-[hsl(152,69%,91%)] flex items-center justify-center">
-                <CheckCircle2 className="h-6 w-6 text-[hsl(152,69%,30%)]" />
+      {/* Full-screen post-publish success overlay */}
+      {postPublishDialogOpen && (
+        <div className="fixed inset-0 z-50 bg-background flex flex-col overflow-y-auto">
+          {/* Top bar */}
+          <div className="flex items-center justify-between border-b border-border px-4 py-2.5 flex-shrink-0">
+            <Button variant="ghost" size="sm" onClick={() => setPostPublishDialogOpen(false)} className="gap-2">
+              <ArrowLeft className="h-4 w-4" /> Back to Editor
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => { setPostPublishDialogOpen(false); navigate("/payment-pages"); }}>
+              View All Pages
+            </Button>
+          </div>
+
+          {/* Centered content */}
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="max-w-xl w-full space-y-6">
+              {/* Success header */}
+              <div className="text-center space-y-3">
+                <div className="mx-auto h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
+                  <CheckCircle2 className="h-9 w-9 text-green-600" />
+                </div>
+                <h1 className="text-2xl font-bold text-foreground">Payment Page Published!</h1>
+                <p className="text-muted-foreground">Your page is live and ready to accept payments.</p>
               </div>
-              <div>
-                <DialogTitle className="text-xl">Payment Page Published!</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-0.5">Your page is live and ready to accept payments</p>
+
+              {/* Page URL */}
+              <div className="blade-card p-4 space-y-2">
+                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your Payment Page URL</label>
+                <div className="flex items-center gap-2">
+                  <Input value={`https://rzp.io/rzp/${pageData.slug}`} readOnly className="flex-1 text-sm font-mono" />
+                  <Button variant="outline" size="sm" onClick={copyLink}><Copy className="h-4 w-4" /></Button>
+                  <Button variant="outline" size="sm" onClick={() => window.open(`/payment/${pageData.slug}`, "_blank")}><ExternalLink className="h-4 w-4" /></Button>
+                </div>
               </div>
-            </div>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="blade-card p-4">
-              <label className="text-xs font-semibold mb-2 block">Your Payment Page URL</label>
-              <div className="flex items-center gap-2">
-                <Input value={`https://rzp.io/rzp/${pageData.slug}`} readOnly className="flex-1 text-sm font-mono" />
-                <Button variant="outline" size="sm" onClick={copyLink}><Copy className="h-4 w-4 mr-1" />Copy</Button>
-                <Button variant="outline" size="sm" onClick={() => window.open(`/payment/${pageData.slug}`, "_blank")}><ExternalLink className="h-4 w-4 mr-1" />Open</Button>
+
+              {/* Action grid */}
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { icon: Receipt,      label: "Receipts",   desc: "Configure receipts",    action: () => setReceiptsDialogOpen(true) },
+                  { icon: Settings,     label: "Settings",   desc: "Page settings",         action: () => setSettingsDialogOpen(true) },
+                  { icon: Copy,         label: "Copy Link",  desc: "Copy page URL",         action: copyLink },
+                  { icon: Share2,       label: "WhatsApp",   desc: "Share on WhatsApp",     action: () => toast.success("Shared via WhatsApp") },
+                  { icon: Mail,         label: "Email",      desc: "Share via email",       action: () => toast.success("Shared via Email") },
+                  { icon: ExternalLink, label: "View Page",  desc: "Open live page",        action: () => window.open(`/payment/${pageData.slug}`, "_blank") },
+                ].map(({ icon: Icon, label, desc, action }) => (
+                  <button
+                    key={label}
+                    onClick={action}
+                    className="blade-card p-4 flex flex-col items-center gap-2.5 hover:bg-secondary/70 transition-colors text-center rounded-xl"
+                  >
+                    <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{label}</p>
+                      <p className="text-xs text-muted-foreground">{desc}</p>
+                    </div>
+                  </button>
+                ))}
               </div>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={() => setPostPublishDialogOpen(false)}>Done</Button>
-              <Button className="flex-1" onClick={() => { setPostPublishDialogOpen(false); navigate("/payment-pages"); }}>View All Pages</Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 };

@@ -292,7 +292,7 @@ const PreviewPaymentPanel = ({ config, compact = false }: { config: TemplatePrev
   <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
     <div className={`${compact ? "px-4 pt-4 pb-3" : "px-6 pt-6 pb-4"} border-b border-gray-100`}>
       <h3 className={`${compact ? "text-base" : "text-xl"} font-bold text-gray-900`}>Payment Details</h3>
-      <div className="w-8 h-0.5 mt-1.5" style={{ backgroundColor: config.brandColor }} />
+      <div className="w-8 h-0.5 mt-1.5" style={{ backgroundColor: "#0066FF" }} />
     </div>
     <div className={`${compact ? "px-4 py-3" : "px-6 py-4"} space-y-${compact ? "3" : "4"}`}>
       {config.fields.map((f) => (
@@ -305,7 +305,7 @@ const PreviewPaymentPanel = ({ config, compact = false }: { config: TemplatePrev
               <div className={`flex items-center border border-gray-200 rounded-lg overflow-hidden ${compact ? "h-8" : ""}`}>
                 <span className={`${compact ? "pl-2.5 pr-2 py-2 text-xs" : "pl-3 pr-3 py-2.5 text-sm"} text-gray-600 border-r border-gray-200 bg-gray-50`}>₹</span>
                 <span className={`${compact ? "px-2.5 py-2 text-xs" : "px-3 py-2.5 text-sm"} font-semibold text-gray-900`}>{f.amount!.toLocaleString("en-IN")}</span>
-                <span className="ml-auto mr-3 text-[10px] border rounded px-1.5 py-0.5" style={{ color: config.brandColor, borderColor: config.brandColor + "50" }}>Fixed</span>
+                <span className="ml-auto mr-3 text-[10px] border rounded px-1.5 py-0.5" style={{ color: "#0066FF", borderColor: "#0066FF50" }}>Fixed</span>
               </div>
               {f.amountDesc && <p className="text-[10px] text-gray-400 mt-0.5">{f.amountDesc}</p>}
             </div>
@@ -325,7 +325,7 @@ const PreviewPaymentPanel = ({ config, compact = false }: { config: TemplatePrev
           <span key={l} className="text-[10px] text-gray-400 border border-gray-200 rounded px-2 py-0.5 font-medium">{l}</span>
         ))}
       </div>
-      <button className={`w-full text-white rounded-lg ${compact ? "py-2.5 text-xs" : "py-3 text-sm"} font-semibold`} style={{ backgroundColor: config.brandColor }}>
+      <button className={`w-full text-white rounded-lg ${compact ? "py-2.5 text-xs" : "py-3 text-sm"} font-semibold`} style={{ backgroundColor: "#0066FF" }}>
         {config.buttonText}
       </button>
       <p className="text-center text-[11px] text-gray-400">
@@ -355,11 +355,11 @@ const TemplatePageDesktop = ({ template, config }: { template: Template; config:
       <div className="space-y-8">
         {/* Hero */}
         <div className="space-y-4">
-          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: config.brandColor + "18", color: config.brandColor }}>
+          <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: "#0066FF18", color: "#0066FF" }}>
             <Sparkles className="h-3 w-3" />{CATEGORY_LABELS[template.category] ?? template.category}
           </span>
           <h1 className="text-3xl font-bold text-gray-900 leading-tight">{config.hero.title}</h1>
-          <p className="text-base font-medium" style={{ color: config.brandColor }}>{config.hero.tagline}</p>
+          <p className="text-base font-medium" style={{ color: "#0066FF" }}>{config.hero.tagline}</p>
           <p className="text-gray-600 leading-relaxed max-w-xl">{config.hero.description}</p>
         </div>
 
@@ -393,7 +393,7 @@ const TemplatePageDesktop = ({ template, config }: { template: Template; config:
           <div className="bg-gray-50 rounded-2xl p-6 flex items-start gap-5">
             <img src={config.about.image} alt={config.about.name} className="w-16 h-16 rounded-full object-cover flex-shrink-0 shadow" />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: config.brandColor }}>
+              <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "#0066FF" }}>
                 {template.category === "Education" ? "Your Instructor" : "Your Provider"}
               </p>
               <h3 className="text-base font-semibold text-gray-900">{config.about.name}</h3>
@@ -415,7 +415,7 @@ const TemplatePageDesktop = ({ template, config }: { template: Template; config:
                   </div>
                   <p className="text-sm text-gray-700 leading-relaxed mb-3">"{t.text}"</p>
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: config.brandColor }}>
+                    <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: "#0066FF" }}>
                       {t.name.charAt(0)}
                     </div>
                     <span className="text-xs font-medium text-gray-700">{t.name}</span>
@@ -464,11 +464,11 @@ const TemplatePageMobile = ({
           <div className="flex-1 px-4 py-5 pb-20 space-y-5">
             {/* Hero */}
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: config.brandColor + "18", color: config.brandColor }}>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full" style={{ backgroundColor: "#0066FF18", color: "#0066FF" }}>
                 <Sparkles className="h-2.5 w-2.5" />{CATEGORY_LABELS[template.category] ?? template.category}
               </span>
               <h1 className="text-xl font-bold text-gray-900 leading-tight">{config.hero.title}</h1>
-              <p className="text-xs font-medium" style={{ color: config.brandColor }}>{config.hero.tagline}</p>
+              <p className="text-xs font-medium" style={{ color: "#0066FF" }}>{config.hero.tagline}</p>
               <p className="text-xs text-gray-600 leading-relaxed">{config.hero.description}</p>
             </div>
 
@@ -502,7 +502,7 @@ const TemplatePageMobile = ({
               <div className="bg-gray-50 rounded-xl p-3.5 flex items-start gap-3">
                 <img src={config.about.image} alt={config.about.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0 shadow-sm" />
                 <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: config.brandColor }}>
+                  <p className="text-[9px] font-semibold uppercase tracking-wider mb-0.5" style={{ color: "#0066FF" }}>
                     {template.category === "Education" ? "Your Instructor" : "Your Provider"}
                   </p>
                   <p className="text-xs font-semibold text-gray-900">{config.about.name}</p>
@@ -517,7 +517,7 @@ const TemplatePageMobile = ({
             <button
               onClick={() => setMobileStep("payment")}
               className="w-full rounded-xl py-3 text-sm font-semibold text-white"
-              style={{ backgroundColor: config.brandColor }}
+              style={{ backgroundColor: "#0066FF" }}
             >
               Proceed to Payment →
             </button>
