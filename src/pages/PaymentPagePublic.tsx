@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import EditorPublicView from "@/components/EditorPublicView";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sparkles, ChevronDown, ArrowLeft, Lock } from "lucide-react";
 import { toast } from "sonner";
@@ -81,6 +82,12 @@ const getPublishedPage = (slug: string) => {
     },
   };
 
+  // Check localStorage for editor-published pages
+  try {
+    const stored = JSON.parse(localStorage.getItem("rzp_published_pages") || "{}");
+    if (stored[slug]) return stored[slug];
+  } catch {}
+
   return mockPages[slug] || null;
 };
 
@@ -122,6 +129,11 @@ const PaymentPagePublic = () => {
         </div>
       </div>
     );
+  }
+
+  // Editor-published pages have `sections` array — render with EditorPublicView
+  if (pageData?.sections) {
+    return <EditorPublicView pageData={pageData} />;
   }
 
   const handleSubmit = async (e: React.FormEvent) => {

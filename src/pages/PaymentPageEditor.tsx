@@ -3,13 +3,13 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Monitor, Smartphone, Eye, Settings,
   X, Copy, ExternalLink, Plus,
-  Trash2, GripVertical, ChevronDown,
+  Trash2, GripVertical, ChevronDown, ChevronUp, Camera,
   Save, Loader2, CheckCircle2,
   Receipt, Image as ImageIcon, MoreVertical, Package, DollarSign,
   AlignLeft, Hash, Mail, Phone, Type, Link, CalendarDays, List,
   Share2, Sparkles, Shield, Star, Check, CreditCard, Settings2,
   BarChart2, User, HelpCircle, Play, LayoutGrid, MousePointer, Pencil,
-  Calendar, Tag, MapPin, Clock, Users, Minus,
+  Calendar, Tag, MapPin, Clock, Users, Minus, Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,6 +100,8 @@ interface PageData {
   supportEmail: string;
   supportPhone: string;
   termsText: string;
+  heroStyle: "basic" | "banner";
+  heroBannerImage: string;
 }
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -518,9 +520,13 @@ const PaymentPageEditor = () => {
     supportEmail: "",
     supportPhone: "",
     termsText: "",
+    heroStyle: "banner" as const,
+    heroBannerImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=400&fit=crop",
     ...templateConfig,
     primaryColor: (templateConfig as any)?.brandColor || "#0066FF",
     secondaryColor: "#EEF3FF",
+    heroStyle: "banner" as const,
+    heroBannerImage: (templateConfig as any)?.heroBannerImage || "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=400&fit=crop",
   });
 
   const updatePage = (updates: Partial<PageData>) => {
@@ -601,8 +607,13 @@ const PaymentPageEditor = () => {
     setPublishing(true);
     setTimeout(() => {
       setPublishing(false);
+      const published = { ...pageData, status: "published" as const };
       updatePage({ status: "published" });
-      setPublishDialogOpen(false);
+      try {
+        const existing: Record<string, any> = JSON.parse(localStorage.getItem("rzp_published_pages") || "{}");
+        existing[published.slug] = published;
+        localStorage.setItem("rzp_published_pages", JSON.stringify(existing));
+      } catch {}
       setPostPublishDialogOpen(true);
       setUnsavedChanges(false);
     }, 2000);
@@ -633,7 +644,9 @@ const PaymentPageEditor = () => {
             <button onClick={() => setViewMode("desktop")} className={`p-2 ${viewMode === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}><Monitor className="h-4 w-4" /></button>
             <button onClick={() => setViewMode("mobile")}  className={`p-2 ${viewMode === "mobile"  ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}><Smartphone className="h-4 w-4" /></button>
           </div>
-          <Button size="sm" onClick={() => { setPreviewMode(false); setPublishDialogOpen(true); }}>Publish</Button>
+          <Button size="sm" onClick={() => { setPreviewMode(false); handlePublish(); }} disabled={publishing}>
+            {publishing ? <><Loader2 className="h-4 w-4 animate-spin mr-1" />Publishing...</> : "Publish"}
+          </Button>
         </div>
         <div className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6">
           <div className={`mx-auto bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden ${viewMode === "mobile" ? "max-w-sm" : "max-w-5xl"}`}>
@@ -682,7 +695,9 @@ const PaymentPageEditor = () => {
           <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setSettingsDialogOpen(true)}>
             <Settings className="h-4 w-4" /><span className="hidden sm:inline">Settings</span>
           </Button>
-          <Button size="sm" onClick={() => setPublishDialogOpen(true)}>Publish</Button>
+          <Button size="sm" onClick={handlePublish} disabled={publishing}>
+            {publishing ? <><Loader2 className="h-4 w-4 animate-spin mr-1" />Publishing...</> : "Publish"}
+          </Button>
         </div>
       </div>
 
@@ -899,35 +914,6 @@ const PaymentPageEditor = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Publish Dialog */}
-      <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Publish Payment Page</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="bg-secondary/50 rounded-lg p-4">
-              <h3 className="font-semibold text-sm mb-2">{pageData.merchantName}</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-muted-foreground text-xs">Fields</span><p className="font-medium">{pageData.formFields.length} fields</p></div>
-                <div><span className="text-muted-foreground text-xs">Total</span><p className="font-medium">₹{totalAmount.toLocaleString("en-IN")}</p></div>
-              </div>
-            </div>
-            <div><label className="text-xs font-medium">Page URL</label>
-              <div className="flex items-center gap-2 mt-1.5">
-                <Input value={pageData.pageUrl} readOnly className="flex-1 text-xs" />
-                <Button variant="outline" size="sm" onClick={copyLink}><Copy className="h-3.5 w-3.5" /></Button>
-              </div>
-            </div>
-            <div className="space-y-2 text-sm">
-              {["Payment integration active", "SSL-secured checkout", pageData.gstEnabled ? "GST-compliant receipts" : "Receipts enabled"].map((t) => (
-                <div key={t} className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-primary" />{t}</div>
-              ))}
-            </div>
-            <Button className="w-full gap-2" onClick={handlePublish} disabled={publishing}>
-              {publishing ? <><Loader2 className="h-4 w-4 animate-spin" />Publishing...</> : "Publish Now"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Share Dialog */}
       <Dialog open={shareDialogOpen} onOpenChange={setShareDialogOpen}>
@@ -1035,33 +1021,16 @@ const EditorCanvas = ({
   };
   const handleSectionDragEnd = () => { sectionDragRef.current = null; };
 
+  const moveSection = (fromIdx: number, toIdx: number) => {
+    if (toIdx < 1 || toIdx >= visibleSections.length) return; // hero stays at 0
+    const arr = [...visibleSections];
+    const [moved] = arr.splice(fromIdx, 1);
+    arr.splice(toIdx, 0, moved);
+    onReorderSections?.(arr.map((s) => s.id));
+  };
+
   return (
     <div className="bg-white min-h-screen">
-      {/* Merchant nav */}
-      <div className="bg-white/95 backdrop-blur-md sticky top-0 z-20 shadow-sm">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center">
-          <div className="flex items-center gap-3">
-            {pageData.logoUrl ? (
-              <img src={pageData.logoUrl} alt="logo" className="w-11 h-11 rounded-xl object-cover flex-shrink-0 border border-gray-100" />
-            ) : (
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-base flex-shrink-0"
-                style={{ backgroundColor: primaryColor }}>
-                {pageData.logoInitial}
-              </div>
-            )}
-            {editable ? (
-              <input
-                value={pageData.merchantName}
-                onChange={(e) => onUpdatePage?.({ merchantName: e.target.value })}
-                className="font-bold text-base text-gray-900 bg-transparent border-none focus:outline-none focus:bg-gray-50 rounded px-1 hover:bg-gray-50 max-w-xs"
-              />
-            ) : (
-              <span className="font-bold text-base text-gray-900">{pageData.merchantName}</span>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Two-column grid — mobile becomes single-column with step navigation */}
       {isMobile ? (
         /* ── Mobile: stepped layout ── */
@@ -1077,10 +1046,13 @@ const EditorCanvas = ({
                     <SectionBlock
                       section={section} pageData={pageData} editable={editable}
                       primaryColor={primaryColor} secondaryColor={secondaryColor}
-                      isHero={i === 0}
+                      isHero={i === 0} isFirst={i === 1} isLast={i === visibleSections.length - 1}
                       onUpdate={(data) => onUpdateSectionData?.(section.id, data)}
                       onRemove={() => onRemoveSection?.(section.id)}
                       onEdit={() => setEditingSection(section)}
+                      onUpdatePage={onUpdatePage}
+                      onMoveUp={() => moveSection(i, i - 1)}
+                      onMoveDown={() => moveSection(i, i + 1)}
                     />
                   </div>
                 ))}
@@ -1133,7 +1105,7 @@ const EditorCanvas = ({
         </div>
       ) : (
         /* Desktop: two-column grid */
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-10 items-start">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-10 items-start">
           {/* LEFT: content sections */}
           <div className="space-y-8">
             {visibleSections.map((section, i) => (
@@ -1143,10 +1115,13 @@ const EditorCanvas = ({
                 onDragEnd={handleSectionDragEnd}>
                 <SectionBlock section={section} pageData={pageData} editable={editable}
                   primaryColor={primaryColor} secondaryColor={secondaryColor}
-                  isHero={i === 0}
+                  isHero={i === 0} isFirst={i === 1} isLast={i === visibleSections.length - 1}
                   onUpdate={(data) => onUpdateSectionData?.(section.id, data)}
                   onRemove={() => onRemoveSection?.(section.id)}
                   onEdit={() => setEditingSection(section)}
+                  onUpdatePage={onUpdatePage}
+                  onMoveUp={() => moveSection(i, i - 1)}
+                  onMoveDown={() => moveSection(i, i + 1)}
                 />
               </div>
             ))}
@@ -1174,7 +1149,7 @@ const EditorCanvas = ({
             <PageContactFooter merchantName={pageData.merchantName} supportEmail={pageData.supportEmail} supportPhone={pageData.supportPhone} termsText={pageData.termsText} editable={editable} onUpdate={(p) => onUpdatePage?.(p)} />
           </div>
           {/* RIGHT: payment panel */}
-          <div className="lg:sticky lg:top-20">
+          <div className="lg:sticky lg:top-6">
             <PaymentPanel editable={editable} pageData={pageData} totalAmount={totalAmount}
               onUpdateField={onUpdateField} onRemoveField={onRemoveField}
               onAddInputField={onAddInputField} onAddAmountField={onAddAmountField}
@@ -1547,9 +1522,14 @@ interface SectionBlockProps {
   onUpdate: (data: Record<string, any>) => void;
   onRemove: () => void;
   onEdit: () => void;
+  onUpdatePage?: (u: Partial<PageData>) => void;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  isFirst?: boolean;
+  isLast?: boolean;
 }
 
-const SectionBlock = ({ section, pageData, editable, primaryColor, secondaryColor, isHero, onUpdate, onRemove, onEdit }: SectionBlockProps) => {
+const SectionBlock = ({ section, pageData, editable, primaryColor, secondaryColor, isHero, onUpdate, onRemove, onEdit, onUpdatePage, onMoveUp, onMoveDown, isFirst, isLast }: SectionBlockProps) => {
   const wrap = (children: React.ReactNode) =>
     editable ? (
       <div className="relative group/section">
@@ -1561,8 +1541,13 @@ const SectionBlock = ({ section, pageData, editable, primaryColor, secondaryColo
           </div>
         )}
         {!isHero && editable && (
-          <div className="absolute -left-5 top-1/2 -translate-y-1/2 opacity-0 group-hover/section:opacity-100 transition-all cursor-grab active:cursor-grabbing">
-            <GripVertical className="h-4 w-4 text-gray-300" />
+          <div className="absolute -left-7 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 opacity-0 group-hover/section:opacity-100 transition-all">
+            <button onClick={onMoveUp} disabled={isFirst}
+              className="p-1 rounded bg-white border border-gray-200 shadow-sm text-gray-400 hover:text-blue-500 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              title="Move up"><ChevronUp className="h-3 w-3" /></button>
+            <button onClick={onMoveDown} disabled={isLast}
+              className="p-1 rounded bg-white border border-gray-200 shadow-sm text-gray-400 hover:text-blue-500 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+              title="Move down"><ChevronDown className="h-3 w-3" /></button>
           </div>
         )}
       </div>
@@ -1579,10 +1564,84 @@ const SectionBlock = ({ section, pageData, editable, primaryColor, secondaryColo
   };
 
   if (section.type === "hero") return wrap(
-    <div className="space-y-4">
-      <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: `${primaryColor}18`, color: primaryColor }}>
-        <Sparkles className="h-3 w-3" />{categoryLabel(pageData.category)}
-      </span>
+    <div className="space-y-5">
+      {/* Logo + merchant name — inline in content, not sticky */}
+      <div className="flex items-center gap-4">
+        {/* Logo with upload overlay */}
+        <label className={`relative flex-shrink-0 ${editable ? "cursor-pointer group/logo" : ""}`}>
+          {pageData.logoUrl ? (
+            <img src={pageData.logoUrl} alt="logo" className="w-14 h-14 rounded-2xl object-cover border border-gray-100 shadow-sm" />
+          ) : (
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-sm"
+              style={{ backgroundColor: primaryColor }}>
+              {pageData.logoInitial}
+            </div>
+          )}
+          {editable && (
+            <>
+              <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover/logo:opacity-100 transition-opacity flex items-center justify-center">
+                <Camera className="h-5 w-5 text-white" />
+              </div>
+              <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (ev) => onUpdatePage?.({ logoUrl: ev.target?.result as string });
+                reader.readAsDataURL(file);
+              }} />
+            </>
+          )}
+        </label>
+        {/* Merchant name — 2× bigger */}
+        {editable ? (
+          <input value={pageData.merchantName} onChange={(e) => onUpdatePage?.({ merchantName: e.target.value })}
+            className="font-bold text-2xl text-gray-900 bg-transparent border-none focus:outline-none focus:bg-gray-50 rounded px-1 hover:bg-gray-50 w-full" />
+        ) : (
+          <span className="font-bold text-2xl text-gray-900">{pageData.merchantName}</span>
+        )}
+      </div>
+
+      {/* Banner image — inline within hero */}
+      {pageData.heroStyle === "banner" ? (
+        <div className="relative rounded-2xl overflow-hidden group/banner" style={{ height: 200 }}>
+          {pageData.heroBannerImage ? (
+            <img src={pageData.heroBannerImage} alt="Banner" className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-r from-gray-100 to-gray-200 flex items-center justify-center">
+              <ImageIcon className="h-8 w-8 text-gray-300" />
+            </div>
+          )}
+          {/* Hover overlay with controls — editable only */}
+          {editable && (
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/banner:opacity-100 transition-opacity flex items-center justify-center gap-3">
+              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-xs font-medium text-gray-700 cursor-pointer hover:bg-gray-50 shadow">
+                <Upload className="h-3.5 w-3.5" />
+                {pageData.heroBannerImage ? "Change" : "Upload"}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onload = (ev) => onUpdatePage?.({ heroBannerImage: ev.target?.result as string });
+                  reader.readAsDataURL(file);
+                }} />
+              </label>
+              <button onClick={() => onUpdatePage?.({ heroStyle: "basic", heroBannerImage: "" })}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white text-xs font-medium text-red-500 hover:bg-red-50 shadow">
+                <X className="h-3.5 w-3.5" /> Remove
+              </button>
+            </div>
+          )}
+        </div>
+      ) : editable ? (
+        /* "Add banner image" empty state */
+        <button onClick={() => onUpdatePage?.({ heroStyle: "banner", heroBannerImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&h=400&fit=crop" })}
+          className="flex items-center justify-center gap-2 w-full rounded-2xl border-2 border-dashed border-gray-200 text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 transition-colors"
+          style={{ height: 80 }}>
+          <ImageIcon className="h-4 w-4" /> Add banner image
+        </button>
+      ) : null}
+
+      {/* Title, tagline, description */}
       <ET tag="h1" value={section.data.title} onChange={(v) => onUpdate({ title: v })} className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight" />
       {section.data.tagline && <ET value={section.data.tagline} onChange={(v) => onUpdate({ tagline: v })} className="text-base font-medium" style={{ color: primaryColor } as any} />}
       <ET value={section.data.description} onChange={(v) => onUpdate({ description: v })} className="text-gray-600 leading-relaxed max-w-xl" />
