@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
-  ArrowLeft, Monitor, Smartphone, Eye, Settings, Sparkles, Camera, Send,
-  X, Copy, ExternalLink, Globe, Palette, Type, Image, Layout, Plus,
-  Trash2, GripVertical, Check, Undo2, Redo2, Code, Share2, ChevronDown,
-  Save, Loader2, CheckCircle2, Link2, QrCode, Download, BarChart3, ChevronRight, Receipt
+  ArrowLeft, Monitor, Smartphone, Eye, Settings, Camera,
+  X, Copy, ExternalLink, Globe, Plus,
+  Trash2, GripVertical, Check, Code, Share2, ChevronDown,
+  Save, Loader2, CheckCircle2, Link2, QrCode, Download, BarChart3, ChevronRight, Receipt,
+  Image as ImageIcon, MoreVertical, ChevronUp, Package, DollarSign, AlignLeft,
+  Hash, Mail, Phone, Type, Link, CalendarDays, List
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,16 +22,49 @@ import { toast } from "sonner";
 import {
   Tabs, TabsContent, TabsList, TabsTrigger,
 } from "@/components/ui/tabs";
-import { generateChatResponse } from "@/services/geminiService";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Sparkles } from "lucide-react";
 
-// --- Page data model ---
-interface FormField {
+// ─── Types ───────────────────────────────────────────────────────────────────
+
+type InputFieldType =
+  | "text" | "alpha" | "alphanum" | "number" | "email" | "phone"
+  | "url" | "textarea" | "pan" | "pincode" | "dropdown" | "date";
+
+type AmountFieldType = "amount-fixed" | "amount-custom" | "amount-item";
+
+type FieldType = InputFieldType | AmountFieldType;
+
+interface BaseField {
   id: string;
   label: string;
-  type: "text" | "email" | "phone" | "select" | "textarea";
   required: boolean;
   placeholder: string;
 }
+
+interface InputField extends BaseField {
+  fieldKind: "input";
+  type: InputFieldType;
+  options?: string[]; // for dropdown
+}
+
+interface AmountField extends BaseField {
+  fieldKind: "amount";
+  type: AmountFieldType;
+  amount: number;
+  // item-with-quantity extras
+  description?: string;
+  image?: string;
+  optional?: boolean;
+  minQty?: number;
+  maxQty?: number;
+  // UI state
+  showDescription?: boolean;
+}
+
+type FormField = InputField | AmountField;
 
 interface PageSection {
   id: string;
@@ -44,8 +79,6 @@ interface PageData {
   description: string;
   bannerImage: string;
   logoInitial: string;
-  amount: number;
-  amountType: "fixed" | "custom";
   currency: string;
   buttonText: string;
   buttonColor: string;
@@ -63,10 +96,36 @@ interface PageData {
   pageUrl: string;
 }
 
+// ─── Defaults ────────────────────────────────────────────────────────────────
+
 const defaultFormFields: FormField[] = [
-  { id: "f1", label: "Full Name", type: "text", required: true, placeholder: "Enter your full name" },
-  { id: "f2", label: "Email", type: "email", required: true, placeholder: "Enter your email" },
-  { id: "f3", label: "Phone", type: "phone", required: false, placeholder: "Enter your phone number" },
+  {
+    id: "f_amt",
+    fieldKind: "amount",
+    type: "amount-fixed",
+    label: "Amount",
+    required: true,
+    placeholder: "",
+    amount: 2999,
+    showDescription: true,
+    description: "Event registration fee",
+  },
+  {
+    id: "f_email",
+    fieldKind: "input",
+    type: "email",
+    label: "Email",
+    required: true,
+    placeholder: "Enter your email",
+  },
+  {
+    id: "f_phone",
+    fieldKind: "input",
+    type: "phone",
+    label: "Phone",
+    required: false,
+    placeholder: "Enter your phone number",
+  },
 ];
 
 const defaultSections: PageSection[] = [
@@ -78,30 +137,40 @@ const defaultSections: PageSection[] = [
   { id: "s6", type: "faq", visible: true, content: { items: [{ q: "What is included in the registration?", a: "Full access to all sessions, workshop materials, lunch, and networking events." }, { q: "Can I get a refund?", a: "Yes, full refund up to 7 days before the event. 50% refund within 7 days." }, { q: "Is there a group discount?", a: "Yes! Groups of 5+ get 15% off. Use code GROUP15 at checkout." }] } },
 ];
 
-const suggestedActions = [
-  "Add a countdown timer for early-bird pricing",
-  "Generate a professional header banner image",
-  "Change the color theme to match my brand",
-  "Add a testimonials section with star ratings",
-  "Add a new form field to collect more details",
-  "Create a FAQ section about the course",
+// ─── Label/icon maps ──────────────────────────────────────────────────────────
+
+const INPUT_TYPES: { type: InputFieldType; label: string; icon: React.ElementType }[] = [
+  { type: "text", label: "Single Line Text", icon: Type },
+  { type: "alpha", label: "Alphabets", icon: Type },
+  { type: "alphanum", label: "Alphanumeric", icon: Hash },
+  { type: "number", label: "Number", icon: Hash },
+  { type: "email", label: "Email", icon: Mail },
+  { type: "phone", label: "Phone No.", icon: Phone },
+  { type: "url", label: "Link / URL", icon: Link },
+  { type: "textarea", label: "Large Textarea", icon: AlignLeft },
+  { type: "pan", label: "PAN Number", icon: Hash },
+  { type: "pincode", label: "Pincode", icon: Hash },
+  { type: "dropdown", label: "Dropdown", icon: List },
+  { type: "date", label: "Date Picker", icon: CalendarDays },
 ];
 
-interface ChatMsg {
-  role: "assistant" | "user";
-  content: string;
-  time: string;
-}
+const AMOUNT_TYPES: { type: AmountFieldType; label: string; desc: string; icon: React.ElementType }[] = [
+  { type: "amount-fixed", label: "Fixed Amount", desc: "Customers pay a set amount", icon: DollarSign },
+  { type: "amount-custom", label: "Customers Decide Amount", desc: "Customers enter any amount", icon: DollarSign },
+  { type: "amount-item", label: "Item with Quantity", desc: "Product with quantity selector", icon: Package },
+];
+
+const inputTypeLabel = (t: InputFieldType) => INPUT_TYPES.find(x => x.type === t)?.label ?? t;
+const amountTypeLabel = (t: AmountFieldType) => AMOUNT_TYPES.find(x => x.type === t)?.label ?? t;
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const PaymentPageEditor = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // View state
   const [viewMode, setViewMode] = useState<"desktop" | "mobile">("desktop");
-  const [rightPanel, setRightPanel] = useState<"ai" | "settings" | "receipts" | null>("ai");
-  const [uiMode, setUiMode] = useState<"classic" | "visual">("visual");
+  const [rightPanel, setRightPanel] = useState<"settings" | "receipts" | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [postPublishDialogOpen, setPostPublishDialogOpen] = useState(false);
@@ -110,6 +179,10 @@ const PaymentPageEditor = () => {
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [settingsTab, setSettingsTab] = useState("page");
   const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [expandedFieldId, setExpandedFieldId] = useState<string | null>(null);
+
+  // DnD
+  const dragIndexRef = useRef<number | null>(null);
 
   // Receipt settings
   const [receiptDeliveryMode, setReceiptDeliveryMode] = useState<"auto" | "manual">("auto");
@@ -117,15 +190,12 @@ const PaymentPageEditor = () => {
   const [receiptPrefix, setReceiptPrefix] = useState("RCP");
   const [receiptStartNumber, setReceiptStartNumber] = useState("001");
 
-  // Page data
   const [pageData, setPageData] = useState<PageData>({
     title: searchParams.get("title") || searchParams.get("template") || "Event Booking — My Page",
     subtitle: "EVENT BOOKING",
     description: "A professional event registration page for conferences, workshops, seminars, meetups, concerts, and community gatherings.",
     bannerImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&h=300&fit=crop",
     logoInitial: "E",
-    amount: 2999,
-    amountType: "fixed",
     currency: "INR",
     buttonText: "Pay Now",
     buttonColor: "primary",
@@ -143,19 +213,52 @@ const PaymentPageEditor = () => {
     pageUrl: "https://rzp.io/rzp/event-booking",
   });
 
-  // AI Chat
-  const [chatInput, setChatInput] = useState("");
-  const [messages, setMessages] = useState<ChatMsg[]>([
-    { role: "assistant", content: "Hi! I'm your Razorpay AI page builder. I can edit your page content, add sections, change styling, update pricing, and more. What would you like to change?", time: "1m ago" },
-  ]);
-
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
   const updatePage = (updates: Partial<PageData>) => {
     setPageData((prev) => ({ ...prev, ...updates }));
     setUnsavedChanges(true);
+  };
+
+  const updateField = (id: string, patch: Partial<FormField>) => {
+    updatePage({
+      formFields: pageData.formFields.map((f) =>
+        f.id === id ? ({ ...f, ...patch } as FormField) : f
+      ),
+    });
+  };
+
+  const removeField = (id: string) => {
+    updatePage({ formFields: pageData.formFields.filter((f) => f.id !== id) });
+    if (expandedFieldId === id) setExpandedFieldId(null);
+  };
+
+  const addInputField = (type: InputFieldType) => {
+    const field: InputField = {
+      id: `f_${Date.now()}`,
+      fieldKind: "input",
+      type,
+      label: INPUT_TYPES.find(x => x.type === type)?.label ?? "New Field",
+      required: false,
+      placeholder: "Enter value",
+    };
+    updatePage({ formFields: [...pageData.formFields, field] });
+    setExpandedFieldId(field.id);
+  };
+
+  const addAmountField = (type: AmountFieldType) => {
+    const field: AmountField = {
+      id: `f_${Date.now()}`,
+      fieldKind: "amount",
+      type,
+      label: AMOUNT_TYPES.find(x => x.type === type)?.label ?? "Amount",
+      required: true,
+      placeholder: "",
+      amount: 0,
+      showDescription: true,
+      description: "",
+      optional: false,
+    };
+    updatePage({ formFields: [...pageData.formFields, field] });
+    setExpandedFieldId(field.id);
   };
 
   const toggleSectionVisibility = (sectionId: string) => {
@@ -166,85 +269,29 @@ const PaymentPageEditor = () => {
     });
   };
 
-  const sendMessage = async (text: string) => {
-    if (!text.trim()) return;
+  // ─── Drag and drop ───────────────────────────────────────────────────────────
 
-    const userMsg: ChatMsg = { role: "user", content: text, time: "Just now" };
-    setMessages((prev) => [...prev, userMsg]);
-    setChatInput("");
-
-    // Add a loading message
-    const loadingMsg: ChatMsg = {
-      role: "assistant",
-      content: "Thinking...",
-      time: "Just now"
-    };
-    setMessages((prev) => [...prev, loadingMsg]);
-
-    try {
-      // Build conversation history for context
-      const conversationHistory = messages.map(msg => ({
-        role: msg.role === "assistant" ? "model" as const : "user" as const,
-        text: msg.content
-      }));
-
-      // Add the new user message
-      conversationHistory.push({
-        role: "user" as const,
-        text: text
-      });
-
-      const systemInstruction = `You are an AI assistant helping users create and customize payment pages.
-Current page details:
-- Title: ${pageData.title}
-- Amount: ₹${pageData.amount}
-- Type: ${pageData.amountType}
-- Form fields: ${pageData.formFields.map(f => f.label).join(", ")}
-- Active sections: ${pageData.sections.filter(s => s.visible).map(s => s.type).join(", ")}
-
-When the user asks to make changes:
-1. Acknowledge the request
-2. Briefly explain what you'll change
-3. Mention where they can find the settings if they want to customize further
-4. Be concise and friendly
-
-If they ask about features that aren't implemented, politely explain they can use the Settings panel to make those changes manually.`;
-
-      // Call Gemini API
-      const response = await generateChatResponse(conversationHistory, systemInstruction);
-
-      // Remove loading message and add real response
-      setMessages((prev) => {
-        const withoutLoading = prev.slice(0, -1);
-        return [...withoutLoading, { role: "assistant", content: response, time: "Just now" }];
-      });
-
-      // Apply changes based on user request (simple keyword matching)
-      const lower = text.toLowerCase();
-      if (lower.includes("testimonial") || lower.includes("review")) {
-        updatePage({ sections: pageData.sections.map((s) => s.type === "testimonials" ? { ...s, visible: true } : s) });
-      } else if (lower.includes("faq")) {
-        updatePage({ sections: pageData.sections.map((s) => s.type === "faq" ? { ...s, visible: true } : s) });
-      } else if (lower.includes("feature")) {
-        updatePage({ sections: pageData.sections.map((s) => s.type === "features" ? { ...s, visible: true } : s) });
-      }
-
-    } catch (error) {
-      console.error("Error calling Gemini:", error);
-
-      // Remove loading and show error
-      setMessages((prev) => {
-        const withoutLoading = prev.slice(0, -1);
-        return [...withoutLoading, {
-          role: "assistant",
-          content: "Sorry, I'm having trouble connecting right now. You can use the Settings panel on the right to make changes to your page.",
-          time: "Just now"
-        }];
-      });
-
-      toast.error("AI assistant temporarily unavailable");
-    }
+  const handleDragStart = (index: number) => {
+    dragIndexRef.current = index;
   };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    const from = dragIndexRef.current;
+    if (from === null || from === index) return;
+    const fields = [...pageData.formFields];
+    const [moved] = fields.splice(from, 1);
+    fields.splice(index, 0, moved);
+    dragIndexRef.current = index;
+    setPageData((prev) => ({ ...prev, formFields: fields }));
+    setUnsavedChanges(true);
+  };
+
+  const handleDragEnd = () => {
+    dragIndexRef.current = null;
+  };
+
+  // ─── Publish ─────────────────────────────────────────────────────────────────
 
   const handlePublish = () => {
     setPublishing(true);
@@ -267,7 +314,14 @@ If they ask about features that aren't implemented, politely explain they can us
     toast.success("Link copied to clipboard!");
   };
 
-  // Full preview mode
+  // ─── Derived ─────────────────────────────────────────────────────────────────
+
+  const totalAmount = pageData.formFields
+    .filter((f): f is AmountField => f.fieldKind === "amount" && f.type === "amount-fixed")
+    .reduce((sum, f) => sum + (f.amount || 0), 0);
+
+  // ─── Preview mode ─────────────────────────────────────────────────────────────
+
   if (previewMode) {
     return (
       <div className="h-screen flex flex-col bg-background">
@@ -276,7 +330,7 @@ If they ask about features that aren't implemented, politely explain they can us
             <Button variant="outline" size="sm" onClick={() => setPreviewMode(false)} className="gap-2">
               <ArrowLeft className="h-4 w-4" /> Exit Preview
             </Button>
-            <span className="text-sm text-muted-foreground">Previewing as your customers will see it</span>
+            <span className="text-sm text-muted-foreground hidden sm:block">Previewing as your customers will see it</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center border border-border rounded-md overflow-hidden">
@@ -290,7 +344,7 @@ If they ask about features that aren't implemented, politely explain they can us
             <Button size="sm" onClick={() => { setPreviewMode(false); setPublishDialogOpen(true); }}>Publish</Button>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto bg-muted/30 p-6">
+        <div className="flex-1 overflow-y-auto bg-muted/30 p-4 sm:p-6">
           <div className={`mx-auto bg-background rounded-lg shadow-lg border border-border overflow-hidden ${viewMode === "mobile" ? "max-w-sm" : "max-w-3xl"}`}>
             <PagePreviewContent pageData={pageData} viewMode={viewMode} />
           </div>
@@ -299,280 +353,230 @@ If they ask about features that aren't implemented, politely explain they can us
     );
   }
 
+  // ─── Editor ───────────────────────────────────────────────────────────────────
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Top bar */}
-      <div className="flex items-center justify-between border-b border-border px-4 py-2.5 bg-background z-10">
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => navigate("/payment-pages")} className="gap-2">
-            <ArrowLeft className="h-4 w-4" /> Back
+      <div className="flex items-center justify-between border-b border-border px-3 sm:px-4 py-2.5 bg-background z-10 flex-wrap gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <Button variant="outline" size="sm" onClick={() => navigate("/payment-pages")} className="gap-1.5 flex-shrink-0">
+            <ArrowLeft className="h-4 w-4" /> <span className="hidden sm:inline">Back</span>
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
             <input
               type="text"
               value={pageData.title}
               onChange={(e) => updatePage({ title: e.target.value })}
-              className="font-semibold text-foreground text-sm bg-transparent border-none focus:outline-none focus:ring-0 hover:bg-secondary/50 rounded px-2 py-1 -ml-2"
+              className="font-semibold text-foreground text-sm bg-transparent border-none focus:outline-none focus:ring-0 hover:bg-secondary/50 rounded px-2 py-1 -ml-2 min-w-0 max-w-[140px] sm:max-w-xs truncate"
             />
-            {unsavedChanges && <span className="w-2 h-2 rounded-full bg-warning" />}
-            <span className={pageData.status === "published" ? "blade-badge-paid text-[10px]" : "blade-badge-expired text-[10px]"}>
+            {unsavedChanges && <span className="w-2 h-2 rounded-full bg-warning flex-shrink-0" />}
+            <span className={`${pageData.status === "published" ? "blade-badge-paid" : "blade-badge-expired"} text-[10px] flex-shrink-0`}>
               {pageData.status === "published" ? "Published" : "Draft"}
             </span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          {/* UI Mode Toggle */}
+
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+          {unsavedChanges && (
+            <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hidden sm:flex" onClick={handleSave}>
+              <Save className="h-3.5 w-3.5" /> Save Draft
+            </Button>
+          )}
           <div className="flex items-center border border-border rounded-md overflow-hidden">
-            <button
-              onClick={() => { setUiMode("classic"); if (rightPanel === "ai") setRightPanel(null); }}
-              className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${uiMode === "classic" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Current
+            <button onClick={() => setViewMode("desktop")} className={`p-2 ${viewMode === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+              <Monitor className="h-4 w-4" />
             </button>
-            <button
-              onClick={() => setUiMode("visual")}
-              className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${uiMode === "visual" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              Proposed
+            <button onClick={() => setViewMode("mobile")} className={`p-2 ${viewMode === "mobile" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
+              <Smartphone className="h-4 w-4" />
             </button>
           </div>
-
-          {uiMode === "visual" && (
-            <>
-              {unsavedChanges && (
-                <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground" onClick={handleSave}>
-                  <Save className="h-3.5 w-3.5" /> Save Draft
-                </Button>
-              )}
-              <div className="flex items-center border border-border rounded-md overflow-hidden">
-                <button onClick={() => setViewMode("desktop")} className={`p-2 ${viewMode === "desktop" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-                  <Monitor className="h-4 w-4" />
-                </button>
-                <button onClick={() => setViewMode("mobile")} className={`p-2 ${viewMode === "mobile" ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-                  <Smartphone className="h-4 w-4" />
-                </button>
-              </div>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPreviewMode(true)}>
-                <Eye className="h-4 w-4" /> Preview
-              </Button>
-              <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "receipts" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "receipts" ? null : "receipts")}>
-                <Receipt className="h-4 w-4" /> Receipts
-              </Button>
-              <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "settings" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}>
-                <Settings className="h-4 w-4" /> Settings
-              </Button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShareDialogOpen(true)}>
-                <Share2 className="h-4 w-4" /> Share
-              </Button>
-              <Button size="sm" onClick={() => setPublishDialogOpen(true)}>Publish</Button>
-              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setRightPanel(rightPanel === "ai" ? null : "ai")}>
-                <Sparkles className="h-4 w-4" />
-                AI
-              </Button>
-            </>
-          )}
-
-          {uiMode === "classic" && (
-            <>
-              <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "receipts" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "receipts" ? null : "receipts")}>
-                <Receipt className="h-4 w-4" /> Payment Receipts
-              </Button>
-              <Button variant="outline" size="sm" className={`gap-1.5 ${rightPanel === "settings" ? "bg-secondary" : ""}`} onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}>
-                <Settings className="h-4 w-4" /> Page Settings
-              </Button>
-              <Button size="sm" className="gap-1.5" onClick={() => setPublishDialogOpen(true)}>
-                Create and Publish Page
-              </Button>
-            </>
-          )}
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setPreviewMode(true)}>
+            <Eye className="h-4 w-4" /> <span className="hidden sm:inline">Preview</span>
+          </Button>
+          <Button
+            variant="outline" size="sm"
+            className={`gap-1.5 ${rightPanel === "receipts" ? "bg-secondary" : ""}`}
+            onClick={() => setRightPanel(rightPanel === "receipts" ? null : "receipts")}
+          >
+            <Receipt className="h-4 w-4" /> <span className="hidden sm:inline">Receipts</span>
+          </Button>
+          <Button
+            variant="outline" size="sm"
+            className={`gap-1.5 ${rightPanel === "settings" ? "bg-secondary" : ""}`}
+            onClick={() => setRightPanel(rightPanel === "settings" ? null : "settings")}
+          >
+            <Settings className="h-4 w-4" /> <span className="hidden sm:inline">Settings</span>
+          </Button>
+          <Button variant="outline" size="sm" className="gap-1.5 hidden sm:flex" onClick={() => setShareDialogOpen(true)}>
+            <Share2 className="h-4 w-4" /> Share
+          </Button>
+          <Button size="sm" onClick={() => setPublishDialogOpen(true)}>Publish</Button>
         </div>
       </div>
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
-        {uiMode === "classic" ? (
-          /* Classic form editor — left column */
-          <div className="flex-1 overflow-y-auto border-r border-border bg-background">
-            <div className="p-8 max-w-2xl">
-              {/* Company branding */}
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center border border-border">
-                  <span className="text-sm font-bold text-foreground">{pageData.logoInitial}</span>
-                </div>
-                <span className="text-xs font-semibold text-foreground/60 uppercase tracking-widest">WEALTHJOY TECHNOLOGIES</span>
+        {/* Left: description editor */}
+        <div className="flex-1 overflow-y-auto border-r border-border bg-background min-w-0">
+          <div className="p-4 sm:p-8 max-w-2xl">
+            {/* Branding */}
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-10 h-10 rounded bg-muted flex items-center justify-center border border-border flex-shrink-0">
+                <span className="text-sm font-bold text-foreground">{pageData.logoInitial}</span>
               </div>
+              <span className="text-xs font-semibold text-foreground/60 uppercase tracking-widest truncate">WEALTHJOY TECHNOLOGIES</span>
+            </div>
 
-              {/* Page title */}
-              <input
-                type="text"
-                value={pageData.title}
-                onChange={(e) => updatePage({ title: e.target.value })}
-                placeholder="Enter page title here"
-                className="w-full text-xl text-foreground bg-transparent border-b border-border focus:outline-none focus:border-primary pb-2 mb-1 placeholder:text-muted-foreground/40"
+            {/* Page title */}
+            <input
+              type="text"
+              value={pageData.title}
+              onChange={(e) => updatePage({ title: e.target.value })}
+              placeholder="Enter page title here"
+              className="w-full text-xl text-foreground bg-transparent border-b border-border focus:outline-none focus:border-primary pb-2 mb-1 placeholder:text-muted-foreground/40"
+            />
+            <div className="w-10 h-0.5 bg-primary mb-5" />
+
+            <button className="flex items-center gap-1.5 text-sm text-primary mb-5 hover:underline">
+              <Plus className="h-3.5 w-3.5" />
+              Add a Goal Tracker
+              <span className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded font-bold ml-0.5">NEW</span>
+            </button>
+
+            {/* Description */}
+            <div className="border border-border rounded-md overflow-hidden mb-3">
+              <div className="border-b border-border bg-muted/30 px-3 py-1.5 flex items-center gap-2 flex-wrap">
+                <Select defaultValue="normal">
+                  <SelectTrigger className="h-6 text-xs border-0 bg-transparent w-20 focus:ring-0 p-0 px-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="normal">Normal</SelectItem>
+                    <SelectItem value="h1">Heading 1</SelectItem>
+                    <SelectItem value="h2">Heading 2</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="w-px h-4 bg-border mx-1" />
+                <button className="text-xs font-black text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">B</button>
+                <button className="text-xs italic text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">I</button>
+                <button className="text-xs underline text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">U</button>
+                <div className="w-px h-4 bg-border mx-1" />
+                <button className="text-xs text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">1.</button>
+                <button className="text-xs text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">•</button>
+              </div>
+              <Textarea
+                value={pageData.description}
+                onChange={(e) => updatePage({ description: e.target.value })}
+                placeholder="Enter page description"
+                className="border-0 rounded-none focus-visible:ring-0 text-sm min-h-[100px] resize-none"
+                rows={4}
               />
-              <div className="w-10 h-0.5 bg-primary mb-5" />
+            </div>
 
-              {/* Goal Tracker */}
-              <button className="flex items-center gap-1.5 text-sm text-primary mb-5 hover:underline">
-                <Plus className="h-3.5 w-3.5" />
-                Add a Goal Tracker
-                <span className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded font-bold ml-0.5">NEW</span>
-              </button>
+            <button className="flex items-center gap-1.5 text-sm text-primary mb-6 hover:underline">
+              <Plus className="h-3.5 w-3.5" />
+              Add social media share icons
+            </button>
 
-              {/* Description editor with mock toolbar */}
-              <div className="border border-border rounded-md overflow-hidden mb-3">
-                <div className="border-b border-border bg-muted/30 px-3 py-1.5 flex items-center gap-2 flex-wrap">
-                  <Select defaultValue="normal">
-                    <SelectTrigger className="h-6 text-xs border-0 bg-transparent w-20 focus:ring-0 p-0 px-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="normal">Normal</SelectItem>
-                      <SelectItem value="h1">Heading 1</SelectItem>
-                      <SelectItem value="h2">Heading 2</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="w-px h-4 bg-border mx-1" />
-                  <button className="text-xs font-black text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">B</button>
-                  <button className="text-xs italic text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">I</button>
-                  <button className="text-xs underline text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">U</button>
-                  <div className="w-px h-4 bg-border mx-1" />
-                  <button className="text-xs text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">1.</button>
-                  <button className="text-xs text-muted-foreground hover:text-foreground px-1 py-0.5 rounded hover:bg-secondary">•</button>
+            <div className="border-t border-border pt-5">
+              <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-primary inline-block" />
+                Contact Us:
+              </p>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 border border-border rounded-md px-2.5 py-1.5 text-xs text-muted-foreground flex-shrink-0">
+                  🇮🇳 +91 (IN)
                 </div>
-                <Textarea
-                  value={pageData.description}
-                  onChange={(e) => updatePage({ description: e.target.value })}
-                  placeholder="Enter page description"
-                  className="border-0 rounded-none focus-visible:ring-0 text-sm min-h-[100px] resize-none"
-                  rows={4}
-                />
-              </div>
-
-              {/* Social share */}
-              <button className="flex items-center gap-1.5 text-sm text-primary mb-6 hover:underline">
-                <Plus className="h-3.5 w-3.5" />
-                Add social media share icons
-              </button>
-
-              {/* Contact Us */}
-              <div className="border-t border-border pt-5">
-                <p className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary inline-block" />
-                  Contact Us:
-                </p>
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 border border-border rounded-md px-2.5 py-1.5 text-xs text-muted-foreground flex-shrink-0">
-                    🇮🇳 +91 (IN)
-                  </div>
-                  <Input placeholder="1 Your support phone" className="text-sm" />
-                </div>
+                <Input placeholder="Your support phone" className="text-sm" />
               </div>
             </div>
           </div>
-        ) : (
-          /* Visual editor canvas */
-          <div className="flex-1 overflow-y-auto bg-muted/30 p-6">
-            <div className={`mx-auto bg-background rounded-lg shadow-sm border border-border overflow-hidden transition-all ${viewMode === "mobile" ? "max-w-sm" : "max-w-4xl"}`}>
-              <PagePreviewContent pageData={pageData} viewMode={viewMode} editable onUpdatePage={updatePage} editingSection={editingSection} onEditSection={setEditingSection} />
-            </div>
-          </div>
-        )}
+        </div>
 
-        {/* Classic mode: Payment Details column (shown only when no panel is open) */}
-        {uiMode === "classic" && !rightPanel && (
-          <div className="w-96 overflow-y-auto bg-background border-l border-border">
-            <div className="p-6">
+        {/* Middle: Payment Details */}
+        {!rightPanel && (
+          <div className="w-80 lg:w-96 overflow-y-auto bg-background border-l border-border flex-shrink-0">
+            <div className="p-4 sm:p-6">
               <h3 className="text-xl font-bold text-foreground mb-1">Payment Details</h3>
               <div className="w-8 h-0.5 bg-primary mb-6" />
-              <div className="mb-4">
-                <label className="text-xs text-muted-foreground mb-1.5 block">Amount</label>
-                <div className="flex items-center border border-border rounded-md">
-                  <input
-                    type="number"
-                    value={pageData.amount || ""}
-                    onChange={(e) => updatePage({ amount: Number(e.target.value) })}
-                    placeholder="0.00"
-                    className="flex-1 px-3 py-2 text-sm text-foreground bg-transparent focus:outline-none"
+
+              {/* Field list */}
+              <div className="space-y-2 mb-4">
+                {pageData.formFields.map((field, index) => (
+                  <FieldCard
+                    key={field.id}
+                    field={field}
+                    index={index}
+                    expanded={expandedFieldId === field.id}
+                    onToggleExpand={() => setExpandedFieldId(expandedFieldId === field.id ? null : field.id)}
+                    onUpdate={(patch) => updateField(field.id, patch)}
+                    onRemove={() => removeField(field.id)}
+                    onDragStart={() => handleDragStart(index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragEnd={handleDragEnd}
                   />
-                  <span className="mr-2 text-[11px] text-primary border border-primary/40 rounded px-2 py-0.5 flex-shrink-0">Price field</span>
-                </div>
+                ))}
               </div>
-              {pageData.formFields.map((field) => (
-                <div key={field.id} className="mb-4">
-                  <label className="text-xs text-muted-foreground mb-1.5 block">{field.label}:</label>
-                  <Input placeholder={field.placeholder} className="text-sm" />
-                </div>
-              ))}
-              <button className="flex items-center gap-2 text-sm text-muted-foreground mb-6 hover:text-foreground">
-                <Plus className="h-3.5 w-3.5" /> Add new
-                <span className="text-[11px] text-primary border border-primary/40 rounded px-2 py-0.5">Input field</span>
-                <span className="text-[11px] text-primary border border-primary/40 rounded px-2 py-0.5">Price field</span>
-              </button>
-              <div className="flex items-center gap-2 mb-5 flex-wrap">
+
+              {/* Add field buttons */}
+              <div className="flex gap-2 mb-6 flex-wrap">
+                {/* Add Input Field */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 flex-1">
+                      <Plus className="h-3.5 w-3.5" /> Add input field
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-52">
+                    {INPUT_TYPES.map(({ type, label, icon: Icon }) => (
+                      <DropdownMenuItem key={type} onClick={() => addInputField(type)} className="gap-2">
+                        <Icon className="h-3.5 w-3.5 text-muted-foreground" />
+                        {label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* Add Amount Field */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5 flex-1">
+                      <Plus className="h-3.5 w-3.5" /> Add amount field
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-60">
+                    {AMOUNT_TYPES.map(({ type, label, desc, icon: Icon }) => (
+                      <DropdownMenuItem key={type} onClick={() => addAmountField(type)} className="flex-col items-start gap-0.5 py-2">
+                        <div className="flex items-center gap-2 w-full">
+                          <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          <span className="font-medium text-xs">{label}</span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground pl-5">{desc}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              {/* Payment methods */}
+              <div className="flex items-center gap-1.5 mb-5 flex-wrap">
                 {["UPI", "Visa", "MC", "RuPay", "PhonePe"].map((logo) => (
                   <span key={logo} className="text-[10px] text-muted-foreground border border-border/60 rounded px-1.5 py-0.5 font-medium">{logo}</span>
                 ))}
               </div>
+
+              {/* Pay button preview */}
               <Button className="w-full">
-                Pay ₹ {pageData.amount ? pageData.amount.toLocaleString("en-IN") : "0,000.00"}
+                Pay ₹{totalAmount ? totalAmount.toLocaleString("en-IN") : "—"}
               </Button>
             </div>
           </div>
         )}
 
-        {/* Right Panel: AI Chat or Settings */}
-        {rightPanel === "ai" && (
-          <div className="w-80 border-l border-border flex flex-col bg-background">
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-6 rounded bg-primary flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold text-[10px]">R</span>
-                </div>
-                <span className="text-sm font-semibold text-foreground">AI Builder</span>
-              </div>
-              <button onClick={() => setRightPanel(null)} className="text-muted-foreground hover:text-foreground">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {messages.map((msg, i) => (
-                <div key={i} className={`${msg.role === "user" ? "ml-8" : "mr-4"}`}>
-                  <div className={`text-sm p-3 rounded-lg ${msg.role === "assistant" ? "bg-muted text-foreground" : "bg-primary text-primary-foreground"}`}>
-                    {msg.content}
-                  </div>
-                  <span className="text-[10px] text-muted-foreground mt-1 block">{msg.time}</span>
-                </div>
-              ))}
-              <div ref={chatEndRef} />
-            </div>
-            <div className="px-4 pb-2 space-y-1.5">
-              {suggestedActions.slice(0, 3).map((action) => (
-                <button key={action} onClick={() => sendMessage(action)} className="w-full text-left text-xs px-3 py-2 rounded-md border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors">
-                  {action}
-                </button>
-              ))}
-            </div>
-            <div className="p-3 border-t border-border">
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendMessage(chatInput)}
-                  placeholder="Ask AI to edit your page..."
-                  className="flex-1 text-sm bg-transparent text-foreground placeholder:text-muted-foreground focus:outline-none"
-                />
-                <button onClick={() => sendMessage(chatInput)} className="text-primary hover:text-primary/80 p-1">
-                  <Send className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
+        {/* Right panel: Settings */}
         {rightPanel === "settings" && (
-          <div className="w-96 border-l border-border flex flex-col bg-background overflow-y-auto">
+          <div className="w-80 lg:w-96 border-l border-border flex flex-col bg-background overflow-y-auto flex-shrink-0">
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
               <span className="text-sm font-semibold text-foreground">Page Settings</span>
               <button onClick={() => setRightPanel(null)} className="text-muted-foreground hover:text-foreground">
@@ -583,7 +587,6 @@ If they ask about features that aren't implemented, politely explain they can us
               <TabsList className="w-full justify-start rounded-none border-b border-border bg-transparent px-4">
                 <TabsTrigger value="page" className="text-xs">Page</TabsTrigger>
                 <TabsTrigger value="payment" className="text-xs">Payment</TabsTrigger>
-                <TabsTrigger value="form" className="text-xs">Form Fields</TabsTrigger>
                 <TabsTrigger value="sections" className="text-xs">Sections</TabsTrigger>
                 <TabsTrigger value="seo" className="text-xs">SEO</TabsTrigger>
               </TabsList>
@@ -621,70 +624,22 @@ If they ask about features that aren't implemented, politely explain they can us
 
               <TabsContent value="payment" className="p-4 space-y-4">
                 <div>
-                  <label className="text-xs font-medium text-foreground">Amount Type</label>
-                  <Select value={pageData.amountType} onValueChange={(v) => updatePage({ amountType: v as "fixed" | "custom" })}>
-                    <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fixed">Fixed Amount</SelectItem>
-                      <SelectItem value="custom">Customer Enters Amount</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-foreground">Amount (₹)</label>
-                  <Input type="number" value={pageData.amount} onChange={(e) => updatePage({ amount: Number(e.target.value) })} className="mt-1.5" />
-                </div>
-                <div>
                   <label className="text-xs font-medium text-foreground">Button Text</label>
                   <Input value={pageData.buttonText} onChange={(e) => updatePage({ buttonText: e.target.value })} className="mt-1.5" />
                 </div>
-              </TabsContent>
-
-              <TabsContent value="form" className="p-4 space-y-4">
-                <p className="text-xs text-muted-foreground">Drag fields to reorder. Toggle required status.</p>
-                {pageData.formFields.map((field, idx) => (
-                  <div key={field.id} className="flex items-center gap-2 p-3 rounded-md border border-border bg-secondary/30">
-                    <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <div className="flex-1">
-                      <Input value={field.label} onChange={(e) => {
-                        const updated = [...pageData.formFields];
-                        updated[idx] = { ...field, label: e.target.value };
-                        updatePage({ formFields: updated });
-                      }} className="h-8 text-xs" />
-                    </div>
-                    <Select value={field.type} onValueChange={(v) => {
-                      const updated = [...pageData.formFields];
-                      updated[idx] = { ...field, type: v as FormField["type"] };
-                      updatePage({ formFields: updated });
-                    }}>
-                      <SelectTrigger className="w-24 h-8 text-xs"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="text">Text</SelectItem>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="phone">Phone</SelectItem>
-                        <SelectItem value="select">Dropdown</SelectItem>
-                        <SelectItem value="textarea">Textarea</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <div className="flex items-center gap-1">
-                      <span className="text-[10px] text-muted-foreground">Req</span>
-                      <Switch checked={field.required} onCheckedChange={(v) => {
-                        const updated = [...pageData.formFields];
-                        updated[idx] = { ...field, required: v };
-                        updatePage({ formFields: updated });
-                      }} />
-                    </div>
-                    <button onClick={() => updatePage({ formFields: pageData.formFields.filter((f) => f.id !== field.id) })} className="text-muted-foreground hover:text-destructive">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-foreground">Collect GST</p>
+                    <p className="text-[10px] text-muted-foreground">Add 18% GST to the total</p>
                   </div>
-                ))}
-                <Button variant="outline" size="sm" className="w-full gap-1.5" onClick={() => {
-                  const newField: FormField = { id: `f${Date.now()}`, label: "New Field", type: "text", required: false, placeholder: "Enter value" };
-                  updatePage({ formFields: [...pageData.formFields, newField] });
-                }}>
-                  <Plus className="h-3.5 w-3.5" /> Add Field
-                </Button>
+                  <Switch checked={pageData.gstEnabled} onCheckedChange={(v) => updatePage({ gstEnabled: v })} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-foreground">Collect Address</p>
+                  </div>
+                  <Switch checked={pageData.collectAddress} onCheckedChange={(v) => updatePage({ collectAddress: v })} />
+                </div>
               </TabsContent>
 
               <TabsContent value="sections" className="p-4 space-y-3">
@@ -704,7 +659,7 @@ If they ask about features that aren't implemented, politely explain they can us
                 <div>
                   <label className="text-xs font-medium text-foreground">Page Slug</label>
                   <div className="flex items-center gap-1 mt-1.5">
-                    <span className="text-xs text-muted-foreground">rzp.io/rzp/</span>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">rzp.io/rzp/</span>
                     <Input value={pageData.slug} onChange={(e) => updatePage({ slug: e.target.value })} className="flex-1" />
                   </div>
                 </div>
@@ -719,13 +674,13 @@ If they ask about features that aren't implemented, politely explain they can us
                   <p className="text-[10px] text-muted-foreground mt-1">{pageData.description.length}/160 characters</p>
                 </div>
               </TabsContent>
-
             </Tabs>
           </div>
         )}
 
+        {/* Right panel: Receipts */}
         {rightPanel === "receipts" && (
-          <div className="w-96 border-l border-border flex flex-col bg-background overflow-y-auto">
+          <div className="w-80 lg:w-96 border-l border-border flex flex-col bg-background overflow-y-auto flex-shrink-0">
             <div className="px-4 py-3 border-b border-border flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Receipt className="h-4 w-4 text-foreground" />
@@ -737,7 +692,6 @@ If they ask about features that aren't implemented, politely explain they can us
             </div>
 
             <div className="p-4 space-y-5">
-              {/* Master toggle */}
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-foreground">Enable payment receipts</p>
@@ -748,7 +702,6 @@ If they ask about features that aren't implemented, politely explain they can us
 
               {pageData.sendReceipt && (
                 <>
-                  {/* Receipt Type */}
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-foreground">Receipt Type</p>
                     <div className="grid grid-cols-2 gap-2">
@@ -769,7 +722,6 @@ If they ask about features that aren't implemented, politely explain they can us
                     </div>
                   </div>
 
-                  {/* Delivery Mode */}
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-foreground">Delivery</p>
                     <Select value={receiptDeliveryMode} onValueChange={(v) => setReceiptDeliveryMode(v as "auto" | "manual")}>
@@ -781,7 +733,6 @@ If they ask about features that aren't implemented, politely explain they can us
                     </Select>
                   </div>
 
-                  {/* Send Via */}
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-foreground">Send via</p>
                     <Select value={receiptChannel} onValueChange={(v) => setReceiptChannel(v as "email" | "whatsapp" | "both")}>
@@ -794,7 +745,6 @@ If they ask about features that aren't implemented, politely explain they can us
                     </Select>
                   </div>
 
-                  {/* Receipt Numbering */}
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-foreground">Receipt Numbering</p>
                     <div className="flex items-center gap-2">
@@ -822,27 +772,6 @@ If they ask about features that aren't implemented, politely explain they can us
                       Preview: <span className="font-mono text-foreground">{receiptPrefix}-{receiptStartNumber}</span>
                     </p>
                   </div>
-
-                  {/* Fields included */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-foreground">Include customer fields</p>
-                    <div className="space-y-2">
-                      {[
-                        { label: "Name", always: true },
-                        { label: "Email", always: true },
-                        { label: "Phone number", always: false },
-                      ].map((f) => (
-                        <div key={f.label} className="flex items-center justify-between">
-                          <span className="text-xs text-foreground">{f.label}</span>
-                          {f.always ? (
-                            <span className="text-[10px] text-muted-foreground">Always included</span>
-                          ) : (
-                            <Switch defaultChecked={false} />
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </>
               )}
             </div>
@@ -858,10 +787,10 @@ If they ask about features that aren't implemented, politely explain they can us
             <div className="bg-secondary/50 rounded-lg p-4">
               <h3 className="font-semibold text-foreground text-sm mb-2">{pageData.title}</h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div><span className="text-muted-foreground text-xs">Amount</span><p className="font-medium text-foreground">₹{pageData.amount.toLocaleString("en-IN")}</p></div>
-                <div><span className="text-muted-foreground text-xs">Form Fields</span><p className="font-medium text-foreground">{pageData.formFields.length} fields</p></div>
+                <div><span className="text-muted-foreground text-xs">Fields</span><p className="font-medium text-foreground">{pageData.formFields.length} fields</p></div>
                 <div><span className="text-muted-foreground text-xs">Sections</span><p className="font-medium text-foreground">{pageData.sections.filter((s) => s.visible).length} active</p></div>
                 <div><span className="text-muted-foreground text-xs">GST</span><p className="font-medium text-foreground">{pageData.gstEnabled ? "Enabled" : "Disabled"}</p></div>
+                <div><span className="text-muted-foreground text-xs">Total</span><p className="font-medium text-foreground">₹{totalAmount.toLocaleString("en-IN")}</p></div>
               </div>
             </div>
             <div>
@@ -922,7 +851,7 @@ If they ask about features that aren't implemented, politely explain they can us
         </DialogContent>
       </Dialog>
 
-      {/* Post-Publish Success Dialog */}
+      {/* Post-Publish Dialog */}
       <Dialog open={postPublishDialogOpen} onOpenChange={setPostPublishDialogOpen}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -938,11 +867,10 @@ If they ask about features that aren't implemented, politely explain they can us
           </DialogHeader>
 
           <div className="space-y-5">
-            {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-3">
               <div className="blade-stat">
-                <p className="text-xs text-muted-foreground">Amount</p>
-                <p className="text-lg font-semibold text-foreground mt-0.5">₹{pageData.amount.toLocaleString("en-IN")}</p>
+                <p className="text-xs text-muted-foreground">Total Amount</p>
+                <p className="text-lg font-semibold text-foreground mt-0.5">₹{totalAmount.toLocaleString("en-IN")}</p>
               </div>
               <div className="blade-stat">
                 <p className="text-xs text-muted-foreground">Form Fields</p>
@@ -954,21 +882,15 @@ If they ask about features that aren't implemented, politely explain they can us
               </div>
             </div>
 
-            {/* Page URL */}
             <div className="blade-card p-4">
               <label className="text-xs font-semibold text-foreground mb-2 block">Your Payment Page URL</label>
               <div className="flex items-center gap-2">
                 <Input value={`http://localhost:8080/payment/${pageData.slug}`} readOnly className="flex-1 text-sm font-mono" />
-                <Button variant="outline" size="sm" onClick={() => { copyLink(); }}>
-                  <Copy className="h-4 w-4 mr-1" /> Copy
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => window.open(`/payment/${pageData.slug}`, "_blank")}>
-                  <ExternalLink className="h-4 w-4 mr-1" /> Open
-                </Button>
+                <Button variant="outline" size="sm" onClick={copyLink}><Copy className="h-4 w-4 mr-1" /> Copy</Button>
+                <Button variant="outline" size="sm" onClick={() => window.open(`/payment/${pageData.slug}`, "_blank")}><ExternalLink className="h-4 w-4 mr-1" /> Open</Button>
               </div>
             </div>
 
-            {/* QR Code */}
             <div className="flex items-center gap-3 blade-card p-3">
               <div className="h-16 w-16 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 border border-border">
                 <QrCode className="h-8 w-8 text-muted-foreground" />
@@ -977,12 +899,9 @@ If they ask about features that aren't implemented, politely explain they can us
                 <h4 className="text-sm font-semibold text-foreground mb-1">Share via QR Code</h4>
                 <p className="text-xs text-muted-foreground">Scan to access on mobile</p>
               </div>
-              <Button variant="outline" size="sm" className="gap-1.5">
-                <Download className="h-3.5 w-3.5" /> Download
-              </Button>
+              <Button variant="outline" size="sm" className="gap-1.5"><Download className="h-3.5 w-3.5" /> Download</Button>
             </div>
 
-            {/* Suggested Next Actions */}
             <div>
               <h4 className="text-sm font-semibold text-foreground mb-2 flex items-center gap-2">
                 <Sparkles className="h-4 w-4 text-primary" /> Next Steps
@@ -1004,14 +923,9 @@ If they ask about features that aren't implemented, politely explain they can us
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex gap-2 pt-2">
-              <Button variant="outline" className="flex-1" onClick={() => setPostPublishDialogOpen(false)}>
-                Done
-              </Button>
-              <Button className="flex-1" onClick={() => { setPostPublishDialogOpen(false); navigate("/payment-pages"); }}>
-                View All Pages
-              </Button>
+              <Button variant="outline" className="flex-1" onClick={() => setPostPublishDialogOpen(false)}>Done</Button>
+              <Button className="flex-1" onClick={() => { setPostPublishDialogOpen(false); navigate("/payment-pages"); }}>View All Pages</Button>
             </div>
           </div>
         </DialogContent>
@@ -1020,7 +934,246 @@ If they ask about features that aren't implemented, politely explain they can us
   );
 };
 
-// --- Page Preview Content Component ---
+// ─── FieldCard ────────────────────────────────────────────────────────────────
+
+interface FieldCardProps {
+  field: FormField;
+  index: number;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  onUpdate: (patch: Partial<FormField>) => void;
+  onRemove: () => void;
+  onDragStart: () => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragEnd: () => void;
+}
+
+const FieldCard = ({
+  field, index, expanded, onToggleExpand, onUpdate, onRemove,
+  onDragStart, onDragOver, onDragEnd,
+}: FieldCardProps) => {
+  const isAmount = field.fieldKind === "amount";
+  const amountField = isAmount ? (field as AmountField) : null;
+
+  const fieldIcon = isAmount
+    ? (field as AmountField).type === "amount-item" ? Package : DollarSign
+    : INPUT_TYPES.find(x => x.type === (field as InputField).type)?.icon ?? Type;
+
+  const FieldIcon = fieldIcon;
+
+  const typeLabel = isAmount
+    ? amountTypeLabel((field as AmountField).type)
+    : inputTypeLabel((field as InputField).type);
+
+  return (
+    <div
+      draggable
+      onDragStart={onDragStart}
+      onDragOver={onDragOver}
+      onDragEnd={onDragEnd}
+      className="border border-border rounded-lg bg-background overflow-hidden"
+    >
+      {/* Header row */}
+      <div className="flex items-center gap-2 px-3 py-2.5">
+        <GripVertical className="h-4 w-4 text-muted-foreground flex-shrink-0 cursor-grab active:cursor-grabbing" />
+        <FieldIcon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium text-foreground truncate block">{field.label}</span>
+          <span className="text-[10px] text-muted-foreground">{typeLabel}{field.required ? " · Required" : " · Optional"}</span>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button
+            onClick={onToggleExpand}
+            className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+          >
+            {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+          </button>
+          <button onClick={onRemove} className="p-1 rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Expanded editing */}
+      {expanded && (
+        <div className="px-3 pb-3 pt-1 border-t border-border space-y-3">
+          {/* Label */}
+          <div>
+            <label className="text-[10px] text-muted-foreground mb-1 block">Label</label>
+            <Input
+              value={field.label}
+              onChange={(e) => onUpdate({ label: e.target.value } as Partial<FormField>)}
+              className="h-8 text-xs"
+            />
+          </div>
+
+          {/* Amount fields */}
+          {isAmount && amountField && (
+            <>
+              {amountField.type === "amount-fixed" && (
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-1 block">Amount (₹)</label>
+                  <Input
+                    type="number"
+                    value={amountField.amount || ""}
+                    onChange={(e) => onUpdate({ amount: Number(e.target.value) } as Partial<FormField>)}
+                    className="h-8 text-xs"
+                    placeholder="0"
+                  />
+                </div>
+              )}
+
+              {amountField.type === "amount-item" && (
+                <>
+                  <div>
+                    <label className="text-[10px] text-muted-foreground mb-1 block">Price per item (₹)</label>
+                    <Input
+                      type="number"
+                      value={amountField.amount || ""}
+                      onChange={(e) => onUpdate({ amount: Number(e.target.value) } as Partial<FormField>)}
+                      className="h-8 text-xs"
+                      placeholder="0"
+                    />
+                  </div>
+                  {amountField.showDescription && (
+                    <div>
+                      <label className="text-[10px] text-muted-foreground mb-1 block">Description</label>
+                      <Input
+                        value={amountField.description || ""}
+                        onChange={(e) => onUpdate({ description: e.target.value } as Partial<FormField>)}
+                        className="h-8 text-xs"
+                        placeholder="Item description"
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Amount field additional options */}
+              <div className="space-y-1.5 pt-1">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Options</p>
+
+                {/* Add Image */}
+                <button
+                  onClick={() => onUpdate({ image: amountField.image ? undefined : "" } as Partial<FormField>)}
+                  className="flex items-center gap-2 w-full text-left text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-secondary/40 transition-colors"
+                >
+                  <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="flex-1 text-foreground">Add Image</span>
+                  {amountField.image !== undefined && <Check className="h-3.5 w-3.5 text-primary" />}
+                </button>
+                {amountField.image !== undefined && (
+                  <Input
+                    value={amountField.image || ""}
+                    onChange={(e) => onUpdate({ image: e.target.value } as Partial<FormField>)}
+                    className="h-8 text-xs"
+                    placeholder="Image URL"
+                  />
+                )}
+
+                {/* Remove/Add Description (item only) */}
+                {amountField.type === "amount-item" && (
+                  <button
+                    onClick={() => onUpdate({ showDescription: !amountField.showDescription } as Partial<FormField>)}
+                    className="flex items-center gap-2 w-full text-left text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-secondary/40 transition-colors"
+                  >
+                    <AlignLeft className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="flex-1 text-foreground">
+                      {amountField.showDescription ? "Remove Description" : "Add Description"}
+                    </span>
+                    {amountField.showDescription && <Check className="h-3.5 w-3.5 text-primary" />}
+                  </button>
+                )}
+
+                {/* Optional Item */}
+                <button
+                  onClick={() => onUpdate({ optional: !amountField.optional } as Partial<FormField>)}
+                  className="flex items-center gap-2 w-full text-left text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-secondary/40 transition-colors"
+                >
+                  <Check className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="flex-1 text-foreground">Optional Item</span>
+                  {amountField.optional && <Check className="h-3.5 w-3.5 text-primary" />}
+                </button>
+
+                {/* Advanced Options (item) */}
+                {amountField.type === "amount-item" && (
+                  <details className="text-xs">
+                    <summary className="flex items-center gap-2 px-2.5 py-1.5 rounded-md border border-border hover:bg-secondary/40 transition-colors cursor-pointer list-none">
+                      <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="flex-1 text-foreground">Advanced Options</span>
+                      <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                    </summary>
+                    <div className="pt-2 space-y-2">
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground mb-1 block">Min Qty</label>
+                          <Input
+                            type="number"
+                            value={amountField.minQty ?? 1}
+                            onChange={(e) => onUpdate({ minQty: Number(e.target.value) } as Partial<FormField>)}
+                            className="h-8 text-xs"
+                            min={0}
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="text-[10px] text-muted-foreground mb-1 block">Max Qty</label>
+                          <Input
+                            type="number"
+                            value={amountField.maxQty ?? 99}
+                            onChange={(e) => onUpdate({ maxQty: Number(e.target.value) } as Partial<FormField>)}
+                            className="h-8 text-xs"
+                            min={1}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Input field options */}
+          {!isAmount && (
+            <>
+              <div>
+                <label className="text-[10px] text-muted-foreground mb-1 block">Placeholder</label>
+                <Input
+                  value={field.placeholder}
+                  onChange={(e) => onUpdate({ placeholder: e.target.value } as Partial<FormField>)}
+                  className="h-8 text-xs"
+                  placeholder="Placeholder text"
+                />
+              </div>
+              {(field as InputField).type === "dropdown" && (
+                <div>
+                  <label className="text-[10px] text-muted-foreground mb-1 block">Options (one per line)</label>
+                  <Textarea
+                    value={((field as InputField).options || []).join("\n")}
+                    onChange={(e) => onUpdate({ options: e.target.value.split("\n") } as Partial<FormField>)}
+                    className="text-xs min-h-[60px] resize-none"
+                    placeholder="Option 1&#10;Option 2&#10;Option 3"
+                    rows={3}
+                  />
+                </div>
+              )}
+              <div className="flex items-center justify-between">
+                <label className="text-xs text-foreground">Required</label>
+                <Switch
+                  checked={field.required}
+                  onCheckedChange={(v) => onUpdate({ required: v } as Partial<FormField>)}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ─── Page Preview Content ─────────────────────────────────────────────────────
+
 interface PagePreviewProps {
   pageData: PageData;
   viewMode: "desktop" | "mobile";
@@ -1036,9 +1189,13 @@ const PagePreviewContent = ({ pageData, viewMode, editable, onUpdatePage, editin
   const testimonialsSection = pageData.sections.find((s) => s.type === "testimonials");
   const faqSection = pageData.sections.find((s) => s.type === "faq");
 
+  const fixedAmounts = pageData.formFields.filter(
+    (f): f is AmountField => f.fieldKind === "amount" && f.type === "amount-fixed"
+  );
+  const totalAmount = fixedAmounts.reduce((sum, f) => sum + (f.amount || 0), 0);
+
   return (
     <>
-      {/* Banner */}
       {bannerSection?.visible && (
         <div className="relative group">
           <img src={pageData.bannerImage} alt="Banner" className="w-full h-52 object-cover" />
@@ -1086,7 +1243,6 @@ const PagePreviewContent = ({ pageData, viewMode, editable, onUpdatePage, editin
             <p className="text-sm text-muted-foreground leading-relaxed mb-6">{pageData.description}</p>
           )}
 
-          {/* Features Section */}
           {featuresSection?.visible && (
             <div className="border-t border-border pt-6 mb-6">
               <h3 className="text-lg font-bold text-foreground mb-1">{featuresSection.content.title}</h3>
@@ -1095,28 +1251,25 @@ const PagePreviewContent = ({ pageData, viewMode, editable, onUpdatePage, editin
                 {featuresSection.content.items.map((item: string) => (
                   <div key={item} className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Sparkles className="h-4 w-4 text-primary" />
+                      <Check className="h-4 w-4 text-primary" />
                     </div>
-                    <span className="text-sm font-medium text-foreground">{item}</span>
+                    <span className="text-sm text-foreground">{item}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Testimonials Section */}
           {testimonialsSection?.visible && (
             <div className="border-t border-border pt-6 mb-6">
-              <h3 className="text-lg font-bold text-foreground mb-4">What Our Students Say</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg font-bold text-foreground mb-4">What people say</h3>
+              <div className="space-y-3">
                 {testimonialsSection.content.items.map((t: any, i: number) => (
-                  <div key={i} className="bg-secondary/50 rounded-lg p-4">
-                    <div className="flex items-center gap-1 mb-2">
-                      {Array.from({ length: t.rating }).map((_, j) => (
-                        <span key={j} className="text-yellow-500 text-xs">★</span>
-                      ))}
+                  <div key={i} className="p-4 rounded-lg bg-secondary/50 border border-border">
+                    <div className="flex gap-0.5 mb-2">
+                      {[...Array(t.rating)].map((_, j) => <span key={j} className="text-yellow-400 text-sm">★</span>)}
                     </div>
-                    <p className="text-sm text-foreground italic mb-2">"{t.text}"</p>
+                    <p className="text-sm text-foreground mb-2">"{t.text}"</p>
                     <p className="text-xs font-semibold text-muted-foreground">— {t.name}</p>
                   </div>
                 ))}
@@ -1124,18 +1277,17 @@ const PagePreviewContent = ({ pageData, viewMode, editable, onUpdatePage, editin
             </div>
           )}
 
-          {/* FAQ Section */}
           {faqSection?.visible && (
             <div className="border-t border-border pt-6">
-              <h3 className="text-lg font-bold text-foreground mb-4">Frequently Asked Questions</h3>
+              <h3 className="text-lg font-bold text-foreground mb-4">FAQs</h3>
               <div className="space-y-3">
                 {faqSection.content.items.map((faq: any, i: number) => (
-                  <details key={i} className="group border border-border rounded-lg">
-                    <summary className="flex items-center justify-between px-4 py-3 cursor-pointer text-sm font-medium text-foreground">
-                      {faq.q}
-                      <ChevronDown className="h-4 w-4 text-muted-foreground group-open:rotate-180 transition-transform" />
+                  <details key={i} className="border border-border rounded-lg">
+                    <summary className="flex items-center justify-between p-4 cursor-pointer">
+                      <span className="text-sm font-medium text-foreground">{faq.q}</span>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     </summary>
-                    <p className="px-4 pb-3 text-sm text-muted-foreground">{faq.a}</p>
+                    <p className="px-4 pb-4 text-sm text-muted-foreground">{faq.a}</p>
                   </details>
                 ))}
               </div>
@@ -1144,52 +1296,86 @@ const PagePreviewContent = ({ pageData, viewMode, editable, onUpdatePage, editin
         </div>
 
         {/* Right: payment form */}
-        <div className={`${viewMode === "mobile" ? "w-full" : "w-full lg:w-96"} p-6`}>
-          <h3 className="text-lg font-bold text-foreground mb-4">Payment Details</h3>
+        <div className="w-full lg:w-72 p-6">
           <div className="space-y-4">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount Type</label>
-              <Select value={pageData.amountType} onValueChange={(v) => onUpdatePage?.({ amountType: v as "fixed" | "custom" })}>
-                <SelectTrigger className="mt-1.5"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="fixed">Fixed Amount</SelectItem>
-                  <SelectItem value="custom">Custom Amount</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Amount</label>
-              {pageData.amountType === "fixed" ? (
-                <div className="mt-1.5 text-3xl font-bold text-foreground">₹ {pageData.amount.toLocaleString("en-IN")}</div>
-              ) : (
-                <Input type="number" placeholder="Enter amount" className="mt-1.5 text-lg font-bold" />
-              )}
-            </div>
-            <div className="border-t border-border pt-4">
-              <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Contact Info</label>
-              <div className="space-y-3 mt-2">
-                {pageData.formFields.map((field) => (
-                  <div key={field.id}>
-                    <label className="text-sm text-foreground">
-                      {field.label} {field.required && <span className="text-destructive">*</span>}
+            {pageData.formFields.map((field) => (
+              <div key={field.id}>
+                {field.fieldKind === "amount" ? (
+                  <div>
+                    <label className="text-xs font-medium text-foreground block mb-1.5">
+                      {field.label}
+                      {(field as AmountField).type === "amount-custom" && <span className="text-muted-foreground ml-1">(you decide)</span>}
                     </label>
-                    {field.type === "textarea" ? (
-                      <Textarea placeholder={field.placeholder} className="mt-1" rows={2} />
-                    ) : (
-                      <Input placeholder={field.placeholder} type={field.type === "email" ? "email" : field.type === "phone" ? "tel" : "text"} className="mt-1" />
+                    {(field as AmountField).type === "amount-fixed" && (
+                      <div className="flex items-center border border-border rounded-md px-3 py-2">
+                        <span className="text-sm font-semibold text-foreground">₹ {(field as AmountField).amount.toLocaleString("en-IN")}</span>
+                        <span className="ml-auto text-[10px] text-primary border border-primary/30 rounded px-1.5 py-0.5">Fixed</span>
+                      </div>
+                    )}
+                    {(field as AmountField).type === "amount-custom" && (
+                      <div className="flex items-center border border-border rounded-md px-3 py-2 gap-2">
+                        <span className="text-sm text-muted-foreground">₹</span>
+                        <input className="flex-1 text-sm bg-transparent focus:outline-none" placeholder="Enter amount" />
+                      </div>
+                    )}
+                    {(field as AmountField).type === "amount-item" && (
+                      <div className="border border-border rounded-md p-3 space-y-2">
+                        <div className="flex items-start gap-2">
+                          {(field as AmountField).image && (
+                            <img src={(field as AmountField).image} alt="" className="w-10 h-10 rounded object-cover" />
+                          )}
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-foreground">{field.label}</p>
+                            {(field as AmountField).showDescription && (field as AmountField).description && (
+                              <p className="text-xs text-muted-foreground">{(field as AmountField).description}</p>
+                            )}
+                          </div>
+                          <span className="text-sm font-semibold text-foreground">₹{(field as AmountField).amount.toLocaleString("en-IN")}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button className="w-7 h-7 rounded-md border border-border flex items-center justify-center text-foreground hover:bg-secondary">−</button>
+                          <span className="text-sm w-6 text-center">1</span>
+                          <button className="w-7 h-7 rounded-md border border-border flex items-center justify-center text-foreground hover:bg-secondary">+</button>
+                        </div>
+                      </div>
                     )}
                   </div>
-                ))}
+                ) : (
+                  <div>
+                    <label className="text-xs font-medium text-foreground block mb-1.5">
+                      {field.label}
+                      {field.required && <span className="text-destructive ml-0.5">*</span>}
+                    </label>
+                    {(field as InputField).type === "textarea" ? (
+                      <textarea rows={3} className="w-full text-sm border border-border rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary resize-none" placeholder={field.placeholder} />
+                    ) : (field as InputField).type === "dropdown" ? (
+                      <select className="w-full text-sm border border-border rounded-md px-3 py-2 bg-background focus:outline-none focus:ring-1 focus:ring-primary">
+                        <option value="">{field.placeholder || "Select..."}</option>
+                        {((field as InputField).options || []).map((o) => <option key={o} value={o}>{o}</option>)}
+                      </select>
+                    ) : (field as InputField).type === "date" ? (
+                      <input type="date" className="w-full text-sm border border-border rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary" />
+                    ) : (
+                      <input
+                        type={(field as InputField).type === "email" ? "email" : (field as InputField).type === "phone" || (field as InputField).type === "number" || (field as InputField).type === "pincode" ? "tel" : "text"}
+                        className="w-full text-sm border border-border rounded-md px-3 py-2 bg-transparent focus:outline-none focus:ring-1 focus:ring-primary"
+                        placeholder={field.placeholder}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
+            ))}
+
+            <div className="flex items-center gap-2 pt-1 flex-wrap">
+              {["UPI", "Visa", "MC", "RuPay"].map((l) => (
+                <span key={l} className="text-[10px] text-muted-foreground border border-border/60 rounded px-1.5 py-0.5">{l}</span>
+              ))}
             </div>
-            {pageData.gstEnabled && (
-              <div className="bg-secondary/50 rounded-md p-3 text-xs text-muted-foreground">
-                <div className="flex justify-between"><span>Subtotal</span><span>₹{Math.round(pageData.amount / 1.18).toLocaleString("en-IN")}</span></div>
-                <div className="flex justify-between mt-1"><span>GST (18%)</span><span>₹{Math.round(pageData.amount - pageData.amount / 1.18).toLocaleString("en-IN")}</span></div>
-                <div className="flex justify-between mt-1 font-semibold text-foreground border-t border-border pt-1"><span>Total</span><span>₹{pageData.amount.toLocaleString("en-IN")}</span></div>
-              </div>
-            )}
-            <Button className="w-full mt-2">{pageData.buttonText || `Pay ₹ ${pageData.amount.toLocaleString("en-IN")}`}</Button>
+
+            <Button className="w-full">
+              {pageData.buttonText} {totalAmount > 0 ? `₹${totalAmount.toLocaleString("en-IN")}` : ""}
+            </Button>
           </div>
         </div>
       </div>
