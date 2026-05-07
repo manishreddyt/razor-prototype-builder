@@ -75,6 +75,7 @@ interface ContentSection {
 interface PageData {
   merchantName: string;
   logoInitial: string;
+  logoUrl?: string;
   brandColor: string;
   category: "education" | "services" | "ecommerce" | "events";
   buttonText: string;
@@ -87,6 +88,9 @@ interface PageData {
   status: "draft" | "published";
   slug: string;
   pageUrl: string;
+  supportEmail: string;
+  supportPhone: string;
+  termsText: string;
 }
 
 // ─── Defaults ─────────────────────────────────────────────────────────────────
@@ -231,6 +235,178 @@ const AMOUNT_TYPES: { type: AmountFieldType; label: string; desc: string }[] = [
 const categoryLabel = (cat: PageData["category"]) =>
   ({ education: "Online Course", services: "Professional Service", ecommerce: "Product", events: "Event" }[cat] ?? "Payment");
 
+// ─── Template configs ─────────────────────────────────────────────────────────
+
+const COMPANY_LOGO = "https://images.unsplash.com/photo-1599305445671-ac291c95aaa9?w=64&h=64&fit=crop";
+
+const TEMPLATE_CONFIGS: Record<string, Partial<PageData>> = {
+  "School / College Fee Collection": {
+    merchantName: "Company",
+    logoInitial: "C",
+    logoUrl: COMPANY_LOGO,
+    brandColor: "#1D4ED8",
+    category: "education",
+    buttonText: "Pay Fees Now",
+    successMessage: "Payment received! Your fee receipt has been sent to your email.",
+    slug: "company-fee-payment",
+    pageUrl: "https://rzp.io/rzp/company-fee-payment",
+    sections: [
+      { id: "s_hero", type: "hero", visible: true, data: { title: "Student Fee Payment Portal", tagline: "Quick & secure fee collection — no queues, no cash", description: "Pay tuition fees, exam fees, hostel charges, and any other dues directly online. Get an instant GST-compliant receipt delivered to your email." } },
+      { id: "s_stats", type: "stats", visible: true, data: { items: [{ value: "15,000+", label: "Students enrolled" }, { value: "₹0", label: "Convenience fee" }, { value: "10+", label: "Payment modes" }, { value: "Instant", label: "Receipt delivery" }] } },
+      { id: "s_highlights", type: "highlights", visible: true, data: { title: "Why pay online?", items: ["Accept any fee type in one place", "UPI, card, net banking — all accepted", "Instant GST-compliant receipt on email", "Partial payment & installment support", "Auto-reminders for upcoming due dates", "24/7 payment acceptance, no queues"] } },
+      { id: "s_about", type: "about", visible: true, data: { image: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=80&h=80&fit=crop&crop=face", name: "Finance Department", role: "Accounts & Admissions Office", bio: "All payments are processed securely and credited within 24 hours. Contact fees@company.edu for queries. Office hours: Mon–Sat, 9 AM – 5 PM." } },
+      { id: "s_testimonials", type: "testimonials", visible: false, data: { items: [] } },
+      { id: "s_faq", type: "faq", visible: true, data: { items: [{ q: "Which payment methods are accepted?", a: "UPI, Debit/Credit Cards (Visa, Mastercard, RuPay), Net Banking, and Wallets." }, { q: "Will I get a receipt?", a: "Yes, a GST-compliant receipt is sent to your email immediately after payment." }, { q: "Can I pay in installments?", a: "Yes, installment plans are available for select fee types. Contact the finance office." }, { q: "What if my payment fails?", a: "Failed payments are auto-refunded within 5–7 business days. You can retry immediately." }] } },
+    ] as ContentSection[],
+    formFields: [
+      { id: "f_amt", fieldKind: "amount" as const, type: "amount-fixed" as const, label: "Fee Amount", required: true, placeholder: "", amount: 15000, showDescription: true, description: "Academic year 2024–25 tuition fee" },
+      { id: "f_name", fieldKind: "input" as const, type: "text" as const, label: "Student Full Name", required: true, placeholder: "Enter student's full name" },
+      { id: "f_id", fieldKind: "input" as const, type: "alphanum" as const, label: "Student / Roll Number", required: true, placeholder: "e.g. STU2024001" },
+      { id: "f_class", fieldKind: "input" as const, type: "dropdown" as const, label: "Class / Course", required: true, placeholder: "Select your class", options: ["Class 9", "Class 10", "Class 11 (Science)", "Class 11 (Commerce)", "Class 12 (Science)", "Class 12 (Commerce)", "B.Com Year 1", "B.Com Year 2", "B.Com Year 3"] },
+      { id: "f_type", fieldKind: "input" as const, type: "dropdown" as const, label: "Fee Type", required: true, placeholder: "Select fee type", options: ["Tuition Fee", "Exam Fee", "Hostel Fee", "Library Fee", "Sports Fee", "Lab Fee"] },
+      { id: "f_email", fieldKind: "input" as const, type: "email" as const, label: "Email Address", required: true, placeholder: "Receipt will be sent here" },
+      { id: "f_phone", fieldKind: "input" as const, type: "phone" as const, label: "Phone Number", required: false, placeholder: "Parent / guardian contact" },
+    ] as FormField[],
+  },
+
+  "Online Course Fee Collection": {
+    merchantName: "Company",
+    logoInitial: "C",
+    logoUrl: COMPANY_LOGO,
+    brandColor: "#7C3AED",
+    category: "education",
+    buttonText: "Enroll Now",
+    successMessage: "Welcome aboard! Check your email for onboarding instructions and course access details.",
+    slug: "company-bootcamp",
+    pageUrl: "https://rzp.io/rzp/company-bootcamp",
+    sections: [
+      { id: "s_hero", type: "hero", visible: true, data: { title: "Full-Stack Web Development Bootcamp", tagline: "From complete beginner to job-ready in 12 weeks", description: "A rigorous, hands-on bootcamp that teaches you React, Node.js, PostgreSQL, and deployment. Built for people who want to switch careers or upskill fast." } },
+      { id: "s_stats", type: "stats", visible: true, data: { items: [{ value: "2,400+", label: "Students enrolled" }, { value: "4.9★", label: "Average rating" }, { value: "12 weeks", label: "Duration" }, { value: "92%", label: "Placement rate" }] } },
+      { id: "s_highlights", type: "highlights", visible: true, data: { title: "What's included", items: ["60+ hours of live instructor-led sessions", "Unlimited doubt-clearing support", "6 real-world portfolio projects", "Certificate of completion", "1:1 mock interviews + resume review", "Lifetime alumni community access"] } },
+      { id: "s_about", type: "about", visible: true, data: { image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=80&h=80&fit=crop&crop=face", name: "Rahul Sharma", role: "Lead Instructor & Founder", bio: "Ex-Razorpay senior engineer with 12 years of industry experience. Has trained 4,000+ developers and helped 500+ land their first tech job." } },
+      { id: "s_testimonials", type: "testimonials", visible: true, data: { items: [{ name: "Priya S.", rating: 5, text: "Switched from a non-tech background. Got a ₹12 LPA offer 3 weeks after completing the bootcamp!" }, { name: "Arjun M.", rating: 5, text: "Best investment I've made. The mock interviews and resume prep were game-changing. Placed at a Series B startup." }, { name: "Neha K.", rating: 5, text: "Incredibly well-structured curriculum. You build real things from day 1 instead of watching theory videos." }, { name: "Vikram P.", rating: 4, text: "Excellent mentorship. Rahul personally reviewed my portfolio and the feedback was gold." }] } },
+      { id: "s_faq", type: "faq", visible: true, data: { items: [{ q: "Do I need prior coding experience?", a: "No prior experience needed. We start from absolute basics and build up progressively." }, { q: "Are sessions live or recorded?", a: "All sessions are live with recordings available for 6 months after the course ends." }, { q: "What's the refund policy?", a: "Full refund within 7 days of starting. No questions asked." }] } },
+    ] as ContentSection[],
+    formFields: [
+      { id: "f_amt", fieldKind: "amount" as const, type: "amount-fixed" as const, label: "Course Fee", required: true, placeholder: "", amount: 29999, showDescription: true, description: "Full-Stack Web Development Bootcamp — Batch 12" },
+      { id: "f_name", fieldKind: "input" as const, type: "text" as const, label: "Full Name", required: true, placeholder: "Your full name" },
+      { id: "f_email", fieldKind: "input" as const, type: "email" as const, label: "Email Address", required: true, placeholder: "Course access will be sent here" },
+      { id: "f_phone", fieldKind: "input" as const, type: "phone" as const, label: "Phone Number", required: true, placeholder: "For WhatsApp updates" },
+    ] as FormField[],
+  },
+
+  "Coaching Session Booking": {
+    merchantName: "Company",
+    logoInitial: "C",
+    logoUrl: COMPANY_LOGO,
+    brandColor: "#059669",
+    category: "services",
+    buttonText: "Book My Session",
+    successMessage: "Session booked! You'll receive a calendar invite and Zoom link within 2 hours.",
+    slug: "company-coaching",
+    pageUrl: "https://rzp.io/rzp/company-coaching",
+    sections: [
+      { id: "s_hero", type: "hero", visible: true, data: { title: "1-on-1 Business Strategy Coaching", tagline: "Clarity, focus, and a real action plan — in one session", description: "Work directly with an experienced business coach to overcome challenges, validate your strategy, and unlock your next level of growth. Available for founders, managers, and professionals." } },
+      { id: "s_stats", type: "stats", visible: true, data: { items: [{ value: "500+", label: "Clients coached" }, { value: "4.9★", label: "Average rating" }, { value: "60 min", label: "Session duration" }, { value: "48 hrs", label: "Response time" }] } },
+      { id: "s_highlights", type: "highlights", visible: true, data: { title: "What you get", items: ["Pre-session questionnaire for deep prep", "Full session recording sent to you", "Written summary + action items after", "Proven frameworks for growth decisions", "Email follow-up support for 2 weeks", "Flexible rescheduling with 24-hr notice"] } },
+      { id: "s_about", type: "about", visible: true, data: { image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=80&h=80&fit=crop&crop=face", name: "Meera Krishnan", role: "Business Coach & Consultant", bio: "Former McKinsey consultant. 15 years helping founders and executives unlock growth across 200+ companies. Certified ICF coach and TEDx speaker." } },
+      { id: "s_testimonials", type: "testimonials", visible: true, data: { items: [{ name: "Kartik T.", rating: 5, text: "One session with Meera was worth more than 3 months of self-doubt. Clear path forward, immediate action." }, { name: "Divya R.", rating: 5, text: "I came in overwhelmed. I left with a prioritized 90-day plan. The ROI on this session was immediate." }, { name: "Sameer G.", rating: 5, text: "Meera's frameworks for decision-making are genuinely powerful. Recommended her to every founder I know." }, { name: "Anjali M.", rating: 4, text: "Great depth, very personalized. She did her homework before the call and asked exactly the right questions." }] } },
+      { id: "s_faq", type: "faq", visible: false, data: { items: [] } },
+    ] as ContentSection[],
+    formFields: [
+      { id: "f_amt", fieldKind: "amount" as const, type: "amount-fixed" as const, label: "Coaching Session", required: true, placeholder: "", amount: 4999, showDescription: true, description: "60-minute 1-on-1 business strategy session via Zoom" },
+      { id: "f_name", fieldKind: "input" as const, type: "text" as const, label: "Full Name", required: true, placeholder: "Your full name" },
+      { id: "f_email", fieldKind: "input" as const, type: "email" as const, label: "Email Address", required: true, placeholder: "Calendar invite sent here" },
+      { id: "f_phone", fieldKind: "input" as const, type: "phone" as const, label: "Phone / WhatsApp", required: true, placeholder: "+91 XXXXX XXXXX" },
+      { id: "f_type", fieldKind: "input" as const, type: "dropdown" as const, label: "Session Focus", required: true, placeholder: "What do you want to work on?", options: ["Business strategy & growth", "Fundraising & investor pitch", "Team building & leadership", "Career transition & clarity", "Product-market fit", "Revenue & sales strategy", "Other"] },
+      { id: "f_date", fieldKind: "input" as const, type: "date" as const, label: "Preferred Session Date", required: false, placeholder: "" },
+    ] as FormField[],
+  },
+
+  "E-commerce Store": {
+    merchantName: "Company",
+    logoInitial: "C",
+    logoUrl: COMPANY_LOGO,
+    brandColor: "#DC2626",
+    category: "ecommerce",
+    buttonText: "Buy Now",
+    successMessage: "Order confirmed! You'll receive shipping details and tracking within 24 hours.",
+    slug: "company-store",
+    pageUrl: "https://rzp.io/rzp/company-store",
+    sections: [
+      { id: "s_hero", type: "hero", visible: true, data: { title: "Premium Noise-Cancelling Headphones", tagline: "Studio-grade sound. Built for the real world.", description: "Experience deep bass, crystal-clear highs, and 30 hours of battery life in an ultra-light design. Perfect for work, travel, and everything in between." } },
+      { id: "s_stats", type: "stats", visible: true, data: { items: [{ value: "4.8★", label: "Rated by 8,000+ buyers" }, { value: "30 hrs", label: "Battery life" }, { value: "Free", label: "Shipping pan-India" }, { value: "30 days", label: "Easy returns" }] } },
+      { id: "s_highlights", type: "highlights", visible: true, data: { title: "Product highlights", items: ["Active noise cancellation (ANC)", "40mm custom drivers for rich bass", "Foldable design with hard carry case", "Works with iOS, Android & Windows", "USB-C fast charge: 10 min = 3 hrs", "1-year manufacturer warranty"] } },
+      { id: "s_testimonials", type: "testimonials", visible: true, data: { items: [{ name: "Rohan P.", rating: 5, text: "Best headphones under ₹5K. ANC blocks out my entire open office. Sound quality is exceptional." }, { name: "Shreya M.", rating: 5, text: "Battery life is insane. Charged once and used it for 4 days straight. Super comfortable too." }, { name: "Aditya K.", rating: 4, text: "Great build quality and the carry case is a nice touch. Crystal clear on video meetings." }, { name: "Pooja V.", rating: 5, text: "Gifted to my husband. He hasn't taken them off. Fast delivery, great packaging." }] } },
+      { id: "s_about", type: "about", visible: false, data: { image: "", name: "", role: "", bio: "" } },
+      { id: "s_faq", type: "faq", visible: true, data: { items: [{ q: "How long does shipping take?", a: "2–5 business days for metro cities, 5–7 days for other locations. Express shipping available." }, { q: "What's the return policy?", a: "30-day hassle-free returns. Product must be in original condition with all accessories." }, { q: "Is warranty included?", a: "Yes, 1-year manufacturer warranty covering all manufacturing defects." }] } },
+    ] as ContentSection[],
+    formFields: [
+      { id: "f_amt", fieldKind: "amount" as const, type: "amount-fixed" as const, label: "Headphones XPro 3.0", required: true, placeholder: "", amount: 4999, showDescription: true, description: "Premium Noise-Cancelling Headphones — includes carry case & USB-C cable" },
+      { id: "f_name", fieldKind: "input" as const, type: "text" as const, label: "Full Name", required: true, placeholder: "Name for shipping label" },
+      { id: "f_email", fieldKind: "input" as const, type: "email" as const, label: "Email Address", required: true, placeholder: "Order confirmation sent here" },
+      { id: "f_phone", fieldKind: "input" as const, type: "phone" as const, label: "Phone Number", required: true, placeholder: "For delivery updates" },
+      { id: "f_color", fieldKind: "input" as const, type: "dropdown" as const, label: "Colour", required: true, placeholder: "Choose a colour", options: ["Midnight Black", "Pearl White", "Space Grey", "Coral Red"] },
+      { id: "f_addr", fieldKind: "input" as const, type: "textarea" as const, label: "Delivery Address", required: true, placeholder: "Full delivery address with pincode" },
+    ] as FormField[],
+  },
+
+  "Event Booking": {
+    merchantName: "Company",
+    logoInitial: "C",
+    logoUrl: COMPANY_LOGO,
+    brandColor: "#D97706",
+    category: "events",
+    buttonText: "Register Now",
+    successMessage: "You're registered! Check your email for your event pass and schedule.",
+    slug: "company-summit",
+    pageUrl: "https://rzp.io/rzp/company-summit",
+    sections: [
+      { id: "s_hero", type: "hero", visible: true, data: { title: "Growth Summit 2025 — Mumbai", tagline: "India's premier conference for founders and business builders", description: "Two days of high-signal talks, workshops, and networking with 1,500+ founders, investors, and operators. Actionable insights you can implement immediately." } },
+      { id: "s_stats", type: "stats", visible: true, data: { items: [{ value: "1,500+", label: "Attendees" }, { value: "40+", label: "Speakers" }, { value: "Dec 14–15", label: "Mumbai" }, { value: "3", label: "Tracks" }] } },
+      { id: "s_highlights", type: "highlights", visible: true, data: { title: "What's included", items: ["Access to all keynotes & panel sessions", "Hands-on workshops (limited seats)", "Curated 1:1 networking sessions", "Summit playbook & speaker slide decks", "Lunch, tea & evening networking dinner", "Recording access for 3 months"] } },
+      { id: "s_testimonials", type: "testimonials", visible: true, data: { items: [{ name: "Ankit S.", rating: 5, text: "Best conference I've attended in years. Every session was packed with actionable insights. Met my co-founder here!" }, { name: "Ritu K.", rating: 5, text: "Quality of speakers and hallway conversations is unmatched. Worth every rupee." }, { name: "Varun M.", rating: 4, text: "Great organisation. The investor networking session alone was worth the ticket price." }, { name: "Preethi N.", rating: 5, text: "I've attended Growth Summit 3 years in a row. The one conference I never miss." }] } },
+      { id: "s_about", type: "about", visible: false, data: { image: "", name: "", role: "", bio: "" } },
+      { id: "s_faq", type: "faq", visible: true, data: { items: [{ q: "Is there a group discount?", a: "Yes! Get 20% off for groups of 5+. Email events@company.in for group bookings." }, { q: "Can I transfer my ticket?", a: "Tickets are transferable up to 7 days before the event." }, { q: "What's the refund policy?", a: "Full refund up to 30 days before. 50% refund up to 14 days before. No refund after." }] } },
+    ] as ContentSection[],
+    formFields: [
+      { id: "f_ticket", fieldKind: "amount" as const, type: "amount-fixed" as const, label: "Standard Pass", required: true, placeholder: "", amount: 2999, showDescription: true, description: "Growth Summit 2025 — Dec 14–15 · Mumbai · NSCI Dome" },
+      { id: "f_name", fieldKind: "input" as const, type: "text" as const, label: "Full Name", required: true, placeholder: "Name for event badge" },
+      { id: "f_email", fieldKind: "input" as const, type: "email" as const, label: "Email Address", required: true, placeholder: "Event pass sent here" },
+      { id: "f_phone", fieldKind: "input" as const, type: "phone" as const, label: "Phone Number", required: false, placeholder: "For event updates" },
+      { id: "f_org", fieldKind: "input" as const, type: "text" as const, label: "Company / Organisation", required: false, placeholder: "For badge & networking" },
+      { id: "f_type", fieldKind: "input" as const, type: "dropdown" as const, label: "Ticket Type", required: true, placeholder: "Select ticket type", options: ["Standard Pass — ₹2,999", "Pro Pass (incl. workshops) — ₹5,999", "VIP Pass (front row + dinner) — ₹9,999"] },
+    ] as FormField[],
+  },
+
+  "Non-Profit Donation": {
+    merchantName: "Company",
+    logoInitial: "C",
+    logoUrl: COMPANY_LOGO,
+    brandColor: "#BE185D",
+    category: "services",
+    buttonText: "Donate Now",
+    successMessage: "Thank you for your generosity! Your 80G tax receipt has been sent to your email within 30 minutes.",
+    slug: "company-donate",
+    pageUrl: "https://rzp.io/rzp/company-donate",
+    sections: [
+      { id: "s_hero", type: "hero", visible: true, data: { title: "Help 10,000 Children Access Quality Education", tagline: "Your contribution changes lives — one child at a time", description: "In rural India, millions of children drop out of school due to poverty. We provide free schooling, meals, and mentorship. 100% of your donation goes directly to the children." } },
+      { id: "s_stats", type: "stats", visible: true, data: { items: [{ value: "8,400+", label: "Children supported" }, { value: "12 years", label: "On the ground" }, { value: "3 states", label: "UP, Bihar, Jharkhand" }, { value: "₹3.2 Cr", label: "Raised last year" }] } },
+      { id: "s_highlights", type: "highlights", visible: true, data: { title: "Your donation funds", items: ["Free schooling for out-of-school children", "Daily nutritious mid-day meals", "Trained teachers and mentors", "Educational materials & digital access", "80G tax exemption for all donations", "Monthly impact reports sent to donors"] } },
+      { id: "s_about", type: "about", visible: true, data: { image: "https://images.unsplash.com/photo-1573497019940-1c28c88b4f3e?w=80&h=80&fit=crop&crop=face", name: "Sunita Rao", role: "Founder & Executive Director", bio: "Former IAS officer who left a 20-year career to build this NGO. NASSCOM Social Innovation Award winner. Trusted by 8,000+ donors across India." } },
+      { id: "s_testimonials", type: "testimonials", visible: true, data: { items: [{ name: "Kavya R.", rating: 5, text: "I've been donating monthly for 2 years. The impact reports are detailed and honest. You can see exactly where your money goes." }, { name: "Deepak J.", rating: 5, text: "Transparent, trustworthy, genuinely impactful. Got my 80G receipt instantly. Will keep supporting." }, { name: "Sunita B.", rating: 5, text: "Visited one of their centres in Bihar. The work they do on the ground is incredible." }, { name: "Manish T.", rating: 5, text: "One of the few NGOs that publishes audited financials. Zero doubt about credibility." }] } },
+      { id: "s_faq", type: "faq", visible: true, data: { items: [{ q: "How is my donation used?", a: "100% of your donation goes to program costs. Operational expenses are funded separately via CSR partners." }, { q: "Will I get a tax receipt?", a: "Yes, an 80G-compliant receipt is sent to your email within 30 minutes of your donation." }, { q: "Can I donate monthly?", a: "Yes! Set up a monthly donation using UPI AutoPay or recurring card. Cancel anytime." }] } },
+    ] as ContentSection[],
+    formFields: [
+      { id: "f_amt", fieldKind: "amount" as const, type: "amount-custom" as const, label: "Donation Amount", required: true, placeholder: "Enter amount you wish to donate" },
+      { id: "f_name", fieldKind: "input" as const, type: "text" as const, label: "Full Name", required: true, placeholder: "Name for 80G receipt" },
+      { id: "f_email", fieldKind: "input" as const, type: "email" as const, label: "Email Address", required: true, placeholder: "80G receipt sent here" },
+      { id: "f_phone", fieldKind: "input" as const, type: "phone" as const, label: "Phone Number", required: false, placeholder: "Optional" },
+      { id: "f_pan", fieldKind: "input" as const, type: "pan" as const, label: "PAN Number (for 80G)", required: false, placeholder: "ABCDE1234F" },
+    ] as FormField[],
+  },
+};
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const PaymentPageEditor = () => {
@@ -254,21 +430,29 @@ const PaymentPageEditor = () => {
 
   const dragIndexRef = useRef<number | null>(null);
 
+  const templateName   = searchParams.get("template") || "";
+  const templateConfig = TEMPLATE_CONFIGS[templateName] || {};
+
   const [pageData, setPageData] = useState<PageData>({
-    merchantName: searchParams.get("title") || searchParams.get("template") || "WealthJoy Technologies",
-    logoInitial: "W",
+    merchantName: "Company",
+    logoInitial: "C",
+    logoUrl: COMPANY_LOGO,
     brandColor: "#0066FF",
     category: "education",
-    buttonText: "Enroll Now",
-    successMessage: "Thank you! You'll receive a confirmation email shortly.",
+    buttonText: "Pay Now",
+    successMessage: "Thank you! You'll receive a confirmation shortly.",
     redirectUrl: "",
     sendReceipt: true,
     gstEnabled: true,
     sections: defaultSections,
     formFields: defaultFormFields,
     status: "draft",
-    slug: "fullstack-bootcamp",
-    pageUrl: "https://rzp.io/rzp/fullstack-bootcamp",
+    slug: "company-page",
+    pageUrl: "https://rzp.io/rzp/company-page",
+    supportEmail: "",
+    supportPhone: "",
+    termsText: "",
+    ...templateConfig,
   });
 
   const updatePage = (updates: Partial<PageData>) => {
@@ -677,10 +861,14 @@ const EditorCanvas = ({
       <div className="border-b border-gray-100 bg-white/95 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
-              style={{ backgroundColor: pageData.brandColor }}>
-              {pageData.logoInitial}
-            </div>
+            {pageData.logoUrl ? (
+              <img src={pageData.logoUrl} alt="logo" className="w-9 h-9 rounded-lg object-cover flex-shrink-0 border border-gray-100" />
+            ) : (
+              <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm flex-shrink-0"
+                style={{ backgroundColor: pageData.brandColor }}>
+                {pageData.logoInitial}
+              </div>
+            )}
             {editable ? (
               <input
                 value={pageData.merchantName}
@@ -1256,6 +1444,133 @@ const PreviewField = ({ field }: { field: FormField }) => {
           placeholder={field.placeholder}
         />
       )}
+    </div>
+  );
+};
+
+// ─── PageContactFooter ────────────────────────────────────────────────────────
+// Contact Us + T&C + Razorpay footer shown at the bottom of every payment page.
+
+interface PageContactFooterProps {
+  merchantName: string;
+  supportEmail: string;
+  supportPhone: string;
+  termsText: string;
+  editable?: boolean;
+  onUpdate?: (patch: { supportEmail?: string; supportPhone?: string; termsText?: string }) => void;
+}
+
+export const PageContactFooter = ({
+  merchantName, supportEmail, supportPhone, termsText, editable = false, onUpdate,
+}: PageContactFooterProps) => {
+  return (
+    <div className="border-t border-gray-100 pt-8 mt-6 space-y-6">
+      {/* Contact Us */}
+      <div>
+        <p className="text-sm font-semibold text-gray-900 flex items-center gap-2 mb-3">
+          <span className="w-1.5 h-1.5 rounded-full bg-primary inline-block" />
+          Contact Us:
+        </p>
+        <div className="space-y-2">
+          {/* Email */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-2 bg-white flex-1">
+              <Mail className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+              {editable ? (
+                <input
+                  type="email"
+                  value={supportEmail}
+                  onChange={(e) => onUpdate?.({ supportEmail: e.target.value })}
+                  placeholder="Enter support email"
+                  className="flex-1 text-sm bg-transparent focus:outline-none text-gray-700 placeholder:text-gray-300"
+                />
+              ) : (
+                <span className={`text-sm flex-1 ${supportEmail ? "text-gray-700" : "text-gray-300"}`}>
+                  {supportEmail || "Enter support email"}
+                </span>
+              )}
+            </div>
+          </div>
+          {!supportEmail && editable && (
+            <p className="text-[11px] text-gray-400 pl-1">Please add your support email</p>
+          )}
+          {/* Phone */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 border border-gray-200 rounded-lg px-3 py-2 bg-white flex-shrink-0">
+              <span className="text-sm text-gray-500 whitespace-nowrap">🇮🇳 +91 (IN)</span>
+            </div>
+            <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-2 bg-white flex-1">
+              <Phone className="h-3.5 w-3.5 text-gray-400 flex-shrink-0" />
+              {editable ? (
+                <input
+                  type="tel"
+                  value={supportPhone}
+                  onChange={(e) => onUpdate?.({ supportPhone: e.target.value })}
+                  placeholder="Enter support phone"
+                  className="flex-1 text-sm bg-transparent focus:outline-none text-gray-700 placeholder:text-gray-300"
+                />
+              ) : (
+                <span className={`text-sm flex-1 ${supportPhone ? "text-gray-700" : "text-gray-300"}`}>
+                  {supportPhone || "Enter support phone"}
+                </span>
+              )}
+            </div>
+          </div>
+          {!supportPhone && editable && (
+            <p className="text-[11px] text-gray-400 pl-1">Please add your support contact number</p>
+          )}
+        </div>
+      </div>
+
+      {/* Terms & Conditions */}
+      <div>
+        {editable ? (
+          <div className="space-y-1.5">
+            <button className="flex items-center gap-1.5 text-sm text-primary hover:underline">
+              <Plus className="h-3.5 w-3.5" />
+              Add Your Terms and Conditions
+            </button>
+            {termsText && (
+              <Textarea
+                value={termsText}
+                onChange={(e) => onUpdate?.({ termsText: e.target.value })}
+                placeholder="Enter your terms and conditions..."
+                rows={3}
+                className="text-xs resize-none mt-1"
+              />
+            )}
+          </div>
+        ) : termsText ? (
+          <div className="text-xs text-gray-500 leading-relaxed">{termsText}</div>
+        ) : null}
+
+        {/* Mandatory consent text */}
+        <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+          <p className="text-[11px] text-gray-500 leading-relaxed">
+            You agree to share information entered on this page with{" "}
+            <span className="font-semibold text-gray-700">{merchantName || "the merchant"}</span>{" "}
+            (owner of this page) and Razorpay, adhering to applicable laws.
+            These terms and conditions are mandatory and cannot be removed.
+          </p>
+        </div>
+      </div>
+
+      {/* Razorpay footer */}
+      <div className="border-t border-gray-100 pt-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <svg width="20" height="20" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M14.968 0L6.5 17.344h7.246L9.863 30l14.17-17.344H16.79L21.437 0z" fill="#0066FF"/>
+          </svg>
+          <span className="text-xs font-semibold text-gray-500">Razorpay</span>
+        </div>
+        <p className="text-[11px] text-gray-400 text-center sm:text-right">
+          Want to create a page like this for your business?{" "}
+          <a href="#" className="text-primary hover:underline font-medium">
+            Visit Razorpay Payment Pages
+          </a>{" "}
+          to get started!
+        </p>
+      </div>
     </div>
   );
 };
