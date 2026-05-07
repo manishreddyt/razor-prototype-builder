@@ -604,44 +604,28 @@ const CreatePaymentPage = () => {
 
         {/* Template grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.map((t) => {
-            const cfg = PREVIEW_CONFIGS[t.title];
-            return (
-              <div key={t.title} className="blade-card overflow-hidden group flex flex-col">
-                {/* Thumbnail */}
-                <div className="relative h-44 overflow-hidden flex-shrink-0">
-                  <img src={t.image} alt={t.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-                  {/* Category pill overlaid on image */}
-                  <span className="absolute top-3 left-3 px-2 py-0.5 rounded-full bg-white/90 backdrop-blur-sm text-[10px] font-semibold text-gray-700 shadow-sm">{t.category}</span>
-                </div>
+          {filtered.map((t) => (
+            <div key={t.title} className="blade-card overflow-hidden group flex flex-col">
+              {/* Thumbnail */}
+              <div className="h-44 overflow-hidden flex-shrink-0">
+                <img src={t.image} alt={t.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+              </div>
 
-                <div className="p-4 flex flex-col flex-1">
-                  {cfg ? (
-                    <>
-                      {/* Specific hero content matching the preview */}
-                      <h3 className="font-bold text-foreground text-sm leading-snug mb-0.5">{cfg.hero.title}</h3>
-                      <p className="text-xs font-medium mb-1.5" style={{ color: cfg.brandColor }}>{cfg.hero.tagline}</p>
-                      {/* Template type label */}
-                      <p className="text-[10px] text-muted-foreground mb-3 flex-1">{t.title}</p>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="font-semibold text-foreground text-sm mb-1">{t.title}</h3>
-                      <p className="text-xs text-muted-foreground mb-3 line-clamp-2 flex-1">{t.desc}</p>
-                    </>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => openPreview(t)}>
-                      <Eye className="h-3.5 w-3.5" /> Preview
-                    </Button>
-                    <Button size="sm" className="gap-1.5 text-xs flex-1" onClick={() => navigate(`/payment-pages/editor?template=${encodeURIComponent(t.title)}`)}>
-                      Use Template <ArrowRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+              <div className="p-4 flex flex-col flex-1">
+                <h3 className="font-bold text-foreground text-sm leading-snug mb-2">{t.title}</h3>
+                <p className="text-xs text-muted-foreground line-clamp-2 flex-1 mb-2">{t.desc}</p>
+                <span className="inline-block self-start px-2 py-0.5 rounded-full bg-blue-50 text-[10px] font-medium text-primary border border-primary/20 mb-3">{t.category}</span>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" className="gap-1.5 text-xs flex-1" onClick={() => openPreview(t)}>
+                    <Eye className="h-3.5 w-3.5" /> Preview
+                  </Button>
+                  <Button size="sm" className="gap-1.5 text-xs flex-1" onClick={() => navigate(`/payment-pages/editor?template=${encodeURIComponent(t.title)}`)}>
+                    Use Template <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
       </div>
 
