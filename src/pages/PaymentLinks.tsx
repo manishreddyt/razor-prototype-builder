@@ -147,7 +147,9 @@ const PaymentLinks = () => {
     customerPhone: "",
     customerEmail: "",
     referenceId: "",
+    customerName: "",
   });
+  const [autoSendInvoice, setAutoSendInvoice] = useState(false);
   // Multi-payment state
   const [collectInMultiplePayments, setCollectInMultiplePayments] = useState(false);
   const [multiPaymentMode, setMultiPaymentMode] = useState<"schedule" | "customer_choice">("schedule");
@@ -545,7 +547,8 @@ const PaymentLinks = () => {
   const getProductById = (id: string) => availableProducts.find((p) => p.id === id);
 
   const resetCreateForm = () => {
-    setFormData({ description: "", amount: "", customerPhone: "", customerEmail: "", referenceId: "" });
+    setFormData({ description: "", amount: "", customerPhone: "", customerEmail: "", referenceId: "", customerName: "" });
+    setAutoSendInvoice(false);
     setCollectInMultiplePayments(false);
     setMultiPaymentMode("schedule");
     setSplitType("equal");
@@ -1082,6 +1085,16 @@ const PaymentLinks = () => {
               <button className="mt-2 text-sm text-blue-600 hover:underline flex items-center gap-1">
                 More ways to notify <ExternalLink className="h-3.5 w-3.5" />
               </button>
+
+              {/* Customer Name */}
+              <div className="space-y-1.5 mt-3">
+                <label className="text-sm text-muted-foreground block">Customer Name</label>
+                <Input
+                  placeholder="Enter customer name"
+                  value={formData.customerName}
+                  onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                />
+              </div>
             </div>
 
             {/* Reference Id */}
@@ -1369,26 +1382,10 @@ const PaymentLinks = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-2">
-                    <Checkbox
-                      id="gstReceiptEnabled"
-                      checked={gstReceiptEnabled}
-                      onCheckedChange={(checked) => {
-                        setGstReceiptEnabled(!!checked);
-                        if (checked) setSendReceiptAuto(false);
-                      }}
-                    />
-                    <div>
-                      <label htmlFor="gstReceiptEnabled" className="text-sm font-medium text-foreground cursor-pointer">
-                        Post-Payment Invoice
-                      </label>
-                      <p className="text-xs text-muted-foreground mt-0.5">Generate GST-compliant invoice with customer &amp; tax details</p>
-                    </div>
-                  </div>
                 </div>
 
-                {/* GST Invoice Details Form */}
-                {gstReceiptEnabled && (
+                {/* Placeholder so the GST form state is preserved but hidden — removed from create flow */}
+                {false && (
                   <div className="border border-border rounded-lg p-4 space-y-4 bg-secondary/10">
                     <p className="text-sm font-semibold text-foreground">Add Details for Invoice</p>
 
@@ -1818,36 +1815,57 @@ const PaymentLinks = () => {
 
       {/* Success Modal - Post Payment Link Creation */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-center">Payment Link Created Successfully!</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="p-4 bg-secondary/50 rounded-lg border border-border">
-              <p className="text-xs text-muted-foreground mb-2">Your Payment Link</p>
-              <div className="flex items-center gap-2 min-w-0 overflow-hidden">
-                <code className="text-sm text-foreground flex-1 truncate block min-w-0">{createdLink}</code>
-              </div>
+        <DialogContent className="max-w-md [&>button.absolute]:hidden">
+          {/* Header */}
+          <div className="flex items-start gap-3 pb-4 border-b border-border">
+            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="h-5 w-5 text-green-600" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="font-semibold text-foreground text-base">Payment Link Created!</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Your link is ready to accept payments.</p>
+            </div>
+            <button
+              onClick={() => { setShowSuccessModal(false); setCreatedLink(""); setCreatedLinkId(""); resetCreateForm(); }}
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex-shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div className="space-y-4 pt-2">
+            {/* Link box */}
+            <div className="p-3 bg-secondary/40 rounded-lg border border-border">
+              <p className="text-xs text-muted-foreground mb-1.5">Your Payment Link</p>
+              <code className="text-sm text-foreground block truncate">{createdLink}</code>
             </div>
 
-            {/* Show enabled integrations */}
+            {/* Copy + Preview */}
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1 gap-2" onClick={() => { navigator.clipboard.writeText(createdLink); toast.success("Link copied!"); }}>
+                <Copy className="h-4 w-4" /> Copy Link
+              </Button>
+              <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(`/pay/${createdLinkId}`, '_blank')}>
+                <ExternalLink className="h-4 w-4" /> Preview
+              </Button>
+            </div>
+
+            {/* Enabled integrations */}
             {(shiprocketEnabled || whatsappConfirmationEnabled) && (
-              <div className="p-3 bg-secondary/30 rounded-lg border border-border">
-                <p className="text-xs font-medium text-foreground mb-2">Enabled Integrations</p>
-                <div className="space-y-1.5">
-                  {shiprocketEnabled && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Package className="h-3.5 w-3.5 text-primary" />
-                      <span>Shiprocket - Order details will be sent automatically</span>
-                    </div>
-                  )}
-                  {whatsappConfirmationEnabled && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <MessageCircle className="h-3.5 w-3.5 text-green-600" />
-                      <span>WhatsApp - Order confirmation will be sent to customer</span>
-                    </div>
-                  )}
-                </div>
+              <div className="p-3 bg-secondary/30 rounded-lg border border-border space-y-1.5">
+                <p className="text-xs font-medium text-foreground">Enabled Integrations</p>
+                {shiprocketEnabled && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Package className="h-3.5 w-3.5 text-primary" />
+                    <span>Shiprocket — Order details sent automatically</span>
+                  </div>
+                )}
+                {whatsappConfirmationEnabled && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <MessageCircle className="h-3.5 w-3.5 text-green-600" />
+                    <span>WhatsApp — Confirmation sent to customer</span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -1855,8 +1873,7 @@ const PaymentLinks = () => {
             {collectInMultiplePayments && (
               <div className="p-3 bg-secondary/30 rounded-lg border border-border">
                 <p className="text-xs font-medium text-foreground mb-2">
-                  Payment Schedule
-                  {multiPaymentMode === "schedule" ? ` — ${installments.length} payments` : " — Customer chooses amount"}
+                  Payment Schedule{multiPaymentMode === "schedule" ? ` — ${installments.length} payments` : " — Customer chooses amount"}
                 </p>
                 {multiPaymentMode === "schedule" ? (
                   <div className="space-y-1.5">
@@ -1864,9 +1881,7 @@ const PaymentLinks = () => {
                       <div key={inst.id} className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>{inst.label || `Payment ${idx + 1}`}{inst.dueDate ? ` · Due ${new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}</span>
                         <span className="font-medium text-foreground">
-                          {inst.amount !== "" && !isNaN(Number(inst.amount))
-                            ? `₹${Number(inst.amount).toLocaleString("en-IN")}`
-                            : <span className="text-muted-foreground italic">TBD</span>}
+                          {inst.amount !== "" && !isNaN(Number(inst.amount)) ? `₹${Number(inst.amount).toLocaleString("en-IN")}` : <span className="italic">TBD</span>}
                         </span>
                       </div>
                     ))}
@@ -1877,100 +1892,44 @@ const PaymentLinks = () => {
               </div>
             )}
 
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="flex-1 gap-2"
-                onClick={() => {
-                  navigator.clipboard.writeText(createdLink);
-                  toast.success("Link copied to clipboard!");
-                }}
-              >
-                <Copy className="h-4 w-4" />
-                Copy Link
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 gap-2"
-                onClick={() => {
-                  window.open(`/pay/${createdLinkId}`, '_blank');
-                }}
-              >
-                <ExternalLink className="h-4 w-4" />
-                Preview
-              </Button>
-            </div>
-
-            <div className="border-t pt-4">
-              <p className="text-sm font-medium text-foreground mb-3">Share via</p>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => {
-                    const message = encodeURIComponent(`Pay using this link: ${createdLink}`);
-                    window.open(`https://wa.me/?text=${message}`, '_blank');
-                    toast.success("Shared via WhatsApp");
-                  }}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </Button>
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => {
-                    const subject = encodeURIComponent("Payment Link");
-                    const body = encodeURIComponent(`Please use this link to make payment: ${createdLink}`);
-                    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
-                    toast.success("Opened email client");
-                  }}
-                >
-                  <Mail className="h-4 w-4" />
-                  Email
-                </Button>
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => {
-                    const message = encodeURIComponent(`Pay using this link: ${createdLink}`);
-                    window.open(`sms:?&body=${message}`, '_blank');
-                    toast.success("Opened SMS app");
-                  }}
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  SMS
-                </Button>
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: 'Payment Link',
-                        text: 'Pay using this link',
-                        url: createdLink,
-                      }).then(() => toast.success("Shared successfully"))
-                        .catch(() => {});
-                    } else {
-                      toast.info("Share feature not supported");
-                    }
-                  }}
-                >
-                  <Share2 className="h-4 w-4" />
-                  More
-                </Button>
+            {/* Post-payment invoice option */}
+            <div className="p-3 rounded-lg border border-border bg-background space-y-3">
+              <div className="flex items-start gap-2.5">
+                <Checkbox
+                  id="autoSendInvoice"
+                  checked={autoSendInvoice}
+                  onCheckedChange={(checked) => setAutoSendInvoice(!!checked)}
+                  className="mt-0.5"
+                />
+                <div>
+                  <label htmlFor="autoSendInvoice" className="text-sm font-medium text-foreground cursor-pointer">
+                    Send invoice post payment automatically
+                  </label>
+                  <p className="text-xs text-muted-foreground mt-0.5">GST-compliant invoice will be sent to the customer on payment.</p>
+                </div>
               </div>
+
+              {autoSendInvoice && (
+                <div className="ml-6 space-y-2">
+                  <label className="text-xs text-muted-foreground block">Customer Name <span className="text-destructive">*</span></label>
+                  <Input
+                    placeholder="Enter customer name for invoice"
+                    value={formData.customerName}
+                    onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
+                    className="text-sm"
+                  />
+                </div>
+              )}
+
+              <p className="text-xs text-muted-foreground ml-0.5 flex items-center gap-1.5">
+                <span className="text-muted-foreground/60">or</span>
+                <span>create and send invoice manually from <span className="text-primary font-medium cursor-pointer hover:underline" onClick={() => { setShowSuccessModal(false); }}>payment details</span></span>
+              </p>
             </div>
 
             <Button
               className="w-full"
-              onClick={() => {
-                setShowSuccessModal(false);
-                setCreatedLink("");
-                setCreatedLinkId("");
-                resetCreateForm();
-              }}
+              onClick={() => { setShowSuccessModal(false); setCreatedLink(""); setCreatedLinkId(""); resetCreateForm(); }}
             >
               Done
             </Button>
