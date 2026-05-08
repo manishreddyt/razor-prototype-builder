@@ -1815,7 +1815,7 @@ const PaymentLinks = () => {
 
       {/* Success Modal - Post Payment Link Creation */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="max-w-md [&>button.absolute]:hidden">
+        <DialogContent className="max-w-md w-full overflow-hidden [&>button.absolute]:hidden">
           {/* Header */}
           <div className="flex items-start gap-3 pb-4 border-b border-border">
             <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -1835,9 +1835,9 @@ const PaymentLinks = () => {
 
           <div className="space-y-4 pt-2">
             {/* Link box */}
-            <div className="p-3 bg-secondary/40 rounded-lg border border-border">
+            <div className="p-3 bg-secondary/40 rounded-lg border border-border min-w-0">
               <p className="text-xs text-muted-foreground mb-1.5">Your Payment Link</p>
-              <code className="text-sm text-foreground block truncate">{createdLink}</code>
+              <code className="text-sm text-foreground block truncate min-w-0">{createdLink}</code>
             </div>
 
             {/* Copy + Preview */}
