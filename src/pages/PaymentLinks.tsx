@@ -1878,55 +1878,58 @@ const PaymentLinks = () => {
       </Dialog>
 
       {/* Success Modal - Post Payment Link Creation */}
-      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="max-w-[440px] w-[calc(100vw-2rem)] overflow-hidden [&>button.absolute]:hidden">
+      <Dialog open={showSuccessModal} onOpenChange={(open) => { if (!open) { setShowSuccessModal(false); setCreatedLink(""); setCreatedLinkId(""); resetCreateForm(); } }}>
+        <DialogContent className="w-[min(420px,calc(100vw-32px))] p-0 gap-0 [&>button.absolute]:hidden rounded-xl">
           {/* Header */}
-          <div className="flex items-start gap-3 pb-4 border-b border-border">
-            <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
+            <div className="h-9 w-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <h2 className="font-semibold text-foreground text-base">Payment Link Created!</h2>
+              <h2 className="font-semibold text-foreground text-sm leading-tight">Payment Link Created!</h2>
               <p className="text-xs text-muted-foreground mt-0.5">Your link is ready to accept payments.</p>
             </div>
             <button
               onClick={() => { setShowSuccessModal(false); setCreatedLink(""); setCreatedLinkId(""); resetCreateForm(); }}
-              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex-shrink-0"
+              className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex-shrink-0"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
-          <div className="space-y-4 pt-2">
+          {/* Body */}
+          <div className="px-5 py-4 space-y-3">
             {/* Link box */}
-            <div className="p-3 bg-secondary/40 rounded-lg border border-border overflow-hidden">
-              <p className="text-xs text-muted-foreground mb-1.5">Your Payment Link</p>
-              <p className="text-sm text-foreground truncate font-mono">{createdLink}</p>
+            <div className="rounded-lg border border-border bg-muted/40 px-3 py-2.5">
+              <p className="text-[11px] text-muted-foreground mb-1">Your Payment Link</p>
+              <p className="text-xs text-foreground font-mono break-all leading-relaxed">{createdLink}</p>
             </div>
 
             {/* Copy + Preview */}
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={() => { navigator.clipboard.writeText(createdLink); toast.success("Link copied!"); }}>
-                <Copy className="h-3.5 w-3.5" /> Copy Link
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { navigator.clipboard.writeText(createdLink); toast.success("Link copied!"); }}>
+                <Copy className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>Copy Link</span>
               </Button>
-              <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={() => window.open(`/pay/${createdLinkId}`, '_blank')}>
-                <ExternalLink className="h-3.5 w-3.5" /> Preview
+              <Button variant="outline" size="sm" className="gap-1.5" onClick={() => window.open(`/pay/${createdLinkId}`, '_blank')}>
+                <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>Preview</span>
               </Button>
             </div>
 
             {/* Enabled integrations */}
             {(shiprocketEnabled || whatsappConfirmationEnabled) && (
-              <div className="p-3 bg-secondary/30 rounded-lg border border-border space-y-1.5">
+              <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5 space-y-1.5">
                 <p className="text-xs font-medium text-foreground">Enabled Integrations</p>
                 {shiprocketEnabled && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Package className="h-3.5 w-3.5 text-primary" />
+                    <Package className="h-3.5 w-3.5 text-primary flex-shrink-0" />
                     <span>Shiprocket — Order details sent automatically</span>
                   </div>
                 )}
                 {whatsappConfirmationEnabled && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <MessageCircle className="h-3.5 w-3.5 text-green-600" />
+                    <MessageCircle className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
                     <span>WhatsApp — Confirmation sent to customer</span>
                   </div>
                 )}
@@ -1935,16 +1938,16 @@ const PaymentLinks = () => {
 
             {/* Payment schedule summary */}
             {collectInMultiplePayments && (
-              <div className="p-3 bg-secondary/30 rounded-lg border border-border">
+              <div className="rounded-lg border border-border bg-muted/30 px-3 py-2.5">
                 <p className="text-xs font-medium text-foreground mb-2">
                   Payment Schedule{multiPaymentMode === "schedule" ? ` — ${installments.length} payments` : " — Customer chooses amount"}
                 </p>
                 {multiPaymentMode === "schedule" ? (
                   <div className="space-y-1.5">
                     {installments.map((inst, idx) => (
-                      <div key={inst.id} className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{inst.label || `Payment ${idx + 1}`}{inst.dueDate ? ` · Due ${new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}</span>
-                        <span className="font-medium text-foreground">
+                      <div key={inst.id} className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                        <span className="min-w-0 truncate">{inst.label || `Payment ${idx + 1}`}{inst.dueDate ? ` · Due ${new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}</span>
+                        <span className="font-medium text-foreground flex-shrink-0">
                           {inst.amount !== "" && !isNaN(Number(inst.amount)) ? `₹${Number(inst.amount).toLocaleString("en-IN")}` : <span className="italic">TBD</span>}
                         </span>
                       </div>
@@ -1957,21 +1960,22 @@ const PaymentLinks = () => {
             )}
 
             {/* Post-payment invoice option */}
-            <div className="rounded-lg border border-border bg-background overflow-hidden">
-              <div className="flex items-start gap-3 p-3">
+            <div className="rounded-lg border border-border bg-background">
+              <div className="flex items-start gap-3 px-3 pt-3 pb-2">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-sm font-medium text-foreground">Send invoice post payment automatically</span>
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary text-white leading-none">New</span>
-                    {invoiceConfigured && (
-                      <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-                        <CheckCircle2 className="h-3 w-3" /> Configured
-                      </span>
-                    )}
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary text-white leading-none flex-shrink-0">New</span>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">GST-compliant invoice will be sent to the customer on payment.</p>
+                  {invoiceConfigured ? (
+                    <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium mt-0.5">
+                      <CheckCircle2 className="h-3 w-3" /> Configured
+                    </span>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-0.5">GST-compliant invoice will be sent to the customer on payment.</p>
+                  )}
                   {autoSendInvoice && invoiceConfigured && (
-                    <button onClick={openInvoiceDialog} className="text-xs text-primary hover:underline mt-1 flex items-center gap-1">
+                    <button onClick={() => { setShowSuccessModal(false); setShowGstModal(true); }} className="text-xs text-primary hover:underline mt-1 flex items-center gap-1">
                       <FileText className="h-3 w-3" /> Edit invoice details
                     </button>
                   )}
@@ -1980,22 +1984,27 @@ const PaymentLinks = () => {
                   checked={autoSendInvoice}
                   onCheckedChange={(checked) => {
                     setAutoSendInvoice(checked);
-                    if (checked) openInvoiceDialog();
-                    else setInvoiceConfigured(false);
+                    if (checked) {
+                      setShowSuccessModal(false);
+                      setShowGstModal(true);
+                    } else {
+                      setInvoiceConfigured(false);
+                    }
                   }}
                   className="flex-shrink-0 mt-0.5"
                 />
               </div>
-              <div className="px-3 pb-3">
-                <p className="text-xs text-muted-foreground">
-                  You can create the invoice later post payment confirmation too from the{" "}
-                  <span className="text-primary font-medium cursor-pointer hover:underline" onClick={() => setShowSuccessModal(false)}>
-                    payment link details
-                  </span>{" "}section.
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground px-3 pb-3 leading-relaxed">
+                You can create the invoice later post payment confirmation too from the{" "}
+                <span className="text-primary font-medium cursor-pointer hover:underline" onClick={() => setShowSuccessModal(false)}>
+                  payment link details
+                </span>{" "}section.
+              </p>
             </div>
+          </div>
 
+          {/* Footer */}
+          <div className="px-5 pb-4">
             <Button
               className="w-full"
               onClick={() => { setShowSuccessModal(false); setCreatedLink(""); setCreatedLinkId(""); resetCreateForm(); }}
@@ -2760,6 +2769,7 @@ const PaymentLinks = () => {
               onClick={() => {
                 setDetailReceiptGenerated(true);
                 setDetailIncludeGst(true);
+                setInvoiceConfigured(true);
                 setShowGstModal(false);
                 toast.success("GST Receipt generated and sent to customer!");
               }}
