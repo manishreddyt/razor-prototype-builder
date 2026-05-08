@@ -1433,7 +1433,7 @@ const PaymentLinks = () => {
                     />
                     <div>
                       <label htmlFor="sendReceiptAuto" className="text-sm font-medium text-foreground cursor-pointer">
-                        Send Payment Confirmation Receipt PDF
+                        Send Payment Confirmation Receipt
                       </label>
                       <div className="flex items-center gap-4 mt-0.5">
                         <a href="https://razorpay.com/docs/payments/payment-pages/receipt/#pdf-receipt-to-customers" target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
