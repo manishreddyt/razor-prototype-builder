@@ -1879,7 +1879,7 @@ const PaymentLinks = () => {
 
       {/* Success Modal - Post Payment Link Creation */}
       <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
-        <DialogContent className="max-w-md w-full overflow-hidden [&>button.absolute]:hidden">
+        <DialogContent className="max-w-[440px] w-[calc(100vw-2rem)] overflow-hidden [&>button.absolute]:hidden">
           {/* Header */}
           <div className="flex items-start gap-3 pb-4 border-b border-border">
             <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
@@ -1899,18 +1899,18 @@ const PaymentLinks = () => {
 
           <div className="space-y-4 pt-2">
             {/* Link box */}
-            <div className="p-3 bg-secondary/40 rounded-lg border border-border min-w-0">
+            <div className="p-3 bg-secondary/40 rounded-lg border border-border overflow-hidden">
               <p className="text-xs text-muted-foreground mb-1.5">Your Payment Link</p>
-              <code className="text-sm text-foreground block truncate min-w-0">{createdLink}</code>
+              <p className="text-sm text-foreground truncate font-mono">{createdLink}</p>
             </div>
 
             {/* Copy + Preview */}
-            <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 gap-2" onClick={() => { navigator.clipboard.writeText(createdLink); toast.success("Link copied!"); }}>
-                <Copy className="h-4 w-4" /> Copy Link
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={() => { navigator.clipboard.writeText(createdLink); toast.success("Link copied!"); }}>
+                <Copy className="h-3.5 w-3.5" /> Copy Link
               </Button>
-              <Button variant="outline" className="flex-1 gap-2" onClick={() => window.open(`/pay/${createdLinkId}`, '_blank')}>
-                <ExternalLink className="h-4 w-4" /> Preview
+              <Button variant="outline" size="sm" className="gap-1.5 w-full" onClick={() => window.open(`/pay/${createdLinkId}`, '_blank')}>
+                <ExternalLink className="h-3.5 w-3.5" /> Preview
               </Button>
             </div>
 
@@ -1957,26 +1957,15 @@ const PaymentLinks = () => {
             )}
 
             {/* Post-payment invoice option */}
-            <div className="p-3 rounded-lg border border-border bg-background space-y-3">
-              <div className="flex items-start gap-2.5">
-                <Checkbox
-                  id="autoSendInvoice"
-                  checked={autoSendInvoice}
-                  onCheckedChange={(checked) => {
-                    setAutoSendInvoice(!!checked);
-                    if (checked) openInvoiceDialog();
-                    else setInvoiceConfigured(false);
-                  }}
-                  className="mt-0.5"
-                />
+            <div className="rounded-lg border border-border bg-background overflow-hidden">
+              <div className="flex items-start gap-3 p-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <label htmlFor="autoSendInvoice" className="text-sm font-medium text-foreground cursor-pointer">
-                      Send invoice post payment automatically
-                    </label>
+                    <span className="text-sm font-medium text-foreground">Send invoice post payment automatically</span>
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary text-white leading-none">New</span>
                     {invoiceConfigured && (
                       <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium">
-                        <CheckCircle2 className="h-3.5 w-3.5" /> Configured
+                        <CheckCircle2 className="h-3 w-3" /> Configured
                       </span>
                     )}
                   </div>
@@ -1987,12 +1976,24 @@ const PaymentLinks = () => {
                     </button>
                   )}
                 </div>
+                <Switch
+                  checked={autoSendInvoice}
+                  onCheckedChange={(checked) => {
+                    setAutoSendInvoice(checked);
+                    if (checked) openInvoiceDialog();
+                    else setInvoiceConfigured(false);
+                  }}
+                  className="flex-shrink-0 mt-0.5"
+                />
               </div>
-
-              <p className="text-xs text-muted-foreground ml-0.5 flex items-center gap-1.5">
-                <span className="text-muted-foreground/60">or</span>
-                <span>create and send invoice manually from <span className="text-primary font-medium cursor-pointer hover:underline" onClick={() => { setShowSuccessModal(false); }}>payment details</span></span>
-              </p>
+              <div className="px-3 pb-3">
+                <p className="text-xs text-muted-foreground">
+                  You can create the invoice later post payment confirmation too from the{" "}
+                  <span className="text-primary font-medium cursor-pointer hover:underline" onClick={() => setShowSuccessModal(false)}>
+                    payment link details
+                  </span>{" "}section.
+                </p>
+              </div>
             </div>
 
             <Button
