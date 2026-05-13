@@ -116,9 +116,6 @@ const PaymentLinks = () => {
   const [expiryDate, setExpiryDate] = useState("");
   // Receipt state
   const [sendReceiptAuto, setSendReceiptAuto] = useState(true);
-  const [show80gDetails, setShow80gDetails] = useState(false);
-  const [g80Description, setG80Description] = useState("");
-  const [g80SignatureFile, setG80SignatureFile] = useState<File | null>(null);
   const [gstReceiptEnabled, setGstReceiptEnabled] = useState(false);
   const [gstCustomerName, setGstCustomerName] = useState("");
   const [gstNumber, setGstNumber] = useState("");
@@ -632,8 +629,6 @@ const PaymentLinks = () => {
     setCollectAddress(false);
     setSendReceiptAuto(true);
     setShow80gDetails(false);
-    setG80Description("");
-    setG80SignatureFile(null);
     setGstReceiptEnabled(false);
     setGstCustomerName("");
     setGstNumber("");
@@ -1754,114 +1749,7 @@ const PaymentLinks = () => {
                   </div>
                 )}
 
-                {/* 80g Details */}
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="show80g"
-                      checked={show80gDetails}
-                      onCheckedChange={(checked) => setShow80gDetails(!!checked)}
-                    />
-                    <label htmlFor="show80g" className="text-sm font-medium flex items-center gap-1.5 cursor-pointer">
-                      Show 80g Details on Receipt
-                      <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                    </label>
-                  </div>
-
-                  {show80gDetails && (
-                    <div className="ml-6 space-y-4 mt-2 p-4 rounded-lg border border-border bg-muted/30">
-                      <p className="text-xs font-semibold text-foreground uppercase tracking-wide">80g Details</p>
-
-                      {/* 80g Description */}
-                      <div className="space-y-1.5">
-                        <div className="flex items-center justify-between">
-                          <label className="text-sm font-medium">80g Description</label>
-                          <a
-                            href="https://razorpay.com/docs/payments/payment-pages/80g-receipt/#pdf-receipt-to-customers"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-xs text-blue-600 hover:underline flex items-center gap-1"
-                          >
-                            Sample 80g Receipt
-                            <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </div>
-                        <textarea
-                          value={g80Description}
-                          onChange={(e) => setG80Description(e.target.value)}
-                          placeholder="All donations made to us are eligible for tax exemption under 80G of IT act"
-                          rows={3}
-                          className="w-full rounded-md border border-input bg-white px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                        />
-                      </div>
-
-                      {/* Signature Upload */}
-                      <div className="space-y-1.5">
-                        <label className="text-sm font-medium">
-                          Signature of Authorised Person{" "}
-                          <span className="text-muted-foreground font-normal">(Optional)</span>
-                        </label>
-                        <label
-                          className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-white px-4 py-5 cursor-pointer hover:border-blue-400 hover:bg-blue-50/30 transition-colors"
-                        >
-                          <input
-                            type="file"
-                            accept=".png,.jpg,.jpeg"
-                            className="hidden"
-                            onChange={(e) => {
-                              const file = e.target.files?.[0] ?? null;
-                              if (file && file.size > 500 * 1024) {
-                                toast.error("File size must be under 500 KB");
-                                return;
-                              }
-                              setG80SignatureFile(file);
-                            }}
-                          />
-                          {g80SignatureFile ? (
-                            <div className="flex items-center gap-2 text-sm text-green-700">
-                              <CheckCircle2 className="h-4 w-4" />
-                              <span>{g80SignatureFile.name}</span>
-                              <button
-                                type="button"
-                                className="text-muted-foreground hover:text-destructive ml-1"
-                                onClick={(e) => { e.preventDefault(); setG80SignatureFile(null); }}
-                              >
-                                <X className="h-3.5 w-3.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                                <span>Drag file here or</span>
-                                <span className="text-blue-600 font-medium underline-offset-2 hover:underline">Upload</span>
-                              </div>
-                              <p className="text-xs text-muted-foreground">Upload .png, .jpg or .jpeg file | 500 KB Max</p>
-                            </>
-                          )}
-                        </label>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex justify-end gap-2 pt-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => { setShow80gDetails(false); setG80Description(""); setG80SignatureFile(null); }}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          type="button"
-                          size="sm"
-                          onClick={() => toast.success("80g details saved")}
-                        >
-                          Save details
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* 80G details moved to Receipt Settings */}
               </div>
             </div>
 
