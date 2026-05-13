@@ -379,53 +379,65 @@ const ReceiptsSettings = () => {
 
         {/* Brand Name & Logo */}
         <Card className="mb-5">
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-0.5">Brand Name and Logo</h3>
-            <p className="text-sm text-muted-foreground mb-5">Shows your Brand Name on the Receipts, Checkout screens etc.</p>
-            <div className="flex items-center gap-5">
-              <div className="relative flex-shrink-0">
-                <div
-                  className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden cursor-pointer group"
-                  style={{ background: logoUrl ? "transparent" : brandColor }}
-                  onClick={() => logoInputRef.current?.click()}
-                >
-                  {logoUrl
-                    ? <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
-                    : <span className="text-white font-bold text-xl">{brandName.slice(0, 2).toUpperCase()}</span>}
-                  <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Upload className="h-5 w-5 text-white" />
+          <CardContent className="p-6 space-y-6">
+            <div>
+              <h3 className="font-semibold mb-0.5">Brand Name and Logo</h3>
+              <p className="text-sm text-muted-foreground">Shows your Brand Name on the Receipts, Checkout screens etc.</p>
+            </div>
+
+            {/* Logo */}
+            <div>
+              <p className="text-sm font-medium text-foreground mb-3">Logo</p>
+              <div className="flex items-center gap-4">
+                <div className="relative flex-shrink-0">
+                  <div
+                    className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden cursor-pointer group"
+                    style={{ background: logoUrl ? "transparent" : brandColor }}
+                    onClick={() => logoInputRef.current?.click()}
+                  >
+                    {logoUrl
+                      ? <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
+                      : <span className="text-white font-bold text-xl">{brandName.slice(0, 2).toUpperCase()}</span>}
+                    <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Upload className="h-5 w-5 text-white" />
+                    </div>
                   </div>
+                  <input ref={logoInputRef} type="file" accept="image/*" className="sr-only" onChange={handleLogoUpload} />
                 </div>
-                <input ref={logoInputRef} type="file" accept="image/*" className="sr-only" onChange={handleLogoUpload} />
-              </div>
-              <div className="flex-1 min-w-0">
-                {editingName ? (
-                  <div className="flex items-center gap-2">
-                    <Input autoFocus value={draftName} onChange={(e) => setDraftName(e.target.value)} className="max-w-xs h-9 text-sm"
-                      onKeyDown={(e) => { if (e.key === "Enter") { setBrandName(draftName); setEditingName(false); } if (e.key === "Escape") { setDraftName(brandName); setEditingName(false); } }} />
-                    <Button size="sm" className="h-9 px-3" onClick={() => { setBrandName(draftName); setEditingName(false); }}>Save</Button>
-                    <Button size="sm" variant="ghost" className="h-9 px-2" onClick={() => { setDraftName(brandName); setEditingName(false); }}><X className="h-4 w-4" /></Button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2.5">
-                    <span className="text-base font-semibold text-foreground">{brandName}</span>
-                    <button onClick={() => { setDraftName(brandName); setEditingName(true); }} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
-                      <Pencil className="h-3.5 w-3.5" />
+                <div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => logoInputRef.current?.click()} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
+                      <Upload className="h-3.5 w-3.5" /> {logoUrl ? "Change logo" : "Upload logo"}
                     </button>
+                    {logoUrl && (
+                      <button onClick={() => { setLogoUrl(undefined); toast.success("Logo removed"); }} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
+                        <X className="h-3.5 w-3.5" /> Remove
+                      </button>
+                    )}
                   </div>
-                )}
-                <div className="flex items-center gap-3 mt-2">
-                  <button onClick={() => logoInputRef.current?.click()} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
-                    <Upload className="h-3.5 w-3.5" /> {logoUrl ? "Change logo" : "Upload logo"}
+                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 2 MB. Square logo recommended.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Brand Name */}
+            <div>
+              <p className="text-sm font-medium text-foreground mb-3">Brand Name</p>
+              {editingName ? (
+                <div className="flex items-center gap-2">
+                  <Input autoFocus value={draftName} onChange={(e) => setDraftName(e.target.value)} className="max-w-xs h-9 text-sm"
+                    onKeyDown={(e) => { if (e.key === "Enter") { setBrandName(draftName); setEditingName(false); } if (e.key === "Escape") { setDraftName(brandName); setEditingName(false); } }} />
+                  <Button size="sm" className="h-9 px-3" onClick={() => { setBrandName(draftName); setEditingName(false); }}>Save</Button>
+                  <Button size="sm" variant="ghost" className="h-9 px-2" onClick={() => { setDraftName(brandName); setEditingName(false); }}><X className="h-4 w-4" /></Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2.5">
+                  <span className="text-base font-semibold text-foreground">{brandName}</span>
+                  <button onClick={() => { setDraftName(brandName); setEditingName(true); }} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+                    <Pencil className="h-3.5 w-3.5" />
                   </button>
-                  {logoUrl && (
-                    <button onClick={() => { setLogoUrl(undefined); toast.success("Logo removed"); }} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
-                      <X className="h-3.5 w-3.5" /> Remove
-                    </button>
-                  )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 2 MB. Square logo recommended.</p>
-              </div>
+              )}
             </div>
           </CardContent>
         </Card>
