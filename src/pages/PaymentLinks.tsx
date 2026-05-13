@@ -1717,6 +1717,7 @@ const PaymentLinks = () => {
                     </div>
                   </div>
                 )}
+          </div>
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 flex-shrink-0 bg-white">
