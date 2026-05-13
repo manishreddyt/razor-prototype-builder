@@ -2280,7 +2280,151 @@ const PaymentLinks = () => {
                       onClick={() => {
                         setDetailReceiptGenerated(true);
                         setDetailIncludeGst(false);
-                        toast.success("Payment receipt generated and downloaded!");
+                        // Build and open the wealthjoy-style receipt
+                        const link = selectedLink!;
+                        const merchantInitials = "MR";
+                        const merchantBrandName = "Manish Reddy";
+                        const brandColor = "#0066FF";
+                        const paidOn = link.date ? new Date(link.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : new Date().toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+                        const amount = link.amount ? Number(link.amount).toLocaleString("en-IN", { minimumFractionDigits: 2 }) : "0.00";
+                        const paymentFor = link.title || link.description || "Payment";
+                        const txnRef = `pay_${link.id?.slice(-8) || "000000"}`;
+                        const customerName = link.customer || "Customer";
+                        const customerEmail = link.customerEmail || "";
+                        const customerPhone = link.customerPhone || "";
+
+                        const receiptHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment Receipt</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #d0d0d0; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; color: #1a1a1a; -webkit-font-smoothing: antialiased; }
+    .receipt-card { width: 794px; min-height: 1123px; background: #fff; box-shadow: 0 4px 24px rgba(0,0,0,0.13); display: flex; flex-direction: column; position: relative; }
+    .receipt-body { flex: 1; padding: 56px 60px 32px; display: flex; flex-direction: column; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0; }
+    .receipt-title { font-size: 38px; font-weight: 700; color: #000; letter-spacing: -0.5px; line-height: 1; margin-bottom: 20px; }
+    .meta-grid { display: grid; grid-template-columns: auto 1fr; gap: 6px 18px; align-items: baseline; }
+    .meta-key { font-size: 13px; color: #888; font-weight: 400; white-space: nowrap; }
+    .meta-val { font-size: 13px; color: #1a1a1a; font-weight: 500; }
+    .header-right { display: flex; flex-direction: column; align-items: center; gap: 9px; }
+    .logo-box { width: 88px; height: 88px; background: ${brandColor}; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+    .logo-mark { font-size: 32px; font-weight: 800; color: #fff; letter-spacing: -1px; line-height: 1; }
+    .logo-name { font-size: 13.5px; font-weight: 600; color: #333; letter-spacing: 0.2px; }
+    .divider { height: 1px; background: #e8e8e8; margin: 30px 0; }
+    .parties-row { display: grid; grid-template-columns: 1fr 1fr; margin-top: 32px; }
+    .party-label { font-size: 12px; color: #888; font-weight: 600; margin-bottom: 10px; }
+    .party-name { font-size: 15px; font-weight: 700; color: #000; margin-bottom: 6px; }
+    .party-detail { font-size: 13px; color: #444; line-height: 1.9; }
+    .party-detail a { color: #444; text-decoration: none; }
+    .items-table { width: 100%; border-collapse: collapse; }
+    .items-table thead tr { border-bottom: 1px solid #e8e8e8; }
+    .items-table th { padding: 11px 10px; font-size: 12.5px; font-weight: 500; color: #aaa; text-align: left; white-space: nowrap; }
+    .items-table th:not(:first-child) { text-align: right; }
+    .items-table tbody tr { border-bottom: 1px solid #f0f0f0; }
+    .items-table td { padding: 20px 10px; vertical-align: middle; color: #1a1a1a; font-size: 14px; }
+    .items-table td:not(:first-child) { text-align: right; }
+    .item-name { font-weight: 500; }
+    .totals-area { display: flex; justify-content: flex-end; margin-top: 6px; }
+    .totals-box { width: 290px; }
+    .total-row { display: flex; justify-content: space-between; padding: 8px 10px; font-size: 13.5px; color: #555; }
+    .total-row.grand { font-size: 19px; font-weight: 700; color: #000; padding-top: 12px; border-top: 1.5px solid #ccc; margin-top: 4px; }
+    .total-row.amount-paid { font-size: 13.5px; font-weight: 500; color: #444; padding-top: 6px; }
+    .spacer { flex: 1; }
+    .footer { border-top: 1px solid #e8e8e8; padding: 18px 60px; display: flex; align-items: center; justify-content: space-between; background: #fff; }
+    .rzp-row { display: flex; align-items: center; gap: 6px; }
+    .rzp-text { font-size: 12px; color: #888; }
+    .rzp-wordmark { font-size: 14px; font-weight: 700; color: #000; letter-spacing: -0.3px; }
+    .footer-page { font-size: 12px; color: #aaa; }
+    .print-btn { display: block; margin: 20px auto 0; padding: 10px 30px; background: #000; color: #fff; border: none; border-radius: 5px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Inter', sans-serif; letter-spacing: 0.2px; }
+    .print-btn:hover { opacity: 0.75; }
+    @media print { body { background: #fff; padding: 0; } .print-btn { display: none; } .receipt-card { width: 210mm; min-height: 297mm; box-shadow: none; } }
+  </style>
+</head>
+<body>
+<div class="receipt-card">
+  <div class="receipt-body">
+    <div class="header">
+      <div class="header-left">
+        <div class="receipt-title">Payment Receipt</div>
+        <div class="meta-grid">
+          <span class="meta-key">Transaction Reference:</span>
+          <span class="meta-val">${txnRef}</span>
+          <span class="meta-key">Paid On:</span>
+          <span class="meta-val">${paidOn}</span>
+          <span class="meta-key">Payment For:</span>
+          <span class="meta-val">${paymentFor}</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="logo-box"><div class="logo-mark">${merchantInitials}</div></div>
+        <div class="logo-name">${merchantBrandName}</div>
+      </div>
+    </div>
+    <div class="parties-row">
+      <div class="party-block">
+        <div class="party-label">Bill From</div>
+        <div class="party-name">${merchantBrandName}</div>
+        <div class="party-detail">billing@${merchantBrandName.toLowerCase().replace(/\s+/g, "")}.in</div>
+      </div>
+      <div class="party-block">
+        <div class="party-label">Bill To</div>
+        <div class="party-name">${customerName}</div>
+        <div class="party-detail">
+          ${customerEmail ? `<a href="mailto:${customerEmail}">${customerEmail}</a><br>` : ""}
+          ${customerPhone || ""}
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width:50%">Description</th>
+          <th>Unit Price</th>
+          <th>Qty</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="item-name">${paymentFor}</span></td>
+          <td>₹ ${amount}</td>
+          <td>1</td>
+          <td>₹ ${amount}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="totals-area">
+      <div class="totals-box">
+        <div class="total-row grand"><span>Total</span><span>₹ ${amount}</span></div>
+        <div class="total-row amount-paid"><span>Amount Paid</span><span>₹ ${amount}</span></div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+  <div class="footer">
+    <div class="rzp-row">
+      <span class="rzp-text">Invoicing and payments powered by</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left:6px">
+        <path d="M13.5 2L4 14h8l-1.5 8L20 10h-8l1.5-8z" fill="#000"/>
+      </svg>
+      <span class="rzp-wordmark">Razorpay</span>
+    </div>
+    <div class="footer-page">Page 1 of 1</div>
+  </div>
+</div>
+<button class="print-btn" onclick="window.print()">Download / Print PDF</button>
+</body>
+</html>`;
+
+                        const blob = new Blob([receiptHtml], { type: "text/html" });
+                        const url = URL.createObjectURL(blob);
+                        window.open(url, "_blank");
+                        toast.success("Receipt opened — use Print to save as PDF");
                       }}
                     >
                       <FileText className="h-3.5 w-3.5" /> Generate Payment Receipt
