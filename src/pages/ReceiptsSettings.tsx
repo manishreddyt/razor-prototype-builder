@@ -654,7 +654,7 @@ const ReceiptsSettings = () => {
         {/* Receipt Template */}
         <Card className="mb-6">
           <CardContent className="p-6">
-            <h3 className="font-semibold mb-0.5">Receipt Template</h3>
+            <h3 className="font-semibold mb-0.5">Receipt PDF Template</h3>
             <p className="text-sm text-muted-foreground mb-5">Choose the visual style for your payment receipts.</p>
             <div className="grid grid-cols-2 gap-5">
               {TEMPLATES.map(({ id, label, Component }) => (
