@@ -12,7 +12,7 @@ import { ArrowLeft, Check, Pencil, Upload, X } from "lucide-react";
 // ── Shared A4 sub-components ──────────────────────────────────────────────────
 
 const A4W = 794;
-const SCALE = 0.181; // fits ~144px card width
+const SCALE = 0.383; // fits ~304px card width (2-col grid)
 
 const RzpFooter = ({ dark }: { dark?: boolean }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -478,7 +478,7 @@ const ReceiptsSettings = () => {
           <CardContent className="p-6">
             <h3 className="font-semibold mb-0.5">Receipt Template</h3>
             <p className="text-sm text-muted-foreground mb-5">Choose the visual style for your payment receipts.</p>
-            <div className="grid grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 gap-5">
               {TEMPLATES.map(({ id, label, Component }) => (
                 <button key={id} onClick={() => setSelectedTemplate(id)} className="group flex flex-col gap-2 text-left">
                   <div className="relative w-full rounded-xl overflow-hidden transition-all"
