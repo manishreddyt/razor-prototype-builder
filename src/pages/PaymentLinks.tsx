@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, FileText, Info, Trash2, Download, Send, Receipt, Wand2 } from "lucide-react";
+import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, Check, FileText, Info, Trash2, Download, Send, Receipt, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -145,7 +145,7 @@ const PaymentLinks = () => {
   const [detailBillingCity, setDetailBillingCity] = useState("");
   const [detailBillingState, setDetailBillingState] = useState("");
   const [detailBillingPincode, setDetailBillingPincode] = useState("");
-  const [detailShippingSameAsBilling, setDetailShippingSameAsBilling] = useState(false);
+  const [detailShippingSameAsBilling, setDetailShippingSameAsBilling] = useState(true);
   const [detailShippingAddress, setDetailShippingAddress] = useState("");
   const [detailShippingCity, setDetailShippingCity] = useState("");
   const [detailShippingState, setDetailShippingState] = useState("");
@@ -2450,7 +2450,7 @@ const PaymentLinks = () => {
           <DialogHeader className="pb-3 border-b border-border flex-shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="h-4 w-4 text-blue-600" />
-              Generate GST Receipt
+              Generate Tax Invoice
             </DialogTitle>
           </DialogHeader>
 
@@ -2506,7 +2506,7 @@ const PaymentLinks = () => {
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-foreground">Billing Address *</label>
+                    <label className="text-xs font-medium text-foreground">Billing Address <span className="text-muted-foreground font-normal">(Optional)</span></label>
                     <Input
                       className="h-9 text-sm"
                       placeholder="Street address"
@@ -2661,20 +2661,24 @@ const PaymentLinks = () => {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <Input
-                            className="h-8 text-sm flex-1"
-                            placeholder="Item / service name"
-                            value={item.name}
-                            onChange={(e) => {
-                              const updated = [...detailInvoiceItems];
-                              updated[idx] = { ...updated[idx], name: e.target.value };
-                              setDetailInvoiceItems(updated);
-                            }}
-                          />
-                          <div className="w-24">
+                          <div className="flex-1 space-y-1">
+                            <label className="text-[10px] font-medium text-muted-foreground">Item / Service Name</label>
                             <Input
                               className="h-8 text-sm"
-                              placeholder="Rate (₹)"
+                              placeholder="e.g. Online Course"
+                              value={item.name}
+                              onChange={(e) => {
+                                const updated = [...detailInvoiceItems];
+                                updated[idx] = { ...updated[idx], name: e.target.value };
+                                setDetailInvoiceItems(updated);
+                              }}
+                            />
+                          </div>
+                          <div className="w-24 space-y-1">
+                            <label className="text-[10px] font-medium text-muted-foreground">Rate (₹)</label>
+                            <Input
+                              className="h-8 text-sm"
+                              placeholder="0.00"
                               type="number"
                               value={item.rate}
                               onChange={(e) => {
@@ -2686,42 +2690,51 @@ const PaymentLinks = () => {
                           </div>
                         </div>
                         <div className="grid grid-cols-3 gap-2">
-                          <Input
-                            className="h-8 text-sm text-center"
-                            placeholder="Qty"
-                            value={item.qty}
-                            onChange={(e) => {
-                              const updated = [...detailInvoiceItems];
-                              updated[idx] = { ...updated[idx], qty: e.target.value };
-                              setDetailInvoiceItems(updated);
-                            }}
-                          />
-                          <Input
-                            className="h-8 text-sm"
-                            placeholder="HSN/SAC"
-                            value={item.hsn}
-                            onChange={(e) => {
-                              const updated = [...detailInvoiceItems];
-                              updated[idx] = { ...updated[idx], hsn: e.target.value };
-                              setDetailInvoiceItems(updated);
-                            }}
-                          />
-                          <select
-                            className="h-8 text-sm border border-input rounded-md px-2 bg-background"
-                            value={item.taxRate}
-                            onChange={(e) => {
-                              const updated = [...detailInvoiceItems];
-                              updated[idx] = { ...updated[idx], taxRate: e.target.value };
-                              setDetailInvoiceItems(updated);
-                            }}
-                          >
-                            <option value="">Tax %</option>
-                            <option value="0">0%</option>
-                            <option value="5">5%</option>
-                            <option value="12">12%</option>
-                            <option value="18">18%</option>
-                            <option value="28">28%</option>
-                          </select>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-medium text-muted-foreground">Quantity</label>
+                            <Input
+                              className="h-8 text-sm text-center"
+                              placeholder="1"
+                              value={item.qty}
+                              onChange={(e) => {
+                                const updated = [...detailInvoiceItems];
+                                updated[idx] = { ...updated[idx], qty: e.target.value };
+                                setDetailInvoiceItems(updated);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-medium text-muted-foreground">HSN / SAC</label>
+                            <Input
+                              className="h-8 text-sm"
+                              placeholder="e.g. 9983"
+                              value={item.hsn}
+                              onChange={(e) => {
+                                const updated = [...detailInvoiceItems];
+                                updated[idx] = { ...updated[idx], hsn: e.target.value };
+                                setDetailInvoiceItems(updated);
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-medium text-muted-foreground">Tax Rate</label>
+                            <select
+                              className="h-8 w-full text-sm border border-input rounded-md px-2 bg-background"
+                              value={item.taxRate}
+                              onChange={(e) => {
+                                const updated = [...detailInvoiceItems];
+                                updated[idx] = { ...updated[idx], taxRate: e.target.value };
+                                setDetailInvoiceItems(updated);
+                              }}
+                            >
+                              <option value="">None</option>
+                              <option value="0">0% (Exempt)</option>
+                              <option value="5">5%</option>
+                              <option value="12">12%</option>
+                              <option value="18">18%</option>
+                              <option value="28">28%</option>
+                            </select>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -2877,6 +2890,37 @@ const PaymentLinks = () => {
                         </div>
                       </div>
 
+                      {/* Notes */}
+                      <div className="border-t border-gray-100 pt-3 space-y-1">
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Notes</p>
+                        <p className="text-xs text-gray-500 italic">Thank you for your business. Please reach out to us for any queries.</p>
+                      </div>
+
+                      {/* Terms & Conditions */}
+                      <div className="border-t border-gray-100 pt-3 space-y-1">
+                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wide">Terms & Conditions</p>
+                        <ol className="text-[10px] text-gray-400 space-y-0.5 list-decimal list-inside leading-relaxed">
+                          <li>Payment is due within 14 days of invoice date.</li>
+                          <li>All sales are final. Refunds subject to policy.</li>
+                          <li>Disputes must be raised within 7 days of receipt.</li>
+                        </ol>
+                      </div>
+
+                      {/* Authorised Signatory */}
+                      <div className="border-t border-gray-100 pt-3 flex justify-end">
+                        <div className="text-right space-y-6">
+                          <div>
+                            <div className="w-32 h-12 border border-dashed border-gray-200 rounded flex items-center justify-center ml-auto">
+                              <span className="text-[9px] text-gray-300 italic">Signature</span>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-semibold text-gray-700">Authorised Signatory</p>
+                            <p className="text-[10px] text-gray-400">WealthJoy</p>
+                          </div>
+                        </div>
+                      </div>
+
                       {/* Footer */}
                       <div className="border-t border-gray-200 pt-3 text-xs text-gray-400 text-center">
                         <p>This is a computer-generated invoice. No signature required.</p>
@@ -2901,24 +2945,16 @@ const PaymentLinks = () => {
             </Button>
             <Button
               size="sm"
-              variant="outline"
-              className="gap-1.5"
-              onClick={handleDownloadInvoicePdf}
-            >
-              <Download className="h-3.5 w-3.5" /> Download PDF
-            </Button>
-            <Button
-              size="sm"
               className="flex-1 gap-1.5 bg-blue-600 hover:bg-blue-700 text-white"
               onClick={() => {
                 setDetailReceiptGenerated(true);
                 setDetailIncludeGst(true);
                 setInvoiceConfigured(true);
                 setShowGstModal(false);
-                toast.success("GST Receipt generated and sent to customer!");
+                toast.success("Invoice details saved! The tax invoice will be automatically generated and sent to the customer once payment is completed.", { duration: 5000 });
               }}
             >
-              <Send className="h-3.5 w-3.5" /> Generate and Send to Customer
+              <Check className="h-3.5 w-3.5" /> Save Details
             </Button>
           </div>
         </DialogContent>
