@@ -9,126 +9,307 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowLeft, Check, Pencil, Upload, X } from "lucide-react";
 
-// ── Template mini-preview components ─────────────────────────────────────────
+// ── Shared A4 sub-components ──────────────────────────────────────────────────
 
-const TemplatePreview1 = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
-  <div className="w-full h-full bg-white rounded-md p-3 flex flex-col gap-2 border border-gray-100">
-    <div className="flex justify-between items-start">
-      <div className="flex-1 min-w-0 pr-2">
-        <div className="text-[8px] font-bold text-gray-900 leading-tight">Payment Receipt</div>
-        <div className="text-[6px] text-gray-400 mt-0.5">Transaction: pay_Sc6nUSSKS8</div>
-        <div className="text-[6px] text-gray-400">Paid On: 13 Apr 2026</div>
+const A4W = 794;
+const SCALE = 0.181; // fits ~144px card width
+
+const RzpFooter = ({ dark }: { dark?: boolean }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+    <span style={{ fontSize: 12, color: dark ? "rgba(255,255,255,0.4)" : "#888" }}>
+      Invoicing and payments powered by
+    </span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ marginLeft: 2 }}>
+      <path d="M13.5 2L4 14h8l-1.5 8L20 10h-8l1.5-8z" fill={dark ? "#fff" : "#000"} />
+    </svg>
+    <span style={{ fontSize: 14, fontWeight: 700, color: dark ? "#fff" : "#000", letterSpacing: -0.3 }}>Razorpay</span>
+  </div>
+);
+
+const LogoBlock = ({ color, logoUrl, name, textColor = "#333" }: { color: string; logoUrl?: string; name: string; textColor?: string }) => (
+  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 9, flexShrink: 0 }}>
+    <div style={{ width: 88, height: 88, borderRadius: 14, background: logoUrl ? "transparent" : color, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+      {logoUrl
+        ? <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: -1, color: "#000" }}>{name.slice(0, 2).toUpperCase()}</span>}
+    </div>
+    <div style={{ fontSize: 13.5, fontWeight: 600, color: textColor, letterSpacing: 0.2 }}>{name}</div>
+  </div>
+);
+
+const ReceiptHeaderMeta = ({ titleColor = "#000", metaKeyColor = "#888", metaValColor = "#1a1a1a" }: { titleColor?: string; metaKeyColor?: string; metaValColor?: string }) => (
+  <div>
+    <div style={{ fontSize: 38, fontWeight: 700, color: titleColor, letterSpacing: -0.5, lineHeight: 1, marginBottom: 20 }}>Payment Receipt</div>
+    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "6px 18px", alignItems: "baseline" }}>
+      {[["Transaction Reference:", "pay_Scv6cq6nUSSKS8"], ["Paid On:", "13 Apr 2026"], ["Reference ID:", "ISN12123"]].map(([k, v], i) => (
+        [
+          <span key={`k${i}`} style={{ fontSize: 13, color: metaKeyColor, whiteSpace: "nowrap" }}>{k}</span>,
+          <span key={`v${i}`} style={{ fontSize: 13, color: metaValColor, fontWeight: 500 }}>{v}</span>,
+        ]
+      ))}
+    </div>
+  </div>
+);
+
+const Parties = ({ accentColor = "#888" }: { accentColor?: string }) => (
+  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+    {[["Bill From", "Wealthjoy Tech Pvt Ltd", "GSTIN: 29AADCW4121C1CY\nsupport@wealthjoy.in"],
+      ["Bill To", "Manish", "manish@gmail.com\n+91 99209 72082"]].map(([label, name, detail]) => (
+      <div key={label}>
+        <div style={{ fontSize: 12, color: accentColor, fontWeight: 600, marginBottom: 10 }}>{label}</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: "#000", marginBottom: 6 }}>{name}</div>
+        <div style={{ fontSize: 13, color: "#444", lineHeight: 1.9 }}>{detail.split("\n").map((l, i) => <div key={i}>{l}</div>)}</div>
       </div>
-      <div className="flex flex-col items-center gap-1 flex-shrink-0">
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden" style={{ background: logoUrl ? "transparent" : color }}>
-          {logoUrl
-            ? <img src={logoUrl} alt="" className="w-full h-full object-cover" />
-            : <span className="text-white font-bold text-[9px]">{name.slice(0, 2).toUpperCase()}</span>}
+    ))}
+  </div>
+);
+
+const ItemsTable = ({ thBg = "transparent", thColor = "#aaa", thBorder = "1px solid #e8e8e8" }: { thBg?: string; thColor?: string; thBorder?: string }) => (
+  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <thead>
+      <tr style={{ borderBottom: thBorder, background: thBg }}>
+        {["Description", "Unit Price", "Qty", "Amount"].map((h, i) => (
+          <th key={h} style={{ padding: "11px 10px", fontSize: 12.5, fontWeight: thBg !== "transparent" ? 600 : 500, color: thColor, textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap" }}>{h}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      <tr style={{ borderBottom: "1px solid #f0f0f0" }}>
+        <td style={{ padding: "20px 10px", fontSize: 14, fontWeight: 500, color: "#1a1a1a" }}>Online Course</td>
+        {["₹ 5.00", "1", "₹ 5.00"].map((v) => (
+          <td key={v} style={{ padding: "20px 10px", fontSize: 14, color: "#1a1a1a", textAlign: "right" }}>{v}</td>
+        ))}
+      </tr>
+    </tbody>
+  </table>
+);
+
+const Totals = ({ borderTopColor = "#ccc" }: { borderTopColor?: string }) => (
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 16 }}>
+    {/* PAID stamp */}
+    <div style={{ width: 90, height: 90, border: "2.5px solid #000", borderRadius: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", transform: "rotate(-18deg)", opacity: 0.1, flexShrink: 0 }}>
+      <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 2 }}>PAID</div>
+      <div style={{ fontSize: 6.5, fontWeight: 600, letterSpacing: 1, marginTop: 3 }}>13 APR 2026</div>
+    </div>
+    <div style={{ width: 290 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "12px 10px", fontSize: 19, fontWeight: 700, color: "#000", borderTop: `1.5px solid ${borderTopColor}` }}>
+        <span>Total</span><span>₹ 5.00</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "6px 10px", fontSize: 13.5, fontWeight: 500, color: "#444" }}>
+        <span>Amount Paid</span><span>₹ 5.00</span>
+      </div>
+    </div>
+  </div>
+);
+
+const Notes = () => (
+  <div>
+    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 8 }}>Customer Notes</div>
+    <div style={{ fontSize: 12, color: "#444", lineHeight: 1.75 }}>Thank you for enrolling with Wealthjoy! Your course access is valid for 12 months. For support, reach us at support@wealthjoy.in.</div>
+  </div>
+);
+
+// ── A4 Scale wrapper ──────────────────────────────────────────────────────────
+
+const A4Preview = ({ children }: { children: React.ReactNode }) => (
+  <div style={{ width: "100%", aspectRatio: "2/3", overflow: "hidden", position: "relative" }}>
+    <div style={{
+      position: "absolute", top: 0, left: 0,
+      width: A4W,
+      transform: `scale(${SCALE})`,
+      transformOrigin: "top left",
+      fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+      WebkitFontSmoothing: "antialiased",
+    }}>
+      {children}
+    </div>
+  </div>
+);
+
+// ── Template A: Classic Clean ─────────────────────────────────────────────────
+
+const TemplateA = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
+  <A4Preview>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Header */}
+        <div style={{ padding: "56px 60px 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <ReceiptHeaderMeta />
+            <LogoBlock color={color} logoUrl={logoUrl} name={name} />
+          </div>
         </div>
-        <div className="text-[5.5px] font-semibold text-gray-600 max-w-[36px] truncate text-center">{name}</div>
+        {/* Parties */}
+        <div style={{ padding: "0 60px" }}>
+          <div style={{ height: 1, background: "#e8e8e8", margin: "30px 0" }} />
+          <Parties />
+          <div style={{ height: 1, background: "#e8e8e8", margin: "30px 0" }} />
+        </div>
+        {/* Table */}
+        <div style={{ padding: "0 60px" }}>
+          <ItemsTable />
+        </div>
+        {/* Totals */}
+        <div style={{ padding: "0 60px" }}>
+          <Totals />
+        </div>
+        {/* Notes */}
+        <div style={{ flex: 1, minHeight: 40 }} />
+        <div style={{ padding: "0 60px 32px" }}>
+          <Notes />
+        </div>
+      </div>
+      {/* Footer */}
+      <div style={{ borderTop: "1px solid #e8e8e8", padding: "18px 60px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff" }}>
+        <RzpFooter />
+        <span style={{ fontSize: 12, color: "#aaa" }}>Page 1 of 1</span>
       </div>
     </div>
-    <div className="border-t border-gray-100 pt-1.5 flex gap-4">
-      <div><div className="text-[5.5px] text-gray-400 mb-0.5">Bill From</div><div className="text-[6px] font-semibold text-gray-800">{name}</div></div>
-      <div><div className="text-[5.5px] text-gray-400 mb-0.5">Bill To</div><div className="text-[6px] font-semibold text-gray-800">Customer</div></div>
-    </div>
-    <div className="border-t border-gray-100 pt-1.5 flex-1">
-      <div className="flex justify-between text-[5.5px] text-gray-400 mb-1">
-        <span>Description</span><span>Amount</span>
-      </div>
-      <div className="flex justify-between text-[6.5px] text-gray-800 font-medium">
-        <span>Online Course</span><span>₹5,000</span>
-      </div>
-    </div>
-    <div className="border-t border-gray-100 pt-1.5 flex justify-end">
-      <div className="text-[7px] font-bold text-gray-900">Total ₹5,000</div>
-    </div>
-    <div className="text-[5px] text-gray-300 text-center">Powered by Razorpay</div>
-  </div>
+  </A4Preview>
 );
 
-const TemplatePreview2 = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
-  <div className="w-full h-full bg-white rounded-md overflow-hidden border border-gray-100">
-    <div className="px-3 py-2 flex justify-between items-center" style={{ background: color }}>
-      <div className="text-white text-[7.5px] font-bold">{name}</div>
-      {logoUrl
-        ? <img src={logoUrl} alt="" className="w-6 h-6 rounded object-cover" />
-        : <div className="text-white text-[7px] font-semibold opacity-80 border border-white/30 rounded px-1 py-0.5">Receipt</div>}
+// ── Template B: Dark Header ───────────────────────────────────────────────────
+
+const TemplateB = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
+  <A4Preview>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      {/* Dark header */}
+      <div style={{ background: "#111", padding: "56px 60px 36px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <ReceiptHeaderMeta titleColor="#fff" metaKeyColor="rgba(255,255,255,0.45)" metaValColor="#fff" />
+          <LogoBlock color={color} logoUrl={logoUrl} name={name} textColor="rgba(255,255,255,0.75)" />
+        </div>
+      </div>
+      {/* White body */}
+      <div style={{ flex: 1, background: "#fff", display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "36px 60px 0" }}>
+          <Parties />
+        </div>
+        <div style={{ height: 1, background: "#e8e8e8", margin: "28px 60px" }} />
+        <div style={{ padding: "0 60px" }}>
+          <ItemsTable thBg="#111" thColor="#fff" thBorder="none" />
+        </div>
+        <div style={{ padding: "0 60px" }}>
+          <Totals borderTopColor="#111" />
+        </div>
+        <div style={{ flex: 1, minHeight: 40 }} />
+        <div style={{ padding: "0 60px 32px" }}>
+          <Notes />
+        </div>
+      </div>
+      {/* Dark footer */}
+      <div style={{ background: "#111", padding: "18px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <RzpFooter dark />
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Page 1 of 1</span>
+      </div>
     </div>
-    <div className="p-3 flex flex-col gap-2">
-      <div className="flex justify-between text-[5.5px]">
-        <div className="text-gray-400">Transaction<br /><span className="text-gray-700 font-medium">pay_Sc6nUSSKS8</span></div>
-        <div className="text-gray-400 text-right">Paid On<br /><span className="text-gray-700 font-medium">13 Apr 2026</span></div>
-      </div>
-      <div className="border-t border-gray-100 pt-1.5 flex justify-between text-[6px] text-gray-700">
-        <span>Online Course</span><span>₹5,000</span>
-      </div>
-      <div className="flex justify-end">
-        <div className="text-[6.5px] font-semibold px-2 py-0.5 rounded text-white" style={{ background: color }}>₹5,000 Paid</div>
-      </div>
-      <div className="text-[5px] text-gray-300 text-center pt-1 border-t border-gray-100">Powered by Razorpay</div>
-    </div>
-  </div>
+  </A4Preview>
 );
 
-const TemplatePreview3 = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
-  <div className="w-full h-full bg-white rounded-md p-3 flex flex-col gap-1.5 border border-gray-100">
-    <div className="flex justify-between items-center pb-1.5 border-b border-gray-200">
-      <div className="flex items-center gap-1.5">
-        {logoUrl
-          ? <img src={logoUrl} alt="" className="w-5 h-5 rounded object-cover" />
-          : <div className="w-5 h-5 rounded flex items-center justify-center text-white text-[6px] font-bold" style={{ background: color }}>{name.slice(0,2).toUpperCase()}</div>}
-        <div className="text-[6.5px] font-semibold text-gray-700">{name}</div>
+// ── Template C: Gold Accent ───────────────────────────────────────────────────
+
+const TemplateC = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
+  <A4Preview>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      {/* Gold top bar */}
+      <div style={{ height: 6, background: color }} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Header */}
+        <div style={{ padding: "50px 60px 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <ReceiptHeaderMeta />
+            <LogoBlock color={color} logoUrl={logoUrl} name={name} />
+          </div>
+        </div>
+        {/* Parties */}
+        <div style={{ padding: "0 60px" }}>
+          <div style={{ height: 1.5, background: color, opacity: 0.6, margin: "28px 0" }} />
+          <Parties accentColor={color} />
+          <div style={{ height: 1.5, background: color, opacity: 0.6, margin: "28px 0" }} />
+        </div>
+        {/* Table */}
+        <div style={{ padding: "0 60px" }}>
+          <ItemsTable thBorder={`2px solid ${color}`} />
+        </div>
+        {/* Totals */}
+        <div style={{ padding: "0 60px" }}>
+          <Totals borderTopColor={color} />
+        </div>
+        <div style={{ flex: 1, minHeight: 40 }} />
+        <div style={{ padding: "0 60px 32px" }}>
+          <Notes />
+        </div>
       </div>
-      <div className="text-[5.5px] text-gray-400">13 Apr 2026</div>
-    </div>
-    <div className="text-[9px] font-bold text-gray-900">₹5,000</div>
-    <div className="text-[5.5px] text-gray-400">Amount Paid · 13 Apr 2026</div>
-    <div className="border-t border-gray-100 mt-1 pt-1.5 space-y-1">
-      <div className="flex justify-between text-[5.5px] text-gray-500">
-        <span>Online Course</span><span>₹5,000</span>
-      </div>
-      <div className="flex justify-between text-[5.5px] text-gray-500">
-        <span>Ref: pay_Sc6n…</span><span></span>
+      {/* Footer */}
+      <div style={{ borderTop: `2px solid ${color}`, padding: "18px 60px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fffef5" }}>
+        <RzpFooter />
+        <span style={{ fontSize: 12, color: "#aaa" }}>Page 1 of 1</span>
       </div>
     </div>
-    <div className="mt-auto pt-1.5 border-t border-gray-100 text-[5px] text-gray-300 text-center">
-      Powered by Razorpay
-    </div>
-  </div>
+  </A4Preview>
 );
 
-const TemplatePreview4 = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
-  <div className="w-full h-full rounded-md overflow-hidden border border-gray-100" style={{ background: "#111" }}>
-    <div className="px-3 py-2 flex justify-between items-center">
-      <div>
-        <div className="text-white text-[7.5px] font-bold leading-tight">{name}</div>
-        <div className="text-[5.5px] mt-0.5 font-medium" style={{ color }}>PAYMENT RECEIPT</div>
+// ── Template D: Bold Contrast ─────────────────────────────────────────────────
+
+const TemplateD = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
+  <A4Preview>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {/* Header with bold border */}
+        <div style={{ padding: "56px 60px 28px", borderBottom: "2.5px solid #000" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <ReceiptHeaderMeta />
+            <LogoBlock color={color} logoUrl={logoUrl} name={name} />
+          </div>
+        </div>
+        {/* Black meta band */}
+        <div style={{ background: "#000", padding: "12px 60px", display: "flex", gap: 36, alignItems: "center" }}>
+          {[["Transaction ID", "pay_Scv6cq6n…"], ["Method", "UPI"], ["Currency", "INR"]].map(([k, v]) => (
+            <div key={k}>
+              <div style={{ fontSize: 9, color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: 1, fontWeight: 600, marginBottom: 3 }}>{k}</div>
+              <div style={{ fontSize: 13, color: "#fff", fontWeight: 600 }}>{v}</div>
+            </div>
+          ))}
+          <div style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 6, border: "1.5px solid rgba(255,255,255,0.4)", borderRadius: 100, fontSize: 10, fontWeight: 700, color: "#fff", padding: "5px 14px", textTransform: "uppercase" }}>
+            <div style={{ width: 6, height: 6, background: "#fff", borderRadius: "50%" }} /> Paid
+          </div>
+        </div>
+        {/* Parties */}
+        <div style={{ padding: "32px 60px 0" }}>
+          <Parties />
+          <div style={{ height: 1, background: "#e8e8e8", margin: "28px 0" }} />
+        </div>
+        {/* Table */}
+        <div style={{ padding: "0 60px" }}>
+          <ItemsTable thBorder="1.5px solid #000" />
+        </div>
+        {/* Totals */}
+        <div style={{ padding: "0 60px" }}>
+          <Totals borderTopColor="#000" />
+        </div>
+        <div style={{ flex: 1, minHeight: 40 }} />
+        {/* Notes divider + notes */}
+        <div style={{ height: 2, background: "#000", margin: "0 60px 24px" }} />
+        <div style={{ padding: "0 60px 32px" }}>
+          <Notes />
+        </div>
       </div>
-      {logoUrl
-        ? <img src={logoUrl} alt="" className="w-6 h-6 rounded object-cover" />
-        : <div className="w-6 h-6 rounded flex items-center justify-center text-white text-[7px] font-bold" style={{ background: color }}>{name.slice(0,2).toUpperCase()}</div>}
+      {/* Dark footer */}
+      <div style={{ background: "#000", padding: "18px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <RzpFooter dark />
+        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Page 1 of 1</span>
+      </div>
     </div>
-    <div className="bg-white mx-2 mb-2 rounded-md p-2 flex flex-col gap-1.5">
-      <div className="flex justify-between text-[5.5px] text-gray-400">
-        <span>pay_Sc6nUSSKS8</span><span>13 Apr 2026</span>
-      </div>
-      <div className="border-t border-gray-100 pt-1 flex justify-between text-[6px] text-gray-700">
-        <span>Online Course</span><span className="font-bold">₹5,000</span>
-      </div>
-      <div className="flex justify-between text-[6.5px] font-bold text-gray-900 pt-1 border-t border-gray-100">
-        <span>Total</span><span>₹5,000</span>
-      </div>
-      <div className="text-[5px] text-gray-300 text-center pt-0.5">Powered by Razorpay</div>
-    </div>
-  </div>
+  </A4Preview>
 );
+
+// ── Template registry ─────────────────────────────────────────────────────────
 
 const TEMPLATES = [
-  { id: 1, label: "Classic",  Component: TemplatePreview1 },
-  { id: 2, label: "Modern",   Component: TemplatePreview2 },
-  { id: 3, label: "Minimal",  Component: TemplatePreview3 },
-  { id: 4, label: "Bold",     Component: TemplatePreview4 },
+  { id: 1, label: "Classic",       Component: TemplateA },
+  { id: 2, label: "Dark Header",   Component: TemplateB },
+  { id: 3, label: "Gold Accent",   Component: TemplateC },
+  { id: 4, label: "Bold Contrast", Component: TemplateD },
 ];
 
 const PRESET_COLORS = [
@@ -141,30 +322,25 @@ const PRESET_COLORS = [
 const ReceiptsSettings = () => {
   const navigate = useNavigate();
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const customColorRef = useRef<HTMLInputElement>(null);
 
   const [sendViaEmail, setSendViaEmail] = useState(true);
   const [sendViaWhatsapp, setSendViaWhatsapp] = useState(true);
 
-  // Brand name + logo
   const [brandName, setBrandName] = useState("Manish Reddy");
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState("Manish Reddy");
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
 
-  // Brand color
   const [brandColor, setBrandColor] = useState("#0066FF");
   const [editingColor, setEditingColor] = useState(false);
   const [draftColor, setDraftColor] = useState("#0066FF");
 
-  // Template
   const [selectedTemplate, setSelectedTemplate] = useState(1);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const url = URL.createObjectURL(file);
-    setLogoUrl(url);
+    setLogoUrl(URL.createObjectURL(file));
     toast.success("Logo updated");
   };
 
@@ -183,7 +359,7 @@ const ReceiptsSettings = () => {
           <h1 className="text-2xl font-bold">Receipts Settings</h1>
         </div>
 
-        {/* ── Send via ─────────────────────────────────────── */}
+        {/* Send via */}
         <Card className="mb-5">
           <CardContent className="p-6">
             <h3 className="font-semibold mb-1">Send Receipts via</h3>
@@ -201,14 +377,12 @@ const ReceiptsSettings = () => {
           </CardContent>
         </Card>
 
-        {/* ── Brand Name & Logo ─────────────────────────────── */}
+        {/* Brand Name & Logo */}
         <Card className="mb-5">
           <CardContent className="p-6">
             <h3 className="font-semibold mb-0.5">Brand Name and Logo</h3>
             <p className="text-sm text-muted-foreground mb-5">Shows your Brand Name on the Receipts, Checkout screens etc.</p>
-
             <div className="flex items-center gap-5">
-              {/* Logo */}
               <div className="relative flex-shrink-0">
                 <div
                   className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden cursor-pointer group"
@@ -218,56 +392,34 @@ const ReceiptsSettings = () => {
                   {logoUrl
                     ? <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
                     : <span className="text-white font-bold text-xl">{brandName.slice(0, 2).toUpperCase()}</span>}
-                  {/* overlay on hover */}
                   <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Upload className="h-5 w-5 text-white" />
                   </div>
                 </div>
                 <input ref={logoInputRef} type="file" accept="image/*" className="sr-only" onChange={handleLogoUpload} />
               </div>
-
-              {/* Name + actions */}
               <div className="flex-1 min-w-0">
                 {editingName ? (
                   <div className="flex items-center gap-2">
-                    <Input
-                      autoFocus
-                      value={draftName}
-                      onChange={(e) => setDraftName(e.target.value)}
-                      className="max-w-xs h-9 text-sm"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") { setBrandName(draftName); setEditingName(false); }
-                        if (e.key === "Escape") { setDraftName(brandName); setEditingName(false); }
-                      }}
-                    />
+                    <Input autoFocus value={draftName} onChange={(e) => setDraftName(e.target.value)} className="max-w-xs h-9 text-sm"
+                      onKeyDown={(e) => { if (e.key === "Enter") { setBrandName(draftName); setEditingName(false); } if (e.key === "Escape") { setDraftName(brandName); setEditingName(false); } }} />
                     <Button size="sm" className="h-9 px-3" onClick={() => { setBrandName(draftName); setEditingName(false); }}>Save</Button>
-                    <Button size="sm" variant="ghost" className="h-9 px-2" onClick={() => { setDraftName(brandName); setEditingName(false); }}>
-                      <X className="h-4 w-4" />
-                    </Button>
+                    <Button size="sm" variant="ghost" className="h-9 px-2" onClick={() => { setDraftName(brandName); setEditingName(false); }}><X className="h-4 w-4" /></Button>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2.5">
                     <span className="text-base font-semibold text-foreground">{brandName}</span>
-                    <button
-                      onClick={() => { setDraftName(brandName); setEditingName(true); }}
-                      className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                    >
+                    <button onClick={() => { setDraftName(brandName); setEditingName(true); }} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
                       <Pencil className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 )}
                 <div className="flex items-center gap-3 mt-2">
-                  <button
-                    onClick={() => logoInputRef.current?.click()}
-                    className="text-xs text-primary font-medium hover:underline flex items-center gap-1"
-                  >
+                  <button onClick={() => logoInputRef.current?.click()} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
                     <Upload className="h-3.5 w-3.5" /> {logoUrl ? "Change logo" : "Upload logo"}
                   </button>
                   {logoUrl && (
-                    <button
-                      onClick={() => { setLogoUrl(undefined); toast.success("Logo removed"); }}
-                      className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1"
-                    >
+                    <button onClick={() => { setLogoUrl(undefined); toast.success("Logo removed"); }} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
                       <X className="h-3.5 w-3.5" /> Remove
                     </button>
                   )}
@@ -278,117 +430,70 @@ const ReceiptsSettings = () => {
           </CardContent>
         </Card>
 
-        {/* ── Brand Color ───────────────────────────────────── */}
+        {/* Brand Color */}
         <Card className="mb-5">
           <CardContent className="p-6">
             <h3 className="font-semibold mb-0.5">Brand Color</h3>
             <p className="text-sm text-muted-foreground mb-4">Used as the accent color on receipts and logo background.</p>
-
             {!editingColor ? (
-              /* Collapsed: show current swatch + Edit button */
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-lg border border-border shadow-sm" style={{ background: brandColor }} />
                 <span className="text-sm font-mono text-foreground">{brandColor.toUpperCase()}</span>
-                <button
-                  onClick={() => { setDraftColor(brandColor); setEditingColor(true); }}
-                  className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline"
-                >
+                <button onClick={() => { setDraftColor(brandColor); setEditingColor(true); }} className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline">
                   <Pencil className="h-3.5 w-3.5" /> Edit
                 </button>
               </div>
             ) : (
-              /* Expanded: color picker */
               <div className="space-y-4">
-                {/* Preview */}
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-lg border border-border shadow-sm transition-colors" style={{ background: draftColor }} />
                   <span className="text-sm font-mono text-foreground">{draftColor.toUpperCase()}</span>
                 </div>
-                {/* Presets */}
                 <div className="flex items-center gap-2.5 flex-wrap">
                   {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c}
-                      onClick={() => setDraftColor(c)}
-                      className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110"
-                      style={{
-                        background: c,
-                        boxShadow: draftColor === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : "none",
-                      }}
-                      title={c}
-                    >
+                    <button key={c} onClick={() => setDraftColor(c)} className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+                      style={{ background: c, boxShadow: draftColor === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : "none" }} title={c}>
                       {draftColor === c && <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} />}
                     </button>
                   ))}
-                  {/* Custom */}
                   <label className="cursor-pointer" title="Custom color">
-                    <div
-                      className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-500 transition-colors overflow-hidden"
-                      style={!PRESET_COLORS.includes(draftColor) ? { background: draftColor, border: `2px solid ${draftColor}`, boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${draftColor}` } : {}}
-                    >
-                      {!PRESET_COLORS.includes(draftColor)
-                        ? <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} />
-                        : <span className="text-gray-400 text-sm leading-none">+</span>}
+                    <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-500 transition-colors overflow-hidden"
+                      style={!PRESET_COLORS.includes(draftColor) ? { background: draftColor, border: `2px solid ${draftColor}`, boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${draftColor}` } : {}}>
+                      {!PRESET_COLORS.includes(draftColor) ? <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} /> : <span className="text-gray-400 text-sm leading-none">+</span>}
                     </div>
-                    <input
-                      ref={customColorRef}
-                      type="color"
-                      value={draftColor}
-                      onChange={(e) => setDraftColor(e.target.value)}
-                      className="sr-only"
-                    />
+                    <input type="color" value={draftColor} onChange={(e) => setDraftColor(e.target.value)} className="sr-only" />
                   </label>
                 </div>
-                {/* Actions */}
                 <div className="flex items-center gap-2 pt-1">
-                  <Button size="sm" className="h-8 px-4" onClick={() => { setBrandColor(draftColor); setEditingColor(false); }}>
-                    Apply
-                  </Button>
-                  <Button size="sm" variant="ghost" className="h-8 px-3" onClick={() => { setDraftColor(brandColor); setEditingColor(false); }}>
-                    Cancel
-                  </Button>
+                  <Button size="sm" className="h-8 px-4" onClick={() => { setBrandColor(draftColor); setEditingColor(false); }}>Apply</Button>
+                  <Button size="sm" variant="ghost" className="h-8 px-3" onClick={() => { setDraftColor(brandColor); setEditingColor(false); }}>Cancel</Button>
                 </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* ── Receipt Template ─────────────────────────────── */}
+        {/* Receipt Template */}
         <Card className="mb-6">
           <CardContent className="p-6">
             <h3 className="font-semibold mb-0.5">Receipt Template</h3>
             <p className="text-sm text-muted-foreground mb-5">Choose the visual style for your payment receipts.</p>
             <div className="grid grid-cols-4 gap-4">
               {TEMPLATES.map(({ id, label, Component }) => (
-                <button
-                  key={id}
-                  onClick={() => setSelectedTemplate(id)}
-                  className="group flex flex-col gap-2"
-                >
-                  <div
-                    className="relative w-full rounded-xl overflow-hidden transition-all"
+                <button key={id} onClick={() => setSelectedTemplate(id)} className="group flex flex-col gap-2 text-left">
+                  <div className="relative w-full rounded-xl overflow-hidden transition-all"
                     style={{
-                      aspectRatio: "2/3",
                       border: selectedTemplate === id ? `2.5px solid ${brandColor}` : "2px solid #e5e7eb",
                       boxShadow: selectedTemplate === id ? `0 0 0 3px ${brandColor}22` : "0 1px 4px rgba(0,0,0,0.06)",
-                    }}
-                  >
+                    }}>
                     <Component color={brandColor} name={brandName || "Brand"} logoUrl={logoUrl} />
                     {selectedTemplate === id && (
-                      <div
-                        className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center shadow"
-                        style={{ background: brandColor }}
-                      >
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: brandColor }}>
                         <Check className="h-3 w-3 text-white" strokeWidth={3} />
                       </div>
                     )}
                   </div>
-                  <span
-                    className="text-xs font-medium text-center"
-                    style={{ color: selectedTemplate === id ? brandColor : "#6b7280" }}
-                  >
-                    {label}
-                  </span>
+                  <span className="text-xs font-medium text-center w-full" style={{ color: selectedTemplate === id ? brandColor : "#6b7280" }}>{label}</span>
                 </button>
               ))}
             </div>
