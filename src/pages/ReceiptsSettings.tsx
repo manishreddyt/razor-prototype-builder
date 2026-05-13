@@ -144,7 +144,7 @@ const ReceiptsSettings = () => {
   const customColorRef = useRef<HTMLInputElement>(null);
 
   const [sendViaEmail, setSendViaEmail] = useState(true);
-  const [sendViaWhatsapp, setSendViaWhatsapp] = useState(false);
+  const [sendViaWhatsapp, setSendViaWhatsapp] = useState(true);
 
   // Brand name + logo
   const [brandName, setBrandName] = useState("Manish Reddy");
