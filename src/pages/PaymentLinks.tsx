@@ -1412,39 +1412,8 @@ const PaymentLinks = () => {
               </button>
             </div>
 
-            {/* Receipt Settings */}
-            <div className="space-y-4">
-                <p className="text-sm font-semibold text-foreground">Receipt</p>
-                {/* Receipt type — mutually exclusive checkboxes */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="sendReceiptAuto"
-                      checked={sendReceiptAuto}
-                      onCheckedChange={(checked) => {
-                        setSendReceiptAuto(!!checked);
-                        if (checked) setGstReceiptEnabled(false);
-                      }}
-                    />
-                    <div>
-                      <label htmlFor="sendReceiptAuto" className="text-sm font-medium text-foreground cursor-pointer">
-                        Send Payment Confirmation Receipt
-                      </label>
-                      <div className="flex items-center gap-4 mt-0.5">
-                        <a href="https://razorpay.com/docs/payments/payment-pages/receipt/#pdf-receipt-to-customers" target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                          Sample Receipt <ExternalLink className="h-3 w-3" />
-                        </a>
-                        <a href="https://razorpay.com/docs/payments/payment-pages/receipt/" target="_blank" rel="noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                          Know More <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Placeholder so the GST form state is preserved but hidden — removed from create flow */}
-                {false && (
+            {/* Receipt section removed — configured globally in Receipt Settings */}
+            {false && (
                   <div className="border border-border rounded-lg p-4 space-y-4 bg-secondary/10">
                     <p className="text-sm font-semibold text-foreground">Add Details for Invoice</p>
 
@@ -1748,10 +1717,6 @@ const PaymentLinks = () => {
                     </div>
                   </div>
                 )}
-
-                {/* 80G details moved to Receipt Settings */}
-              </div>
-            </div>
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 flex-shrink-0 bg-white">

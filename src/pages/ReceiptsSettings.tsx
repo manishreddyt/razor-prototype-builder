@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, Check, CheckCircle2, ExternalLink, Pencil, Upload, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Check, CheckCircle2, ExternalLink, Info, Pencil, Upload, X } from "lucide-react";
 
 // ── Shared A4 sub-components ──────────────────────────────────────────────────
 
@@ -323,6 +323,7 @@ const ReceiptsSettings = () => {
   const navigate = useNavigate();
   const logoInputRef = useRef<HTMLInputElement>(null);
 
+  const [receiptMode, setReceiptMode] = useState<"auto" | "manual">("auto");
   const [sendViaEmail, setSendViaEmail] = useState(true);
   const [sendViaWhatsapp, setSendViaWhatsapp] = useState(true);
 
@@ -365,6 +366,66 @@ const ReceiptsSettings = () => {
           </Button>
           <h1 className="text-2xl font-bold">Receipts Settings</h1>
         </div>
+
+        {/* Payment Links — Receipts */}
+        <Card className="mb-5">
+          <CardContent className="p-6">
+            {/* Section header with docs link */}
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 className="font-semibold mb-0.5">Payment Links — Receipts</h3>
+                <p className="text-sm text-muted-foreground">Configure how receipts are sent for all Payment Links.</p>
+              </div>
+              <a
+                href="https://razorpay.com/docs/payments/payment-pages/receipt/#pdf-receipt-to-customers"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-primary font-medium hover:underline flex-shrink-0 mt-0.5"
+              >
+                <BookOpen className="h-3.5 w-3.5" /> Documentation
+              </a>
+            </div>
+
+            {/* Radio options */}
+            <div className="space-y-3">
+              {/* Auto */}
+              <label
+                className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${receiptMode === "auto" ? "border-primary bg-primary/5" : "border-border hover:border-gray-300"}`}
+                onClick={() => setReceiptMode("auto")}
+              >
+                <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${receiptMode === "auto" ? "border-primary" : "border-gray-300"}`}>
+                  {receiptMode === "auto" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Send Receipts Automatically</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Receipts are emailed to customers immediately after payment.</p>
+                </div>
+              </label>
+
+              {/* Manual */}
+              <label
+                className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${receiptMode === "manual" ? "border-primary bg-primary/5" : "border-border hover:border-gray-300"}`}
+                onClick={() => setReceiptMode("manual")}
+              >
+                <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${receiptMode === "manual" ? "border-primary" : "border-gray-300"}`}>
+                  {receiptMode === "manual" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-foreground">Don't Send Receipts Automatically</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">You may send receipts later from dashboard. Your own reference ID may be added too.</p>
+                </div>
+              </label>
+            </div>
+
+            {/* Payment Pages note */}
+            <div className="mt-4 flex items-start gap-2 rounded-md bg-muted/50 border border-border px-3 py-2.5">
+              <Info className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                Receipts for <span className="font-medium text-foreground">Payment Pages</span> can be configured in the payment page settings.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Send via */}
         <Card className="mb-5">
