@@ -7,8 +7,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
   CheckCircle2, ShieldCheck, Lock, CreditCard, Smartphone, Wallet, Building2,
-  ArrowLeft, Calendar, QrCode, Check, ChevronRight, Sparkles, Package, Star,
-  Users, Zap, Gift, X,
+  ArrowLeft, Calendar, QrCode, Check, ChevronRight, ChevronDown, Sparkles,
+  Package, Star, Users, Zap, Gift, X, ShoppingCart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -534,171 +534,287 @@ export function PaymentLinkCheckout() {
   // ──────────────────────────────────────────────────────────────────────────────
   // ── V3: DASHBOARD CHECKOUT ─ Razorpay-checkout-inspired rich 2-panel layout
   // ──────────────────────────────────────────────────────────────────────────────
+  const PAYMENT_METHODS = [
+    {
+      k: "upi" as PayMethod,
+      label: "UPI",
+      sub: "2 Offers",
+      icon: <Smartphone className="h-4 w-4" />,
+      logos: [["G","#4285F4"],["P","#5F259F"],["C","#000"],["B","#003366"]],
+    },
+    {
+      k: "card" as PayMethod,
+      label: "Cards",
+      sub: "Upto 1.5% savings",
+      icon: <CreditCard className="h-4 w-4" />,
+      logos: [],
+    },
+    {
+      k: "netbanking" as PayMethod,
+      label: "Netbanking",
+      sub: "",
+      icon: <Building2 className="h-4 w-4" />,
+      logos: [],
+    },
+    {
+      k: "wallet" as PayMethod,
+      label: "Wallet",
+      sub: "",
+      icon: <Wallet className="h-4 w-4" />,
+      logos: [],
+    },
+  ];
+
   const renderV3 = () => (
-    <div className="min-h-screen bg-[#f0f4f8] flex flex-col items-center justify-start py-8 px-4">
-      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl shadow-blue-100/60 overflow-hidden flex flex-col lg:flex-row" style={{ minHeight: 620 }}>
+    <div className="min-h-screen bg-[#eef0f5] flex flex-col items-center justify-start py-10 px-4">
+      <div
+        className="w-full max-w-[900px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col lg:flex-row"
+        style={{ minHeight: 580 }}
+      >
+        {/* ── LEFT PANEL ── */}
+        <div className="lg:w-[340px] flex-shrink-0 bg-[#1a3472] text-white flex flex-col">
 
-      {/* ── Left panel: dark brand sidebar ── */}
-      <div className="lg:w-[38%] bg-[#1e3a8a] text-white flex flex-col px-8 py-8">
-
-        {/* Merchant identity */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-12 w-12 rounded-2xl bg-white/15 flex items-center justify-center flex-shrink-0 ring-1 ring-white/20">
-            <span className="text-white font-bold text-lg">{MERCHANT_INITIALS}</span>
-          </div>
-          <div>
-            <p className="font-bold text-lg leading-tight">{MERCHANT_NAME}</p>
-            <div className="flex items-center gap-1 mt-0.5">
-              <ShieldCheck className="h-3 w-3 text-green-400" />
-              <span className="text-xs text-blue-200">Razorpay Trusted Business</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Activity pill */}
-        <div className="bg-white/10 rounded-xl px-4 py-3 flex items-center gap-2.5 mb-6">
-          <div className="h-2 w-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
-          <p className="text-sm text-blue-100">300+ orders last month · 148 paid today</p>
-        </div>
-
-        {/* Price summary */}
-        <div className="mb-5">
-          <p className="text-xs text-blue-300 uppercase tracking-widest mb-2 font-medium">Price Summary</p>
-          <p className="text-5xl font-black tracking-tight">{fmtINR(smartTotal)}</p>
-          <p className="text-sm text-blue-300 mt-1">{smartProducts.length} item{smartProducts.length > 1 ? "s" : ""} · Tax included</p>
-        </div>
-
-        {/* Product thumbnails */}
-        <div className="space-y-3 flex-1">
-          {smartProducts.map((p) => (
-            <div key={p.id} className="flex items-center gap-3">
-              {p.image
-                ? <img src={p.image} alt={p.name} className="w-11 h-11 rounded-xl object-cover flex-shrink-0 ring-1 ring-white/10" />
-                : <div className="w-11 h-11 rounded-xl bg-white/10 flex-shrink-0 flex items-center justify-center"><Package className="h-4 w-4 text-white/40" /></div>
-              }
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white leading-tight truncate">{p.name}</p>
-                <p className="text-xs text-blue-300 mt-0.5">Qty {p.qty} · {fmtINR(p.price)}</p>
+          {/* Top: merchant identity */}
+          <div className="px-6 pt-6 pb-4">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-11 w-11 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
+                <span className="text-white font-black text-base tracking-tight">{MERCHANT_INITIALS}</span>
               </div>
-              <p className="text-sm font-bold text-white flex-shrink-0">{fmtINR(p.price * p.qty)}</p>
-            </div>
-          ))}
-        </div>
-
-        {/* Price breakdown */}
-        <div className="mt-6 pt-4 border-t border-white/10 space-y-2">
-          <div className="flex justify-between text-sm text-blue-200">
-            <span>Subtotal</span><span>{fmtINR(smartTotal)}</span>
-          </div>
-          <div className="flex justify-between text-sm text-blue-200">
-            <span>Tax</span><span className="text-green-400">Included</span>
-          </div>
-          <div className="flex justify-between text-base font-bold text-white pt-1">
-            <span>Total</span><span>{fmtINR(smartTotal)}</span>
-          </div>
-        </div>
-
-        {/* Bottom trust */}
-        <div className="mt-6 flex items-center gap-2 text-blue-300 text-xs">
-          <Lock className="h-3 w-3" />
-          <span>Money Back Guarantee by Razorpay</span>
-        </div>
-      </div>
-
-      {/* ── Right panel: white checkout ── */}
-      <div className="flex-1 bg-white flex flex-col">
-
-        {screen === "overview" && (
-          <>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-base font-semibold text-gray-900">Payment Options</h2>
-              <span className="text-xs text-gray-400 flex items-center gap-1"><Lock className="h-3 w-3" /> Secured</span>
-            </div>
-
-            <div className="flex-1 p-6 space-y-5 overflow-y-auto">
-              {/* Method tabs */}
-              {renderMethodTabs(true)}
-
-              {/* Offers banner */}
               <div>
-                <p className="text-sm font-semibold text-gray-900 mb-2">Available Offers</p>
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                  <div className="h-9 w-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0"><Gift className="h-4 w-4 text-amber-600" /></div>
-                  <p className="text-sm text-gray-800 flex-1 font-medium">Upto ₹50 cashback via CRED</p>
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    <span className="text-xs bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded-full">+6</span>
-                    <button className="text-xs text-blue-600 font-semibold hover:underline">View all</button>
-                  </div>
+                <p className="font-bold text-base leading-tight">{MERCHANT_NAME}</p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <ShieldCheck className="h-3 w-3 text-emerald-400" />
+                  <span className="text-[11px] text-blue-300">Razorpay Trusted Business</span>
                 </div>
               </div>
+            </div>
 
-              {/* UPI default */}
-              {payMethod === "upi" && (
-                <div>
-                  <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-semibold text-gray-900">UPI QR</p>
-                    <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-mono">⏱ 11:48</span>
+            {/* Activity pill */}
+            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2.5 mb-5">
+              <ShoppingCart className="h-3.5 w-3.5 text-blue-300 flex-shrink-0" />
+              <p className="text-xs text-blue-100 leading-snug">300+ orders last month · 148 paid today</p>
+            </div>
+
+            {/* Order summary */}
+            <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-widest mb-2.5">Order summary</p>
+            <div className="space-y-2 mb-4">
+              {smartProducts.map((p) => (
+                <div key={p.id} className="flex items-center gap-2.5 bg-white/8 rounded-xl p-2.5" style={{ background: "rgba(255,255,255,0.07)" }}>
+                  {p.image
+                    ? <img src={p.image} alt={p.name} className="w-11 h-11 rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10" />
+                    : <div className="w-11 h-11 rounded-lg bg-white/10 flex-shrink-0 flex items-center justify-center"><Package className="h-4 w-4 text-white/40" /></div>
+                  }
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-white truncate leading-snug">{p.name}</p>
+                    <p className="text-[10px] text-blue-300 mt-0.5">Qty. {p.qty}</p>
                   </div>
-                  <div className="flex gap-5 p-4 rounded-xl border border-gray-200 bg-gray-50">
-                    <div className="flex-shrink-0 bg-white border border-gray-200 rounded-xl p-2.5 shadow-sm">
-                      <QrCode className="h-[100px] w-[100px] text-gray-800" />
+                  <p className="text-sm font-bold text-white flex-shrink-0">{fmtINR(p.price * p.qty)}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Savings / green pill */}
+            <div className="flex items-center gap-2 bg-emerald-500/15 border border-emerald-400/25 rounded-xl px-3 py-2.5 mb-5">
+              <div className="h-5 w-5 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                <Check className="h-3 w-3 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[11px] font-semibold text-emerald-300">Tax & fees included</p>
+                <p className="text-[10px] text-emerald-400/70">Best price guaranteed</p>
+              </div>
+              <ChevronRight className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" />
+            </div>
+          </div>
+
+          {/* Price summary block */}
+          <div className="px-6 mb-auto">
+            <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-widest mb-1">Price Summary</p>
+            <p className="text-4xl font-black tracking-tight leading-none">{fmtINR(smartTotal)}</p>
+            <p className="text-xs text-blue-300 mt-1.5">{smartProducts.length} item{smartProducts.length > 1 ? "s" : ""} · Tax included</p>
+          </div>
+
+          {/* Price breakdown + trust */}
+          <div className="px-6 pt-5 pb-5 mt-5 border-t border-white/10 space-y-1.5">
+            {smartProducts.map((p) => (
+              <div key={p.id} className="flex justify-between text-[11px] text-blue-200">
+                <span className="truncate pr-2">{p.name} ×{p.qty}</span>
+                <span className="flex-shrink-0">{fmtINR(p.price * p.qty)}</span>
+              </div>
+            ))}
+            <div className="flex justify-between text-[11px] text-blue-200 pt-1">
+              <span>Tax</span><span className="text-emerald-400">Included</span>
+            </div>
+            <div className="flex justify-between text-sm font-bold text-white pt-1.5 border-t border-white/10">
+              <span>Total</span><span>{fmtINR(smartTotal)}</span>
+            </div>
+            <div className="flex items-center gap-1.5 pt-3 text-blue-300/70 text-[11px]">
+              <Lock className="h-3 w-3" />
+              <span>Money Back Promise by Razorpay</span>
+            </div>
+          </div>
+        </div>
+
+        {/* ── RIGHT PANEL ── */}
+        <div className="flex-1 flex flex-col min-w-0 bg-white">
+
+          {screen === "overview" && (
+            <>
+              {/* Breadcrumb nav bar */}
+              <div className="flex items-center gap-1.5 px-6 py-4 border-b border-gray-100 bg-gray-50/60 flex-shrink-0">
+                {["Contact", "Address", "Payment"].map((step, i, arr) => (
+                  <span key={step} className="flex items-center gap-1.5">
+                    <span className={cn("text-sm font-medium", i === arr.length - 1 ? "text-blue-700 font-semibold" : "text-gray-400")}>{step}</span>
+                    {i < arr.length - 1 && <ChevronRight className="h-3.5 w-3.5 text-gray-300" />}
+                  </span>
+                ))}
+                <span className="ml-auto text-[11px] text-gray-400 flex items-center gap-1">
+                  <Lock className="h-3 w-3" /> Secured
+                </span>
+              </div>
+
+              {/* Two-column: method list | detail area */}
+              <div className="flex flex-1 min-h-0 divide-x divide-gray-100 overflow-hidden">
+
+                {/* Left col: payment method rows */}
+                <div className="w-[200px] flex-shrink-0 flex flex-col py-4 overflow-y-auto">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-4 mb-2">Recommended</p>
+                  {PAYMENT_METHODS.map(({ k, label, sub, icon, logos }) => (
+                    <button
+                      key={k}
+                      onClick={() => setPayMethod(k)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-l-2",
+                        payMethod === k
+                          ? "border-l-blue-600 bg-blue-50/70"
+                          : "border-l-transparent hover:bg-gray-50"
+                      )}
+                    >
+                      <div className={cn(
+                        "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                        payMethod === k ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"
+                      )}>
+                        {icon}
+                      </div>
+                      <div className="min-w-0">
+                        <p className={cn("text-sm font-semibold leading-tight", payMethod === k ? "text-blue-700" : "text-gray-800")}>{label}</p>
+                        {sub && (
+                          <span className="text-[10px] text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded-full leading-none mt-0.5 inline-block">{sub}</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                  <button className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 px-4 py-3 mt-1">
+                    <ChevronDown className="h-3.5 w-3.5" /> More options
+                  </button>
+                </div>
+
+                {/* Right col: detail / QR */}
+                <div className="flex-1 flex flex-col p-5 overflow-y-auto gap-4 min-w-0">
+
+                  {/* Available Offers */}
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Available Offers</p>
+                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200">
+                      <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
+                        <Gift className="h-3.5 w-3.5 text-amber-600" />
+                      </div>
+                      <p className="text-xs text-gray-800 font-medium flex-1 leading-snug">Upto ₹50 cashback via CRED</p>
+                      <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">+6</span>
+                      <button className="text-[11px] text-blue-600 font-semibold hover:underline flex-shrink-0">View all</button>
                     </div>
-                    <div className="flex-1 space-y-3">
-                      <p className="text-sm text-gray-700 font-medium">Scan the QR using any UPI App</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {[["G", "#4285F4"], ["P", "#5F259F"], ["C", "#000"], ["PT", "#00B9F1"], ["B", "#003366"]].map(([l, c]) => (
-                          <div key={l} className="h-8 w-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: c }}>{l}</div>
+                  </div>
+
+                  {/* UPI detail */}
+                  {payMethod === "upi" && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">UPI QR</p>
+                        <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-mono">⏱ 11:48</span>
+                      </div>
+                      <div className="flex gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50/60">
+                        <div className="bg-white border border-gray-200 rounded-xl p-2 shadow-sm flex-shrink-0">
+                          <QrCode className="h-[84px] w-[84px] text-gray-800" />
+                        </div>
+                        <div className="flex-1 space-y-2 min-w-0">
+                          <p className="text-xs text-gray-700 font-medium leading-snug">Scan using any UPI App</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {[["G","#4285F4"],["P","#5F259F"],["C","#000"],["PT","#00B9F1"],["B","#003366"]].map(([l,c]) => (
+                              <div key={l} className="h-7 w-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm" style={{ background: c }}>{l}</div>
+                            ))}
+                          </div>
+                          <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg font-semibold">
+                            <Zap className="h-2.5 w-2.5" /> 8 Offers
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                        <div className="flex-1 h-px bg-gray-200" /><span>or enter UPI ID</span><div className="flex-1 h-px bg-gray-200" />
+                      </div>
+                      <div className="flex gap-2">
+                        <Input placeholder="yourname@upi" value={upiId} onChange={(e) => { setUpiId(e.target.value); setUpiVerified(false); }} className="h-9 flex-1 text-sm" />
+                        <Button variant="outline" className="h-9 px-3 text-xs flex-shrink-0" onClick={() => { if (upiId.includes("@")) setUpiVerified(true); }}>
+                          {upiVerified ? <span className="flex items-center gap-1 text-green-600"><Check className="h-3.5 w-3.5" />OK</span> : "Verify"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cards */}
+                  {payMethod === "card" && (
+                    <div className="space-y-3">
+                      <div><Label className="text-xs text-gray-600 mb-1 block">Card Number</Label><Input placeholder="0000 0000 0000 0000" value={cardData.number} onChange={(e) => { const v = e.target.value.replace(/\D/g,"").slice(0,16); setCardData({...cardData, number: v.replace(/(.{4})/g,"$1 ").trim()}); }} className="h-9 font-mono text-sm" /></div>
+                      <div><Label className="text-xs text-gray-600 mb-1 block">Name on Card</Label><Input placeholder="As printed on card" value={cardData.name} onChange={(e) => setCardData({...cardData, name: e.target.value})} className="h-9 text-sm" /></div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div><Label className="text-xs text-gray-600 mb-1 block">Expiry</Label><Input placeholder="MM / YY" value={cardData.expiry} className="h-9 font-mono text-sm" onChange={(e) => { let v = e.target.value.replace(/\D/g,"").slice(0,4); if(v.length>=3) v=v.slice(0,2)+" / "+v.slice(2); setCardData({...cardData, expiry:v}); }} /></div>
+                        <div><Label className="text-xs text-gray-600 mb-1 block">CVV</Label><Input placeholder="• • •" type="password" maxLength={4} value={cardData.cvv} onChange={(e) => setCardData({...cardData, cvv:e.target.value.replace(/\D/g,"").slice(0,4)})} className="h-9 font-mono text-sm" /></div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Netbanking */}
+                  {payMethod === "netbanking" && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Popular Banks</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {["SBI","HDFC","ICICI","Axis","Kotak","Yes Bank","PNB","Canara"].map(b => (
+                          <button key={b} className="py-2.5 rounded-xl border text-xs font-medium hover:border-blue-400 hover:bg-blue-50 transition-colors">{b}</button>
                         ))}
                       </div>
-                      <div className="bg-green-100 text-green-700 rounded-lg px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1">
-                        <Zap className="h-3 w-3" /> 8 Offers available
+                    </div>
+                  )}
+
+                  {/* Wallet */}
+                  {payMethod === "wallet" && (
+                    <div>
+                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Choose Wallet</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {["Paytm","PhonePe","Amazon Pay","Mobikwik","Freecharge","Ola Money"].map(w => (
+                          <button key={w} className="py-2.5 rounded-xl border text-xs font-medium hover:border-blue-400 hover:bg-blue-50 transition-colors">{w}</button>
+                        ))}
                       </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400 my-4">
-                    <div className="flex-1 h-px bg-gray-200" /><span>or enter UPI ID</span><div className="flex-1 h-px bg-gray-200" />
-                  </div>
-                  <div className="flex gap-2">
-                    <Input placeholder="yourname@upi" value={upiId} onChange={(e) => { setUpiId(e.target.value); setUpiVerified(false); }} className="h-10 flex-1" />
-                    <Button variant="outline" className="h-10 px-4" onClick={() => { if (upiId.includes("@")) setUpiVerified(true); }}>
-                      {upiVerified ? <span className="flex items-center gap-1 text-green-600"><Check className="h-4 w-4" /> OK</span> : "Verify"}
+                  )}
+
+                  {/* CTA */}
+                  <div className="mt-auto pt-2 space-y-2">
+                    <Button onClick={handleOverviewContinue} className="w-full h-11 bg-blue-700 hover:bg-blue-800 font-bold rounded-xl text-sm shadow-md shadow-blue-200">
+                      Continue to Pay {fmtINR(smartTotal)} <ChevronRight className="ml-1 h-4 w-4" />
                     </Button>
+                    <p className="text-center text-[11px] text-gray-400 flex items-center justify-center gap-1">
+                      <ShieldCheck className="h-3 w-3" /> PCI DSS Compliant · Secured by Razorpay
+                    </p>
                   </div>
                 </div>
-              )}
-              {payMethod === "card" && (
-                <div className="space-y-3">
-                  <div><Label className="text-xs text-gray-600 mb-1 block">Card Number</Label><Input placeholder="0000 0000 0000 0000" value={cardData.number} onChange={(e) => { const v = e.target.value.replace(/\D/g, "").slice(0, 16); setCardData({ ...cardData, number: v.replace(/(.{4})/g, "$1 ").trim() }); }} className="h-10 font-mono" /></div>
-                  <div><Label className="text-xs text-gray-600 mb-1 block">Name on Card</Label><Input placeholder="As printed on card" value={cardData.name} onChange={(e) => setCardData({ ...cardData, name: e.target.value })} className="h-10" /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs text-gray-600 mb-1 block">Expiry</Label><Input placeholder="MM / YY" value={cardData.expiry} onChange={(e) => { let v = e.target.value.replace(/\D/g, "").slice(0, 4); if (v.length >= 3) v = v.slice(0, 2) + " / " + v.slice(2); setCardData({ ...cardData, expiry: v }); }} className="h-10 font-mono" /></div>
-                    <div><Label className="text-xs text-gray-600 mb-1 block">CVV</Label><Input placeholder="• • •" type="password" maxLength={4} value={cardData.cvv} onChange={(e) => setCardData({ ...cardData, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })} className="h-10 font-mono" /></div>
-                  </div>
-                </div>
-              )}
-              {payMethod === "netbanking" && <div className="grid grid-cols-3 gap-2">{["SBI", "HDFC", "ICICI", "Axis", "Kotak", "Yes Bank", "PNB", "Canara", "Union Bank"].map(b => <button key={b} className="py-3 rounded-lg border text-xs font-medium hover:border-blue-400 hover:bg-blue-50">{b}</button>)}</div>}
-              {payMethod === "wallet" && <div className="grid grid-cols-3 gap-2">{["Paytm", "PhonePe", "Amazon Pay", "Mobikwik", "Freecharge", "Ola Money"].map(w => <button key={w} className="py-3 rounded-lg border text-xs font-medium hover:border-blue-400 hover:bg-blue-50">{w}</button>)}</div>}
-
-              {/* CTA */}
-              <div className="pt-2 space-y-3">
-                <Button onClick={handleOverviewContinue} className="w-full h-12 bg-blue-700 hover:bg-blue-800 font-bold text-base rounded-xl">
-                  Continue to Pay {fmtINR(smartTotal)} <ChevronRight className="ml-1.5 h-5 w-5" />
-                </Button>
-                <p className="text-center text-xs text-gray-400 flex items-center justify-center gap-1.5">
-                  <ShieldCheck className="h-3 w-3" /> PCI DSS Compliant · Secured by Razorpay
-                </p>
-                {renderPayIcons()}
               </div>
-            </div>
-          </>
-        )}
+            </>
+          )}
 
-        {screen === "details" && <div className="flex-1">{renderDetailsPanel(() => setScreen("overview"), fmtINR(smartTotal))}</div>}
-        {screen === "method" && <div className="flex-1">{renderMethodPanel(() => setScreen("details"), smartTotal)}</div>}
-        {screen === "success" && <div className="flex-1">{renderSuccessPanel()}</div>}
-      </div>
+          {screen === "details" && <div className="flex-1">{renderDetailsPanel(() => setScreen("overview"), fmtINR(smartTotal))}</div>}
+          {screen === "method" && <div className="flex-1">{renderMethodPanel(() => setScreen("details"), smartTotal)}</div>}
+          {screen === "success" && <div className="flex-1">{renderSuccessPanel()}</div>}
+        </div>
 
-      </div>{/* end max-w-4xl card */}
+      </div>{/* end max-w card */}
     </div>
   );
 
