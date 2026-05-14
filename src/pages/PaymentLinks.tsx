@@ -179,6 +179,7 @@ const PaymentLinks = () => {
     }))
   );
   const [smartSelectedIds, setSmartSelectedIds] = useState<string[]>([]);
+  const [smartSelectedItems, setSmartSelectedItems] = useState<Array<{ id: string; price: number; qty: number }>>([]);
   const [productSearch, setProductSearch] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
 
@@ -642,6 +643,7 @@ const PaymentLinks = () => {
   const resetCreateForm = () => {
     setCreateLinkTab("standard");
     setSmartSelectedIds([]);
+    setSmartSelectedItems([]);
     setProductSearch("");
     setShowProductDropdown(false);
     setFormData({ description: "", amount: "", customerPhone: "", customerEmail: "", referenceId: "", customerName: "" });
@@ -708,6 +710,13 @@ const PaymentLinks = () => {
       splitType: collectInMultiplePayments && multiPaymentMode === "schedule" ? splitType : undefined,
       installments: collectInMultiplePayments && multiPaymentMode === "schedule" ? installments.map(i => ({ ...i, amount: Number(i.amount) })) : undefined,
       sendReceiptAuto,
+      // Smart link data
+      isSmartLink: createLinkTab === "smart",
+      smartProducts: createLinkTab === "smart" ? smartSelectedItems.map((item) => {
+        const cat = smartCatalogue.find((p) => p.id === item.id);
+        const original = availableProducts.find((p) => p.id === item.id);
+        return { id: item.id, name: cat?.name ?? "Product", price: item.price, qty: item.qty, image: original?.image };
+      }) : undefined,
     };
     const stored = localStorage.getItem("payment_links");
     const existingLinks = stored ? JSON.parse(stored) : [];
@@ -1133,40 +1142,104 @@ const PaymentLinks = () => {
                   Products <span className="text-destructive">*</span>
                 </label>
 
-                {/* Selected chips */}
-                {smartSelectedIds.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {smartSelectedIds.map((id) => {
-                      const p = smartCatalogue.find((x) => x.id === id);
+                {/* Selected products — editable rows */}
+                {smartSelectedItems.length > 0 && (
+                  <div className="border border-border rounded-lg overflow-hidden mb-2">
+                    {/* Column headers */}
+                    <div className="grid items-center bg-muted/40 border-b border-border px-3 py-2" style={{ gridTemplateColumns: "1fr 100px 72px 28px" }}>
+                      <span className="text-xs font-medium text-muted-foreground">Product</span>
+                      <span className="text-xs font-medium text-muted-foreground pl-1">Price (₹)</span>
+                      <span className="text-xs font-medium text-muted-foreground text-center">Qty</span>
+                      <span />
+                    </div>
+                    {smartSelectedItems.map((item) => {
+                      const p = smartCatalogue.find((x) => x.id === item.id);
                       if (!p) return null;
+                      const recalcTotal = (nextItems: typeof smartSelectedItems) => {
+                        const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
+                        setFormData((f) => ({ ...f, amount: String(t) }));
+                      };
                       return (
-                        <span key={id} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full">
-                          {p.name}
-                          <button onClick={() => setSmartSelectedIds(smartSelectedIds.filter((s) => s !== id))} className="hover:text-destructive ml-0.5">
-                            <X className="h-3 w-3" />
+                        <div key={item.id} className="grid items-center px-3 py-2.5 border-b border-border last:border-0 gap-2" style={{ gridTemplateColumns: "1fr 100px 72px 28px" }}>
+                          {/* Name */}
+                          <span className="text-sm font-medium text-foreground truncate pr-1">{p.name}</span>
+                          {/* Price */}
+                          <div className="relative">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">₹</span>
+                            <input
+                              type="number"
+                              value={item.price}
+                              min={0}
+                              onChange={(e) => {
+                                const next = smartSelectedItems.map((si) => si.id === item.id ? { ...si, price: Number(e.target.value) || 0 } : si);
+                                setSmartSelectedItems(next);
+                                recalcTotal(next);
+                              }}
+                              className="w-full pl-5 pr-1 py-1 text-sm border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+                            />
+                          </div>
+                          {/* Qty */}
+                          <input
+                            type="number"
+                            value={item.qty}
+                            min={1}
+                            onChange={(e) => {
+                              const next = smartSelectedItems.map((si) => si.id === item.id ? { ...si, qty: Math.max(1, Number(e.target.value) || 1) } : si);
+                              setSmartSelectedItems(next);
+                              recalcTotal(next);
+                            }}
+                            className="w-full px-2 py-1 text-sm border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring text-center"
+                          />
+                          {/* Remove */}
+                          <button
+                            type="button"
+                            className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                            onClick={() => {
+                              const next = smartSelectedItems.filter((si) => si.id !== item.id);
+                              setSmartSelectedItems(next);
+                              setSmartSelectedIds(smartSelectedIds.filter((id) => id !== item.id));
+                              recalcTotal(next);
+                            }}
+                          >
+                            <X className="h-3.5 w-3.5" />
                           </button>
-                        </span>
+                        </div>
                       );
                     })}
+                    {/* Total row */}
+                    <div className="flex items-center justify-end gap-2 px-3 py-2 bg-muted/20 border-t border-border">
+                      <span className="text-xs text-muted-foreground">Total</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        ₹{smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 )}
 
                 {/* Dropdown trigger */}
                 <div className="relative">
+                  {smartSelectedIds.length > 0 ? (
+                    <button
+                      type="button"
+                      className="flex items-center gap-1 text-sm text-blue-600 font-medium hover:underline mt-1"
+                      onClick={() => setShowProductDropdown((v) => !v)}
+                    >
+                      <Plus className="h-3.5 w-3.5" /> Add more products
+                    </button>
+                  ) : (
                   <button
                     type="button"
                     className="w-full flex items-center justify-between px-3 h-10 border border-input rounded-lg bg-background text-sm hover:border-primary/60 transition-colors"
                     onClick={() => setShowProductDropdown((v) => !v)}
                   >
-                    <span className={smartSelectedIds.length === 0 ? "text-muted-foreground" : "text-foreground"}>
-                      {smartSelectedIds.length === 0 ? "Select or search products…" : `${smartSelectedIds.length} product${smartSelectedIds.length > 1 ? "s" : ""} selected`}
-                    </span>
+                    <span className="text-muted-foreground">Select or search products…</span>
                     {showProductDropdown ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
                   </button>
+                  )}
 
                   {showProductDropdown && (
                     <div className="absolute z-50 left-0 right-0 top-full mt-1 border border-border rounded-lg bg-white shadow-xl overflow-hidden">
-                      {/* Search inside dropdown */}
+                      {/* Search */}
                       <div className="p-2 border-b border-border">
                         <div className="relative">
                           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -1181,7 +1254,7 @@ const PaymentLinks = () => {
                       </div>
 
                       {/* Product list */}
-                      <div className="max-h-52 overflow-y-auto">
+                      <div className="max-h-48 overflow-y-auto">
                         {smartCatalogue
                           .filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase()))
                           .map((p) => {
@@ -1192,16 +1265,22 @@ const PaymentLinks = () => {
                                 type="button"
                                 className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/50 transition-colors ${selected ? "bg-primary/5" : ""}`}
                                 onClick={() => {
-                                  const next = selected
-                                    ? smartSelectedIds.filter((s) => s !== p.id)
-                                    : [...smartSelectedIds, p.id];
-                                  setSmartSelectedIds(next);
-                                  // Auto-fill amount from product total
-                                  const total = next.reduce((sum, id) => {
-                                    const prod = smartCatalogue.find((x) => x.id === id);
-                                    return sum + (prod?.discountedPrice ?? prod?.price ?? 0);
-                                  }, 0);
-                                  setFormData((f) => ({ ...f, amount: total > 0 ? String(total) : f.amount }));
+                                  if (selected) {
+                                    // deselect
+                                    const nextItems = smartSelectedItems.filter((si) => si.id !== p.id);
+                                    setSmartSelectedItems(nextItems);
+                                    setSmartSelectedIds(smartSelectedIds.filter((id) => id !== p.id));
+                                    const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
+                                    setFormData((f) => ({ ...f, amount: String(t) }));
+                                  } else {
+                                    // select — add with default price & qty=1
+                                    const effectivePrice = p.discountedPrice ?? p.price;
+                                    const nextItems = [...smartSelectedItems, { id: p.id, price: effectivePrice, qty: 1 }];
+                                    setSmartSelectedItems(nextItems);
+                                    setSmartSelectedIds([...smartSelectedIds, p.id]);
+                                    const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
+                                    setFormData((f) => ({ ...f, amount: String(t) }));
+                                  }
                                 }}
                               >
                                 <div className={`h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selected ? "bg-primary border-primary" : "border-gray-300"}`}>
@@ -1213,7 +1292,7 @@ const PaymentLinks = () => {
                                     {p.discountedPrice ? (
                                       <>
                                         <span className="text-green-600 font-medium">₹{p.discountedPrice.toLocaleString()}</span>
-                                        <span className="line-through ml-1">₹{p.price.toLocaleString()}</span>
+                                        <span className="line-through ml-1 text-muted-foreground">₹{p.price.toLocaleString()}</span>
                                       </>
                                     ) : `₹${p.price.toLocaleString()}`}
                                   </p>
@@ -1226,7 +1305,7 @@ const PaymentLinks = () => {
                         )}
                       </div>
 
-                      {/* Add new product CTA */}
+                      {/* Add new product */}
                       <div className="border-t border-border p-1.5">
                         <button
                           type="button"
@@ -1239,25 +1318,6 @@ const PaymentLinks = () => {
                     </div>
                   )}
                 </div>
-
-                {/* Total hint */}
-                {smartSelectedIds.length > 0 && (
-                  <p className="text-xs text-muted-foreground mt-1.5">
-                    Total: <span className="font-medium text-foreground">
-                      ₹{smartSelectedIds.reduce((s, id) => {
-                        const p = smartCatalogue.find((x) => x.id === id);
-                        return s + (p?.discountedPrice ?? p?.price ?? 0);
-                      }, 0).toLocaleString()}
-                    </span>
-                    <button className="ml-2 text-primary hover:underline" onClick={() => {
-                      const total = smartSelectedIds.reduce((s, id) => {
-                        const p = smartCatalogue.find((x) => x.id === id);
-                        return s + (p?.discountedPrice ?? p?.price ?? 0);
-                      }, 0);
-                      setFormData((f) => ({ ...f, amount: String(total) }));
-                    }}>Use as amount</button>
-                  </p>
-                )}
               </div>
             )}
 
@@ -2103,14 +2163,15 @@ const PaymentLinks = () => {
                   description: cpDescription,
                   images: cpImages,
                 };
+                const effectivePrice = newProduct.discountedPrice ?? newProduct.price;
                 setSmartCatalogue((prev) => [...prev, newProduct]);
                 setSmartSelectedIds((prev) => [...prev, newProduct.id]);
-                // Auto-add to amount
-                const effectivePrice = newProduct.discountedPrice ?? newProduct.price;
-                setFormData((f) => ({
-                  ...f,
-                  amount: String((Number(f.amount) || 0) + effectivePrice),
-                }));
+                setSmartSelectedItems((prev) => {
+                  const next = [...prev, { id: newProduct.id, price: effectivePrice, qty: 1 }];
+                  const t = next.reduce((s, si) => s + si.price * si.qty, 0);
+                  setFormData((f) => ({ ...f, amount: String(t) }));
+                  return next;
+                });
                 setShowCreateProduct(false);
                 setCpName(""); setCpPrice(""); setCpDiscountedPrice("");
                 setCpQty(""); setCpCategory(""); setCpDescription(""); setCpImages([]);
