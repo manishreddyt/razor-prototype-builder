@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   CheckCircle2, ShieldCheck, Lock, CreditCard, Smartphone, Wallet, Building2,
   ArrowLeft, Calendar, QrCode, Check, ChevronRight, Sparkles, Package, Star,
-  Users, Zap, Gift,
+  Users, Zap, Gift, X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -384,100 +384,152 @@ export function PaymentLinkCheckout() {
   );
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // ── V2: STREAM CHECKOUT ─ Mobile-first, conversion-optimised single column
+  // ── V2: STREAM CHECKOUT ─ Mobile-first, modal-based checkout popup
   // ──────────────────────────────────────────────────────────────────────────────
-  const renderV2 = () => (
-    <div className="min-h-screen bg-gray-100">
-      {/* Brand hero */}
-      <div className="bg-gradient-to-br from-blue-700 via-blue-800 to-indigo-900 text-white px-4 pb-10 pt-8 text-center relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10" style={{ backgroundImage: "radial-gradient(circle at 20% 80%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)", backgroundSize: "40px 40px" }} />
-        <div className="relative">
-          <div className="mx-auto h-16 w-16 rounded-2xl bg-white/20 backdrop-blur flex items-center justify-center mb-3 ring-2 ring-white/30">
-            <span className="text-white font-bold text-2xl">{MERCHANT_INITIALS}</span>
-          </div>
-          <h1 className="text-xl font-bold">{MERCHANT_NAME}</h1>
-          <div className="flex items-center justify-center gap-1.5 mt-1.5">
-            <ShieldCheck className="h-3.5 w-3.5 text-green-400" />
-            <span className="text-sm text-blue-200 font-medium">Razorpay Trusted Business</span>
-          </div>
-          <div className="flex items-center justify-center gap-5 mt-4">
-            <div className="flex items-center gap-1 text-xs text-blue-200">
-              <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" /><span>4.9 · 2,400+ orders</span>
+  const renderV2 = () => {
+    const openModal = () => { setScreen("details"); };
+    const closeModal = () => { setScreen("overview"); };
+
+    return (
+      <div className="min-h-screen" style={{ background: "linear-gradient(160deg, #eef2ff 0%, #f8fafc 60%)" }}>
+        {/* Brand hero — compact strip */}
+        <div className="bg-gradient-to-r from-blue-700 to-indigo-800 text-white px-4 pt-10 pb-16 text-center relative overflow-hidden">
+          {/* Subtle dot grid */}
+          <div className="absolute inset-0 opacity-[0.07]" style={{ backgroundImage: "radial-gradient(white 1px, transparent 1px)", backgroundSize: "24px 24px" }} />
+          <div className="relative z-10">
+            <div className="mx-auto h-16 w-16 rounded-2xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center mb-3 shadow-lg">
+              <span className="text-white font-black text-2xl tracking-tight">{MERCHANT_INITIALS}</span>
             </div>
-            <div className="flex items-center gap-1 text-xs text-blue-200">
-              <Users className="h-3 w-3" /><span>148 paid today</span>
+            <h1 className="text-xl font-bold tracking-tight">{MERCHANT_NAME}</h1>
+            <div className="flex items-center justify-center gap-1.5 mt-1">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              <span className="text-sm text-blue-200">Razorpay Trusted Business</span>
+            </div>
+            <div className="flex items-center justify-center gap-4 mt-3">
+              <span className="flex items-center gap-1 text-xs text-blue-200/80">
+                <Star className="h-3 w-3 text-yellow-400 fill-yellow-400" /> 4.9 · 2,400+ orders
+              </span>
+              <span className="text-blue-400/50">·</span>
+              <span className="flex items-center gap-1 text-xs text-blue-200/80">
+                <Users className="h-3 w-3" /> 148 paid today
+              </span>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Card */}
-      <div className="max-w-md mx-auto px-4 -mt-5 pb-10">
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-          {screen === "overview" && (
-            <div className="p-5 space-y-5">
-              {/* Section header */}
-              <div className="flex items-center gap-2">
-                <div className="h-7 w-7 rounded-lg bg-blue-100 flex items-center justify-center"><Package className="h-4 w-4 text-blue-600" /></div>
-                <h3 className="font-semibold text-gray-900">{smartProducts.length} items in your order</h3>
+        {/* Floating order card — always shows overview */}
+        <div className="max-w-md mx-auto px-4 -mt-8 pb-12 relative z-10">
+          <div className="bg-white rounded-3xl shadow-2xl shadow-blue-100/50 border border-white overflow-hidden">
+
+            {/* Card header */}
+            <div className="px-5 pt-5 pb-4 flex items-center gap-2 border-b border-gray-100">
+              <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Package className="h-3.5 w-3.5 text-blue-600" />
               </div>
+              <span className="font-semibold text-gray-900 text-sm">{smartProducts.length} item{smartProducts.length > 1 ? "s" : ""} in your order</span>
+              <span className="ml-auto text-xs text-gray-400 font-medium">{fmtINR(smartTotal)}</span>
+            </div>
 
-              {/* Product rows */}
-              <div className="divide-y divide-gray-100">
-                {smartProducts.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                    {p.image
-                      ? <img src={p.image} alt={p.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
-                      : <div className="w-14 h-14 rounded-xl bg-gray-100 flex-shrink-0 flex items-center justify-center"><Package className="h-5 w-5 text-gray-300" /></div>
-                    }
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 leading-tight">{p.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{fmtINR(p.price)} × {p.qty}</p>
-                    </div>
-                    <p className="text-base font-bold text-gray-900 flex-shrink-0">{fmtINR(p.price * p.qty)}</p>
+            {/* Product rows */}
+            <div className="divide-y divide-gray-50 px-5">
+              {smartProducts.map((p) => (
+                <div key={p.id} className="flex items-center gap-3 py-3.5">
+                  {p.image
+                    ? <img src={p.image} alt={p.name} className="w-12 h-12 rounded-xl object-cover flex-shrink-0 shadow-sm" />
+                    : <div className="w-12 h-12 rounded-xl bg-gray-100 flex-shrink-0 flex items-center justify-center"><Package className="h-4 w-4 text-gray-300" /></div>
+                  }
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 leading-snug truncate">{p.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{fmtINR(p.price)} × {p.qty}</p>
                   </div>
-                ))}
-              </div>
-
-              {/* Total */}
-              <div className="bg-gradient-to-r from-gray-50 to-blue-50/40 rounded-xl p-4 flex items-center justify-between border border-blue-100">
-                <div>
-                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">Total Amount</p>
-                  <p className="text-xs text-green-600 mt-0.5 font-medium">✓ Tax & fees included</p>
+                  <p className="text-sm font-bold text-gray-900 flex-shrink-0">{fmtINR(p.price * p.qty)}</p>
                 </div>
-                <p className="text-3xl font-bold text-gray-900">{fmtINR(smartTotal)}</p>
-              </div>
+              ))}
+            </div>
 
-              {/* CTA */}
-              <Button onClick={handleOverviewContinue} className="w-full h-13 bg-blue-700 hover:bg-blue-800 font-bold text-base py-4 rounded-xl shadow-lg shadow-blue-200">
+            {/* Total row */}
+            <div className="mx-5 mb-5 mt-1 rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%)" }}>
+              <div className="px-4 py-3.5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-blue-200 font-medium uppercase tracking-wide">TOTAL AMOUNT</p>
+                  <p className="text-[11px] text-green-400 mt-0.5 font-medium">✓ Tax & fees included</p>
+                </div>
+                <p className="text-3xl font-black text-white tracking-tight">{fmtINR(smartTotal)}</p>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="px-5 pb-5 space-y-3">
+              <Button
+                onClick={openModal}
+                className="w-full h-13 py-3.5 text-base font-bold rounded-2xl shadow-lg shadow-blue-300/40 bg-blue-700 hover:bg-blue-800 transition-all active:scale-[0.98]"
+              >
                 Continue to Pay {fmtINR(smartTotal)}
                 <ChevronRight className="ml-1.5 h-5 w-5" />
               </Button>
 
-              {/* Trust row */}
-              <div className="text-center space-y-2">
+              {/* Trust + pay icons */}
+              <div className="text-center space-y-2 pt-1">
                 {renderSecured(true)}
                 {renderPayIcons()}
               </div>
 
-              {/* Social proof pill */}
-              <div className="flex items-center justify-center gap-2">
+              {/* Social proof */}
+              <div className="flex items-center justify-center gap-2 pt-1">
                 <div className="flex -space-x-1.5">
-                  {["#3B82F6", "#8B5CF6", "#10B981"].map((c, i) => (
-                    <div key={i} className="h-5 w-5 rounded-full border-2 border-white" style={{ background: c }} />
+                  {["#3B82F6", "#8B5CF6", "#10B981", "#F59E0B"].map((c, i) => (
+                    <div key={i} className="h-5 w-5 rounded-full border-2 border-white ring-0" style={{ background: c }} />
                   ))}
                 </div>
-                <p className="text-xs text-gray-500">148 people paid today</p>
+                <p className="text-xs text-gray-400">148 people paid today</p>
               </div>
             </div>
-          )}
-          {screen === "details" && renderDetailsPanel(() => setScreen("overview"), fmtINR(smartTotal))}
-          {screen === "method" && renderMethodPanel(() => setScreen("details"), smartTotal)}
-          {screen === "success" && renderSuccessPanel()}
+          </div>
         </div>
+
+        {/* ── Checkout modal overlay ── */}
+        {screen !== "overview" && (
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
+            style={{ background: "rgba(15,23,42,0.55)", backdropFilter: "blur(3px)" }}
+            onClick={(e) => { if (e.target === e.currentTarget && screen === "details") closeModal(); }}
+          >
+            <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl overflow-hidden shadow-2xl" style={{ maxHeight: "90vh" }}>
+
+              {/* Modal top bar */}
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-gray-100 bg-white sticky top-0 z-10">
+                {/* Drag handle (mobile) */}
+                <div className="absolute left-1/2 -translate-x-1/2 top-2 h-1 w-10 rounded-full bg-gray-200 sm:hidden" />
+                <div className="h-8 w-8 rounded-xl bg-blue-600 flex items-center justify-center flex-shrink-0">
+                  <span className="text-white text-[11px] font-bold">{MERCHANT_INITIALS}</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 leading-tight truncate">{MERCHANT_NAME}</p>
+                  <p className="text-xs text-gray-500">Paying {fmtINR(smartTotal)}</p>
+                </div>
+                {/* Close — only when not in success */}
+                {screen !== "success" && (
+                  <button
+                    onClick={closeModal}
+                    className="h-7 w-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors flex-shrink-0"
+                  >
+                    <X className="h-3.5 w-3.5 text-gray-500" />
+                  </button>
+                )}
+              </div>
+
+              {/* Modal content */}
+              <div className="overflow-y-auto" style={{ maxHeight: "calc(90vh - 73px)" }}>
+                {screen === "details" && renderDetailsPanel(closeModal, fmtINR(smartTotal))}
+                {screen === "method" && renderMethodPanel(() => setScreen("details"), smartTotal)}
+                {screen === "success" && renderSuccessPanel()}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
-    </div>
-  );
+    );
+  };
 
   // ──────────────────────────────────────────────────────────────────────────────
   // ── V3: DASHBOARD CHECKOUT ─ Razorpay-checkout-inspired rich 2-panel layout
