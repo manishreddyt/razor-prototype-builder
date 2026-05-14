@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, Check, FileText, Info, Trash2, Download, Send, Receipt, Wand2 } from "lucide-react";
+import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, Check, FileText, Info, Trash2, Download, Send, Receipt, Wand2, Sparkles, ImagePlus, Tag, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -94,6 +94,12 @@ const SAVED_ITEMS = [
   { id: "item_7", name: "GST Filing Service", rate: "1499", hsn: "998214", taxRate: "18" },
 ];
 
+const PRODUCT_CATEGORIES = [
+  "Electronics", "Fashion & Apparel", "Home & Living", "Food & Beverages",
+  "Books & Stationery", "Health & Wellness", "Software & SaaS", "Education & Courses",
+  "Services", "Consulting", "Digital Downloads", "Other",
+];
+
 const PaymentLinks = () => {
   const navigate = useNavigate();
   const [paymentLinks, setPaymentLinks] = useState<any[]>([]);
@@ -159,6 +165,34 @@ const PaymentLinks = () => {
   });
   const [autoSendInvoice, setAutoSendInvoice] = useState(false);
   const [invoiceConfigured, setInvoiceConfigured] = useState(false);
+
+  // ── Create dialog: Standard / Smart tab ──────────────────────────────────────
+  const [createLinkTab, setCreateLinkTab] = useState<"standard" | "smart">("standard");
+
+  // Smart link — product catalogue (seeded from availableProducts)
+  const [smartCatalogue, setSmartCatalogue] = useState(
+    availableProducts.map((p) => ({
+      id: p.id, name: p.name, price: p.price,
+      discountedPrice: undefined as number | undefined,
+      qty: undefined as number | undefined,
+      category: "", description: "", images: [] as string[],
+    }))
+  );
+  const [smartSelectedIds, setSmartSelectedIds] = useState<string[]>([]);
+  const [productSearch, setProductSearch] = useState("");
+  const [showProductDropdown, setShowProductDropdown] = useState(false);
+
+  // Create-product modal
+  const [showCreateProduct, setShowCreateProduct] = useState(false);
+  const [cpName, setCpName] = useState("");
+  const [cpPrice, setCpPrice] = useState("");
+  const [cpDiscountedPrice, setCpDiscountedPrice] = useState("");
+  const [cpQty, setCpQty] = useState("");
+  const [cpCategory, setCpCategory] = useState("");
+  const [cpDescription, setCpDescription] = useState("");
+  const [cpImages, setCpImages] = useState<string[]>([]);
+  const cpImageRef = useRef<HTMLInputElement>(null);
+
   // Invoice creation dialog state
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
   const [invActiveTab, setInvActiveTab] = useState<"details" | "customer" | "items">("details");
@@ -606,6 +640,10 @@ const PaymentLinks = () => {
   };
 
   const resetCreateForm = () => {
+    setCreateLinkTab("standard");
+    setSmartSelectedIds([]);
+    setProductSearch("");
+    setShowProductDropdown(false);
     setFormData({ description: "", amount: "", customerPhone: "", customerEmail: "", referenceId: "", customerName: "" });
     setAutoSendInvoice(false);
     setInvoiceConfigured(false);
@@ -628,7 +666,6 @@ const PaymentLinks = () => {
     setWhatsappConfirmationEnabled(false);
     setCollectAddress(false);
     setSendReceiptAuto(true);
-    setShow80gDetails(false);
     setGstReceiptEnabled(false);
     setGstCustomerName("");
     setGstNumber("");
@@ -1039,8 +1076,25 @@ const PaymentLinks = () => {
       {/* Create Payment Link Dialog */}
       <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) resetCreateForm(); }}>
         <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden max-h-[90vh] flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0">
-            <DialogTitle className="text-xl font-semibold">Standard Payment Link</DialogTitle>
+          <DialogHeader className="px-6 pt-6 pb-0 flex-shrink-0">
+            <DialogTitle className="text-xl font-semibold mb-4">New Payment Link</DialogTitle>
+            {/* Standard / Smart tabs */}
+            <div className="flex border-b border-border -mx-6 px-6">
+              {(["standard", "smart"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setCreateLinkTab(tab)}
+                  className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-medium border-b-2 transition-colors ${
+                    createLinkTab === tab
+                      ? "border-primary text-primary"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab === "smart" && <Sparkles className="h-3.5 w-3.5" />}
+                  {tab === "standard" ? "Standard" : "Smart"}
+                </button>
+              ))}
+            </div>
           </DialogHeader>
 
           <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
@@ -1063,15 +1117,149 @@ const PaymentLinks = () => {
               </div>
             </div>
 
-            {/* Payment For */}
-            <div>
-              <label className="text-sm text-muted-foreground mb-2 block">Payment For</label>
-              <Input
-                placeholder="Payment description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              />
-            </div>
+            {/* Payment For — Standard: plain text; Smart: product multi-select */}
+            {createLinkTab === "standard" ? (
+              <div>
+                <label className="text-sm text-muted-foreground mb-2 block">Payment For</label>
+                <Input
+                  placeholder="Payment description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                />
+              </div>
+            ) : (
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-2 block">
+                  Products <span className="text-destructive">*</span>
+                </label>
+
+                {/* Selected chips */}
+                {smartSelectedIds.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {smartSelectedIds.map((id) => {
+                      const p = smartCatalogue.find((x) => x.id === id);
+                      if (!p) return null;
+                      return (
+                        <span key={id} className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full">
+                          {p.name}
+                          <button onClick={() => setSmartSelectedIds(smartSelectedIds.filter((s) => s !== id))} className="hover:text-destructive ml-0.5">
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Dropdown trigger */}
+                <div className="relative">
+                  <button
+                    type="button"
+                    className="w-full flex items-center justify-between px-3 h-10 border border-input rounded-lg bg-background text-sm hover:border-primary/60 transition-colors"
+                    onClick={() => setShowProductDropdown((v) => !v)}
+                  >
+                    <span className={smartSelectedIds.length === 0 ? "text-muted-foreground" : "text-foreground"}>
+                      {smartSelectedIds.length === 0 ? "Select or search products…" : `${smartSelectedIds.length} product${smartSelectedIds.length > 1 ? "s" : ""} selected`}
+                    </span>
+                    {showProductDropdown ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+                  </button>
+
+                  {showProductDropdown && (
+                    <div className="absolute z-50 left-0 right-0 top-full mt-1 border border-border rounded-lg bg-white shadow-xl overflow-hidden">
+                      {/* Search inside dropdown */}
+                      <div className="p-2 border-b border-border">
+                        <div className="relative">
+                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                          <input
+                            autoFocus
+                            placeholder="Search products…"
+                            value={productSearch}
+                            onChange={(e) => setProductSearch(e.target.value)}
+                            className="w-full pl-8 pr-3 py-1.5 text-sm border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Product list */}
+                      <div className="max-h-52 overflow-y-auto">
+                        {smartCatalogue
+                          .filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase()))
+                          .map((p) => {
+                            const selected = smartSelectedIds.includes(p.id);
+                            return (
+                              <button
+                                key={p.id}
+                                type="button"
+                                className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/50 transition-colors ${selected ? "bg-primary/5" : ""}`}
+                                onClick={() => {
+                                  const next = selected
+                                    ? smartSelectedIds.filter((s) => s !== p.id)
+                                    : [...smartSelectedIds, p.id];
+                                  setSmartSelectedIds(next);
+                                  // Auto-fill amount from product total
+                                  const total = next.reduce((sum, id) => {
+                                    const prod = smartCatalogue.find((x) => x.id === id);
+                                    return sum + (prod?.discountedPrice ?? prod?.price ?? 0);
+                                  }, 0);
+                                  setFormData((f) => ({ ...f, amount: total > 0 ? String(total) : f.amount }));
+                                }}
+                              >
+                                <div className={`h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selected ? "bg-primary border-primary" : "border-gray-300"}`}>
+                                  {selected && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
+                                </div>
+                                <div className="flex-1 text-left min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {p.discountedPrice ? (
+                                      <>
+                                        <span className="text-green-600 font-medium">₹{p.discountedPrice.toLocaleString()}</span>
+                                        <span className="line-through ml-1">₹{p.price.toLocaleString()}</span>
+                                      </>
+                                    ) : `₹${p.price.toLocaleString()}`}
+                                  </p>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        {smartCatalogue.filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
+                          <p className="px-3 py-3 text-sm text-muted-foreground">No products found</p>
+                        )}
+                      </div>
+
+                      {/* Add new product CTA */}
+                      <div className="border-t border-border p-1.5">
+                        <button
+                          type="button"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary font-medium hover:bg-primary/5 rounded-md transition-colors"
+                          onClick={() => { setShowProductDropdown(false); setShowCreateProduct(true); }}
+                        >
+                          <Plus className="h-4 w-4" /> Add new product
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Total hint */}
+                {smartSelectedIds.length > 0 && (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    Total: <span className="font-medium text-foreground">
+                      ₹{smartSelectedIds.reduce((s, id) => {
+                        const p = smartCatalogue.find((x) => x.id === id);
+                        return s + (p?.discountedPrice ?? p?.price ?? 0);
+                      }, 0).toLocaleString()}
+                    </span>
+                    <button className="ml-2 text-primary hover:underline" onClick={() => {
+                      const total = smartSelectedIds.reduce((s, id) => {
+                        const p = smartCatalogue.find((x) => x.id === id);
+                        return s + (p?.discountedPrice ?? p?.price ?? 0);
+                      }, 0);
+                      setFormData((f) => ({ ...f, amount: String(total) }));
+                    }}>Use as amount</button>
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Customer Details */}
             <div>
@@ -1726,6 +1914,210 @@ const PaymentLinks = () => {
             </Button>
             <Button className="px-6 bg-blue-600 hover:bg-blue-700 text-white" onClick={handleCreateLink}>
               Create Payment Link
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Create Product Modal ─────────────────────────────────────────────── */}
+      <Dialog open={showCreateProduct} onOpenChange={(open) => {
+        if (!open) {
+          setShowCreateProduct(false);
+          setCpName(""); setCpPrice(""); setCpDiscountedPrice("");
+          setCpQty(""); setCpCategory(""); setCpDescription(""); setCpImages([]);
+        }
+      }}>
+        <DialogContent className="max-w-md p-0 gap-0 overflow-hidden max-h-[90vh] flex flex-col">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border flex-shrink-0">
+            <DialogTitle className="text-lg font-semibold">Create Product</DialogTitle>
+          </DialogHeader>
+
+          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+            {/* Product name */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+                Product name <span className="text-destructive">*</span>
+              </label>
+              <Input
+                placeholder="Add product name"
+                value={cpName}
+                maxLength={100}
+                onChange={(e) => setCpName(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground text-right">{cpName.length}/100</p>
+            </div>
+
+            {/* Price */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex items-center gap-1">
+                Price <span className="text-destructive">*</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium select-none">₹</span>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={cpPrice}
+                  onChange={(e) => setCpPrice(e.target.value)}
+                  className="pl-7"
+                  min={0}
+                />
+              </div>
+            </div>
+
+            {/* Discounted price */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex gap-1">
+                Discounted price <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium select-none">₹</span>
+                <Input
+                  type="number"
+                  placeholder="0.00"
+                  value={cpDiscountedPrice}
+                  onChange={(e) => setCpDiscountedPrice(e.target.value)}
+                  className="pl-7"
+                  min={0}
+                />
+              </div>
+            </div>
+
+            {/* Quantity in stock */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex gap-1">
+                Quantity in stock <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
+              </label>
+              <Input
+                type="number"
+                placeholder="No. of pieces or units"
+                value={cpQty}
+                onChange={(e) => setCpQty(e.target.value)}
+                min={0}
+              />
+            </div>
+
+            {/* Upload images */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex gap-1">
+                Upload images <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
+              </label>
+              <div
+                className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                onClick={() => cpImages.length < 5 && cpImageRef.current?.click()}
+              >
+                <input
+                  ref={cpImageRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    const files = Array.from(e.target.files ?? []);
+                    const remaining = 5 - cpImages.length;
+                    const toAdd = files.slice(0, remaining).map((f) => URL.createObjectURL(f));
+                    setCpImages((prev) => [...prev, ...toAdd]);
+                  }}
+                />
+                <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">Upload product images</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Click to add up to 5 images</p>
+                </div>
+              </div>
+              {cpImages.length > 0 && (
+                <div className="flex gap-2 flex-wrap mt-2">
+                  {cpImages.map((url, i) => (
+                    <div key={i} className="relative group">
+                      <img src={url} alt="" className="w-16 h-16 object-cover rounded-lg border border-border" />
+                      <button
+                        type="button"
+                        className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={() => setCpImages(cpImages.filter((_, idx) => idx !== i))}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  {cpImages.length < 5 && (
+                    <button
+                      type="button"
+                      className="w-16 h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center hover:border-primary transition-colors text-muted-foreground hover:text-primary"
+                      onClick={() => cpImageRef.current?.click()}
+                    >
+                      <Plus className="h-5 w-5" />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Category */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex gap-1">
+                Category <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
+              </label>
+              <Select value={cpCategory} onValueChange={setCpCategory}>
+                <SelectTrigger className="h-10 text-sm">
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PRODUCT_CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Description */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex gap-1">
+                Description <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
+              </label>
+              <textarea
+                placeholder="Enter Description"
+                value={cpDescription}
+                maxLength={1200}
+                onChange={(e) => setCpDescription(e.target.value)}
+                rows={4}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              />
+              <p className="text-xs text-muted-foreground text-right">{cpDescription.length}/1200</p>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 flex-shrink-0 bg-white">
+            <Button variant="outline" onClick={() => setShowCreateProduct(false)}>Cancel</Button>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={!cpName.trim() || !cpPrice || Number(cpPrice) <= 0}
+              onClick={() => {
+                const newProduct = {
+                  id: `prod_custom_${Date.now()}`,
+                  name: cpName.trim(),
+                  price: Number(cpPrice),
+                  discountedPrice: cpDiscountedPrice ? Number(cpDiscountedPrice) : undefined,
+                  qty: cpQty ? Number(cpQty) : undefined,
+                  category: cpCategory,
+                  description: cpDescription,
+                  images: cpImages,
+                };
+                setSmartCatalogue((prev) => [...prev, newProduct]);
+                setSmartSelectedIds((prev) => [...prev, newProduct.id]);
+                // Auto-add to amount
+                const effectivePrice = newProduct.discountedPrice ?? newProduct.price;
+                setFormData((f) => ({
+                  ...f,
+                  amount: String((Number(f.amount) || 0) + effectivePrice),
+                }));
+                setShowCreateProduct(false);
+                setCpName(""); setCpPrice(""); setCpDiscountedPrice("");
+                setCpQty(""); setCpCategory(""); setCpDescription(""); setCpImages([]);
+                toast.success(`"${newProduct.name}" added to catalogue and selected`);
+              }}
+            >
+              Add Product
             </Button>
           </div>
         </DialogContent>
