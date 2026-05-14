@@ -633,23 +633,16 @@ export function PaymentLinkCheckout() {
             <p className="text-xs text-blue-300 mt-1.5">{smartProducts.length} item{smartProducts.length > 1 ? "s" : ""} · Tax included</p>
           </div>
 
-          {/* Price breakdown + trust */}
-          <div className="px-6 pt-5 pb-5 mt-5 border-t border-white/10 space-y-1.5">
-            {smartProducts.map((p) => (
-              <div key={p.id} className="flex justify-between text-[11px] text-blue-200">
-                <span className="truncate pr-2">{p.name} ×{p.qty}</span>
-                <span className="flex-shrink-0">{fmtINR(p.price * p.qty)}</span>
+          {/* Money Back Promise — prominent footer */}
+          <div className="px-6 pt-4 pb-5 mt-auto border-t border-white/10">
+            <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
+              <div className="h-9 w-9 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center flex-shrink-0">
+                <ShieldCheck className="h-4.5 w-4.5 text-emerald-400" />
               </div>
-            ))}
-            <div className="flex justify-between text-[11px] text-blue-200 pt-1">
-              <span>Tax</span><span className="text-emerald-400">Included</span>
-            </div>
-            <div className="flex justify-between text-sm font-bold text-white pt-1.5 border-t border-white/10">
-              <span>Total</span><span>{fmtINR(smartTotal)}</span>
-            </div>
-            <div className="flex items-center gap-1.5 pt-3 text-blue-300/70 text-[11px]">
-              <Lock className="h-3 w-3" />
-              <span>Money Back Promise by Razorpay</span>
+              <div>
+                <p className="text-sm font-semibold text-white leading-tight">Money Back Promise</p>
+                <p className="text-[11px] text-blue-300 mt-0.5">by Razorpay · 100% secure payments</p>
+              </div>
             </div>
           </div>
         </div>
