@@ -426,8 +426,8 @@ export function PaymentLinkCheckout() {
               <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center">
                 <Package className="h-3.5 w-3.5 text-blue-600" />
               </div>
-              <span className="font-semibold text-gray-900 text-sm">{smartProducts.length} item{smartProducts.length > 1 ? "s" : ""} in your order</span>
-              <span className="ml-auto text-xs text-gray-400 font-medium">{fmtINR(smartTotal)}</span>
+              <span className="font-semibold text-gray-900 text-sm">Order Summary</span>
+              <span className="ml-auto text-xs text-gray-400 font-medium">{smartProducts.length} item{smartProducts.length > 1 ? "s" : ""}</span>
             </div>
 
             {/* Product rows */}
@@ -448,13 +448,13 @@ export function PaymentLinkCheckout() {
             </div>
 
             {/* Total row */}
-            <div className="mx-5 mb-5 mt-1 rounded-2xl overflow-hidden" style={{ background: "linear-gradient(135deg, #1d4ed8 0%, #4f46e5 100%)" }}>
+            <div className="mx-5 mb-5 mt-1 rounded-2xl border border-gray-200 bg-gray-50">
               <div className="px-4 py-3.5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-blue-200 font-medium uppercase tracking-wide">TOTAL AMOUNT</p>
-                  <p className="text-[11px] text-green-400 mt-0.5 font-medium">✓ Tax & fees included</p>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">TOTAL AMOUNT</p>
+                  <p className="text-[11px] text-emerald-600 mt-0.5 font-medium flex items-center gap-0.5">✓ Tax & fees included</p>
                 </div>
-                <p className="text-3xl font-black text-white tracking-tight">{fmtINR(smartTotal)}</p>
+                <p className="text-3xl font-black text-gray-900 tracking-tight">{fmtINR(smartTotal)}</p>
               </div>
             </div>
 
