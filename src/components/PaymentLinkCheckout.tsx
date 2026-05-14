@@ -535,10 +535,11 @@ export function PaymentLinkCheckout() {
   // ── V3: DASHBOARD CHECKOUT ─ Razorpay-checkout-inspired rich 2-panel layout
   // ──────────────────────────────────────────────────────────────────────────────
   const renderV3 = () => (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen bg-[#f0f4f8] flex flex-col items-center justify-start py-8 px-4">
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-2xl shadow-blue-100/60 overflow-hidden flex flex-col lg:flex-row" style={{ minHeight: 620 }}>
 
       {/* ── Left panel: dark brand sidebar ── */}
-      <div className="lg:w-[38%] bg-[#1e3a8a] text-white flex flex-col px-8 py-8 lg:min-h-screen">
+      <div className="lg:w-[38%] bg-[#1e3a8a] text-white flex flex-col px-8 py-8">
 
         {/* Merchant identity */}
         <div className="flex items-center gap-3 mb-6">
@@ -696,6 +697,8 @@ export function PaymentLinkCheckout() {
         {screen === "method" && <div className="flex-1">{renderMethodPanel(() => setScreen("details"), smartTotal)}</div>}
         {screen === "success" && <div className="flex-1">{renderSuccessPanel()}</div>}
       </div>
+
+      </div>{/* end max-w-4xl card */}
     </div>
   );
 
