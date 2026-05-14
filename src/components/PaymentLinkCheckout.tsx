@@ -576,24 +576,74 @@ export function PaymentLinkCheckout() {
 
           {/* Top: merchant identity */}
           <div className="px-6 pt-6 pb-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="h-11 w-11 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
-                <span className="text-white font-black text-base tracking-tight">{MERCHANT_INITIALS}</span>
+
+            {/* Logo + name row */}
+            <div className="flex items-center gap-3.5 mb-5">
+              {/* Logo mark — gradient ring + monogram */}
+              <div className="relative flex-shrink-0">
+                <div
+                  className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg"
+                  style={{ background: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)" }}
+                >
+                  <span className="text-white font-black text-xl tracking-tight leading-none">{MERCHANT_INITIALS}</span>
+                </div>
+                {/* Verified tick */}
+                <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-[#1a3472] flex items-center justify-center">
+                  <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
+                </div>
               </div>
               <div>
-                <p className="font-bold text-base leading-tight">{MERCHANT_NAME}</p>
-                <div className="flex items-center gap-1 mt-0.5">
+                <p className="font-black text-lg leading-tight tracking-tight">{MERCHANT_NAME}</p>
+                <div className="flex items-center gap-1 mt-1">
                   <ShieldCheck className="h-3 w-3 text-emerald-400" />
-                  <span className="text-[11px] text-blue-300">Razorpay Trusted Business</span>
+                  <span className="text-[11px] text-blue-300 font-medium">Razorpay Trusted Business</span>
                 </div>
               </div>
             </div>
 
-            {/* Activity pill */}
-            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-3 py-2.5 mb-5">
-              <ShoppingCart className="h-3.5 w-3.5 text-blue-300 flex-shrink-0" />
-              <p className="text-xs text-blue-100 leading-snug">300+ orders last month · 148 paid today</p>
+            {/* ── Animated activity stats block ── */}
+            <div
+              className="rounded-2xl mb-5 overflow-hidden"
+              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
+            >
+              {/* Live indicator bar */}
+              <div className="flex items-center gap-2 px-4 pt-3 pb-2 border-b border-white/10">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
+                </span>
+                <span className="text-[11px] font-semibold text-emerald-300 uppercase tracking-widest">Live Activity</span>
+              </div>
+              {/* Two stat columns */}
+              <div className="grid grid-cols-2 divide-x divide-white/10 px-0 py-3">
+                <div className="flex flex-col items-center px-4 gap-0.5">
+                  <p
+                    className="text-2xl font-black text-white leading-none"
+                    style={{ animation: "countUp 0.6s ease-out both" }}
+                  >
+                    300+
+                  </p>
+                  <p className="text-[10px] text-blue-300 text-center leading-snug">orders<br/>last month</p>
+                </div>
+                <div className="flex flex-col items-center px-4 gap-0.5">
+                  <p
+                    className="text-2xl font-black text-amber-400 leading-none"
+                    style={{ animation: "countUp 0.6s 0.15s ease-out both" }}
+                  >
+                    148
+                  </p>
+                  <p className="text-[10px] text-blue-300 text-center leading-snug">paid<br/>today</p>
+                </div>
+              </div>
             </div>
+
+            {/* Keyframes injected once */}
+            <style>{`
+              @keyframes countUp {
+                from { opacity: 0; transform: translateY(6px); }
+                to   { opacity: 1; transform: translateY(0); }
+              }
+            `}</style>
 
             {/* Order summary */}
             <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-widest mb-2.5">Order summary</p>
