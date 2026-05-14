@@ -424,6 +424,104 @@ const ReceiptsSettings = () => {
                 Receipts for <span className="font-medium text-foreground">Payment Pages</span> can be configured in the payment page settings.
               </p>
             </div>
+
+            {/* Divider */}
+            <div className="border-t border-border mt-5 pt-5">
+              {/* 80G toggle row */}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground">80G Details</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Add 80G tax exemption details to all payment receipts. Applies to all payment links automatically.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setEnable80g((v) => !v)}
+                  className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none mt-0.5 ${enable80g ? "bg-primary" : "bg-gray-200"}`}
+                  role="switch"
+                  aria-checked={enable80g}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${enable80g ? "translate-x-4" : "translate-x-0"}`} />
+                </button>
+              </div>
+
+              {/* 80G expanded fields */}
+              {enable80g && (
+                <div className="mt-4 space-y-4">
+                  {/* Description */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-medium">80G Description</Label>
+                      <a
+                        href="https://razorpay.com/docs/payments/payment-pages/80g-receipt/#pdf-receipt-to-customers"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline flex items-center gap-1"
+                      >
+                        Sample 80G Receipt <ExternalLink className="h-3 w-3" />
+                      </a>
+                    </div>
+                    <textarea
+                      value={g80Description}
+                      onChange={(e) => setG80Description(e.target.value)}
+                      placeholder="All donations made to us are eligible for tax exemption under 80G of IT act"
+                      rows={3}
+                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    />
+                  </div>
+
+                  {/* Signature upload */}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium">
+                      Signature of Authorised Person{" "}
+                      <span className="text-muted-foreground font-normal">(Optional)</span>
+                    </Label>
+                    <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                      <input
+                        ref={signatureInputRef}
+                        type="file"
+                        accept=".png,.jpg,.jpeg"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] ?? null;
+                          if (file && file.size > 500 * 1024) {
+                            toast.error("File size must be under 500 KB");
+                            return;
+                          }
+                          setG80SignatureFile(file);
+                          if (file) setG80SignatureUrl(URL.createObjectURL(file));
+                        }}
+                      />
+                      {g80SignatureFile ? (
+                        <div className="flex items-center gap-2 text-sm text-green-700">
+                          <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                          <span className="truncate max-w-xs">{g80SignatureFile.name}</span>
+                          <button
+                            type="button"
+                            className="text-muted-foreground hover:text-destructive ml-1 flex-shrink-0"
+                            onClick={(e) => { e.preventDefault(); setG80SignatureFile(null); setG80SignatureUrl(undefined); }}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <Upload className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <span>Drag file here or</span>
+                            <span className="text-primary font-medium">Upload</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">Upload .png, .jpg or .jpeg file | 500 KB Max</p>
+                        </>
+                      )}
+                    </label>
+                    {g80SignatureUrl && (
+                      <img src={g80SignatureUrl} alt="Signature preview" className="mt-2 h-12 object-contain rounded border border-border" />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -547,104 +645,6 @@ const ReceiptsSettings = () => {
                 <div className="flex items-center gap-2 pt-1">
                   <Button size="sm" className="h-8 px-4" onClick={() => { setBrandColor(draftColor); setEditingColor(false); }}>Apply</Button>
                   <Button size="sm" variant="ghost" className="h-8 px-3" onClick={() => { setDraftColor(brandColor); setEditingColor(false); }}>Cancel</Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* 80G Details */}
-        <Card className="mb-5">
-          <CardContent className="p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold mb-0.5">80G Details</h3>
-                <p className="text-sm text-muted-foreground">
-                  Add 80G tax exemption details to all payment receipts. Applies to all payment links automatically.
-                </p>
-              </div>
-              <button
-                onClick={() => setEnable80g((v) => !v)}
-                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none mt-0.5 ${enable80g ? "bg-primary" : "bg-gray-200"}`}
-                role="switch"
-                aria-checked={enable80g}
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${enable80g ? "translate-x-4" : "translate-x-0"}`} />
-              </button>
-            </div>
-
-            {enable80g && (
-              <div className="mt-5 space-y-4">
-                {/* Description */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-sm font-medium">80G Description</Label>
-                    <a
-                      href="https://razorpay.com/docs/payments/payment-pages/80g-receipt/#pdf-receipt-to-customers"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      Sample 80G Receipt <ExternalLink className="h-3 w-3" />
-                    </a>
-                  </div>
-                  <textarea
-                    value={g80Description}
-                    onChange={(e) => setG80Description(e.target.value)}
-                    placeholder="All donations made to us are eligible for tax exemption under 80G of IT act"
-                    rows={3}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                  />
-                </div>
-
-                {/* Signature upload */}
-                <div className="space-y-1.5">
-                  <Label className="text-sm font-medium">
-                    Signature of Authorised Person{" "}
-                    <span className="text-muted-foreground font-normal">(Optional)</span>
-                  </Label>
-                  <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
-                    <input
-                      ref={signatureInputRef}
-                      type="file"
-                      accept=".png,.jpg,.jpeg"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] ?? null;
-                        if (file && file.size > 500 * 1024) {
-                          toast.error("File size must be under 500 KB");
-                          return;
-                        }
-                        setG80SignatureFile(file);
-                        if (file) setG80SignatureUrl(URL.createObjectURL(file));
-                      }}
-                    />
-                    {g80SignatureFile ? (
-                      <div className="flex items-center gap-2 text-sm text-green-700">
-                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                        <span className="truncate max-w-xs">{g80SignatureFile.name}</span>
-                        <button
-                          type="button"
-                          className="text-muted-foreground hover:text-destructive ml-1 flex-shrink-0"
-                          onClick={(e) => { e.preventDefault(); setG80SignatureFile(null); setG80SignatureUrl(undefined); }}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="h-5 w-5 text-muted-foreground" />
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                          <span>Drag file here or</span>
-                          <span className="text-primary font-medium">Upload</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Upload .png, .jpg or .jpeg file | 500 KB Max</p>
-                      </>
-                    )}
-                  </label>
-                  {g80SignatureUrl && (
-                    <img src={g80SignatureUrl} alt="Signature preview" className="mt-2 h-12 object-contain rounded border border-border" />
-                  )}
                 </div>
               </div>
             )}
