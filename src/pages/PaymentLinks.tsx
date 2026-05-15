@@ -1142,72 +1142,73 @@ const PaymentLinks = () => {
                   Products <span className="text-destructive">*</span>
                 </label>
 
-                {/* Selected products — editable rows */}
+                {/* ── Added product rows ── */}
                 {smartSelectedItems.length > 0 && (
-                  <div className="border border-border rounded-lg overflow-hidden mb-2">
-                    {/* Column headers */}
-                    <div className="grid items-center bg-muted/40 border-b border-border px-3 py-2" style={{ gridTemplateColumns: "1fr 100px 72px 28px" }}>
-                      <span className="text-xs font-medium text-muted-foreground">Product</span>
-                      <span className="text-xs font-medium text-muted-foreground pl-1">Price (₹)</span>
-                      <span className="text-xs font-medium text-muted-foreground text-center">Qty</span>
-                      <span />
-                    </div>
+                  <div className="space-y-2 mb-3">
                     {smartSelectedItems.map((item) => {
                       const p = smartCatalogue.find((x) => x.id === item.id);
+                      const orig = availableProducts.find((x) => x.id === item.id);
                       if (!p) return null;
                       const recalcTotal = (nextItems: typeof smartSelectedItems) => {
                         const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
                         setFormData((f) => ({ ...f, amount: String(t) }));
                       };
                       return (
-                        <div key={item.id} className="grid items-center px-3 py-2.5 border-b border-border last:border-0 gap-2" style={{ gridTemplateColumns: "1fr 100px 72px 28px" }}>
+                        <div key={item.id} className="flex items-center gap-2.5 border border-border rounded-xl p-2.5 bg-background">
+                          {/* Thumbnail */}
+                          {orig?.image
+                            ? <img src={orig.image} alt={p.name} className="h-11 w-11 rounded-lg object-cover flex-shrink-0" />
+                            : <div className="h-11 w-11 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center"><Package className="h-4 w-4 text-muted-foreground" /></div>
+                          }
                           {/* Name */}
-                          <span className="text-sm font-medium text-foreground truncate pr-1">{p.name}</span>
-                          {/* Price */}
-                          <div className="relative">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
+                            <p className="text-xs text-muted-foreground">₹{p.price.toLocaleString()}</p>
+                          </div>
+                          {/* Price input */}
+                          <div className="relative w-24 flex-shrink-0">
                             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">₹</span>
                             <input
-                              type="number"
-                              value={item.price}
-                              min={0}
+                              type="number" value={item.price} min={0}
                               onChange={(e) => {
                                 const next = smartSelectedItems.map((si) => si.id === item.id ? { ...si, price: Number(e.target.value) || 0 } : si);
-                                setSmartSelectedItems(next);
-                                recalcTotal(next);
+                                setSmartSelectedItems(next); recalcTotal(next);
                               }}
-                              className="w-full pl-5 pr-1 py-1 text-sm border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+                              className="w-full pl-5 pr-1 py-1.5 text-sm border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring"
                             />
                           </div>
-                          {/* Qty */}
-                          <input
-                            type="number"
-                            value={item.qty}
-                            min={1}
-                            onChange={(e) => {
-                              const next = smartSelectedItems.map((si) => si.id === item.id ? { ...si, qty: Math.max(1, Number(e.target.value) || 1) } : si);
-                              setSmartSelectedItems(next);
-                              recalcTotal(next);
-                            }}
-                            className="w-full px-2 py-1 text-sm border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring text-center"
-                          />
+                          {/* Qty input */}
+                          <div className="flex items-center gap-1 flex-shrink-0">
+                            <button type="button"
+                              className="h-7 w-7 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors text-base leading-none"
+                              onClick={() => {
+                                const next = smartSelectedItems.map((si) => si.id === item.id ? { ...si, qty: Math.max(1, si.qty - 1) } : si);
+                                setSmartSelectedItems(next); recalcTotal(next);
+                              }}>−</button>
+                            <span className="w-6 text-center text-sm font-medium">{item.qty}</span>
+                            <button type="button"
+                              className="h-7 w-7 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors text-base leading-none"
+                              onClick={() => {
+                                const next = smartSelectedItems.map((si) => si.id === item.id ? { ...si, qty: si.qty + 1 } : si);
+                                setSmartSelectedItems(next); recalcTotal(next);
+                              }}>+</button>
+                          </div>
                           {/* Remove */}
-                          <button
-                            type="button"
-                            className="flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                          <button type="button"
+                            className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                             onClick={() => {
                               const next = smartSelectedItems.filter((si) => si.id !== item.id);
                               setSmartSelectedItems(next);
                               setSmartSelectedIds(smartSelectedIds.filter((id) => id !== item.id));
                               recalcTotal(next);
-                            }}
-                          >
+                            }}>
                             <X className="h-3.5 w-3.5" />
                           </button>
                         </div>
                       );
                     })}
-                    {/* Total row */}
-                    <div className="flex items-center justify-end gap-2 px-3 py-2 bg-muted/20 border-t border-border">
+                    {/* Total */}
+                    <div className="flex items-center justify-end gap-2 px-1 pt-1">
                       <span className="text-xs text-muted-foreground">Total</span>
                       <span className="text-sm font-semibold text-foreground">
                         ₹{smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0).toLocaleString()}
@@ -1216,31 +1217,29 @@ const PaymentLinks = () => {
                   </div>
                 )}
 
-                {/* Dropdown trigger */}
+                {/* ── Add product trigger ── */}
                 <div className="relative">
-                  {smartSelectedIds.length > 0 ? (
+                  {/* Trigger button */}
+                  {!showProductDropdown && (
                     <button
                       type="button"
-                      className="flex items-center gap-1 text-sm text-blue-600 font-medium hover:underline mt-1"
-                      onClick={() => setShowProductDropdown((v) => !v)}
+                      onClick={() => { setShowProductDropdown(true); setProductSearch(""); }}
+                      className={
+                        smartSelectedItems.length === 0
+                          ? "w-full flex items-center gap-2 px-3 h-10 border border-dashed border-input rounded-xl bg-muted/30 text-sm text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
+                          : "flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:underline"
+                      }
                     >
-                      <Plus className="h-3.5 w-3.5" /> Add more products
+                      <Plus className="h-3.5 w-3.5" />
+                      {smartSelectedItems.length === 0 ? "Select a product" : "Add product"}
                     </button>
-                  ) : (
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-between px-3 h-10 border border-input rounded-lg bg-background text-sm hover:border-primary/60 transition-colors"
-                    onClick={() => setShowProductDropdown((v) => !v)}
-                  >
-                    <span className="text-muted-foreground">Select or search products…</span>
-                    {showProductDropdown ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-                  </button>
                   )}
 
+                  {/* ── Product picker panel ── */}
                   {showProductDropdown && (
-                    <div className="absolute z-50 left-0 right-0 top-full mt-1 border border-border rounded-lg bg-white shadow-xl overflow-hidden">
+                    <div className="border border-border rounded-xl bg-white shadow-xl overflow-hidden">
                       {/* Search */}
-                      <div className="p-2 border-b border-border">
+                      <div className="p-2.5 border-b border-border">
                         <div className="relative">
                           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                           <input
@@ -1248,71 +1247,69 @@ const PaymentLinks = () => {
                             placeholder="Search products…"
                             value={productSearch}
                             onChange={(e) => setProductSearch(e.target.value)}
-                            className="w-full pl-8 pr-3 py-1.5 text-sm border border-input rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+                            className="w-full pl-8 pr-3 py-1.5 text-sm border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring"
                           />
                         </div>
                       </div>
 
-                      {/* Product list */}
-                      <div className="max-h-48 overflow-y-auto">
+                      {/* Product cards — only unselected */}
+                      <div className="max-h-52 overflow-y-auto p-2 space-y-1">
                         {smartCatalogue
-                          .filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase()))
+                          .filter((p) =>
+                            !smartSelectedIds.includes(p.id) &&
+                            p.name.toLowerCase().includes(productSearch.toLowerCase())
+                          )
                           .map((p) => {
-                            const selected = smartSelectedIds.includes(p.id);
+                            const orig = availableProducts.find((x) => x.id === p.id);
                             return (
                               <button
                                 key={p.id}
                                 type="button"
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 hover:bg-secondary/50 transition-colors ${selected ? "bg-primary/5" : ""}`}
+                                className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
                                 onClick={() => {
-                                  if (selected) {
-                                    // deselect
-                                    const nextItems = smartSelectedItems.filter((si) => si.id !== p.id);
-                                    setSmartSelectedItems(nextItems);
-                                    setSmartSelectedIds(smartSelectedIds.filter((id) => id !== p.id));
-                                    const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
-                                    setFormData((f) => ({ ...f, amount: String(t) }));
-                                  } else {
-                                    // select — add with default price & qty=1
-                                    const effectivePrice = p.discountedPrice ?? p.price;
-                                    const nextItems = [...smartSelectedItems, { id: p.id, price: effectivePrice, qty: 1 }];
-                                    setSmartSelectedItems(nextItems);
-                                    setSmartSelectedIds([...smartSelectedIds, p.id]);
-                                    const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
-                                    setFormData((f) => ({ ...f, amount: String(t) }));
-                                  }
+                                  const effectivePrice = p.discountedPrice ?? p.price;
+                                  const nextItems = [...smartSelectedItems, { id: p.id, price: effectivePrice, qty: 1 }];
+                                  setSmartSelectedItems(nextItems);
+                                  setSmartSelectedIds([...smartSelectedIds, p.id]);
+                                  const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
+                                  setFormData((f) => ({ ...f, amount: String(t) }));
+                                  setShowProductDropdown(false);
+                                  setProductSearch("");
                                 }}
                               >
-                                <div className={`h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${selected ? "bg-primary border-primary" : "border-gray-300"}`}>
-                                  {selected && <Check className="h-3 w-3 text-white" strokeWidth={3} />}
-                                </div>
-                                <div className="flex-1 text-left min-w-0">
+                                {orig?.image
+                                  ? <img src={orig.image} alt={p.name} className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
+                                  : <div className="h-10 w-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center"><Package className="h-4 w-4 text-muted-foreground" /></div>
+                                }
+                                <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
                                   <p className="text-xs text-muted-foreground">
-                                    {p.discountedPrice ? (
-                                      <>
-                                        <span className="text-green-600 font-medium">₹{p.discountedPrice.toLocaleString()}</span>
-                                        <span className="line-through ml-1 text-muted-foreground">₹{p.price.toLocaleString()}</span>
-                                      </>
-                                    ) : `₹${p.price.toLocaleString()}`}
+                                    {p.discountedPrice
+                                      ? <><span className="text-green-600 font-medium">₹{p.discountedPrice.toLocaleString()}</span><span className="line-through ml-1">₹{p.price.toLocaleString()}</span></>
+                                      : `₹${p.price.toLocaleString()}`}
                                   </p>
                                 </div>
                               </button>
                             );
                           })}
-                        {smartCatalogue.filter((p) => p.name.toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
-                          <p className="px-3 py-3 text-sm text-muted-foreground">No products found</p>
+                        {smartCatalogue.filter((p) => !smartSelectedIds.includes(p.id) && p.name.toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
+                          <p className="px-3 py-3 text-sm text-muted-foreground">
+                            {smartSelectedIds.length === smartCatalogue.length ? "All products added" : "No products found"}
+                          </p>
                         )}
                       </div>
 
-                      {/* Add new product */}
-                      <div className="border-t border-border p-1.5">
-                        <button
-                          type="button"
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-primary font-medium hover:bg-primary/5 rounded-md transition-colors"
-                          onClick={() => { setShowProductDropdown(false); setShowCreateProduct(true); }}
-                        >
-                          <Plus className="h-4 w-4" /> Add new product
+                      {/* Footer actions */}
+                      <div className="border-t border-border p-1.5 flex items-center justify-between">
+                        <button type="button"
+                          className="flex items-center gap-2 px-3 py-1.5 text-sm text-primary font-medium hover:bg-primary/5 rounded-md transition-colors"
+                          onClick={() => { setShowProductDropdown(false); setShowCreateProduct(true); }}>
+                          <Plus className="h-3.5 w-3.5" /> Create new product
+                        </button>
+                        <button type="button"
+                          className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground rounded-md transition-colors"
+                          onClick={() => { setShowProductDropdown(false); setProductSearch(""); }}>
+                          Cancel
                         </button>
                       </div>
                     </div>
