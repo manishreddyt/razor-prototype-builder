@@ -1088,7 +1088,7 @@ const PaymentLinks = () => {
 
       {/* Create Payment Link Dialog */}
       <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) resetCreateForm(); }}>
-        <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden max-h-[65vh] flex flex-col">
+        <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden max-h-[82vh] flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-0 flex-shrink-0">
             <DialogTitle className="text-xl font-semibold mb-4">New Payment Link</DialogTitle>
             {/* Standard / Magic Link tabs */}
