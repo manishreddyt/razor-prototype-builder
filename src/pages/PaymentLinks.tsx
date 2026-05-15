@@ -195,6 +195,10 @@ const PaymentLinks = () => {
   const [cpDescription, setCpDescription] = useState("");
   const [cpImages, setCpImages] = useState<string[]>([]);
   const cpImageRef = useRef<HTMLInputElement>(null);
+  const [cpWeight, setCpWeight] = useState("");
+  const [cpDimL, setCpDimL] = useState("");
+  const [cpDimW, setCpDimW] = useState("");
+  const [cpDimH, setCpDimH] = useState("");
 
   // Invoice creation dialog state
   const [showInvoiceDialog, setShowInvoiceDialog] = useState(false);
@@ -2039,8 +2043,8 @@ const PaymentLinks = () => {
       <Dialog open={showCreateProduct} onOpenChange={(open) => {
         if (!open) {
           setShowCreateProduct(false);
-          setCpName(""); setCpPrice(""); setCpDiscountedPrice("");
-          setCpQty(""); setCpCategory(""); setCpDescription(""); setCpImages([]);
+          setCpName(""); setCpPrice(""); setCpDiscountedPrice(""); setCpImages([]);
+          setCpWeight(""); setCpDimL(""); setCpDimW(""); setCpDimH("");
         }
       }}>
         <DialogContent className="max-w-md p-0 gap-0 overflow-hidden max-h-[90vh] flex flex-col">
@@ -2063,142 +2067,101 @@ const PaymentLinks = () => {
               <p className="text-xs text-muted-foreground text-right">{cpName.length}/100</p>
             </div>
 
-            {/* Price */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground flex items-center gap-1">
-                Price <span className="text-destructive">*</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium select-none">₹</span>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={cpPrice}
-                  onChange={(e) => setCpPrice(e.target.value)}
-                  className="pl-7"
-                  min={0}
-                />
-              </div>
-            </div>
-
-            {/* Discounted price */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground flex gap-1">
-                Discounted price <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium select-none">₹</span>
-                <Input
-                  type="number"
-                  placeholder="0.00"
-                  value={cpDiscountedPrice}
-                  onChange={(e) => setCpDiscountedPrice(e.target.value)}
-                  className="pl-7"
-                  min={0}
-                />
-              </div>
-            </div>
-
-            {/* Quantity in stock */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground flex gap-1">
-                Quantity in stock <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
-              </label>
-              <Input
-                type="number"
-                placeholder="No. of pieces or units"
-                value={cpQty}
-                onChange={(e) => setCpQty(e.target.value)}
-                min={0}
-              />
-            </div>
-
-            {/* Upload images */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground flex gap-1">
-                Upload images <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
-              </label>
-              <div
-                className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
-                onClick={() => cpImages.length < 5 && cpImageRef.current?.click()}
-              >
-                <input
-                  ref={cpImageRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files ?? []);
-                    const remaining = 5 - cpImages.length;
-                    const toAdd = files.slice(0, remaining).map((f) => URL.createObjectURL(f));
-                    setCpImages((prev) => [...prev, ...toAdd]);
-                  }}
-                />
-                <ImagePlus className="h-6 w-6 text-muted-foreground" />
-                <div className="text-center">
-                  <p className="text-sm text-muted-foreground">Upload product images</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Click to add up to 5 images</p>
+            {/* Price + Discounted price side by side */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground flex items-center gap-1">
+                  Price <span className="text-destructive">*</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium select-none">₹</span>
+                  <Input type="number" placeholder="0.00" value={cpPrice} onChange={(e) => setCpPrice(e.target.value)} className="pl-7" min={0} />
                 </div>
               </div>
-              {cpImages.length > 0 && (
-                <div className="flex gap-2 flex-wrap mt-2">
-                  {cpImages.map((url, i) => (
-                    <div key={i} className="relative group">
-                      <img src={url} alt="" className="w-16 h-16 object-cover rounded-lg border border-border" />
-                      <button
-                        type="button"
-                        className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-destructive text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => setCpImages(cpImages.filter((_, idx) => idx !== i))}
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  {cpImages.length < 5 && (
-                    <button
-                      type="button"
-                      className="w-16 h-16 rounded-lg border-2 border-dashed border-border flex items-center justify-center hover:border-primary transition-colors text-muted-foreground hover:text-primary"
-                      onClick={() => cpImageRef.current?.click()}
-                    >
-                      <Plus className="h-5 w-5" />
-                    </button>
-                  )}
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground flex gap-1 items-center">
+                  Discounted <span className="text-muted-foreground font-normal text-xs">(optional)</span>
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground font-medium select-none">₹</span>
+                  <Input type="number" placeholder="0.00" value={cpDiscountedPrice} onChange={(e) => setCpDiscountedPrice(e.target.value)} className="pl-7" min={0} />
+                </div>
+              </div>
+            </div>
+
+            {/* Upload image — single */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-foreground flex gap-1">
+                Upload image <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
+              </label>
+              {cpImages.length === 0 ? (
+                <div
+                  className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors"
+                  onClick={() => cpImageRef.current?.click()}
+                >
+                  <input
+                    ref={cpImageRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) setCpImages([URL.createObjectURL(file)]);
+                    }}
+                  />
+                  <ImagePlus className="h-6 w-6 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Click to upload product image</p>
+                </div>
+              ) : (
+                <div className="relative inline-block">
+                  <img src={cpImages[0]} alt="" className="w-24 h-24 object-cover rounded-xl border border-border" />
+                  <button
+                    type="button"
+                    className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-destructive text-white rounded-full flex items-center justify-center"
+                    onClick={() => setCpImages([])}
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
                 </div>
               )}
             </div>
 
-            {/* Category */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground flex gap-1">
-                Category <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
+            {/* Shipping Details */}
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-foreground">
+                Shipping Details <span className="text-muted-foreground font-normal text-xs">(optional)</span>
               </label>
-              <Select value={cpCategory} onValueChange={setCpCategory}>
-                <SelectTrigger className="h-10 text-sm">
-                  <SelectValue placeholder="Select Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PRODUCT_CATEGORIES.map((c) => (
-                    <SelectItem key={c} value={c}>{c}</SelectItem>
+              {/* Weight */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">Weight</label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={cpWeight}
+                    onChange={(e) => setCpWeight(e.target.value)}
+                    className="pr-14"
+                    min={0}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium select-none">gms</span>
+                </div>
+              </div>
+              {/* Dimensions */}
+              <div className="space-y-1.5">
+                <label className="text-xs text-muted-foreground">Dimensions (L × W × H)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { val: cpDimL, set: setCpDimL, ph: "L" },
+                    { val: cpDimW, set: setCpDimW, ph: "W" },
+                    { val: cpDimH, set: setCpDimH, ph: "H" },
+                  ].map(({ val, set, ph }) => (
+                    <div key={ph} className="relative">
+                      <Input type="number" placeholder={ph} value={val} onChange={(e) => set(e.target.value)} className="pr-10" min={0} />
+                      <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">cm</span>
+                    </div>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Description */}
-            <div className="space-y-1.5">
-              <label className="text-sm font-medium text-foreground flex gap-1">
-                Description <span className="text-muted-foreground font-normal text-xs self-center">(optional)</span>
-              </label>
-              <textarea
-                placeholder="Enter Description"
-                value={cpDescription}
-                maxLength={1200}
-                onChange={(e) => setCpDescription(e.target.value)}
-                rows={4}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-              />
-              <p className="text-xs text-muted-foreground text-right">{cpDescription.length}/1200</p>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -2214,9 +2177,9 @@ const PaymentLinks = () => {
                   name: cpName.trim(),
                   price: Number(cpPrice),
                   discountedPrice: cpDiscountedPrice ? Number(cpDiscountedPrice) : undefined,
-                  qty: cpQty ? Number(cpQty) : undefined,
-                  category: cpCategory,
-                  description: cpDescription,
+                  qty: undefined,
+                  category: "",
+                  description: "",
                   images: cpImages,
                 };
                 const effectivePrice = newProduct.discountedPrice ?? newProduct.price;
@@ -2225,12 +2188,13 @@ const PaymentLinks = () => {
                 setSmartSelectedItems((prev) => {
                   const next = [...prev, { id: newProduct.id, price: effectivePrice, qty: 1 }];
                   const t = next.reduce((s, si) => s + si.price * si.qty, 0);
-                  setFormData((f) => ({ ...f, amount: String(t) }));
+                  const fee = deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0);
+                  setFormData((f) => ({ ...f, amount: String(t + fee) }));
                   return next;
                 });
                 setShowCreateProduct(false);
-                setCpName(""); setCpPrice(""); setCpDiscountedPrice("");
-                setCpQty(""); setCpCategory(""); setCpDescription(""); setCpImages([]);
+                setCpName(""); setCpPrice(""); setCpDiscountedPrice(""); setCpImages([]);
+                setCpWeight(""); setCpDimL(""); setCpDimW(""); setCpDimH("");
                 toast.success(`"${newProduct.name}" added to catalogue and selected`);
               }}
             >
