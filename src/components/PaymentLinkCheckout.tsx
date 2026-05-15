@@ -84,6 +84,8 @@ export function PaymentLinkCheckout() {
   const [payFull, setPayFull] = useState(false);
   const [paidInstCount, setPaidInstCount] = useState(0);
   const [txnId, setTxnId] = useState("");
+  const [paymentHistory, setPaymentHistory] = useState<{ label: string; amount: number; paidAt: string; txnId: string }[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const [upiId, setUpiId] = useState("");
   const [upiVerified, setUpiVerified] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
@@ -132,8 +134,15 @@ export function PaymentLinkCheckout() {
     setProcessing(true);
     setTimeout(() => {
       setProcessing(false);
-      setTxnId(`TXN${Date.now().toString().slice(-10)}`);
+      const newTxnId = `TXN${Date.now().toString().slice(-10)}`;
+      setTxnId(newTxnId);
       if (isSchedule) {
+        const instsPaid = payFull ? installments.slice(paidInstCount) : [installments[paidInstCount]];
+        const paidAt = new Date().toISOString();
+        setPaymentHistory(prev => [
+          ...prev,
+          ...instsPaid.map(inst => ({ label: inst.label, amount: Number(inst.amount), paidAt, txnId: newTxnId })),
+        ]);
         setPaidInstCount(payFull ? installments.length : paidInstCount + 1);
       }
       setScreen("success");
@@ -1202,6 +1211,47 @@ export function PaymentLinkCheckout() {
                           </div>
                         )}
                       </div>
+
+                      {/* Payment History link */}
+                      {paymentHistory.length > 0 && (
+                        <div className="mt-3 pt-2 border-t border-gray-100">
+                          <button
+                            type="button"
+                            onClick={() => setShowHistory(v => !v)}
+                            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            <Calendar className="h-3.5 w-3.5" />
+                            Payment History
+                            <ChevronDown className={cn("h-3 w-3 transition-transform ml-0.5", showHistory && "rotate-180")} />
+                          </button>
+
+                          {showHistory && (
+                            <div className="mt-2 space-y-2">
+                              {paymentHistory.map((h, idx) => (
+                                <div key={idx} className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 space-y-1">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                                        <Check className="h-2.5 w-2.5 text-white" strokeWidth={3.5} />
+                                      </div>
+                                      <p className="text-xs font-semibold text-gray-800 leading-tight">{h.label}</p>
+                                    </div>
+                                    <p className="text-xs font-bold text-gray-900 flex-shrink-0">{fmtINR(h.amount)}</p>
+                                  </div>
+                                  <div className="pl-5.5 space-y-0.5">
+                                    <p className="text-[10px] text-gray-400">
+                                      {new Date(h.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                                      {" · "}
+                                      {new Date(h.paidAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                                    </p>
+                                    <p className="text-[10px] font-mono text-gray-400">{h.txnId}</p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
