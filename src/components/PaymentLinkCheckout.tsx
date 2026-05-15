@@ -1072,11 +1072,11 @@ export function PaymentLinkCheckout() {
     return (
       <div className="min-h-screen" style={{ background: "linear-gradient(160deg,#f0f4ff 0%,#f8fafc 60%)" }}>
         <div className="max-w-5xl mx-auto px-4 py-8 lg:py-14">
-          <div className="flex flex-col lg:flex-row gap-5 items-start">
+          <div className="flex flex-col lg:flex-row gap-5 items-center">
 
             {/* ── Left: info card — wider, center-aligned ── */}
             <div className="w-full lg:w-[45%] flex-shrink-0 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-8 py-8 space-y-5 text-center">
+              <div className="px-8 py-8 space-y-5">
                 {/* Merchant */}
                 <div>
                   <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Payment Request from</p>
@@ -1094,13 +1094,13 @@ export function PaymentLinkCheckout() {
                 <div>
                   <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Amount Payable</p>
                   <p className="text-3xl font-black text-gray-900">{fmtINR(stdAmt)}</p>
-                  <div className="w-8 h-0.5 bg-blue-500 rounded-full mt-2 mx-auto" />
+                  <div className="w-8 h-0.5 bg-blue-500 rounded-full mt-2" />
                 </div>
               </div>
               {/* Footer */}
-              <div className="px-8 py-4 border-t border-gray-100 bg-gray-50/60 space-y-1 text-center">
+              <div className="px-8 py-4 border-t border-gray-100 bg-gray-50/60 space-y-1">
                 <p className="text-xs text-gray-400">For any queries, please contact <span className="font-semibold text-gray-600">{MERCHANT_NAME}</span></p>
-                <button className="text-xs text-blue-600 hover:underline font-medium inline-flex items-center gap-0.5">Merchant's business policies <ChevronRight className="h-3 w-3" /></button>
+                <button className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-0.5">Merchant's business policies <ChevronRight className="h-3 w-3" /></button>
               </div>
             </div>
 
