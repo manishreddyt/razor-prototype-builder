@@ -998,53 +998,75 @@ export function PaymentLinkCheckout() {
     </div>
   );
 
-  // ── Non-smart: existing standard layout ──────────────────────────────────────
+  // ── Non-smart: Razorpay-style standard layout ────────────────────────────────
   if (!isSmartLink) {
+    const stdAmt = isSchedule ? payNowAmount : totalAmount;
     return (
-      <div className="min-h-screen bg-[#f5f5f5]">
-        <div className="max-w-5xl mx-auto px-4 py-6 lg:py-10">
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            <div className="grid lg:grid-cols-[3fr_2fr] items-start">
-              {/* Left */}
-              <div className="flex flex-col justify-center lg:min-h-[70vh] py-10 px-8 border-r border-gray-200">
-                <div className="space-y-6">
-                  <div><p className="text-xs text-gray-400 mb-1 uppercase tracking-wide">Payment Request from</p><p className="text-2xl font-bold">{MERCHANT_NAME}</p></div>
-                  {(link.title || link.description) && (
-                    <div><p className="text-xs text-gray-400 mb-0.5">Payment for</p>{link.title && <p className="font-medium text-gray-800">{link.title}</p>}{link.description && <p className="text-xs text-gray-500 mt-0.5">{link.description}</p>}</div>
-                  )}
-                  <div><p className="text-xs text-gray-400 mb-0.5">Total Amount</p><p className="text-2xl font-bold">{fmtINR(totalAmount)}</p></div>
+      <div className="min-h-screen" style={{ background: "linear-gradient(160deg,#f0f4ff 0%,#f8fafc 60%)" }}>
+        <div className="max-w-4xl mx-auto px-4 py-8 lg:py-14">
+          <div className="flex flex-col lg:flex-row gap-5 items-start">
+
+            {/* ── Left: compact info card ── */}
+            <div className="w-full lg:w-[340px] flex-shrink-0 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-5 space-y-4">
+                {/* Merchant */}
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Payment Request from</p>
+                  <p className="text-lg font-bold text-gray-900">{MERCHANT_NAME}</p>
                 </div>
-                <div className="mt-10 pt-5 border-t border-gray-200 space-y-1">
-                  <p className="text-xs text-gray-400">For any queries, please contact <span className="font-medium text-gray-600">{MERCHANT_NAME}</span></p>
-                  <button className="text-xs text-blue-600 underline">Merchant's business policies</button>
+                {/* Payment for */}
+                {(link.title || link.description) && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Payment for</p>
+                    {link.title && <p className="text-sm font-semibold text-gray-800">{link.title}</p>}
+                    {link.description && <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{link.description}</p>}
+                  </div>
+                )}
+                {/* Amount */}
+                <div>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Amount Payable</p>
+                  <p className="text-2xl font-black text-gray-900">{fmtINR(stdAmt)}</p>
+                  <div className="w-7 h-0.5 bg-blue-500 rounded-full mt-1.5" />
                 </div>
               </div>
-              {/* Right — payment methods shown directly */}
-              <div>
-                {/* Sticky header with merchant + amount */}
-                {screen !== "success" && (
-                  <div className="bg-blue-700 px-5 py-4 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-blue-600 border border-blue-500 flex items-center justify-center flex-shrink-0">
-                        <span className="text-white font-bold text-xs">{MERCHANT_INITIALS}</span>
-                      </div>
-                      <p className="text-white font-semibold text-sm">{MERCHANT_NAME}</p>
-                    </div>
-                    <p className="text-white font-bold text-base flex-shrink-0">{fmtINR(isSchedule ? payNowAmount : totalAmount)}</p>
-                  </div>
-                )}
-                {(screen === "overview" || screen === "method") && (
-                  <div>
-                    <div className="p-5 space-y-4">
-                      {renderMethodTabs(true)}
-                      {renderMethodContent(isSchedule ? payNowAmount : totalAmount)}
-                    </div>
-                  </div>
-                )}
-                {screen === "details" && renderDetailsPanel(() => setScreen("overview"), fmtINR(isSchedule ? payNowAmount : totalAmount))}
-                {screen === "success" && renderSuccessPanel()}
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/60 space-y-1">
+                <p className="text-xs text-gray-400">For any queries, please contact <span className="font-semibold text-gray-600">{MERCHANT_NAME}</span></p>
+                <button className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-0.5">Merchant's business policies <ChevronRight className="h-3 w-3" /></button>
               </div>
             </div>
+
+            {/* ── Right: payment panel ── */}
+            <div className="flex-1 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden min-w-0">
+              {/* Dark header */}
+              {screen !== "success" && (
+                <div className="flex items-center justify-between px-5 py-3.5 relative overflow-hidden"
+                  style={{ background: "linear-gradient(135deg,#111827 0%,#1e293b 100%)" }}>
+                  <div className="flex items-center gap-3 z-10">
+                    <div className="h-9 w-9 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-black text-sm">{MERCHANT_INITIALS}</span>
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm leading-tight">{MERCHANT_NAME}</p>
+                      <p className="text-gray-400 text-[11px]">Paying {fmtINR(stdAmt)}</p>
+                    </div>
+                  </div>
+                  {/* Decorative */}
+                  <div className="flex items-center gap-1 opacity-30 select-none pointer-events-none text-2xl pr-1">
+                    🛍️ 📦
+                  </div>
+                </div>
+              )}
+              {(screen === "overview" || screen === "method") && (
+                <div className="p-5 space-y-4">
+                  {renderMethodTabs(true)}
+                  {renderMethodContent(stdAmt)}
+                </div>
+              )}
+              {screen === "details" && renderDetailsPanel(() => setScreen("overview"), fmtINR(stdAmt))}
+              {screen === "success" && renderSuccessPanel()}
+            </div>
+
           </div>
         </div>
         {renderFooter()}
