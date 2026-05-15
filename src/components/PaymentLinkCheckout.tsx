@@ -1001,38 +1001,106 @@ export function PaymentLinkCheckout() {
   // ── Non-smart: Razorpay-style standard layout ────────────────────────────────
   if (!isSmartLink) {
     const stdAmt = isSchedule ? payNowAmount : totalAmount;
+
+    // Partial payment overview panel
+    const renderPartialOverview = () => (
+      <div className="p-5 space-y-5">
+        {/* Amount due now */}
+        <div className="rounded-xl bg-blue-50 border border-blue-200 px-4 py-4">
+          <p className="text-xs font-semibold text-blue-500 uppercase tracking-widest mb-1">Amount Due Now</p>
+          <p className="text-3xl font-black text-gray-900">{fmtINR(payNowAmount)}</p>
+          {currentInst && (
+            <p className="text-sm text-gray-500 mt-1">{currentInst.label} · Due {fmtRelative(currentInst.dueDate)}</p>
+          )}
+        </div>
+
+        {/* Payment plan table */}
+        <div>
+          <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-2">Payment Plan</p>
+          <div className="rounded-xl border border-gray-200 overflow-hidden divide-y divide-gray-100">
+            {installments.map((inst, i) => {
+              const isPast = i === 0;
+              return (
+                <div key={inst.id} className={`flex items-center gap-3 px-4 py-3 ${isPast ? "bg-blue-50/60" : "bg-white"}`}>
+                  <div className={`h-6 w-6 rounded-full flex items-center justify-center flex-shrink-0 text-[11px] font-bold ${isPast ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"}`}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{inst.label}</p>
+                    <p className="text-xs text-gray-400">{fmtRelative(inst.dueDate)}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className={`text-sm font-bold ${isPast ? "text-blue-700" : "text-gray-700"}`}>{fmtINR(Number(inst.amount))}</p>
+                    {isPast && <span className="text-[10px] text-blue-500 font-medium">Pay now</span>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-between items-center px-1 mt-2">
+            <span className="text-xs text-gray-400">Total amount</span>
+            <span className="text-sm font-bold text-gray-700">{fmtINR(totalAmount)}</span>
+          </div>
+        </div>
+
+        {/* Pay full option */}
+        <button
+          type="button"
+          onClick={() => setPayFull(v => !v)}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border transition-all ${payFull ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300 bg-white"}`}
+        >
+          <div className={`h-4 w-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${payFull ? "border-blue-600 bg-blue-600" : "border-gray-300"}`}>
+            {payFull && <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />}
+          </div>
+          <div className="flex-1 text-left">
+            <p className={`text-sm font-semibold ${payFull ? "text-blue-700" : "text-gray-800"}`}>Pay full amount</p>
+            <p className="text-xs text-gray-400">Clear all {installments.length} payments now · {fmtINR(totalAmount)}</p>
+          </div>
+          {payFull && <span className="text-xs bg-blue-600 text-white font-bold px-2 py-0.5 rounded-full">Selected</span>}
+        </button>
+
+        <Button
+          onClick={() => setScreen("method")}
+          className="w-full h-11 bg-blue-700 hover:bg-blue-800 font-bold text-base rounded-xl"
+        >
+          Continue to Pay {fmtINR(payFull ? totalAmount : payNowAmount)} <ChevronRight className="ml-1.5 h-5 w-5" />
+        </Button>
+        {renderSecured(true)}
+      </div>
+    );
+
     return (
       <div className="min-h-screen" style={{ background: "linear-gradient(160deg,#f0f4ff 0%,#f8fafc 60%)" }}>
-        <div className="max-w-4xl mx-auto px-4 py-8 lg:py-14">
+        <div className="max-w-5xl mx-auto px-4 py-8 lg:py-14">
           <div className="flex flex-col lg:flex-row gap-5 items-start">
 
-            {/* ── Left: compact info card ── */}
-            <div className="w-full lg:w-[340px] flex-shrink-0 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-              <div className="px-6 py-5 space-y-4">
+            {/* ── Left: info card — wider, center-aligned ── */}
+            <div className="w-full lg:w-[45%] flex-shrink-0 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+              <div className="px-8 py-8 space-y-5 text-center">
                 {/* Merchant */}
                 <div>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Payment Request from</p>
-                  <p className="text-lg font-bold text-gray-900">{MERCHANT_NAME}</p>
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Payment Request from</p>
+                  <p className="text-xl font-bold text-gray-900">{MERCHANT_NAME}</p>
                 </div>
                 {/* Payment for */}
                 {(link.title || link.description) && (
                   <div>
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Payment for</p>
+                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Payment for</p>
                     {link.title && <p className="text-sm font-semibold text-gray-800">{link.title}</p>}
                     {link.description && <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">{link.description}</p>}
                   </div>
                 )}
                 {/* Amount */}
                 <div>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1">Amount Payable</p>
-                  <p className="text-2xl font-black text-gray-900">{fmtINR(stdAmt)}</p>
-                  <div className="w-7 h-0.5 bg-blue-500 rounded-full mt-1.5" />
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-1.5">Amount Payable</p>
+                  <p className="text-3xl font-black text-gray-900">{fmtINR(stdAmt)}</p>
+                  <div className="w-8 h-0.5 bg-blue-500 rounded-full mt-2 mx-auto" />
                 </div>
               </div>
               {/* Footer */}
-              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50/60 space-y-1">
+              <div className="px-8 py-4 border-t border-gray-100 bg-gray-50/60 space-y-1 text-center">
                 <p className="text-xs text-gray-400">For any queries, please contact <span className="font-semibold text-gray-600">{MERCHANT_NAME}</span></p>
-                <button className="text-xs text-blue-600 hover:underline font-medium flex items-center gap-0.5">Merchant's business policies <ChevronRight className="h-3 w-3" /></button>
+                <button className="text-xs text-blue-600 hover:underline font-medium inline-flex items-center gap-0.5">Merchant's business policies <ChevronRight className="h-3 w-3" /></button>
               </div>
             </div>
 
@@ -1048,19 +1116,27 @@ export function PaymentLinkCheckout() {
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm leading-tight">{MERCHANT_NAME}</p>
-                      <p className="text-gray-400 text-[11px]">Paying {fmtINR(stdAmt)}</p>
+                      <p className="text-gray-400 text-[11px]">Paying {fmtINR(payFull ? totalAmount : stdAmt)}</p>
                     </div>
                   </div>
-                  {/* Decorative */}
                   <div className="flex items-center gap-1 opacity-30 select-none pointer-events-none text-2xl pr-1">
                     🛍️ 📦
                   </div>
                 </div>
               )}
-              {(screen === "overview" || screen === "method") && (
+              {/* Partial payment: show plan overview before methods */}
+              {isSchedule && screen === "overview" && renderPartialOverview()}
+              {/* Direct methods for non-partial, or after continuing from partial plan */}
+              {(!isSchedule && (screen === "overview" || screen === "method")) && (
                 <div className="p-5 space-y-4">
                   {renderMethodTabs(true)}
                   {renderMethodContent(stdAmt)}
+                </div>
+              )}
+              {isSchedule && screen === "method" && (
+                <div className="p-5 space-y-4">
+                  {renderMethodTabs(true)}
+                  {renderMethodContent(payFull ? totalAmount : payNowAmount)}
                 </div>
               )}
               {screen === "details" && renderDetailsPanel(() => setScreen("overview"), fmtINR(stdAmt))}
