@@ -1087,56 +1087,50 @@ const PaymentLinks = () => {
         <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden max-h-[90vh] flex flex-col">
           <DialogHeader className="px-6 pt-6 pb-0 flex-shrink-0">
             <DialogTitle className="text-xl font-semibold mb-4">New Payment Link</DialogTitle>
-            {/* Standard / Smart tabs */}
+            {/* Standard / Magic Link tabs */}
             <div className="flex border-b border-border -mx-6 px-6">
-              {(["standard", "smart"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setCreateLinkTab(tab)}
-                  className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-medium border-b-2 transition-colors ${
-                    createLinkTab === tab
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab === "smart" && <Sparkles className="h-3.5 w-3.5" />}
-                  {tab === "standard" ? "Standard" : "Smart"}
-                </button>
-              ))}
+              <button
+                onClick={() => setCreateLinkTab("standard")}
+                className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-medium border-b-2 transition-colors ${createLinkTab === "standard" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              >
+                Standard
+              </button>
+              <button
+                onClick={() => setCreateLinkTab("smart")}
+                className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-medium border-b-2 transition-colors ${createLinkTab === "smart" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Magic Link
+                <span className="ml-1 text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wide leading-none">New</span>
+              </button>
             </div>
           </DialogHeader>
 
           <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
-            {/* Amount */}
-            <div>
-              <label className="text-sm font-semibold text-foreground mb-2 block">
-                Amount <span className="text-destructive">*</span>
-              </label>
-              <div className="flex gap-2">
-                <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-lg bg-muted/30 text-sm text-muted-foreground whitespace-nowrap select-none">
-                  ₹ (INR) <X className="h-3.5 w-3.5 cursor-pointer hover:text-foreground" />
-                </div>
-                <Input
-                  type="number"
-                  placeholder="0"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                  className="flex-1"
-                />
-              </div>
-            </div>
 
-            {/* Payment For — Standard: plain text; Smart: product multi-select */}
-            {createLinkTab === "standard" ? (
-              <div>
-                <label className="text-sm text-muted-foreground mb-2 block">Payment For</label>
-                <Input
-                  placeholder="Payment description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                />
-              </div>
-            ) : (
+            {/* Standard: Amount + description */}
+            {createLinkTab === "standard" && (
+              <>
+                <div>
+                  <label className="text-sm font-semibold text-foreground mb-2 block">
+                    Amount <span className="text-destructive">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-lg bg-muted/30 text-sm text-muted-foreground whitespace-nowrap select-none">
+                      ₹ (INR) <X className="h-3.5 w-3.5 cursor-pointer hover:text-foreground" />
+                    </div>
+                    <Input type="number" placeholder="0" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} className="flex-1" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground mb-2 block">Payment For</label>
+                  <Input placeholder="Payment description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                </div>
+              </>
+            )}
+
+            {/* Magic Link: Products first, then auto-calculated amount */}
+            {createLinkTab === "smart" && (
               <div>
                 <label className="text-sm font-semibold text-foreground mb-2 block">
                   Products <span className="text-destructive">*</span>
@@ -1313,6 +1307,24 @@ const PaymentLinks = () => {
                         </button>
                       </div>
                     </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Magic Link: Amount (auto-calculated from products) */}
+            {createLinkTab === "smart" && (
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-2 block">Total Amount</label>
+                <div className="flex items-center gap-2 px-3 py-2.5 border border-input rounded-lg bg-muted/30">
+                  <span className="text-sm text-muted-foreground flex-shrink-0">₹ (INR)</span>
+                  <span className="text-sm font-semibold text-foreground flex-1">
+                    {smartSelectedItems.length > 0
+                      ? smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0).toLocaleString()
+                      : <span className="text-muted-foreground font-normal">Auto-calculated from products</span>}
+                  </span>
+                  {smartSelectedItems.length > 0 && (
+                    <span className="text-xs text-muted-foreground">{smartSelectedItems.length} item{smartSelectedItems.length > 1 ? "s" : ""}</span>
                   )}
                 </div>
               </div>
