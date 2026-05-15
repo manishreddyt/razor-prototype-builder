@@ -89,6 +89,14 @@ export function PaymentLinkCheckout() {
   const [cardData, setCardData] = useState({ number: "", expiry: "", cvv: "", name: "" });
   const [variant, setVariant] = useState<Variant>(3);
   const [orderExpanded, setOrderExpanded] = useState(false);
+  // V3 contact + address step state
+  const [v3Phone, setV3Phone] = useState("");
+  const [v3Pincode, setV3Pincode] = useState("");
+  const [v3City, setV3City] = useState("");
+  const [v3FullName, setV3FullName] = useState("");
+  const [v3House, setV3House] = useState("");
+  const [v3Area, setV3Area] = useState("");
+  const [v3SelectedAddr, setV3SelectedAddr] = useState<string | null>(null);
 
   useEffect(() => { loadLink(); }, [linkId]);
 
@@ -533,8 +541,14 @@ export function PaymentLinkCheckout() {
   };
 
   // ──────────────────────────────────────────────────────────────────────────────
-  // ── V3: DASHBOARD CHECKOUT ─ Razorpay-checkout-inspired rich 2-panel layout
+  // ── V3: MAGIC CHECKOUT ─ Contact → Address → Payment full flow
   // ──────────────────────────────────────────────────────────────────────────────
+
+  const SAVED_ADDRESSES = [
+    { id: "a1", tag: "Home", line1: "5th Cross, Koramangala 4th Block", line2: "Bengaluru, Karnataka 560034" },
+    { id: "a2", tag: "Office", line1: "100 Feet Road, Indiranagar", line2: "Bengaluru, Karnataka 560038" },
+  ];
+
   const PAYMENT_METHODS = [
     {
       k: "upi" as PayMethod,
@@ -566,293 +580,384 @@ export function PaymentLinkCheckout() {
     },
   ];
 
-  const renderV3 = () => (
-    <div className="min-h-screen bg-[#eef0f5] flex flex-col items-center justify-start py-10 px-4">
-      <div
-        className="w-full max-w-[900px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col lg:flex-row"
-        style={{ minHeight: 580 }}
-      >
-        {/* ── LEFT PANEL ── */}
-        <div className="lg:w-[340px] flex-shrink-0 bg-[#1a3472] text-white flex flex-col">
+  const renderV3 = () => {
+    // Map screen → step label
+    const v3Step = screen === "overview" ? "contact" : screen === "details" ? "address" : screen === "method" ? "payment" : "success";
+    const steps = ["Contact", "Address", "Payment"] as const;
+    const activeIdx = v3Step === "contact" ? 0 : v3Step === "address" ? 1 : 2;
 
-          {/* Top: merchant identity */}
-          <div className="px-6 pt-6 pb-4">
+    // ── Shared breadcrumb bar ──────────────────────────────────────────────
+    const renderBreadcrumb = () => (
+      <div className="flex items-center gap-1.5 px-6 py-3.5 border-b border-gray-100 bg-gray-50/60 flex-shrink-0">
+        {steps.map((step, i) => {
+          const done = i < activeIdx;
+          const active = i === activeIdx;
+          return (
+            <span key={step} className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  if (done) setScreen(i === 0 ? "overview" : i === 1 ? "details" : "method");
+                }}
+                className={cn(
+                  "flex items-center gap-1.5 text-sm font-medium transition-colors",
+                  active ? "text-blue-700 font-semibold" : done ? "text-gray-600 hover:text-blue-600 cursor-pointer" : "text-gray-300 cursor-default"
+                )}
+              >
+                <span className={cn(
+                  "h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0",
+                  active ? "bg-blue-600 text-white" : done ? "bg-gray-200 text-gray-600" : "bg-gray-100 text-gray-400"
+                )}>
+                  {done ? <Check className="h-3 w-3" strokeWidth={3} /> : i + 1}
+                </span>
+                {step}
+              </button>
+              {i < steps.length - 1 && <ChevronRight className="h-3.5 w-3.5 text-gray-300 flex-shrink-0" />}
+            </span>
+          );
+        })}
+        <span className="ml-auto text-[11px] text-gray-400 flex items-center gap-1">
+          <Lock className="h-3 w-3" /> Secured
+        </span>
+      </div>
+    );
 
-            {/* Logo + name row */}
-            <div className="flex items-center gap-3.5 mb-5">
-              {/* Logo mark — gradient ring + monogram */}
-              <div className="relative flex-shrink-0">
-                <div
-                  className="h-14 w-14 rounded-2xl flex items-center justify-center shadow-lg"
-                  style={{ background: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)" }}
-                >
-                  <span className="text-white font-black text-xl tracking-tight leading-none">{MERCHANT_INITIALS}</span>
-                </div>
-                {/* Verified tick */}
-                <div className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-emerald-500 border-2 border-[#1a3472] flex items-center justify-center">
-                  <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
-                </div>
+    // ── Left panel ─────────────────────────────────────────────────────────
+    const renderLeft = () => (
+      <div className="lg:w-[300px] flex-shrink-0 bg-[#1a3472] text-white flex flex-col">
+        <div className="px-5 pt-5 pb-4 flex flex-col flex-1">
+
+          {/* Logo + name */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="relative flex-shrink-0">
+              <div className="h-12 w-12 rounded-xl flex items-center justify-center shadow-lg"
+                style={{ background: "linear-gradient(135deg,#f59e0b,#f97316)" }}>
+                <span className="text-white font-black text-base tracking-tight">{MERCHANT_INITIALS}</span>
               </div>
-              <div>
-                <p className="font-black text-lg leading-tight tracking-tight">{MERCHANT_NAME}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  <ShieldCheck className="h-3 w-3 text-emerald-400" />
-                  <span className="text-[11px] text-blue-300 font-medium">Razorpay Trusted Business</span>
-                </div>
+              <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full bg-emerald-500 border-2 border-[#1a3472] flex items-center justify-center">
+                <Check className="h-2.5 w-2.5 text-white" strokeWidth={3} />
               </div>
             </div>
+            <div>
+              <p className="font-black text-base leading-tight">{MERCHANT_NAME}</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <ShieldCheck className="h-3 w-3 text-emerald-400" />
+                <span className="text-[11px] text-blue-300">Razorpay Trusted Business</span>
+              </div>
+            </div>
+          </div>
 
-            {/* ── Compact animated activity stats ── */}
-            <div
-              className="flex items-center gap-3 rounded-xl px-3 py-2 mb-5"
-              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
-            >
-              <span className="relative flex h-2 w-2 flex-shrink-0">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+          {/* Live activity strip */}
+          <div className="flex items-center gap-2.5 rounded-xl px-3 py-2 mb-3"
+            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <span className="relative flex h-2 w-2 flex-shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <ShoppingCart className="h-3 w-3 text-blue-300 flex-shrink-0" />
+            <span className="text-[11px] text-blue-100">400+ orders last month</span>
+            <span className="ml-auto text-[11px] font-bold text-amber-400">148 today</span>
+          </div>
+          <style>{`@keyframes countUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
+          {/* Order summary — collapsible */}
+          <button type="button" onClick={() => setOrderExpanded(v => !v)}
+            className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 mb-1"
+            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+            <div className="flex items-center gap-2">
+              <Package className="h-3.5 w-3.5 text-blue-300" />
+              <span className="text-[11px] font-semibold text-blue-200">
+                Order summary · {smartProducts.length} item{smartProducts.length > 1 ? "s" : ""}
               </span>
-              <span className="text-[10px] font-semibold text-emerald-300 uppercase tracking-widest flex-shrink-0">Live</span>
-              <div className="h-3 w-px bg-white/15 flex-shrink-0" />
-              <div className="flex items-baseline gap-1" style={{ animation: "countUp 0.5s ease-out both" }}>
-                <span className="text-base font-black text-white leading-none">300+</span>
-                <span className="text-[10px] text-blue-300">orders</span>
-              </div>
-              <div className="h-3 w-px bg-white/15 flex-shrink-0" />
-              <div className="flex items-baseline gap-1" style={{ animation: "countUp 0.5s 0.12s ease-out both" }}>
-                <span className="text-base font-black text-amber-400 leading-none">148</span>
-                <span className="text-[10px] text-blue-300">paid today</span>
-              </div>
             </div>
-
-            <style>{`
-              @keyframes countUp {
-                from { opacity: 0; transform: translateY(5px); }
-                to   { opacity: 1; transform: translateY(0); }
-              }
-            `}</style>
-
-            {/* Collapsible order summary */}
-            <button
-              type="button"
-              onClick={() => setOrderExpanded((v) => !v)}
-              className="w-full flex items-center justify-between rounded-xl px-3 py-2.5 mb-1 transition-colors"
-              style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}
-            >
-              <div className="flex items-center gap-2">
-                <Package className="h-3.5 w-3.5 text-blue-300 flex-shrink-0" />
-                <span className="text-[11px] font-semibold text-blue-200">
-                  Order Summary · {smartProducts.length} item{smartProducts.length > 1 ? "s" : ""}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-white">{fmtINR(smartTotal)}</span>
-                <ChevronRight className={`h-3.5 w-3.5 text-blue-300 transition-transform duration-200 ${orderExpanded ? "rotate-90" : ""}`} />
-              </div>
-            </button>
-            {orderExpanded && (
-              <div className="space-y-1.5 mb-3 pt-1">
-                {smartProducts.map((p) => (
-                  <div key={p.id} className="flex items-center gap-2.5 rounded-xl px-3 py-2" style={{ background: "rgba(255,255,255,0.05)" }}>
-                    {p.image
-                      ? <img src={p.image} alt={p.name} className="w-9 h-9 rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10" />
-                      : <div className="w-9 h-9 rounded-lg bg-white/10 flex-shrink-0 flex items-center justify-center"><Package className="h-3.5 w-3.5 text-white/40" /></div>
-                    }
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-white truncate leading-snug">{p.name}</p>
-                      <p className="text-[10px] text-blue-300 mt-0.5">Qty. {p.qty}</p>
-                    </div>
-                    <p className="text-xs font-bold text-white flex-shrink-0">{fmtINR(p.price * p.qty)}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-            {!orderExpanded && <div className="mb-4" />}
-          </div>
-
-          {/* Price summary block */}
-          <div className="px-6 mb-auto">
-            <p className="text-[10px] font-semibold text-blue-400 uppercase tracking-widest mb-1">Price Summary</p>
-            <p className="text-4xl font-black tracking-tight leading-none">{fmtINR(smartTotal)}</p>
-            <p className="text-xs text-blue-300 mt-1.5">{smartProducts.length} item{smartProducts.length > 1 ? "s" : ""} · Tax included</p>
-          </div>
-
-          {/* Money Back Promise — prominent footer */}
-          <div className="px-6 pt-4 pb-5 mt-auto border-t border-white/10">
-            <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
-              <div className="h-9 w-9 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center flex-shrink-0">
-                <ShieldCheck className="h-4.5 w-4.5 text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white leading-tight">Money Back Promise</p>
-                <p className="text-[11px] text-blue-300 mt-0.5">by Razorpay · 100% secure payments</p>
-              </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-white">{fmtINR(smartTotal)}</span>
+              <ChevronRight className={`h-3.5 w-3.5 text-blue-300 transition-transform ${orderExpanded ? "rotate-90" : ""}`} />
             </div>
-          </div>
-        </div>
+          </button>
 
-        {/* ── RIGHT PANEL ── */}
-        <div className="flex-1 flex flex-col min-w-0 bg-white">
-
-          {screen === "overview" && (
-            <>
-              {/* Breadcrumb nav bar */}
-              <div className="flex items-center gap-1.5 px-6 py-4 border-b border-gray-100 bg-gray-50/60 flex-shrink-0">
-                {["Contact", "Address", "Payment"].map((step, i, arr) => (
-                  <span key={step} className="flex items-center gap-1.5">
-                    <span className={cn("text-sm font-medium", i === arr.length - 1 ? "text-blue-700 font-semibold" : "text-gray-400")}>{step}</span>
-                    {i < arr.length - 1 && <ChevronRight className="h-3.5 w-3.5 text-gray-300" />}
-                  </span>
-                ))}
-                <span className="ml-auto text-[11px] text-gray-400 flex items-center gap-1">
-                  <Lock className="h-3 w-3" /> Secured
-                </span>
-              </div>
-
-              {/* Two-column: method list | detail area */}
-              <div className="flex flex-1 min-h-0 divide-x divide-gray-100 overflow-hidden">
-
-                {/* Left col: payment method rows */}
-                <div className="w-[200px] flex-shrink-0 flex flex-col py-4 overflow-y-auto">
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-4 mb-2">Recommended</p>
-                  {PAYMENT_METHODS.map(({ k, label, sub, icon, logos }) => (
-                    <button
-                      key={k}
-                      onClick={() => setPayMethod(k)}
-                      className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 text-left transition-all border-l-2",
-                        payMethod === k
-                          ? "border-l-blue-600 bg-blue-50/70"
-                          : "border-l-transparent hover:bg-gray-50"
-                      )}
-                    >
-                      <div className={cn(
-                        "h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0",
-                        payMethod === k ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500"
-                      )}>
-                        {icon}
-                      </div>
-                      <div className="min-w-0">
-                        <p className={cn("text-sm font-semibold leading-tight", payMethod === k ? "text-blue-700" : "text-gray-800")}>{label}</p>
-                        {sub && (
-                          <span className="text-[10px] text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded-full leading-none mt-0.5 inline-block">{sub}</span>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                  <button className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 px-4 py-3 mt-1">
-                    <ChevronDown className="h-3.5 w-3.5" /> More options
-                  </button>
-                </div>
-
-                {/* Right col: detail / QR */}
-                <div className="flex-1 flex flex-col p-5 overflow-y-auto gap-4 min-w-0">
-
-                  {/* Available Offers */}
-                  <div>
-                    <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Available Offers</p>
-                    <div className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-200">
-                      <div className="h-8 w-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
-                        <Gift className="h-3.5 w-3.5 text-amber-600" />
-                      </div>
-                      <p className="text-xs text-gray-800 font-medium flex-1 leading-snug">Upto ₹50 cashback via CRED</p>
-                      <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded-full flex-shrink-0">+6</span>
-                      <button className="text-[11px] text-blue-600 font-semibold hover:underline flex-shrink-0">View all</button>
-                    </div>
+          {orderExpanded && (
+            <div className="space-y-1 mb-2 pt-1">
+              {smartProducts.map((p) => (
+                <div key={p.id} className="flex items-center gap-2 rounded-xl px-3 py-2"
+                  style={{ background: "rgba(255,255,255,0.05)" }}>
+                  {p.image
+                    ? <img src={p.image} alt={p.name} className="w-8 h-8 rounded-lg object-cover flex-shrink-0 ring-1 ring-white/10" />
+                    : <div className="w-8 h-8 rounded-lg bg-white/10 flex-shrink-0 flex items-center justify-center"><Package className="h-3 w-3 text-white/40" /></div>}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-white truncate">{p.name}</p>
+                    <p className="text-[10px] text-blue-300">Qty. {p.qty}</p>
                   </div>
-
-                  {/* UPI detail */}
-                  {payMethod === "upi" && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">UPI QR</p>
-                        <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-mono">⏱ 11:48</span>
-                      </div>
-                      <div className="flex gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50/60">
-                        <div className="bg-white border border-gray-200 rounded-xl p-2 shadow-sm flex-shrink-0">
-                          <QrCode className="h-[84px] w-[84px] text-gray-800" />
-                        </div>
-                        <div className="flex-1 space-y-2 min-w-0">
-                          <p className="text-xs text-gray-700 font-medium leading-snug">Scan using any UPI App</p>
-                          <div className="flex flex-wrap gap-1.5">
-                            {[["G","#4285F4"],["P","#5F259F"],["C","#000"],["PT","#00B9F1"],["B","#003366"]].map(([l,c]) => (
-                              <div key={l} className="h-7 w-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-sm" style={{ background: c }}>{l}</div>
-                            ))}
-                          </div>
-                          <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg font-semibold">
-                            <Zap className="h-2.5 w-2.5" /> 8 Offers
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-[11px] text-gray-400">
-                        <div className="flex-1 h-px bg-gray-200" /><span>or enter UPI ID</span><div className="flex-1 h-px bg-gray-200" />
-                      </div>
-                      <div className="flex gap-2">
-                        <Input placeholder="yourname@upi" value={upiId} onChange={(e) => { setUpiId(e.target.value); setUpiVerified(false); }} className="h-9 flex-1 text-sm" />
-                        <Button variant="outline" className="h-9 px-3 text-xs flex-shrink-0" onClick={() => { if (upiId.includes("@")) setUpiVerified(true); }}>
-                          {upiVerified ? <span className="flex items-center gap-1 text-green-600"><Check className="h-3.5 w-3.5" />OK</span> : "Verify"}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Cards */}
-                  {payMethod === "card" && (
-                    <div className="space-y-3">
-                      <div><Label className="text-xs text-gray-600 mb-1 block">Card Number</Label><Input placeholder="0000 0000 0000 0000" value={cardData.number} onChange={(e) => { const v = e.target.value.replace(/\D/g,"").slice(0,16); setCardData({...cardData, number: v.replace(/(.{4})/g,"$1 ").trim()}); }} className="h-9 font-mono text-sm" /></div>
-                      <div><Label className="text-xs text-gray-600 mb-1 block">Name on Card</Label><Input placeholder="As printed on card" value={cardData.name} onChange={(e) => setCardData({...cardData, name: e.target.value})} className="h-9 text-sm" /></div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div><Label className="text-xs text-gray-600 mb-1 block">Expiry</Label><Input placeholder="MM / YY" value={cardData.expiry} className="h-9 font-mono text-sm" onChange={(e) => { let v = e.target.value.replace(/\D/g,"").slice(0,4); if(v.length>=3) v=v.slice(0,2)+" / "+v.slice(2); setCardData({...cardData, expiry:v}); }} /></div>
-                        <div><Label className="text-xs text-gray-600 mb-1 block">CVV</Label><Input placeholder="• • •" type="password" maxLength={4} value={cardData.cvv} onChange={(e) => setCardData({...cardData, cvv:e.target.value.replace(/\D/g,"").slice(0,4)})} className="h-9 font-mono text-sm" /></div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Netbanking */}
-                  {payMethod === "netbanking" && (
-                    <div>
-                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Popular Banks</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {["SBI","HDFC","ICICI","Axis","Kotak","Yes Bank","PNB","Canara"].map(b => (
-                          <button key={b} className="py-2.5 rounded-xl border text-xs font-medium hover:border-blue-400 hover:bg-blue-50 transition-colors">{b}</button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Wallet */}
-                  {payMethod === "wallet" && (
-                    <div>
-                      <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Choose Wallet</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {["Paytm","PhonePe","Amazon Pay","Mobikwik","Freecharge","Ola Money"].map(w => (
-                          <button key={w} className="py-2.5 rounded-xl border text-xs font-medium hover:border-blue-400 hover:bg-blue-50 transition-colors">{w}</button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* CTA */}
-                  <div className="mt-auto pt-2 space-y-2">
-                    <Button onClick={handleOverviewContinue} className="w-full h-11 bg-blue-700 hover:bg-blue-800 font-bold rounded-xl text-sm shadow-md shadow-blue-200">
-                      Continue to Pay {fmtINR(smartTotal)} <ChevronRight className="ml-1 h-4 w-4" />
-                    </Button>
-                    <p className="text-center text-[11px] text-gray-400 flex items-center justify-center gap-1">
-                      <ShieldCheck className="h-3 w-3" /> PCI DSS Compliant · Secured by Razorpay
-                    </p>
-                  </div>
+                  <p className="text-xs font-bold text-white">{fmtINR(p.price * p.qty)}</p>
                 </div>
-              </div>
-            </>
+              ))}
+            </div>
           )}
 
-          {screen === "details" && <div className="flex-1">{renderDetailsPanel(() => setScreen("overview"), fmtINR(smartTotal))}</div>}
-          {screen === "method" && <div className="flex-1">{renderMethodPanel(() => setScreen("details"), smartTotal)}</div>}
-          {screen === "success" && <div className="flex-1">{renderSuccessPanel()}</div>}
-        </div>
+          {/* Coupons & offers card */}
+          <button type="button"
+            className="w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 mt-2 transition-colors"
+            style={{ background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.25)" }}>
+            <div className="h-7 w-7 rounded-full bg-emerald-500/25 flex items-center justify-center flex-shrink-0">
+              <Gift className="h-3.5 w-3.5 text-emerald-400" />
+            </div>
+            <div className="flex-1 text-left min-w-0">
+              <p className="text-xs font-semibold text-emerald-300 leading-tight">Coupons and offers</p>
+              <p className="text-[10px] text-emerald-400/70">7 coupons and offers available</p>
+            </div>
+            <ChevronRight className="h-3.5 w-3.5 text-emerald-400 flex-shrink-0" />
+          </button>
 
-      </div>{/* end max-w card */}
-    </div>
-  );
+          {/* Show phone after contact step */}
+          {v3Phone && (
+            <div className="flex items-center gap-2 mt-2 rounded-xl px-3 py-2"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.10)" }}>
+              <Users className="h-3.5 w-3.5 text-blue-300 flex-shrink-0" />
+              <span className="text-xs text-blue-200">Using as +91 {v3Phone}</span>
+            </div>
+          )}
+
+          {/* Illustration area */}
+          <div className="flex-1 flex items-end justify-center pb-2 pt-4 select-none pointer-events-none">
+            <div className="flex items-end gap-3 opacity-30">
+              <div className="text-5xl">🛍️</div>
+              <div className="text-4xl mb-1">📦</div>
+              <div className="text-3xl mb-2">🏷️</div>
+            </div>
+          </div>
+
+          {/* Secured footer */}
+          <div className="flex items-center justify-center gap-2 pt-3 border-t border-white/10">
+            <Lock className="h-3 w-3 text-blue-400" />
+            <span className="text-[11px] text-blue-300">Secured by Razorpay</span>
+          </div>
+        </div>
+      </div>
+    );
+
+    // ── Right panel screens ────────────────────────────────────────────────
+
+    // Contact
+    const renderContact = () => (
+      <div className="flex-1 flex flex-col">
+        {renderBreadcrumb()}
+        <div className="flex-1 flex flex-col items-center justify-center px-8 py-10 gap-5">
+          <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-1">
+            <Users className="h-7 w-7 text-gray-400" />
+          </div>
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-gray-900">Contact details</h2>
+            <p className="text-sm text-gray-500 mt-1">Enter mobile number to continue</p>
+          </div>
+          <div className="w-full max-w-sm space-y-3">
+            <div className="flex items-center border border-input rounded-xl overflow-hidden h-12 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all">
+              <div className="flex items-center gap-1.5 px-3 border-r border-input bg-gray-50 h-full text-sm text-gray-700 flex-shrink-0">
+                🇮🇳 <ChevronDown className="h-3.5 w-3.5 text-gray-400" />
+              </div>
+              <span className="px-3 text-sm text-gray-500 border-r border-input h-full flex items-center flex-shrink-0">+91</span>
+              <input
+                type="tel" placeholder="Mobile number" value={v3Phone}
+                onChange={(e) => setV3Phone(e.target.value.replace(/\D/g,"").slice(0,10))}
+                className="flex-1 h-full px-3 text-sm outline-none bg-white"
+              />
+            </div>
+            <Button
+              className="w-full h-11 bg-gray-900 hover:bg-gray-800 font-semibold rounded-xl text-base"
+              onClick={() => { if (v3Phone.length >= 10) setScreen("details"); }}
+              disabled={v3Phone.length < 10}
+            >
+              Continue
+            </Button>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-400 mt-2">
+            <ShieldCheck className="h-3.5 w-3.5 text-blue-500" />
+            <span>Money Back Promise by</span>
+            <span className="font-bold text-gray-700">Razorpay</span>
+          </div>
+        </div>
+      </div>
+    );
+
+    // Address
+    const renderAddress = () => (
+      <div className="flex-1 flex flex-col">
+        {renderBreadcrumb()}
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          <h2 className="text-lg font-bold text-gray-900 mb-4">Add delivery address</h2>
+
+          {/* Saved addresses */}
+          <div className="space-y-2 mb-4">
+            {SAVED_ADDRESSES.map((addr) => (
+              <button key={addr.id} type="button"
+                onClick={() => setV3SelectedAddr(addr.id)}
+                className={cn(
+                  "w-full flex items-start gap-3 p-3 rounded-xl border text-left transition-all",
+                  v3SelectedAddr === addr.id ? "border-blue-500 bg-blue-50/50" : "border-gray-200 hover:border-gray-300"
+                )}>
+                <div className={cn(
+                  "h-4 w-4 rounded-full border-2 flex-shrink-0 mt-0.5 transition-colors",
+                  v3SelectedAddr === addr.id ? "border-blue-600 bg-blue-600" : "border-gray-300"
+                )}>
+                  {v3SelectedAddr === addr.id && <div className="h-full w-full rounded-full scale-50 bg-white" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{addr.tag}</span>
+                  <p className="text-sm text-gray-800 leading-snug mt-0.5">{addr.line1}</p>
+                  <p className="text-xs text-gray-500">{addr.line2}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-4">
+            <div className="flex-1 h-px bg-gray-200" />
+            <span className="text-xs text-gray-400 font-medium">or add new address</span>
+            <div className="flex-1 h-px bg-gray-200" />
+          </div>
+
+          {/* Address form */}
+          <div className="space-y-3">
+            <Input placeholder="Pincode" value={v3Pincode}
+              onChange={(e) => setV3Pincode(e.target.value.replace(/\D/g,"").slice(0,6))}
+              className="h-11 text-sm rounded-xl" />
+            <Input placeholder="City" value={v3City} onChange={(e) => setV3City(e.target.value)} className="h-11 text-sm rounded-xl" />
+            <Input placeholder="Full name" value={v3FullName} onChange={(e) => setV3FullName(e.target.value)} className="h-11 text-sm rounded-xl" />
+            <Input placeholder="House no / Building / Apartment" value={v3House} onChange={(e) => setV3House(e.target.value)} className="h-11 text-sm rounded-xl" />
+            <Input placeholder="Area, Sector, Street, Village" value={v3Area} onChange={(e) => setV3Area(e.target.value)} className="h-11 text-sm rounded-xl" />
+            <button type="button" className="flex items-center gap-1.5 text-sm text-blue-600 font-medium">
+              <span className="text-lg leading-none">+</span> Add landmark (optional)
+            </button>
+            <label className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+              <input type="checkbox" className="rounded border-gray-300 text-blue-600" />
+              Save my address as
+            </label>
+          </div>
+
+          <Button
+            className="w-full h-11 bg-gray-900 hover:bg-gray-800 font-semibold rounded-xl text-base mt-5"
+            onClick={() => setScreen("method")}
+          >
+            Continue
+          </Button>
+        </div>
+      </div>
+    );
+
+    // Payment
+    const renderPayment = () => (
+      <div className="flex-1 flex flex-col min-h-0">
+        {renderBreadcrumb()}
+        <div className="flex flex-1 min-h-0 divide-x divide-gray-100 overflow-hidden">
+          {/* Method list */}
+          <div className="w-[195px] flex-shrink-0 flex flex-col py-4 overflow-y-auto">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest px-4 mb-2">Recommended</p>
+            {PAYMENT_METHODS.map(({ k, label, sub, icon }) => (
+              <button key={k} onClick={() => setPayMethod(k)}
+                className={cn("w-full flex items-center gap-3 px-4 py-2.5 text-left border-l-2 transition-all",
+                  payMethod === k ? "border-l-blue-600 bg-blue-50/70" : "border-l-transparent hover:bg-gray-50")}>
+                <div className={cn("h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0",
+                  payMethod === k ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-500")}>
+                  {icon}
+                </div>
+                <div className="min-w-0">
+                  <p className={cn("text-sm font-semibold leading-tight", payMethod === k ? "text-blue-700" : "text-gray-800")}>{label}</p>
+                  {sub && <span className="text-[10px] text-emerald-600 font-medium bg-emerald-50 px-1.5 py-0.5 rounded-full mt-0.5 inline-block">{sub}</span>}
+                </div>
+              </button>
+            ))}
+            <button className="flex items-center gap-1 text-xs text-gray-400 px-4 py-3">
+              <ChevronDown className="h-3.5 w-3.5" /> More options
+            </button>
+          </div>
+
+          {/* Detail / QR panel */}
+          <div className="flex-1 flex flex-col p-5 overflow-y-auto gap-4 min-w-0">
+            {/* Offers */}
+            <div>
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Available Offers</p>
+              <div className="flex items-center gap-2 p-2.5 rounded-xl bg-amber-50 border border-amber-200">
+                <Gift className="h-4 w-4 text-amber-600 flex-shrink-0" />
+                <p className="text-xs text-gray-800 font-medium flex-1">Upto ₹50 cashback via CRED</p>
+                <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded-full">+6</span>
+                <button className="text-[11px] text-blue-600 font-semibold hover:underline">View all</button>
+              </div>
+            </div>
+
+            {/* UPI */}
+            {payMethod === "upi" && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">UPI QR</p>
+                  <span className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-mono">⏱ 11:48</span>
+                </div>
+                <div className="flex gap-3 p-3 rounded-xl border border-gray-200 bg-gray-50/60">
+                  <div className="bg-white border border-gray-200 rounded-xl p-2 shadow-sm flex-shrink-0">
+                    <QrCode className="h-[80px] w-[80px] text-gray-800" />
+                  </div>
+                  <div className="flex-1 space-y-2 min-w-0">
+                    <p className="text-xs text-gray-700 font-medium">Scan using any UPI App</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[["G","#4285F4"],["P","#5F259F"],["C","#000"],["PT","#00B9F1"],["B","#003366"]].map(([l,c]) => (
+                        <div key={l} className="h-7 w-7 rounded-full flex items-center justify-center text-[9px] font-bold text-white" style={{ background: c }}>{l}</div>
+                      ))}
+                    </div>
+                    <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-100 text-emerald-700 px-2 py-1 rounded-lg font-semibold">
+                      <Zap className="h-2.5 w-2.5" /> 8 Offers
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-[11px] text-gray-400">
+                  <div className="flex-1 h-px bg-gray-200" /><span>or enter UPI ID</span><div className="flex-1 h-px bg-gray-200" />
+                </div>
+                <div className="flex gap-2">
+                  <Input placeholder="yourname@upi" value={upiId} onChange={(e) => { setUpiId(e.target.value); setUpiVerified(false); }} className="h-9 flex-1 text-sm" />
+                  <Button variant="outline" className="h-9 px-3 text-xs" onClick={() => { if (upiId.includes("@")) setUpiVerified(true); }}>
+                    {upiVerified ? <span className="text-green-600 flex items-center gap-1"><Check className="h-3.5 w-3.5" />OK</span> : "Verify"}
+                  </Button>
+                </div>
+              </div>
+            )}
+            {payMethod === "card" && (
+              <div className="space-y-3">
+                <div><Label className="text-xs text-gray-600 mb-1 block">Card Number</Label><Input placeholder="0000 0000 0000 0000" value={cardData.number} onChange={(e) => { const v=e.target.value.replace(/\D/g,"").slice(0,16); setCardData({...cardData,number:v.replace(/(.{4})/g,"$1 ").trim()}); }} className="h-9 font-mono text-sm" /></div>
+                <div><Label className="text-xs text-gray-600 mb-1 block">Name on Card</Label><Input placeholder="As printed on card" value={cardData.name} onChange={(e) => setCardData({...cardData,name:e.target.value})} className="h-9 text-sm" /></div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div><Label className="text-xs text-gray-600 mb-1 block">Expiry</Label><Input placeholder="MM / YY" value={cardData.expiry} className="h-9 font-mono text-sm" onChange={(e) => { let v=e.target.value.replace(/\D/g,"").slice(0,4); if(v.length>=3) v=v.slice(0,2)+" / "+v.slice(2); setCardData({...cardData,expiry:v}); }} /></div>
+                  <div><Label className="text-xs text-gray-600 mb-1 block">CVV</Label><Input placeholder="• • •" type="password" maxLength={4} value={cardData.cvv} onChange={(e) => setCardData({...cardData,cvv:e.target.value.replace(/\D/g,"").slice(0,4)})} className="h-9 font-mono text-sm" /></div>
+                </div>
+              </div>
+            )}
+            {payMethod === "netbanking" && <div className="grid grid-cols-2 gap-2">{["SBI","HDFC","ICICI","Axis","Kotak","Yes Bank","PNB","Canara"].map(b => <button key={b} className="py-2.5 rounded-xl border text-xs font-medium hover:border-blue-400 hover:bg-blue-50">{b}</button>)}</div>}
+            {payMethod === "wallet" && <div className="grid grid-cols-2 gap-2">{["Paytm","PhonePe","Amazon Pay","Mobikwik","Freecharge","Ola Money"].map(w => <button key={w} className="py-2.5 rounded-xl border text-xs font-medium hover:border-blue-400 hover:bg-blue-50">{w}</button>)}</div>}
+
+            {/* CTA */}
+            <div className="mt-auto pt-2 space-y-2">
+              <Button onClick={handlePay} disabled={processing} className="w-full h-11 bg-gray-900 hover:bg-gray-800 font-bold rounded-xl text-sm">
+                {processing ? <span className="flex items-center gap-2"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />Processing…</span> : <>Pay {fmtINR(smartTotal)} <ChevronRight className="ml-1 h-4 w-4" /></>}
+              </Button>
+              <p className="text-center text-[11px] text-gray-400 flex items-center justify-center gap-1">
+                <ShieldCheck className="h-3 w-3" /> PCI DSS Compliant · Secured by Razorpay
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="min-h-screen bg-[#eef0f5] flex flex-col items-center justify-start py-10 px-4">
+        <div className="w-full max-w-[900px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col lg:flex-row" style={{ minHeight: 560 }}>
+          {renderLeft()}
+          <div className="flex-1 flex flex-col min-w-0 bg-white">
+            {v3Step === "contact" && renderContact()}
+            {v3Step === "address" && renderAddress()}
+            {v3Step === "payment" && renderPayment()}
+            {screen === "success" && <div className="flex-1">{renderSuccessPanel()}</div>}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   // ── Prototype variant switcher ────────────────────────────────────────────────
   const VARIANT_META: Record<Variant, { label: string; desc: string }> = {
