@@ -125,7 +125,7 @@ export function PaymentLinkCheckout() {
   const isSmartLink = !!(link?.isSmartLink && smartProducts.length > 0);
   const effectiveAmount = isSmartLink ? smartTotal : payNowAmount;
 
-  const handleOverviewContinue = () => { setScreen("details"); window.scrollTo({ top: 0, behavior: "smooth" }); };
+  const handleOverviewContinue = () => { setScreen("method"); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const handleDetailsContinue = () => { if (!formData.name.trim()) return; setScreen("method"); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const handlePay = () => {
     setProcessing(true);
@@ -1019,26 +1019,29 @@ export function PaymentLinkCheckout() {
                   <button className="text-xs text-blue-600 underline">Merchant's business policies</button>
                 </div>
               </div>
-              {/* Right */}
+              {/* Right — payment methods shown directly */}
               <div>
-                {screen === "overview" && (
-                  <div>
-                    <div className="bg-blue-700 px-5 py-4 flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-blue-600 border border-blue-500 flex items-center justify-center"><span className="text-white font-bold text-xs">{MERCHANT_INITIALS}</span></div>
-                      <p className="text-white font-semibold">{MERCHANT_NAME}</p>
-                    </div>
-                    <div className="p-5 space-y-4">
-                      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">Amount to Pay</p>
-                        <p className="text-2xl font-bold">{fmtINR(isSchedule ? payNowAmount : totalAmount)}</p>
+                {/* Sticky header with merchant + amount */}
+                {screen !== "success" && (
+                  <div className="bg-blue-700 px-5 py-4 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-blue-600 border border-blue-500 flex items-center justify-center flex-shrink-0">
+                        <span className="text-white font-bold text-xs">{MERCHANT_INITIALS}</span>
                       </div>
-                      <Button onClick={handleOverviewContinue} className="w-full h-11 bg-blue-700 hover:bg-blue-800 font-semibold">Continue to Pay {fmtINR(isSchedule ? payNowAmount : totalAmount)} <ChevronRight className="ml-1.5 h-4 w-4" /></Button>
-                      {renderSecured(true)}
+                      <p className="text-white font-semibold text-sm">{MERCHANT_NAME}</p>
+                    </div>
+                    <p className="text-white font-bold text-base flex-shrink-0">{fmtINR(isSchedule ? payNowAmount : totalAmount)}</p>
+                  </div>
+                )}
+                {(screen === "overview" || screen === "method") && (
+                  <div>
+                    <div className="p-5 space-y-4">
+                      {renderMethodTabs(true)}
+                      {renderMethodContent(isSchedule ? payNowAmount : totalAmount)}
                     </div>
                   </div>
                 )}
                 {screen === "details" && renderDetailsPanel(() => setScreen("overview"), fmtINR(isSchedule ? payNowAmount : totalAmount))}
-                {screen === "method" && renderMethodPanel(() => setScreen("details"), isSchedule ? payNowAmount : totalAmount)}
                 {screen === "success" && renderSuccessPanel()}
               </div>
             </div>
