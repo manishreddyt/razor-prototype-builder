@@ -85,7 +85,8 @@ export function PaymentLinkCheckout() {
   const [paidInstCount, setPaidInstCount] = useState(0);
   const [txnId, setTxnId] = useState("");
   const [paymentHistory, setPaymentHistory] = useState<{ label: string; amount: number; paidAt: string; txnId: string }[]>([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [lastPaidAmt, setLastPaidAmt] = useState(0);
   const [upiId, setUpiId] = useState("");
   const [upiVerified, setUpiVerified] = useState(false);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
@@ -121,8 +122,10 @@ export function PaymentLinkCheckout() {
   const installments: Installment[] = (link?.installments ?? []).map((i) => ({ ...i, amount: Number(i.amount) }));
   const currentInst = installments[paidInstCount];
   const remainingInsts = installments.slice(paidInstCount + 1);
-  const payNowAmount = payFull ? installments.reduce((s, i) => s + Number(i.amount), 0) : currentInst ? Number(currentInst.amount) : link?.amount ?? 0;
   const totalAmount = link ? (installments.length > 0 ? installments.reduce((s, i) => s + Number(i.amount), 0) : link.amount) : 0;
+  const paidSoFar = installments.slice(0, paidInstCount).reduce((s, i) => s + Number(i.amount), 0);
+  const remainingAmt = totalAmount - paidSoFar;
+  const payNowAmount = payFull ? remainingAmt : currentInst ? Number(currentInst.amount) : link?.amount ?? 0;
   const smartProducts = link?.smartProducts ?? [];
   const smartTotal = smartProducts.reduce((s, p) => s + p.price * p.qty, 0);
   const isSmartLink = !!(link?.isSmartLink && smartProducts.length > 0);
@@ -138,6 +141,8 @@ export function PaymentLinkCheckout() {
       setTxnId(newTxnId);
       if (isSchedule) {
         const instsPaid = payFull ? installments.slice(paidInstCount) : [installments[paidInstCount]];
+        const amtJustPaid = instsPaid.reduce((s, i) => s + Number(i.amount), 0);
+        setLastPaidAmt(amtJustPaid);
         const paidAt = new Date().toISOString();
         setPaymentHistory(prev => [
           ...prev,
@@ -1020,11 +1025,8 @@ export function PaymentLinkCheckout() {
   if (!isSmartLink) {
     const stdAmt = isSchedule ? payNowAmount : totalAmount;
 
-    // how much was just paid
-    const justPaidAmt = payFull ? totalAmount : (installments[paidInstCount - 1] ? Number(installments[paidInstCount - 1].amount) : payNowAmount);
     const allPaid = paidInstCount >= installments.length;
-    const paidSoFar = installments.slice(0, paidInstCount).reduce((s, i) => s + Number(i.amount), 0);
-    const remainingAmt = totalAmount - paidSoFar;
+    const justPaidAmt = lastPaidAmt || payNowAmount;
 
     // Right panel: radio selection for partial payment
     const renderPartialOverview = () => (
@@ -1060,15 +1062,21 @@ export function PaymentLinkCheckout() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-2">
-              <p className={`text-sm font-semibold ${payFull ? "text-blue-700" : "text-gray-800"}`}>Pay full amount</p>
-              <p className={`text-base font-black flex-shrink-0 ${payFull ? "text-blue-700" : "text-gray-900"}`}>{fmtINR(totalAmount)}</p>
+              <p className={`text-sm font-semibold ${payFull ? "text-blue-700" : "text-gray-800"}`}>
+                {paidInstCount > 0 ? "Pay Remaining Amount" : "Pay full amount"}
+              </p>
+              <p className={`text-base font-black flex-shrink-0 ${payFull ? "text-blue-700" : "text-gray-900"}`}>{fmtINR(remainingAmt)}</p>
             </div>
-            <p className="text-xs text-gray-400 mt-0.5">Clear all {installments.length} payments at once</p>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {paidInstCount > 0
+                ? `${installments.length - paidInstCount} remaining payment${installments.length - paidInstCount !== 1 ? "s" : ""}`
+                : `Clear all ${installments.length} payments at once`}
+            </p>
           </div>
         </button>
 
         <Button onClick={() => setScreen("method")} className="w-full h-11 bg-blue-700 hover:bg-blue-800 font-bold text-base rounded-xl mt-2">
-          Continue to Pay {fmtINR(payFull ? totalAmount : Number(currentInst?.amount ?? 0))} <ChevronRight className="ml-1.5 h-5 w-5" />
+          Continue to Pay {fmtINR(payFull ? remainingAmt : Number(currentInst?.amount ?? 0))} <ChevronRight className="ml-1.5 h-5 w-5" />
         </Button>
         {renderSecured(true)}
       </div>
@@ -1199,9 +1207,9 @@ export function PaymentLinkCheckout() {
                           <span className="text-base font-black text-gray-900">{fmtINR(totalAmount)}</span>
                         </div>
                         {paidInstCount > 0 && !allPaid && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs text-gray-400">Remaining</span>
-                            <span className="text-sm font-bold text-amber-600">{fmtINR(remainingAmt)}</span>
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-widest">Remaining Amount</span>
+                            <span className="text-xl font-black text-amber-600">{fmtINR(remainingAmt)}</span>
                           </div>
                         )}
                         {allPaid && (
@@ -1217,39 +1225,14 @@ export function PaymentLinkCheckout() {
                         <div className="mt-3 pt-2 border-t border-gray-100">
                           <button
                             type="button"
-                            onClick={() => setShowHistory(v => !v)}
-                            className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                            onClick={() => setShowHistoryModal(true)}
+                            className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-semibold transition-colors"
                           >
                             <Calendar className="h-3.5 w-3.5" />
                             Payment History
-                            <ChevronDown className={cn("h-3 w-3 transition-transform ml-0.5", showHistory && "rotate-180")} />
+                            <span className="bg-blue-100 text-blue-600 text-[9px] font-bold px-1.5 py-0.5 rounded-full">{paymentHistory.length}</span>
+                            <ChevronRight className="h-3 w-3 ml-auto" />
                           </button>
-
-                          {showHistory && (
-                            <div className="mt-2 space-y-2">
-                              {paymentHistory.map((h, idx) => (
-                                <div key={idx} className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 space-y-1">
-                                  <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
-                                        <Check className="h-2.5 w-2.5 text-white" strokeWidth={3.5} />
-                                      </div>
-                                      <p className="text-xs font-semibold text-gray-800 leading-tight">{h.label}</p>
-                                    </div>
-                                    <p className="text-xs font-bold text-gray-900 flex-shrink-0">{fmtINR(h.amount)}</p>
-                                  </div>
-                                  <div className="pl-5.5 space-y-0.5">
-                                    <p className="text-[10px] text-gray-400">
-                                      {new Date(h.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
-                                      {" · "}
-                                      {new Date(h.paidAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-                                    </p>
-                                    <p className="text-[10px] font-mono text-gray-400">{h.txnId}</p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
@@ -1283,7 +1266,7 @@ export function PaymentLinkCheckout() {
                     </div>
                     <div>
                       <p className="text-white font-bold text-sm leading-tight">{MERCHANT_NAME}</p>
-                      <p className="text-gray-400 text-[11px]">Paying {fmtINR(payFull ? totalAmount : stdAmt)}</p>
+                      <p className="text-gray-400 text-[11px]">Paying {fmtINR(stdAmt)}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-1 opacity-30 select-none pointer-events-none text-2xl pr-1">
@@ -1303,7 +1286,7 @@ export function PaymentLinkCheckout() {
               {isSchedule && screen === "method" && (
                 <div className="p-5 space-y-4">
                   {renderMethodTabs(true)}
-                  {renderMethodContent(payFull ? totalAmount : payNowAmount)}
+                  {renderMethodContent(payNowAmount)}
                 </div>
               )}
               {screen === "details" && renderDetailsPanel(() => setScreen("overview"), fmtINR(stdAmt))}
@@ -1313,6 +1296,72 @@ export function PaymentLinkCheckout() {
           </div>
         </div>
         {renderFooter()}
+
+        {/* ── Payment History Modal ── */}
+        {showHistoryModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            style={{ background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)" }}
+            onClick={() => setShowHistoryModal(false)}
+          >
+            <div
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="h-7 w-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Calendar className="h-3.5 w-3.5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">Payment History</p>
+                    <p className="text-[10px] text-gray-400">{link?.title}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowHistoryModal(false)}
+                  className="h-7 w-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
+                >
+                  <X className="h-3.5 w-3.5 text-gray-500" />
+                </button>
+              </div>
+
+              {/* Payment rows */}
+              <div className="p-4 space-y-2.5 max-h-[55vh] overflow-y-auto">
+                {paymentHistory.map((h, idx) => (
+                  <div key={idx} className="rounded-xl border border-gray-100 bg-gray-50 px-4 py-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-6 w-6 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0">
+                          <Check className="h-3.5 w-3.5 text-white" strokeWidth={3} />
+                        </div>
+                        <p className="text-sm font-semibold text-gray-800">{h.label}</p>
+                      </div>
+                      <p className="text-sm font-bold text-gray-900 flex-shrink-0">{fmtINR(h.amount)}</p>
+                    </div>
+                    <div className="pl-8 space-y-0.5">
+                      <p className="text-[11px] text-gray-500">
+                        {new Date(h.paidAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                        <span className="mx-1 text-gray-300">·</span>
+                        {new Date(h.paidAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                      </p>
+                      <p className="text-[11px] font-mono text-gray-400 flex items-center gap-1">
+                        <span className="text-gray-300">#</span>{h.txnId}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Footer summary */}
+              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50/60 flex items-center justify-between">
+                <span className="text-xs text-gray-500">Total paid so far</span>
+                <span className="text-sm font-black text-gray-900">{fmtINR(paidSoFar)}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
