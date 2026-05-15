@@ -168,6 +168,7 @@ const PaymentLinks = () => {
 
   // ── Create dialog: Standard / Smart tab ──────────────────────────────────────
   const [createLinkTab, setCreateLinkTab] = useState<"standard" | "smart">("standard");
+  const [showOptionalFields, setShowOptionalFields] = useState(false);
 
   // Smart link — product catalogue (seeded from availableProducts)
   const [smartCatalogue, setSmartCatalogue] = useState(
@@ -678,6 +679,7 @@ const PaymentLinks = () => {
     setShowShippingAddress(false);
     setItemSuggestionOpen(null);
     setInvoiceItems([{ id: "1", name: "", description: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
+    setShowOptionalFields(false);
   };
 
   const handleCreateLink = () => {
@@ -1106,7 +1108,7 @@ const PaymentLinks = () => {
             </div>
           </DialogHeader>
 
-          <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
+          <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
 
             {/* Standard: Amount + description */}
             {createLinkTab === "standard" && (
@@ -1329,6 +1331,21 @@ const PaymentLinks = () => {
                 </div>
               </div>
             )}
+
+            {/* Optional settings toggle */}
+            <button
+              type="button"
+              onClick={() => setShowOptionalFields(v => !v)}
+              className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-dashed border-border text-sm text-muted-foreground hover:bg-muted/40 transition-colors"
+            >
+              <span className="font-medium text-foreground">Optional settings</span>
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                Customer, expiry, reminders
+                <ChevronDown className={`h-4 w-4 transition-transform ${showOptionalFields ? "rotate-180" : ""}`} />
+              </span>
+            </button>
+
+            {showOptionalFields && <>
 
             {/* Customer Details */}
             <div>
@@ -1668,6 +1685,8 @@ const PaymentLinks = () => {
                 + Add New
               </button>
             </div>
+
+            </>}
 
             {/* Receipt section removed — configured globally in Receipt Settings */}
             {false && (
