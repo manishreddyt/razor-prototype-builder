@@ -1091,7 +1091,9 @@ export function PaymentLinkCheckout() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-semibold text-gray-800">{installments[paidInstCount]?.label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">Due {fmtRelative(installments[paidInstCount]?.dueDate ?? "")}</p>
+                {installments[paidInstCount]?.dueDate && fmtRelative(installments[paidInstCount].dueDate) !== "—" && (
+                  <p className="text-xs text-gray-500 mt-0.5">Due {fmtRelative(installments[paidInstCount].dueDate)}</p>
+                )}
               </div>
               <p className="text-base font-black text-gray-900">{fmtINR(Number(installments[paidInstCount]?.amount ?? 0))}</p>
             </div>
@@ -1099,17 +1101,21 @@ export function PaymentLinkCheckout() {
         )}
 
         <div className="space-y-2">
+          <Button
+            onClick={() => { setPayFull(false); setScreen("overview"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            className="w-full h-11 bg-blue-700 hover:bg-blue-800 font-bold rounded-xl"
+          >
+            Done
+          </Button>
           {!allPaid && (
             <Button
+              variant="outline"
+              className="w-full h-10 rounded-xl"
               onClick={() => { setPayFull(false); setScreen("overview"); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-              className="w-full h-11 bg-blue-700 hover:bg-blue-800 font-bold rounded-xl"
             >
               Pay Next Instalment <ChevronRight className="ml-1.5 h-4 w-4" />
             </Button>
           )}
-          <Button variant="outline" className="w-full h-10 rounded-xl" onClick={() => navigate("/")}>
-            Done
-          </Button>
         </div>
         {renderSecured(true)}
       </div>
@@ -1158,14 +1164,16 @@ export function PaymentLinkCheckout() {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center justify-between gap-2">
-                                  <p className={cn("text-sm font-semibold leading-tight", isPaid ? "text-emerald-600 line-through decoration-emerald-400" : isCurrent ? "text-blue-700" : "text-gray-500")}>{inst.label}</p>
-                                  <p className={cn("text-sm font-bold flex-shrink-0", isPaid ? "text-emerald-500" : isCurrent ? "text-blue-700" : "text-gray-400")}>{fmtINR(Number(inst.amount))}</p>
+                                  <p className={cn("text-sm font-semibold leading-tight", isCurrent ? "text-blue-700" : "text-gray-700")}>{inst.label}</p>
+                                  <p className={cn("text-sm font-bold flex-shrink-0", isCurrent ? "text-blue-700" : "text-gray-600")}>{fmtINR(Number(inst.amount))}</p>
                                 </div>
                                 <div className="flex items-center gap-1.5 mt-0.5">
                                   {isPaid
                                     ? <span className="text-[9px] bg-emerald-100 text-emerald-600 font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">Paid</span>
                                     : <>
-                                        <p className="text-[11px] text-gray-400">{fmtRelative(inst.dueDate)}</p>
+                                        {inst.dueDate && fmtRelative(inst.dueDate) !== "—" && (
+                                          <p className="text-[11px] text-gray-400">{fmtRelative(inst.dueDate)}</p>
+                                        )}
                                         {isCurrent && screen !== "success" && <span className="text-[9px] bg-blue-100 text-blue-600 font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wide">Due now</span>}
                                       </>
                                   }
