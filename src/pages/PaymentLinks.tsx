@@ -1320,71 +1320,60 @@ const PaymentLinks = () => {
 
             {/* Magic Link: Delivery fee */}
             {createLinkTab === "smart" && (
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-2 block">Delivery Fee</label>
+              <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  {/* FREE toggle */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDeliveryFreeShipping(true);
-                      setDeliveryFee("");
-                      const t = smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0);
-                      setFormData((f) => ({ ...f, amount: String(t) }));
+                  <Checkbox
+                    id="addDeliveryFee"
+                    checked={!deliveryFreeShipping}
+                    onCheckedChange={(checked) => {
+                      const adding = !!checked;
+                      setDeliveryFreeShipping(!adding);
+                      if (!adding) {
+                        setDeliveryFee("");
+                        const t = smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0);
+                        setFormData((f) => ({ ...f, amount: String(t) }));
+                      }
                     }}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex-shrink-0 ${
-                      deliveryFreeShipping
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                        : "border-input text-muted-foreground hover:bg-muted/40"
-                    }`}
-                  >
-                    <span className="text-base leading-none">🚚</span> FREE
-                  </button>
-                  {/* Custom fee input */}
-                  <div className="relative flex-1">
+                  />
+                  <label htmlFor="addDeliveryFee" className="text-sm text-foreground cursor-pointer">Add delivery fee</label>
+                </div>
+                {!deliveryFreeShipping && (
+                  <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none">₹</span>
                     <input
                       type="number"
                       min={0}
-                      placeholder="Enter amount"
-                      value={deliveryFreeShipping ? "" : deliveryFee}
-                      onFocus={() => setDeliveryFreeShipping(false)}
+                      placeholder="Enter delivery amount"
+                      value={deliveryFee}
                       onChange={(e) => {
-                        setDeliveryFreeShipping(false);
                         setDeliveryFee(e.target.value);
                         const t = smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0);
                         const fee = Number(e.target.value) || 0;
                         setFormData((f) => ({ ...f, amount: String(t + fee) }));
                       }}
-                      className={`w-full pl-7 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-ring transition-colors ${
-                        !deliveryFreeShipping && deliveryFee
-                          ? "border-blue-400 bg-blue-50/40"
-                          : "border-input bg-background"
-                      }`}
+                      className="w-full pl-7 pr-3 py-2 text-sm border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring bg-background"
+                      autoFocus
                     />
                   </div>
-                </div>
+                )}
               </div>
             )}
 
-            {/* Magic Link: Amount (auto-calculated from products) */}
-            {createLinkTab === "smart" && (
-              <div>
-                <label className="text-sm font-semibold text-foreground mb-2 block">Total Amount</label>
-                <div className="flex items-center gap-2 px-3 py-2.5 border border-input rounded-lg bg-muted/30">
-                  <span className="text-sm text-muted-foreground flex-shrink-0">₹ (INR)</span>
-                  <span className="text-sm font-semibold text-foreground flex-1">
-                    {smartSelectedItems.length > 0
-                      ? (smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0) + (deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0))).toLocaleString()
-                      : <span className="text-muted-foreground font-normal">Auto-calculated from products</span>}
-                  </span>
-                  {smartSelectedItems.length > 0 && (
-                    <span className="text-xs text-muted-foreground">
-                      {smartSelectedItems.length} item{smartSelectedItems.length > 1 ? "s" : ""}
-                      {!deliveryFreeShipping && Number(deliveryFee) > 0 && ` + ₹${Number(deliveryFee).toLocaleString()} delivery`}
-                    </span>
+            {/* Magic Link: Total (read-only summary) */}
+            {createLinkTab === "smart" && smartSelectedItems.length > 0 && (
+              <div className="rounded-lg bg-muted/40 border border-border px-4 py-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">Total Amount</p>
+                  {!deliveryFreeShipping && Number(deliveryFee) > 0 && (
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      ₹{smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0).toLocaleString()} products
+                      {" + "}₹{Number(deliveryFee).toLocaleString()} delivery
+                    </p>
                   )}
                 </div>
+                <p className="text-xl font-black text-foreground">
+                  ₹{(smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0) + (deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0))).toLocaleString()}
+                </p>
               </div>
             )}
 
