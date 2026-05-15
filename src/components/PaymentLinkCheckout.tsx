@@ -1246,6 +1246,11 @@ export function PaymentLinkCheckout() {
                     <div className="w-8 h-0.5 bg-blue-500 rounded-full mt-2" />
                   </div>
                 )}
+                {/* Reference ID */}
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Reference ID</p>
+                  <p className="text-xs font-mono font-semibold text-gray-600 bg-gray-100 px-2 py-1 rounded-lg">ABCD23123</p>
+                </div>
               </div>
               {/* Footer */}
               <div className="px-8 py-4 border-t border-gray-100 bg-gray-50/60 space-y-1">
