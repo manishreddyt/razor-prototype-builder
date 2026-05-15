@@ -168,6 +168,8 @@ const PaymentLinks = () => {
 
   // ── Create dialog: Standard / Smart tab ──────────────────────────────────────
   const [createLinkTab, setCreateLinkTab] = useState<"standard" | "smart">("standard");
+  const [deliveryFreeShipping, setDeliveryFreeShipping] = useState(true);
+  const [deliveryFee, setDeliveryFee] = useState("");
 
   // Smart link — product catalogue (seeded from availableProducts)
   const [smartCatalogue, setSmartCatalogue] = useState(
@@ -678,6 +680,8 @@ const PaymentLinks = () => {
     setShowShippingAddress(false);
     setItemSuggestionOpen(null);
     setInvoiceItems([{ id: "1", name: "", description: "", qty: "", rate: "", hsn: "", taxRate: "" }]);
+    setDeliveryFreeShipping(true);
+    setDeliveryFee("");
   };
 
   const handleCreateLink = () => {
@@ -1145,7 +1149,8 @@ const PaymentLinks = () => {
                       if (!p) return null;
                       const recalcTotal = (nextItems: typeof smartSelectedItems) => {
                         const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
-                        setFormData((f) => ({ ...f, amount: String(t) }));
+                        const fee = deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0);
+                        setFormData((f) => ({ ...f, amount: String(t + fee) }));
                       };
                       return (
                         <div key={item.id} className="flex items-center gap-2.5 border border-border rounded-xl p-2.5 bg-background">
@@ -1266,7 +1271,8 @@ const PaymentLinks = () => {
                                   setSmartSelectedItems(nextItems);
                                   setSmartSelectedIds([...smartSelectedIds, p.id]);
                                   const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
-                                  setFormData((f) => ({ ...f, amount: String(t) }));
+                                  const fee = deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0);
+                                  setFormData((f) => ({ ...f, amount: String(t + fee) }));
                                   setShowProductDropdown(false);
                                   setProductSearch("");
                                 }}
@@ -1312,6 +1318,55 @@ const PaymentLinks = () => {
               </div>
             )}
 
+            {/* Magic Link: Delivery fee */}
+            {createLinkTab === "smart" && (
+              <div>
+                <label className="text-sm font-semibold text-foreground mb-2 block">Delivery Fee</label>
+                <div className="flex items-center gap-2">
+                  {/* FREE toggle */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDeliveryFreeShipping(true);
+                      setDeliveryFee("");
+                      const t = smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0);
+                      setFormData((f) => ({ ...f, amount: String(t) }));
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium transition-colors flex-shrink-0 ${
+                      deliveryFreeShipping
+                        ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+                        : "border-input text-muted-foreground hover:bg-muted/40"
+                    }`}
+                  >
+                    <span className="text-base leading-none">🚚</span> FREE
+                  </button>
+                  {/* Custom fee input */}
+                  <div className="relative flex-1">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none">₹</span>
+                    <input
+                      type="number"
+                      min={0}
+                      placeholder="Enter amount"
+                      value={deliveryFreeShipping ? "" : deliveryFee}
+                      onFocus={() => setDeliveryFreeShipping(false)}
+                      onChange={(e) => {
+                        setDeliveryFreeShipping(false);
+                        setDeliveryFee(e.target.value);
+                        const t = smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0);
+                        const fee = Number(e.target.value) || 0;
+                        setFormData((f) => ({ ...f, amount: String(t + fee) }));
+                      }}
+                      className={`w-full pl-7 pr-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-1 focus:ring-ring transition-colors ${
+                        !deliveryFreeShipping && deliveryFee
+                          ? "border-blue-400 bg-blue-50/40"
+                          : "border-input bg-background"
+                      }`}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Magic Link: Amount (auto-calculated from products) */}
             {createLinkTab === "smart" && (
               <div>
@@ -1320,11 +1375,14 @@ const PaymentLinks = () => {
                   <span className="text-sm text-muted-foreground flex-shrink-0">₹ (INR)</span>
                   <span className="text-sm font-semibold text-foreground flex-1">
                     {smartSelectedItems.length > 0
-                      ? smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0).toLocaleString()
+                      ? (smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0) + (deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0))).toLocaleString()
                       : <span className="text-muted-foreground font-normal">Auto-calculated from products</span>}
                   </span>
                   {smartSelectedItems.length > 0 && (
-                    <span className="text-xs text-muted-foreground">{smartSelectedItems.length} item{smartSelectedItems.length > 1 ? "s" : ""}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {smartSelectedItems.length} item{smartSelectedItems.length > 1 ? "s" : ""}
+                      {!deliveryFreeShipping && Number(deliveryFee) > 0 && ` + ₹${Number(deliveryFee).toLocaleString()} delivery`}
+                    </span>
                   )}
                 </div>
               </div>
