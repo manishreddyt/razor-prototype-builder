@@ -2397,13 +2397,6 @@ const PaymentLinks = () => {
               {/* Partial Payment Type + Schedule */}
               {selectedLink.collectInMultiplePayments && (
                 <>
-                  <div className="flex justify-between items-start py-3">
-                    <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Payment Type</span>
-                    <span className="text-sm font-medium text-right">
-                      {selectedLink.multiPaymentMode === "schedule" ? "As per defined schedule" : "Let customer choose and pay"}
-                    </span>
-                  </div>
-
                   {selectedLink.multiPaymentMode === "schedule" && selectedLink.installments?.length > 0 && (
                     <div className="py-3 space-y-2.5">
                       <span className="text-xs font-medium text-foreground block">Payment Schedule</span>
