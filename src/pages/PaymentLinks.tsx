@@ -2534,16 +2534,6 @@ const PaymentLinks = () => {
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 flex-wrap py-3">
-                <Button variant="outline" size="sm" onClick={() => navigate(`/pay/${selectedLink.id}`)}>
-                  <ExternalLink className="h-3.5 w-3.5 mr-1" /> Preview
-                </Button>
-                {["WhatsApp", "SMS", "Email"].map((m) => (
-                  <Button key={m} variant="outline" size="sm" onClick={() => toast.success(`Shared via ${m}`)}>{m}</Button>
-                ))}
-              </div>
-
               {/* Receipt Section */}
               <div className="space-y-3 py-3">
                 <div className="flex items-center gap-2">
