@@ -2445,9 +2445,6 @@ const PaymentLinks = () => {
                                 ))}
                               </div>
                             )}
-                            {(!inst.transactions || inst.transactions.length === 0) && inst.status !== "Upcoming" && (
-                              <p className="text-[10px] text-muted-foreground px-3 py-2 bg-white">No transactions yet</p>
-                            )}
                           </div>
                         );
                       })}
