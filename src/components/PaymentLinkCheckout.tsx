@@ -133,6 +133,45 @@ export function PaymentLinkCheckout() {
 
   const handleOverviewContinue = () => { setScreen("method"); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const handleDetailsContinue = () => { if (!formData.name.trim()) return; setScreen("method"); window.scrollTo({ top: 0, behavior: "smooth" }); };
+
+  // Persist payment result back to localStorage so PaymentLinks list stays in sync
+  const persistPayment = (txnId: string, instsPaid: Installment[], newPaidCount: number) => {
+    try {
+      const stored = localStorage.getItem("payment_links");
+      if (!stored || !link) return;
+      const links: any[] = JSON.parse(stored);
+      const idx = links.findIndex((l) => l.id === link.id);
+      if (idx === -1) return;
+      const updatedLink = { ...links[idx] };
+      const now = new Date();
+      const dateStr = now.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+      const methodLabel: Record<string, string> = { upi: "UPI", card: "Card", netbanking: "Net Banking", wallet: "Wallet" };
+      // Mark each paid installment
+      const updatedInsts = (updatedLink.installments || []).map((inst: any) => {
+        const wasPaid = instsPaid.find((p) => String(p.id) === String(inst.id));
+        if (!wasPaid) return inst;
+        return {
+          ...inst,
+          status: "Paid",
+          transactions: [
+            ...(inst.transactions || []),
+            { id: txnId, date: dateStr, method: methodLabel[payMethod] ?? "UPI", amount: wasPaid.amount, status: "Success" },
+          ],
+        };
+      });
+      const allInstsPaid = newPaidCount >= (updatedLink.installments?.length ?? 0);
+      const anyPaid = newPaidCount > 0;
+      const newAmountPaid = updatedInsts
+        .filter((i: any) => i.status === "Paid")
+        .reduce((s: number, i: any) => s + Number(i.amount), 0);
+      updatedLink.installments = updatedInsts;
+      updatedLink.amountPaid = newAmountPaid;
+      updatedLink.status = allInstsPaid ? "Paid" : anyPaid ? "Partially Paid" : updatedLink.status;
+      links[idx] = updatedLink;
+      localStorage.setItem("payment_links", JSON.stringify(links));
+    } catch (e) { console.error("persistPayment error", e); }
+  };
+
   const handlePay = () => {
     setProcessing(true);
     setTimeout(() => {
@@ -143,12 +182,14 @@ export function PaymentLinkCheckout() {
         const instsPaid = payFull ? installments.slice(paidInstCount) : [installments[paidInstCount]];
         const amtJustPaid = instsPaid.reduce((s, i) => s + Number(i.amount), 0);
         setLastPaidAmt(amtJustPaid);
+        const newPaidCount = payFull ? installments.length : paidInstCount + 1;
         const paidAt = new Date().toISOString();
         setPaymentHistory(prev => [
           ...prev,
           ...instsPaid.map(inst => ({ label: inst.label, amount: Number(inst.amount), paidAt, txnId: newTxnId })),
         ]);
-        setPaidInstCount(payFull ? installments.length : paidInstCount + 1);
+        setPaidInstCount(newPaidCount);
+        persistPayment(newTxnId, instsPaid, newPaidCount);
       }
       setScreen("success");
       window.scrollTo({ top: 0, behavior: "smooth" });

@@ -250,6 +250,14 @@ const PaymentLinks = () => {
       localStorage.setItem("available_products", JSON.stringify(availableProducts));
     }
 
+    // Auto-refresh list when another tab (e.g. checkout) writes payment data
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === "payment_links" && e.newValue) {
+        try { setPaymentLinks(JSON.parse(e.newValue)); } catch {}
+      }
+    };
+    window.addEventListener("storage", handleStorageChange);
+
     // Load existing payment links or create sample ones (v3 forces refresh with paid examples)
     const stored = localStorage.getItem("payment_links");
     const storedVersion = localStorage.getItem("payment_links_version");
@@ -578,6 +586,7 @@ const PaymentLinks = () => {
       localStorage.setItem("payment_links_version", "v6");
       setPaymentLinks(sampleLinks);
     }
+    return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
   // Reset receipt form state when selected link changes
