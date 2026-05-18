@@ -2394,67 +2394,6 @@ const PaymentLinks = () => {
                 <span className="text-sm font-medium">{selectedLink.collectInMultiplePayments ? "Enabled" : "Disabled"}</span>
               </div>
 
-              {/* Partial Payment Type + Schedule */}
-              {selectedLink.collectInMultiplePayments && (
-                <>
-                  {selectedLink.multiPaymentMode === "schedule" && selectedLink.installments?.length > 0 && (
-                    <div className="py-3 space-y-2.5">
-                      <span className="text-xs font-medium text-foreground block">Payment Schedule</span>
-                      {selectedLink.installments.map((inst: any, idx: number) => {
-                        const instStatusColor: Record<string, string> = {
-                          Paid: "bg-green-100 text-green-700",
-                          Pending: "bg-yellow-100 text-yellow-700",
-                          Upcoming: "bg-secondary text-muted-foreground",
-                          Failed: "bg-red-100 text-red-700",
-                        };
-                        const txStatusColor: Record<string, string> = {
-                          Success: "text-green-600",
-                          Failed: "text-red-500",
-                        };
-                        return (
-                          <div key={inst.id || idx} className="rounded-lg border border-border overflow-hidden">
-                            {/* Installment header */}
-                            <div className="flex items-center justify-between px-3 py-2.5 bg-secondary/30">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">{idx + 1}</div>
-                                <div>
-                                  <p className="text-xs font-medium text-foreground">{inst.label || `Payment ${idx + 1}`}</p>
-                                  {inst.dueDate && <p className="text-[10px] text-muted-foreground">Due: {new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>}
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <span className="text-sm font-semibold text-foreground">{inst.amount ? `₹${Number(inst.amount).toLocaleString("en-IN")}` : "—"}</span>
-                                {inst.status && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${instStatusColor[inst.status] || "bg-secondary text-muted-foreground"}`}>{inst.status}</span>}
-                              </div>
-                            </div>
-                            {/* Transactions */}
-                            {inst.transactions?.filter((tx: any) => tx.status === "Success").length > 0 && (
-                              <div className="divide-y divide-border">
-                                {inst.transactions.filter((tx: any) => tx.status === "Success").map((tx: any) => (
-                                  <div key={tx.id} className="flex items-center justify-between px-3 py-2 bg-white">
-                                    <div className="flex items-center gap-2">
-                                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-green-500" />
-                                      <div>
-                                        <p className="text-[10px] font-mono text-muted-foreground">{tx.id}</p>
-                                        <p className="text-[10px] text-muted-foreground">{tx.date} · {tx.method}</p>
-                                      </div>
-                                    </div>
-                                    <div className="text-right flex-shrink-0">
-                                      <p className="text-xs font-medium text-green-600">₹{Number(tx.amount).toLocaleString("en-IN")}</p>
-                                      <p className="text-[10px] text-green-600">Success</p>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </>
-              )}
-
               {/* Amount */}
               <div className="flex justify-between items-center py-3">
                 <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Amount</span>
@@ -2482,6 +2421,57 @@ const PaymentLinks = () => {
                     <p className="text-xs text-blue-600 mt-0.5">pay_{selectedLink.id.slice(-12)}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">Paid on {selectedLink.date}</p>
                   </div>
+                </div>
+              )}
+
+              {/* Payment Schedule — shown below Amount */}
+              {selectedLink.collectInMultiplePayments && selectedLink.multiPaymentMode === "schedule" && selectedLink.installments?.length > 0 && (
+                <div className="py-3 space-y-2.5">
+                  <span className="text-xs font-medium text-foreground block">Payment Schedule</span>
+                  {selectedLink.installments.map((inst: any, idx: number) => {
+                    const instStatusColor: Record<string, string> = {
+                      Paid: "bg-green-100 text-green-700",
+                      Pending: "bg-yellow-100 text-yellow-700",
+                      Upcoming: "bg-secondary text-muted-foreground",
+                      Failed: "bg-red-100 text-red-700",
+                    };
+                    return (
+                      <div key={inst.id || idx} className="rounded-lg border border-border overflow-hidden">
+                        <div className="flex items-center justify-between px-3 py-2.5 bg-secondary/30">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold flex-shrink-0">{idx + 1}</div>
+                            <div>
+                              <p className="text-xs font-medium text-foreground">{inst.label || `Payment ${idx + 1}`}</p>
+                              {inst.dueDate && <p className="text-[10px] text-muted-foreground">Due: {new Date(inst.dueDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</p>}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <span className="text-sm font-semibold text-foreground">{inst.amount ? `₹${Number(inst.amount).toLocaleString("en-IN")}` : "—"}</span>
+                            {inst.status && <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${instStatusColor[inst.status] || "bg-secondary text-muted-foreground"}`}>{inst.status}</span>}
+                          </div>
+                        </div>
+                        {inst.transactions?.filter((tx: any) => tx.status === "Success").length > 0 && (
+                          <div className="divide-y divide-border">
+                            {inst.transactions.filter((tx: any) => tx.status === "Success").map((tx: any) => (
+                              <div key={tx.id} className="flex items-center justify-between px-3 py-2 bg-white">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-1.5 h-1.5 rounded-full flex-shrink-0 bg-green-500" />
+                                  <div>
+                                    <p className="text-[10px] font-mono text-muted-foreground">{tx.id}</p>
+                                    <p className="text-[10px] text-muted-foreground">{tx.date} · {tx.method}</p>
+                                  </div>
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="text-xs font-medium text-green-600">₹{Number(tx.amount).toLocaleString("en-IN")}</p>
+                                  <p className="text-[10px] text-green-600">Success</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
