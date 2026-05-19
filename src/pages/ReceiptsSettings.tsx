@@ -555,7 +555,7 @@ const ReceiptsSettings = () => {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">Post Payment Receipts & Invoice Settings</h1>
+            <h1 className="text-2xl font-bold">Receipts & Invoice Settings</h1>
             <p className="text-sm text-muted-foreground mt-0.5">Customize receipts, invoices, and brand identity shown to customers</p>
           </div>
         </div>
@@ -821,11 +821,16 @@ const ReceiptsSettings = () => {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tax Percentage</Label>
-                  <div className="relative">
-                    <Input value={taxPercentage} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ""); if (parseFloat(v) <= 100 || v === "") setTaxPercentage(v); }} placeholder="e.g. 18" className="h-9 text-sm font-mono pr-8" />
-                    <Percent className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                  </div>
-                  <p className="text-xs text-muted-foreground">Common: 0%, 5%, 12%, 18%, 28%.</p>
+                  <select
+                    value={taxPercentage}
+                    onChange={(e) => setTaxPercentage(e.target.value)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">Select tax rate</option>
+                    {["0", "5", "12", "18", "28"].map((v) => (
+                      <option key={v} value={v}>{v}%</option>
+                    ))}
+                  </select>
                 </div>
               </div>
             </div>
