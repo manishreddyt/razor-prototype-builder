@@ -212,6 +212,45 @@ export function PaymentLinkCheckout() {
         ]);
         setPaidInstCount(newPaidCount);
         persistPayment(newTxnId, instsPaid, newPaidCount);
+      } else {
+        // Regular + Smart/Magic links — mark as Paid in localStorage
+        try {
+          const stored = localStorage.getItem("payment_links");
+          if (stored && link) {
+            const links: any[] = JSON.parse(stored);
+            const idx = links.findIndex((l: any) => l.id === link.id);
+            if (idx !== -1) {
+              const now = new Date();
+              const updatedLink = { ...links[idx] };
+              updatedLink.status = "Paid";
+              updatedLink.amountPaid = effectiveAmount;
+              updatedLink.date = now.toLocaleString("en-IN", {
+                day: "2-digit", month: "short", year: "numeric",
+                hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true,
+              });
+              // Capture delivery address for Smart Links
+              if (updatedLink.isSmartLink) {
+                const SAVED_ADDRS_MAP: Record<string, { tag: string; line1: string; line2: string }> = {
+                  a1: { tag: "Home", line1: "5th Cross, Koramangala 4th Block", line2: "Bengaluru, Karnataka 560034" },
+                  a2: { tag: "Office", line1: "100 Feet Road, Indiranagar", line2: "Bengaluru, Karnataka 560038" },
+                };
+                if (v3SelectedAddr && SAVED_ADDRS_MAP[v3SelectedAddr]) {
+                  const sa = SAVED_ADDRS_MAP[v3SelectedAddr];
+                  updatedLink.customerAddress = { tag: sa.tag, addressLine: sa.line1, cityState: sa.line2 };
+                } else if (v3House || v3Area || v3City) {
+                  updatedLink.customerAddress = {
+                    tag: "Delivery",
+                    name: v3FullName,
+                    addressLine: [v3House, v3Area].filter(Boolean).join(", "),
+                    cityState: [v3City, v3Pincode].filter(Boolean).join(" – "),
+                  };
+                }
+              }
+              links[idx] = updatedLink;
+              localStorage.setItem("payment_links", JSON.stringify(links));
+            }
+          }
+        } catch (e) { console.error("persist payment error", e); }
       }
       setScreen("success");
       window.scrollTo({ top: 0, behavior: "smooth" });
