@@ -7,12 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { ArrowLeft, BookOpen, Check, CheckCircle2, ExternalLink, Info, Pencil, Upload, X } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { ArrowLeft, BookOpen, Check, CheckCircle2, ExternalLink, FileText, Hash, Info, Pencil, Percent, Receipt, Tag, Upload, X } from "lucide-react";
 
 // ── Shared A4 sub-components ──────────────────────────────────────────────────
 
 const A4W = 794;
-const SCALE = 0.383; // fits ~304px card width (2-col grid)
+const SCALE = 0.383;
 
 const RzpFooter = ({ dark }: { dark?: boolean }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -86,7 +87,6 @@ const ItemsTable = ({ thBg = "transparent", thColor = "#aaa", thBorder = "1px so
 
 const Totals = ({ borderTopColor = "#ccc" }: { borderTopColor?: string }) => (
   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: 16 }}>
-    {/* PAID stamp */}
     <div style={{ width: 90, height: 90, border: "2.5px solid #000", borderRadius: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", transform: "rotate(-18deg)", opacity: 0.1, flexShrink: 0 }}>
       <div style={{ fontSize: 15, fontWeight: 800, letterSpacing: 2 }}>PAID</div>
       <div style={{ fontSize: 6.5, fontWeight: 600, letterSpacing: 1, marginTop: 3 }}>13 APR 2026</div>
@@ -102,14 +102,14 @@ const Totals = ({ borderTopColor = "#ccc" }: { borderTopColor?: string }) => (
   </div>
 );
 
-const Notes = () => (
+const Notes = ({ text }: { text?: string }) => (
   <div>
     <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 8 }}>Customer Notes</div>
-    <div style={{ fontSize: 12, color: "#444", lineHeight: 1.75 }}>Thank you for enrolling with Wealthjoy! Your course access is valid for 12 months. For support, reach us at support@wealthjoy.in.</div>
+    <div style={{ fontSize: 12, color: "#444", lineHeight: 1.75 }}>
+      {text || "Thank you for enrolling with Wealthjoy! Your course access is valid for 12 months. For support, reach us at support@wealthjoy.in."}
+    </div>
   </div>
 );
-
-// ── A4 Scale wrapper ──────────────────────────────────────────────────────────
 
 const A4Preview = ({ children }: { children: React.ReactNode }) => (
   <div style={{ width: "100%", aspectRatio: "2/3", overflow: "hidden", position: "relative" }}>
@@ -126,143 +126,95 @@ const A4Preview = ({ children }: { children: React.ReactNode }) => (
   </div>
 );
 
-// ── Template A: Classic Clean ─────────────────────────────────────────────────
-
-const TemplateA = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
+const TemplateA = ({ color, name, logoUrl, notes }: { color: string; name: string; logoUrl?: string; notes?: string }) => (
   <A4Preview>
     <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Header */}
         <div style={{ padding: "56px 60px 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <ReceiptHeaderMeta />
             <LogoBlock color={color} logoUrl={logoUrl} name={name} />
           </div>
         </div>
-        {/* Parties */}
         <div style={{ padding: "0 60px" }}>
           <div style={{ height: 1, background: "#e8e8e8", margin: "30px 0" }} />
           <Parties />
           <div style={{ height: 1, background: "#e8e8e8", margin: "30px 0" }} />
         </div>
-        {/* Table */}
-        <div style={{ padding: "0 60px" }}>
-          <ItemsTable />
-        </div>
-        {/* Totals */}
-        <div style={{ padding: "0 60px" }}>
-          <Totals />
-        </div>
-        {/* Notes */}
+        <div style={{ padding: "0 60px" }}><ItemsTable /></div>
+        <div style={{ padding: "0 60px" }}><Totals /></div>
         <div style={{ flex: 1, minHeight: 40 }} />
-        <div style={{ padding: "0 60px 32px" }}>
-          <Notes />
-        </div>
+        <div style={{ padding: "0 60px 32px" }}><Notes text={notes} /></div>
       </div>
-      {/* Footer */}
       <div style={{ borderTop: "1px solid #e8e8e8", padding: "18px 60px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fff" }}>
-        <RzpFooter />
-        <span style={{ fontSize: 12, color: "#aaa" }}>Page 1 of 1</span>
+        <RzpFooter /><span style={{ fontSize: 12, color: "#aaa" }}>Page 1 of 1</span>
       </div>
     </div>
   </A4Preview>
 );
 
-// ── Template B: Dark Header ───────────────────────────────────────────────────
-
-const TemplateB = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
+const TemplateB = ({ color, name, logoUrl, notes }: { color: string; name: string; logoUrl?: string; notes?: string }) => (
   <A4Preview>
     <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
-      {/* Dark header */}
       <div style={{ background: "#111", padding: "56px 60px 36px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <ReceiptHeaderMeta titleColor="#fff" metaKeyColor="rgba(255,255,255,0.45)" metaValColor="#fff" />
           <LogoBlock color={color} logoUrl={logoUrl} name={name} textColor="rgba(255,255,255,0.75)" />
         </div>
       </div>
-      {/* White body */}
       <div style={{ flex: 1, background: "#fff", display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "36px 60px 0" }}>
-          <Parties />
-        </div>
+        <div style={{ padding: "36px 60px 0" }}><Parties /></div>
         <div style={{ height: 1, background: "#e8e8e8", margin: "28px 60px" }} />
-        <div style={{ padding: "0 60px" }}>
-          <ItemsTable thBg="#111" thColor="#fff" thBorder="none" />
-        </div>
-        <div style={{ padding: "0 60px" }}>
-          <Totals borderTopColor="#111" />
-        </div>
+        <div style={{ padding: "0 60px" }}><ItemsTable thBg="#111" thColor="#fff" thBorder="none" /></div>
+        <div style={{ padding: "0 60px" }}><Totals borderTopColor="#111" /></div>
         <div style={{ flex: 1, minHeight: 40 }} />
-        <div style={{ padding: "0 60px 32px" }}>
-          <Notes />
-        </div>
+        <div style={{ padding: "0 60px 32px" }}><Notes text={notes} /></div>
       </div>
-      {/* Dark footer */}
       <div style={{ background: "#111", padding: "18px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <RzpFooter dark />
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Page 1 of 1</span>
+        <RzpFooter dark /><span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Page 1 of 1</span>
       </div>
     </div>
   </A4Preview>
 );
 
-// ── Template C: Gold Accent ───────────────────────────────────────────────────
-
-const TemplateC = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
+const TemplateC = ({ color, name, logoUrl, notes }: { color: string; name: string; logoUrl?: string; notes?: string }) => (
   <A4Preview>
     <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
-      {/* Gold top bar */}
       <div style={{ height: 6, background: color }} />
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Header */}
         <div style={{ padding: "50px 60px 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <ReceiptHeaderMeta />
             <LogoBlock color={color} logoUrl={logoUrl} name={name} />
           </div>
         </div>
-        {/* Parties */}
         <div style={{ padding: "0 60px" }}>
           <div style={{ height: 1.5, background: color, opacity: 0.6, margin: "28px 0" }} />
           <Parties accentColor={color} />
           <div style={{ height: 1.5, background: color, opacity: 0.6, margin: "28px 0" }} />
         </div>
-        {/* Table */}
-        <div style={{ padding: "0 60px" }}>
-          <ItemsTable thBorder={`2px solid ${color}`} />
-        </div>
-        {/* Totals */}
-        <div style={{ padding: "0 60px" }}>
-          <Totals borderTopColor={color} />
-        </div>
+        <div style={{ padding: "0 60px" }}><ItemsTable thBorder={`2px solid ${color}`} /></div>
+        <div style={{ padding: "0 60px" }}><Totals borderTopColor={color} /></div>
         <div style={{ flex: 1, minHeight: 40 }} />
-        <div style={{ padding: "0 60px 32px" }}>
-          <Notes />
-        </div>
+        <div style={{ padding: "0 60px 32px" }}><Notes text={notes} /></div>
       </div>
-      {/* Footer */}
       <div style={{ borderTop: `2px solid ${color}`, padding: "18px 60px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fffef5" }}>
-        <RzpFooter />
-        <span style={{ fontSize: 12, color: "#aaa" }}>Page 1 of 1</span>
+        <RzpFooter /><span style={{ fontSize: 12, color: "#aaa" }}>Page 1 of 1</span>
       </div>
     </div>
   </A4Preview>
 );
 
-// ── Template D: Bold Contrast ─────────────────────────────────────────────────
-
-const TemplateD = ({ color, name, logoUrl }: { color: string; name: string; logoUrl?: string }) => (
+const TemplateD = ({ color, name, logoUrl, notes }: { color: string; name: string; logoUrl?: string; notes?: string }) => (
   <A4Preview>
     <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        {/* Header with bold border */}
         <div style={{ padding: "56px 60px 28px", borderBottom: "2.5px solid #000" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <ReceiptHeaderMeta />
             <LogoBlock color={color} logoUrl={logoUrl} name={name} />
           </div>
         </div>
-        {/* Black meta band */}
         <div style={{ background: "#000", padding: "12px 60px", display: "flex", gap: 36, alignItems: "center" }}>
           {[["Transaction ID", "pay_Scv6cq6n…"], ["Method", "UPI"], ["Currency", "INR"]].map(([k, v]) => (
             <div key={k}>
@@ -274,36 +226,22 @@ const TemplateD = ({ color, name, logoUrl }: { color: string; name: string; logo
             <div style={{ width: 6, height: 6, background: "#fff", borderRadius: "50%" }} /> Paid
           </div>
         </div>
-        {/* Parties */}
         <div style={{ padding: "32px 60px 0" }}>
           <Parties />
           <div style={{ height: 1, background: "#e8e8e8", margin: "28px 0" }} />
         </div>
-        {/* Table */}
-        <div style={{ padding: "0 60px" }}>
-          <ItemsTable thBorder="1.5px solid #000" />
-        </div>
-        {/* Totals */}
-        <div style={{ padding: "0 60px" }}>
-          <Totals borderTopColor="#000" />
-        </div>
+        <div style={{ padding: "0 60px" }}><ItemsTable thBorder="1.5px solid #000" /></div>
+        <div style={{ padding: "0 60px" }}><Totals borderTopColor="#000" /></div>
         <div style={{ flex: 1, minHeight: 40 }} />
-        {/* Notes divider + notes */}
         <div style={{ height: 2, background: "#000", margin: "0 60px 24px" }} />
-        <div style={{ padding: "0 60px 32px" }}>
-          <Notes />
-        </div>
+        <div style={{ padding: "0 60px 32px" }}><Notes text={notes} /></div>
       </div>
-      {/* Dark footer */}
       <div style={{ background: "#000", padding: "18px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <RzpFooter dark />
-        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Page 1 of 1</span>
+        <RzpFooter dark /><span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Page 1 of 1</span>
       </div>
     </div>
   </A4Preview>
 );
-
-// ── Template registry ─────────────────────────────────────────────────────────
 
 const TEMPLATES = [
   { id: 1, label: "Classic",       Component: TemplateA },
@@ -317,33 +255,71 @@ const PRESET_COLORS = [
   "#F59E0B", "#0EA5E9", "#EC4899", "#111111",
 ];
 
+// ── Toggle helper ─────────────────────────────────────────────────────────────
+const Toggle = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+  <button
+    onClick={onChange}
+    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${checked ? "bg-primary" : "bg-gray-200"}`}
+    role="switch" aria-checked={checked}
+  >
+    <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${checked ? "translate-x-4" : "translate-x-0"}`} />
+  </button>
+);
+
+// ── Section heading helper ────────────────────────────────────────────────────
+const SectionHeading = ({ icon, title, desc }: { icon: React.ReactNode; title: string; desc: string }) => (
+  <div className="flex items-start gap-3 mb-5">
+    <div className="h-8 w-8 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0 mt-0.5">
+      {icon}
+    </div>
+    <div>
+      <h3 className="font-semibold text-foreground">{title}</h3>
+      <p className="text-sm text-muted-foreground mt-0.5">{desc}</p>
+    </div>
+  </div>
+);
+
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 const ReceiptsSettings = () => {
   const navigate = useNavigate();
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
 
-  const [receiptMode, setReceiptMode] = useState<"auto" | "manual">("auto");
-  const [sendViaEmail, setSendViaEmail] = useState(true);
-  const [sendViaWhatsapp, setSendViaWhatsapp] = useState(true);
-
+  // Brand
   const [brandName, setBrandName] = useState("Manish Reddy");
   const [editingName, setEditingName] = useState(false);
   const [draftName, setDraftName] = useState("Manish Reddy");
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
-
   const [brandColor, setBrandColor] = useState("#0066FF");
   const [editingColor, setEditingColor] = useState(false);
   const [draftColor, setDraftColor] = useState("#0066FF");
 
-  const [selectedTemplate, setSelectedTemplate] = useState(1);
+  // Receipt config
+  const [receiptMode, setReceiptMode] = useState<"auto" | "manual">("auto");
+  const [sendViaEmail, setSendViaEmail] = useState(true);
+  const [sendViaWhatsapp, setSendViaWhatsapp] = useState(true);
 
   // 80G
-  const signatureInputRef = useRef<HTMLInputElement>(null);
   const [enable80g, setEnable80g] = useState(false);
   const [g80Description, setG80Description] = useState("");
   const [g80SignatureFile, setG80SignatureFile] = useState<File | null>(null);
   const [g80SignatureUrl, setG80SignatureUrl] = useState<string | undefined>(undefined);
+
+  // Receipt template
+  const [selectedTemplate, setSelectedTemplate] = useState(1);
+
+  // Customer notes
+  const [customerNotes, setCustomerNotes] = useState("Thank you for your payment! For support, contact us at support@wealthjoy.in.");
+
+  // Invoice settings
+  const [invPrefix, setInvPrefix] = useState("INV-");
+  const [invStartFrom, setInvStartFrom] = useState("0001");
+  const [hsnEnabled, setHsnEnabled] = useState(false);
+  const [hsnCode, setHsnCode] = useState("");
+  const [taxPercentage, setTaxPercentage] = useState("");
+
+  const invPreview = `${invPrefix}${invStartFrom.padStart(4, "0")}`;
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -353,203 +329,32 @@ const ReceiptsSettings = () => {
   };
 
   const handleSave = () => {
-    toast.success("Receipts settings saved!");
+    toast.success("Settings saved!");
     navigate("/account-settings");
   };
 
   return (
     <DashboardLayout>
       <div className="max-w-2xl">
+        {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <Button variant="ghost" size="icon" onClick={() => navigate("/account-settings")}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold">Receipts Settings</h1>
+          <div>
+            <h1 className="text-2xl font-bold">Post Payment Receipts & Invoice Settings</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">Customize receipts, invoices, and brand identity shown to customers</p>
+          </div>
         </div>
 
-        {/* Payment Links — Receipts */}
-        <Card className="mb-5">
-          <CardContent className="p-6">
-            {/* Section header with docs link */}
-            <div className="flex items-start justify-between gap-3 mb-4">
-              <div>
-                <h3 className="font-semibold mb-0.5">Payment Links — Receipts</h3>
-                <p className="text-sm text-muted-foreground">Configure how receipts are sent for all Payment Links.</p>
-              </div>
-              <a
-                href="https://razorpay.com/docs/payments/payment-pages/receipt/#pdf-receipt-to-customers"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-primary font-medium hover:underline flex-shrink-0 mt-0.5"
-              >
-                <BookOpen className="h-3.5 w-3.5" /> Documentation
-              </a>
-            </div>
-
-            {/* Radio options */}
-            <div className="space-y-3">
-              {/* Auto */}
-              <label
-                className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${receiptMode === "auto" ? "border-primary bg-primary/5" : "border-border hover:border-gray-300"}`}
-                onClick={() => setReceiptMode("auto")}
-              >
-                <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${receiptMode === "auto" ? "border-primary" : "border-gray-300"}`}>
-                  {receiptMode === "auto" && <div className="h-2 w-2 rounded-full bg-primary" />}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">Send Receipts Automatically</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Receipts are emailed to customers immediately after payment.</p>
-                </div>
-              </label>
-
-              {/* Manual */}
-              <label
-                className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${receiptMode === "manual" ? "border-primary bg-primary/5" : "border-border hover:border-gray-300"}`}
-                onClick={() => setReceiptMode("manual")}
-              >
-                <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${receiptMode === "manual" ? "border-primary" : "border-gray-300"}`}>
-                  {receiptMode === "manual" && <div className="h-2 w-2 rounded-full bg-primary" />}
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-foreground">Don't Send Receipts Automatically</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">You may send receipts later from dashboard. Your own reference ID may be added too.</p>
-                </div>
-              </label>
-            </div>
-
-            {/* Payment Pages note */}
-            <div className="mt-4 flex items-start gap-2 rounded-md bg-muted/50 border border-border px-3 py-2.5">
-              <Info className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-muted-foreground">
-                Receipts for <span className="font-medium text-foreground">Payment Pages</span> can be configured in the payment page settings.
-              </p>
-            </div>
-
-            {/* Divider */}
-            <div className="border-t border-border mt-5 pt-5">
-              {/* 80G toggle row */}
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">80G Details</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Add 80G tax exemption details to all payment receipts. Applies to all payment links automatically.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setEnable80g((v) => !v)}
-                  className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none mt-0.5 ${enable80g ? "bg-primary" : "bg-gray-200"}`}
-                  role="switch"
-                  aria-checked={enable80g}
-                >
-                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ${enable80g ? "translate-x-4" : "translate-x-0"}`} />
-                </button>
-              </div>
-
-              {/* 80G expanded fields */}
-              {enable80g && (
-                <div className="mt-4 space-y-4">
-                  {/* Description */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between">
-                      <Label className="text-sm font-medium">80G Description</Label>
-                      <a
-                        href="https://razorpay.com/docs/payments/payment-pages/80g-receipt/#pdf-receipt-to-customers"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline flex items-center gap-1"
-                      >
-                        Sample 80G Receipt <ExternalLink className="h-3 w-3" />
-                      </a>
-                    </div>
-                    <textarea
-                      value={g80Description}
-                      onChange={(e) => setG80Description(e.target.value)}
-                      placeholder="All donations made to us are eligible for tax exemption under 80G of IT act"
-                      rows={3}
-                      className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                    />
-                  </div>
-
-                  {/* Signature upload */}
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-medium">
-                      Signature of Authorised Person{" "}
-                      <span className="text-muted-foreground font-normal">(Optional)</span>
-                    </Label>
-                    <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
-                      <input
-                        ref={signatureInputRef}
-                        type="file"
-                        accept=".png,.jpg,.jpeg"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0] ?? null;
-                          if (file && file.size > 500 * 1024) {
-                            toast.error("File size must be under 500 KB");
-                            return;
-                          }
-                          setG80SignatureFile(file);
-                          if (file) setG80SignatureUrl(URL.createObjectURL(file));
-                        }}
-                      />
-                      {g80SignatureFile ? (
-                        <div className="flex items-center gap-2 text-sm text-green-700">
-                          <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                          <span className="truncate max-w-xs">{g80SignatureFile.name}</span>
-                          <button
-                            type="button"
-                            className="text-muted-foreground hover:text-destructive ml-1 flex-shrink-0"
-                            onClick={(e) => { e.preventDefault(); setG80SignatureFile(null); setG80SignatureUrl(undefined); }}
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <>
-                          <Upload className="h-5 w-5 text-muted-foreground" />
-                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
-                            <span>Drag file here or</span>
-                            <span className="text-primary font-medium">Upload</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground">Upload .png, .jpg or .jpeg file | 500 KB Max</p>
-                        </>
-                      )}
-                    </label>
-                    {g80SignatureUrl && (
-                      <img src={g80SignatureUrl} alt="Signature preview" className="mt-2 h-12 object-contain rounded border border-border" />
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Send via */}
-        <Card className="mb-5">
-          <CardContent className="p-6">
-            <h3 className="font-semibold mb-1">Send Receipts via</h3>
-            <p className="text-sm text-muted-foreground mb-4">Choose how payment receipts are delivered to your customers</p>
-            <div className="flex gap-5">
-              <div className="flex items-center gap-2">
-                <Checkbox checked={sendViaEmail} onCheckedChange={(v) => setSendViaEmail(!!v)} id="email" />
-                <Label htmlFor="email">Email</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox checked={sendViaWhatsapp} onCheckedChange={(v) => setSendViaWhatsapp(!!v)} id="whatsapp" />
-                <Label htmlFor="whatsapp">WhatsApp</Label>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Brand Name & Logo */}
+        {/* ── 1. Brand Details ─────────────────────────────────────────────── */}
         <Card className="mb-5">
           <CardContent className="p-6 space-y-6">
-            <div>
-              <h3 className="font-semibold mb-0.5">Brand Name and Logo</h3>
-              <p className="text-sm text-muted-foreground">Shows your Brand Name on the Receipts, Checkout screens etc.</p>
-            </div>
+            <SectionHeading
+              icon={<Tag className="h-4 w-4 text-primary" />}
+              title="Brand Details"
+              desc="Your brand identity shown on receipts, checkout screens, and invoices."
+            />
 
             {/* Logo */}
             <div>
@@ -586,13 +391,18 @@ const ReceiptsSettings = () => {
               </div>
             </div>
 
+            <Separator />
+
             {/* Brand Name */}
             <div>
               <p className="text-sm font-medium text-foreground mb-3">Brand Name</p>
               {editingName ? (
                 <div className="flex items-center gap-2">
                   <Input autoFocus value={draftName} onChange={(e) => setDraftName(e.target.value)} className="max-w-xs h-9 text-sm"
-                    onKeyDown={(e) => { if (e.key === "Enter") { setBrandName(draftName); setEditingName(false); } if (e.key === "Escape") { setDraftName(brandName); setEditingName(false); } }} />
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { setBrandName(draftName); setEditingName(false); }
+                      if (e.key === "Escape") { setDraftName(brandName); setEditingName(false); }
+                    }} />
                   <Button size="sm" className="h-9 px-3" onClick={() => { setBrandName(draftName); setEditingName(false); }}>Save</Button>
                   <Button size="sm" variant="ghost" className="h-9 px-2" onClick={() => { setDraftName(brandName); setEditingName(false); }}><X className="h-4 w-4" /></Button>
                 </div>
@@ -605,57 +415,177 @@ const ReceiptsSettings = () => {
                 </div>
               )}
             </div>
+
+            <Separator />
+
+            {/* Brand Color */}
+            <div>
+              <p className="text-sm font-medium text-foreground mb-1">Brand Color</p>
+              <p className="text-xs text-muted-foreground mb-3">Used as the accent color on receipts and logo background.</p>
+              {!editingColor ? (
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-lg border border-border shadow-sm" style={{ background: brandColor }} />
+                  <span className="text-sm font-mono text-foreground">{brandColor.toUpperCase()}</span>
+                  <button onClick={() => { setDraftColor(brandColor); setEditingColor(true); }} className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline">
+                    <Pencil className="h-3.5 w-3.5" /> Edit
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg border border-border shadow-sm transition-colors" style={{ background: draftColor }} />
+                    <span className="text-sm font-mono text-foreground">{draftColor.toUpperCase()}</span>
+                  </div>
+                  <div className="flex items-center gap-2.5 flex-wrap">
+                    {PRESET_COLORS.map((c) => (
+                      <button key={c} onClick={() => setDraftColor(c)} className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110"
+                        style={{ background: c, boxShadow: draftColor === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : "none" }} title={c}>
+                        {draftColor === c && <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} />}
+                      </button>
+                    ))}
+                    <label className="cursor-pointer" title="Custom color">
+                      <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-500 transition-colors overflow-hidden"
+                        style={!PRESET_COLORS.includes(draftColor) ? { background: draftColor, border: `2px solid ${draftColor}`, boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${draftColor}` } : {}}>
+                        {!PRESET_COLORS.includes(draftColor) ? <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} /> : <span className="text-gray-400 text-sm leading-none">+</span>}
+                      </div>
+                      <input type="color" value={draftColor} onChange={(e) => setDraftColor(e.target.value)} className="sr-only" />
+                    </label>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <Button size="sm" className="h-8 px-4" onClick={() => { setBrandColor(draftColor); setEditingColor(false); }}>Apply</Button>
+                    <Button size="sm" variant="ghost" className="h-8 px-3" onClick={() => { setDraftColor(brandColor); setEditingColor(false); }}>Cancel</Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
-        {/* Brand Color */}
+        {/* ── 2. Receipt Configuration ─────────────────────────────────────── */}
         <Card className="mb-5">
           <CardContent className="p-6">
-            <h3 className="font-semibold mb-0.5">Brand Color</h3>
-            <p className="text-sm text-muted-foreground mb-4">Used as the accent color on receipts and logo background.</p>
-            {!editingColor ? (
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg border border-border shadow-sm" style={{ background: brandColor }} />
-                <span className="text-sm font-mono text-foreground">{brandColor.toUpperCase()}</span>
-                <button onClick={() => { setDraftColor(brandColor); setEditingColor(true); }} className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline">
-                  <Pencil className="h-3.5 w-3.5" /> Edit
-                </button>
+            <SectionHeading
+              icon={<Receipt className="h-4 w-4 text-primary" />}
+              title="Receipt Configuration"
+              desc="Configure how and when receipts are sent to your customers."
+            />
+
+            {/* Send mode */}
+            <div className="space-y-3">
+              {[
+                { val: "auto" as const, title: "Send Receipts Automatically", desc: "Receipts are emailed to customers immediately after payment." },
+                { val: "manual" as const, title: "Don't Send Receipts Automatically", desc: "You may send receipts later from dashboard. Your own reference ID may be added too." },
+              ].map(({ val, title, desc }) => (
+                <label key={val}
+                  className={`flex items-start gap-3 p-3.5 rounded-lg border cursor-pointer transition-colors ${receiptMode === val ? "border-primary bg-primary/5" : "border-border hover:border-gray-300"}`}
+                  onClick={() => setReceiptMode(val)}
+                >
+                  <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${receiptMode === val ? "border-primary" : "border-gray-300"}`}>
+                    {receiptMode === val && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+
+            <Separator className="my-5" />
+
+            {/* Send via */}
+            <div>
+              <p className="text-sm font-medium text-foreground mb-1">Send Receipts via</p>
+              <p className="text-xs text-muted-foreground mb-3">Choose how payment receipts are delivered to your customers.</p>
+              <div className="flex gap-5">
+                <div className="flex items-center gap-2">
+                  <Checkbox checked={sendViaEmail} onCheckedChange={(v) => setSendViaEmail(!!v)} id="email" />
+                  <Label htmlFor="email" className="text-sm">Email</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox checked={sendViaWhatsapp} onCheckedChange={(v) => setSendViaWhatsapp(!!v)} id="whatsapp" />
+                  <Label htmlFor="whatsapp" className="text-sm">WhatsApp</Label>
+                </div>
               </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg border border-border shadow-sm transition-colors" style={{ background: draftColor }} />
-                  <span className="text-sm font-mono text-foreground">{draftColor.toUpperCase()}</span>
+            </div>
+
+            <Separator className="my-5" />
+
+            {/* 80G */}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">80G Details</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Add 80G tax exemption details to all payment receipts.</p>
+              </div>
+              <Toggle checked={enable80g} onChange={() => setEnable80g(v => !v)} />
+            </div>
+            {enable80g && (
+              <div className="mt-4 space-y-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">80G Description</Label>
+                    <a href="https://razorpay.com/docs/payments/payment-pages/80g-receipt/#pdf-receipt-to-customers" target="_blank" rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline flex items-center gap-1">
+                      Sample 80G Receipt <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                  <textarea value={g80Description} onChange={(e) => setG80Description(e.target.value)}
+                    placeholder="All donations made to us are eligible for tax exemption under 80G of IT act"
+                    rows={3}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
                 </div>
-                <div className="flex items-center gap-2.5 flex-wrap">
-                  {PRESET_COLORS.map((c) => (
-                    <button key={c} onClick={() => setDraftColor(c)} className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110"
-                      style={{ background: c, boxShadow: draftColor === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : "none" }} title={c}>
-                      {draftColor === c && <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} />}
-                    </button>
-                  ))}
-                  <label className="cursor-pointer" title="Custom color">
-                    <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-500 transition-colors overflow-hidden"
-                      style={!PRESET_COLORS.includes(draftColor) ? { background: draftColor, border: `2px solid ${draftColor}`, boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${draftColor}` } : {}}>
-                      {!PRESET_COLORS.includes(draftColor) ? <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} /> : <span className="text-gray-400 text-sm leading-none">+</span>}
-                    </div>
-                    <input type="color" value={draftColor} onChange={(e) => setDraftColor(e.target.value)} className="sr-only" />
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium">Signature of Authorised Person <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                  <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                    <input ref={signatureInputRef} type="file" accept=".png,.jpg,.jpeg" className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        if (file && file.size > 500 * 1024) { toast.error("File size must be under 500 KB"); return; }
+                        setG80SignatureFile(file);
+                        if (file) setG80SignatureUrl(URL.createObjectURL(file));
+                      }} />
+                    {g80SignatureFile ? (
+                      <div className="flex items-center gap-2 text-sm text-green-700">
+                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                        <span className="truncate max-w-xs">{g80SignatureFile.name}</span>
+                        <button type="button" className="text-muted-foreground hover:text-destructive ml-1 flex-shrink-0"
+                          onClick={(e) => { e.preventDefault(); setG80SignatureFile(null); setG80SignatureUrl(undefined); }}>
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="h-5 w-5 text-muted-foreground" />
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <span>Drag file here or</span>
+                          <span className="text-primary font-medium">Upload</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Upload .png, .jpg or .jpeg file | 500 KB Max</p>
+                      </>
+                    )}
                   </label>
-                </div>
-                <div className="flex items-center gap-2 pt-1">
-                  <Button size="sm" className="h-8 px-4" onClick={() => { setBrandColor(draftColor); setEditingColor(false); }}>Apply</Button>
-                  <Button size="sm" variant="ghost" className="h-8 px-3" onClick={() => { setDraftColor(brandColor); setEditingColor(false); }}>Cancel</Button>
+                  {g80SignatureUrl && <img src={g80SignatureUrl} alt="Signature preview" className="mt-2 h-12 object-contain rounded border border-border" />}
                 </div>
               </div>
             )}
+
+            <div className="mt-5 flex items-start gap-2 rounded-md bg-muted/50 border border-border px-3 py-2.5">
+              <Info className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+              <p className="text-xs text-muted-foreground">
+                Receipts for <span className="font-medium text-foreground">Payment Pages</span> can be configured in the payment page settings.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
-        {/* Receipt Template */}
-        <Card className="mb-6">
+        {/* ── 3. Receipt PDF Template ───────────────────────────────────────── */}
+        <Card className="mb-5">
           <CardContent className="p-6">
-            <h3 className="font-semibold mb-0.5">Receipt PDF Template</h3>
-            <p className="text-sm text-muted-foreground mb-5">Choose the visual style for your payment receipts.</p>
+            <SectionHeading
+              icon={<FileText className="h-4 w-4 text-primary" />}
+              title="Receipt PDF Template"
+              desc="Choose the visual style for your payment receipts."
+            />
             <div className="grid grid-cols-2 gap-5">
               {TEMPLATES.map(({ id, label, Component }) => (
                 <button key={id} onClick={() => setSelectedTemplate(id)} className="group flex flex-col gap-2 text-left">
@@ -664,7 +594,7 @@ const ReceiptsSettings = () => {
                       border: selectedTemplate === id ? `2.5px solid ${brandColor}` : "2px solid #e5e7eb",
                       boxShadow: selectedTemplate === id ? `0 0 0 3px ${brandColor}22` : "0 1px 4px rgba(0,0,0,0.06)",
                     }}>
-                    <Component color={brandColor} name={brandName || "Brand"} logoUrl={logoUrl} />
+                    <Component color={brandColor} name={brandName || "Brand"} logoUrl={logoUrl} notes={customerNotes} />
                     {selectedTemplate === id && (
                       <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: brandColor }}>
                         <Check className="h-3 w-3 text-white" strokeWidth={3} />
@@ -674,6 +604,135 @@ const ReceiptsSettings = () => {
                   <span className="text-xs font-medium text-center w-full" style={{ color: selectedTemplate === id ? brandColor : "#6b7280" }}>{label}</span>
                 </button>
               ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── 4. Customer Notes ─────────────────────────────────────────────── */}
+        <Card className="mb-5">
+          <CardContent className="p-6">
+            <SectionHeading
+              icon={<BookOpen className="h-4 w-4 text-primary" />}
+              title="Customer Notes"
+              desc="A message shown at the bottom of every receipt sent to your customers."
+            />
+            <div className="space-y-2">
+              <textarea
+                value={customerNotes}
+                onChange={(e) => setCustomerNotes(e.target.value)}
+                placeholder="e.g. Thank you for your payment! For support, contact us at support@yourbusiness.in."
+                rows={4}
+                maxLength={500}
+                className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+              />
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">This note will appear on all receipts under the "Customer Notes" section.</p>
+                <span className="text-xs text-muted-foreground flex-shrink-0">{customerNotes.length}/500</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── 5. Invoice Settings ───────────────────────────────────────────── */}
+        <Card className="mb-6">
+          <CardContent className="p-6 space-y-6">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Hash className="h-4 w-4 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">Invoice Settings</h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">Configure invoice numbering and default product tax settings for GST invoices.</p>
+                </div>
+              </div>
+              <a href="https://razorpay.com/docs/payments/payment-pages/receipt/#pdf-receipt-to-customers" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-primary font-medium hover:underline flex-shrink-0 mt-1">
+                <BookOpen className="h-3.5 w-3.5" /> Documentation
+              </a>
+            </div>
+
+            {/* Invoice Number Format */}
+            <div>
+              <p className="text-sm font-medium text-foreground mb-0.5">Invoice Number Format</p>
+              <p className="text-xs text-muted-foreground mb-4">Configure the receipt numbering format for GST invoices.</p>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Prefix</Label>
+                  <Input
+                    value={invPrefix}
+                    onChange={(e) => setInvPrefix(e.target.value)}
+                    placeholder="INV-"
+                    className="h-9 text-sm font-mono"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Start from</Label>
+                  <Input
+                    value={invStartFrom}
+                    onChange={(e) => setInvStartFrom(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                    placeholder="0001"
+                    className="h-9 text-sm font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Preview */}
+              <div className="flex items-center gap-2 rounded-lg bg-muted/40 border border-border px-4 py-3">
+                <span className="text-xs text-muted-foreground font-medium">Preview:</span>
+                <span className="text-sm font-bold font-mono text-foreground tracking-wide">{invPreview}</span>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* Product Config */}
+            <div>
+              <p className="text-sm font-medium text-foreground mb-0.5">Product Config <span className="text-xs text-muted-foreground font-normal ml-1">(default)</span></p>
+              <p className="text-xs text-muted-foreground mb-4">Default tax settings applied to products on GST invoices.</p>
+
+              <div className="space-y-4">
+                {/* HSN/SAC toggle */}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">HSN/SAC Code Applicable</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Include an HSN or SAC code on GST invoices for your products/services.</p>
+                  </div>
+                  <Toggle checked={hsnEnabled} onChange={() => setHsnEnabled(v => !v)} />
+                </div>
+
+                {hsnEnabled && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default HSN/SAC Code</Label>
+                    <Input
+                      value={hsnCode}
+                      onChange={(e) => setHsnCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                      placeholder="e.g. 998313"
+                      className="h-9 text-sm font-mono max-w-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">6 or 8 digit code. Can be overridden per product.</p>
+                  </div>
+                )}
+
+                {/* Tax Percentage */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tax Percentage</Label>
+                  <div className="relative max-w-xs">
+                    <Input
+                      value={taxPercentage}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/[^0-9.]/g, "");
+                        if (parseFloat(v) <= 100 || v === "") setTaxPercentage(v);
+                      }}
+                      placeholder="e.g. 18"
+                      className="h-9 text-sm font-mono pr-8"
+                    />
+                    <Percent className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">Default GST rate applied to invoiced products. Common values: 0%, 5%, 12%, 18%, 28%.</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
