@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, BookOpen, Check, CheckCircle2, ExternalLink, FileText, Hash, Info, Pencil, Percent, Receipt, Tag, Upload, X } from "lucide-react";
+import { AlignLeft, ArrowLeft, BookOpen, Building2, Check, CheckCircle2, ExternalLink, FileText, Hash, Info, MapPin, Pencil, Percent, Receipt, Shield, Tag, Upload, X } from "lucide-react";
 
 // ── Shared A4 sub-components ──────────────────────────────────────────────────
 
@@ -250,6 +250,199 @@ const TEMPLATES = [
   { id: 4, label: "Bold Contrast", Component: TemplateD },
 ];
 
+// ── Invoice A4 sub-components ─────────────────────────────────────────────────
+
+const InvHeader = ({ color, logoUrl, name, invNum, titleColor = "#000", borderColor = "#e8e8e8" }: { color: string; logoUrl?: string; name: string; invNum: string; titleColor?: string; borderColor?: string }) => (
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+    <div>
+      <div style={{ fontSize: 36, fontWeight: 800, color: titleColor, letterSpacing: -0.5, lineHeight: 1, marginBottom: 14 }}>TAX INVOICE</div>
+      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "5px 16px" }}>
+        {[["Invoice No:", invNum], ["Invoice Date:", "13 Apr 2026"], ["Due Date:", "20 Apr 2026"]].map(([k, v], i) => ([
+          <span key={`k${i}`} style={{ fontSize: 12, color: "#888", whiteSpace: "nowrap" }}>{k}</span>,
+          <span key={`v${i}`} style={{ fontSize: 12, color: titleColor === "#000" ? "#1a1a1a" : titleColor, fontWeight: 600 }}>{v}</span>,
+        ]))}
+      </div>
+    </div>
+    <LogoBlock color={color} logoUrl={logoUrl} name={name} textColor={titleColor === "#000" ? "#333" : "rgba(255,255,255,0.75)"} />
+  </div>
+);
+
+const InvParties = ({ accentColor = "#888", company = "Wealthjoy Technologies Pvt Ltd", gstin = "29AADCW4121C1CY", address = "123, MG Road\nBengaluru, KA 560001" }: { accentColor?: string; company?: string; gstin?: string; address?: string }) => (
+  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+    {[
+      { label: "Bill From", name: company, details: [`GSTIN: ${gstin}`, ...address.split("\n"), "support@wealthjoy.in"] },
+      { label: "Bill To",   name: "Manish Reddy", details: ["manish@gmail.com", "+91 99209 72082", "Bengaluru, KA"] },
+    ].map(({ label, name, details }) => (
+      <div key={label}>
+        <div style={{ fontSize: 11, color: accentColor, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 }}>{label}</div>
+        <div style={{ fontSize: 14, fontWeight: 700, color: "#000", marginBottom: 5 }}>{name}</div>
+        {details.map((d, i) => <div key={i} style={{ fontSize: 12, color: "#555", lineHeight: 1.8 }}>{d}</div>)}
+      </div>
+    ))}
+  </div>
+);
+
+const InvTable = ({ thBg = "transparent", thColor = "#888", accentColor = "#e8e8e8" }: { thBg?: string; thColor?: string; accentColor?: string }) => (
+  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+    <thead>
+      <tr style={{ background: thBg, borderBottom: `1.5px solid ${accentColor}` }}>
+        {["Description", "HSN/SAC", "Qty", "Rate", "Tax", "Amount"].map((h, i) => (
+          <th key={h} style={{ padding: "9px 8px", fontSize: 11, fontWeight: 600, color: thColor, textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap" }}>{h}</th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      <tr style={{ borderBottom: `1px solid #f0f0f0` }}>
+        <td style={{ padding: "16px 8px", fontSize: 13, fontWeight: 500 }}>Online Course — Pro Plan</td>
+        <td style={{ padding: "16px 8px", fontSize: 12, color: "#888", textAlign: "right" }}>998313</td>
+        <td style={{ padding: "16px 8px", fontSize: 13, textAlign: "right" }}>1</td>
+        <td style={{ padding: "16px 8px", fontSize: 13, textAlign: "right" }}>₹4,237</td>
+        <td style={{ padding: "16px 8px", fontSize: 13, textAlign: "right" }}>18%</td>
+        <td style={{ padding: "16px 8px", fontSize: 13, fontWeight: 600, textAlign: "right" }}>₹5,000</td>
+      </tr>
+    </tbody>
+  </table>
+);
+
+const InvTotals = ({ color = "#e8e8e8" }: { color?: string }) => (
+  <div style={{ display: "flex", justifyContent: "flex-end" }}>
+    <div style={{ width: 280 }}>
+      {[["Subtotal", "₹4,237"], ["CGST (9%)", "₹381"], ["SGST (9%)", "₹382"]].map(([k, v]) => (
+        <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", fontSize: 12.5, color: "#555" }}>
+          <span>{k}</span><span>{v}</span>
+        </div>
+      ))}
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 8px", fontSize: 17, fontWeight: 700, borderTop: `1.5px solid ${color}`, marginTop: 6 }}>
+        <span>Total</span><span>₹5,000</span>
+      </div>
+    </div>
+  </div>
+);
+
+const InvTerms = ({ text }: { text?: string }) => text ? (
+  <div>
+    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 }}>Terms & Conditions</div>
+    <div style={{ fontSize: 11, color: "#555", lineHeight: 1.7 }}>{text}</div>
+  </div>
+) : null;
+
+const InvSignatory = ({ signUrl }: { signUrl?: string }) => (
+  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+    {signUrl
+      ? <img src={signUrl} alt="Signature" style={{ height: 36, objectFit: "contain", opacity: 0.85 }} />
+      : <div style={{ width: 100, height: 32, borderBottom: "1.5px solid #ccc" }} />}
+    <div style={{ fontSize: 11, color: "#888", textAlign: "right" }}>Authorised Signatory</div>
+  </div>
+);
+
+// ── Invoice Template variants ─────────────────────────────────────────────────
+
+interface InvProps { color: string; name: string; logoUrl?: string; invNum: string; terms?: string; signUrl?: string; company?: string; gstin?: string; address?: string; }
+
+const InvoiceTemplateA = ({ color, name, logoUrl, invNum, terms, signUrl, company, gstin, address }: InvProps) => (
+  <A4Preview>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "52px 60px 0" }}><InvHeader color={color} logoUrl={logoUrl} name={name} invNum={invNum} /></div>
+        <div style={{ padding: "0 60px" }}><div style={{ height: 1, background: "#e8e8e8", margin: "28px 0" }} /><InvParties company={company} gstin={gstin} address={address} /><div style={{ height: 1, background: "#e8e8e8", margin: "28px 0" }} /></div>
+        <div style={{ padding: "0 60px" }}><InvTable accentColor="#e8e8e8" /></div>
+        <div style={{ padding: "0 60px", marginTop: 12 }}><InvTotals /></div>
+        <div style={{ flex: 1, minHeight: 30 }} />
+        <div style={{ padding: "0 60px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <InvTerms text={terms} />
+          <InvSignatory signUrl={signUrl} />
+        </div>
+      </div>
+      <div style={{ borderTop: "1px solid #e8e8e8", padding: "16px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <RzpFooter /><span style={{ fontSize: 12, color: "#aaa" }}>Page 1 of 1</span>
+      </div>
+    </div>
+  </A4Preview>
+);
+
+const InvoiceTemplateB = ({ color, name, logoUrl, invNum, terms, signUrl, company, gstin, address }: InvProps) => (
+  <A4Preview>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      <div style={{ background: "#111", padding: "52px 60px 32px" }}>
+        <InvHeader color={color} logoUrl={logoUrl} name={name} invNum={invNum} titleColor="#fff" borderColor="rgba(255,255,255,0.12)" />
+      </div>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "32px 60px 0" }}><InvParties accentColor="rgba(255,255,255,0.5)" company={company} gstin={gstin} address={address} /></div>
+        <div style={{ height: 1, background: "#e8e8e8", margin: "24px 60px" }} />
+        <div style={{ padding: "0 60px" }}><InvTable thBg="#111" thColor="#fff" accentColor="#111" /></div>
+        <div style={{ padding: "0 60px", marginTop: 12 }}><InvTotals color="#111" /></div>
+        <div style={{ flex: 1, minHeight: 30 }} />
+        <div style={{ padding: "0 60px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <InvTerms text={terms} />
+          <InvSignatory signUrl={signUrl} />
+        </div>
+      </div>
+      <div style={{ background: "#111", padding: "16px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <RzpFooter dark /><span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Page 1 of 1</span>
+      </div>
+    </div>
+  </A4Preview>
+);
+
+const InvoiceTemplateC = ({ color, name, logoUrl, invNum, terms, signUrl, company, gstin, address }: InvProps) => (
+  <A4Preview>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      <div style={{ height: 5, background: color }} />
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "50px 60px 0" }}><InvHeader color={color} logoUrl={logoUrl} name={name} invNum={invNum} /></div>
+        <div style={{ padding: "0 60px" }}><div style={{ height: 1.5, background: color, opacity: 0.5, margin: "26px 0" }} /><InvParties accentColor={color} company={company} gstin={gstin} address={address} /><div style={{ height: 1.5, background: color, opacity: 0.5, margin: "26px 0" }} /></div>
+        <div style={{ padding: "0 60px" }}><InvTable thColor={color} accentColor={color} /></div>
+        <div style={{ padding: "0 60px", marginTop: 12 }}><InvTotals color={color} /></div>
+        <div style={{ flex: 1, minHeight: 30 }} />
+        <div style={{ padding: "0 60px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <InvTerms text={terms} />
+          <InvSignatory signUrl={signUrl} />
+        </div>
+      </div>
+      <div style={{ borderTop: `2px solid ${color}`, padding: "16px 60px", display: "flex", alignItems: "center", justifyContent: "space-between", background: "#fffef8" }}>
+        <RzpFooter /><span style={{ fontSize: 12, color: "#aaa" }}>Page 1 of 1</span>
+      </div>
+    </div>
+  </A4Preview>
+);
+
+const InvoiceTemplateD = ({ color, name, logoUrl, invNum, terms, signUrl, company, gstin, address }: InvProps) => (
+  <A4Preview>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "flex", gap: 0 }}>
+          <div style={{ width: 8, background: color, flexShrink: 0 }} />
+          <div style={{ flex: 1, padding: "52px 60px 28px 36px" }}>
+            <InvHeader color={color} logoUrl={logoUrl} name={name} invNum={invNum} />
+          </div>
+        </div>
+        <div style={{ padding: "0 60px 0 44px" }}>
+          <div style={{ height: 1, background: "#e8e8e8", margin: "0 0 24px" }} />
+          <InvParties company={company} gstin={gstin} address={address} />
+          <div style={{ height: 1, background: "#e8e8e8", margin: "24px 0" }} />
+        </div>
+        <div style={{ padding: "0 60px 0 44px" }}><InvTable accentColor={color} /></div>
+        <div style={{ padding: "0 60px 0 44px", marginTop: 12 }}><InvTotals color={color} /></div>
+        <div style={{ flex: 1, minHeight: 30 }} />
+        <div style={{ padding: "0 60px 12px 44px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+          <InvTerms text={terms} />
+          <InvSignatory signUrl={signUrl} />
+        </div>
+      </div>
+      <div style={{ background: color, padding: "16px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <RzpFooter dark /><span style={{ fontSize: 12, color: "rgba(255,255,255,0.6)" }}>Page 1 of 1</span>
+      </div>
+    </div>
+  </A4Preview>
+);
+
+const INVOICE_TEMPLATES = [
+  { id: 1, label: "Classic",    Component: InvoiceTemplateA },
+  { id: 2, label: "Dark",       Component: InvoiceTemplateB },
+  { id: 3, label: "Accent",     Component: InvoiceTemplateC },
+  { id: 4, label: "Side Bar",   Component: InvoiceTemplateD },
+];
+
 const PRESET_COLORS = [
   "#0066FF", "#6C47FF", "#00AA60", "#E5292A",
   "#F59E0B", "#0EA5E9", "#EC4899", "#111111",
@@ -312,12 +505,30 @@ const ReceiptsSettings = () => {
   // Customer notes
   const [customerNotes, setCustomerNotes] = useState("Thank you for your payment! For support, contact us at support@wealthjoy.in.");
 
-  // Invoice settings
+  // Invoice settings — numbering
   const [invPrefix, setInvPrefix] = useState("INV-");
   const [invStartFrom, setInvStartFrom] = useState("0001");
   const [hsnEnabled, setHsnEnabled] = useState(false);
   const [hsnCode, setHsnCode] = useState("");
   const [taxPercentage, setTaxPercentage] = useState("");
+
+  // Invoice settings — billing from
+  const [billingCompany, setBillingCompany] = useState("Wealthjoy Technologies Pvt Ltd");
+  const [editingBillingCompany, setEditingBillingCompany] = useState(false);
+  const [draftBillingCompany, setDraftBillingCompany] = useState("Wealthjoy Technologies Pvt Ltd");
+  const billingGSTIN = "29AADCW4121C1CY"; // read-only from KYC
+  const [billingAddress, setBillingAddress] = useState("123, MG Road, Indiranagar\nBengaluru, Karnataka 560038");
+  const [editingBillingAddr, setEditingBillingAddr] = useState(false);
+  const [draftBillingAddr, setDraftBillingAddr] = useState("123, MG Road, Indiranagar\nBengaluru, Karnataka 560038");
+
+  // Invoice settings — terms & signatory
+  const [invoiceTerms, setInvoiceTerms] = useState("Payment is due within 7 days of invoice date. Late payments may attract a penalty of 1.5% per month. Goods once sold will not be taken back.");
+  const signatoryInputRef = useRef<HTMLInputElement>(null);
+  const [signatoryFile, setSignatoryFile] = useState<File | null>(null);
+  const [signatoryUrl, setSignatoryUrl] = useState<string | undefined>(undefined);
+
+  // Invoice template
+  const [selectedInvoiceTemplate, setSelectedInvoiceTemplate] = useState(1);
 
   const invPreview = `${invPrefix}${invStartFrom.padStart(4, "0")}`;
 
@@ -634,7 +845,7 @@ const ReceiptsSettings = () => {
         </Card>
 
         {/* ── 5. Invoice Settings ───────────────────────────────────────────── */}
-        <Card className="mb-6">
+        <Card className="mb-5">
           <CardContent className="p-6 space-y-6">
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
@@ -643,7 +854,7 @@ const ReceiptsSettings = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground">Invoice Settings</h3>
-                  <p className="text-sm text-muted-foreground mt-0.5">Configure invoice numbering and default product tax settings for GST invoices.</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">Configure invoice numbering, billing details, and GST defaults.</p>
                 </div>
               </div>
               <a href="https://razorpay.com/docs/payments/payment-pages/receipt/#pdf-receipt-to-customers" target="_blank" rel="noopener noreferrer"
@@ -652,33 +863,96 @@ const ReceiptsSettings = () => {
               </a>
             </div>
 
-            {/* Invoice Number Format */}
+            {/* ── Billing From ── */}
             <div>
-              <p className="text-sm font-medium text-foreground mb-0.5">Invoice Number Format</p>
-              <p className="text-xs text-muted-foreground mb-4">Configure the receipt numbering format for GST invoices.</p>
+              <div className="flex items-center gap-2 mb-3">
+                <Building2 className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Billing From</p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-4">Your business details shown in the invoice header.</p>
 
+              <div className="rounded-lg border border-border divide-y divide-border overflow-hidden">
+                {/* Company Name */}
+                <div className="px-4 py-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">Company Name</p>
+                  {editingBillingCompany ? (
+                    <div className="flex items-center gap-2">
+                      <Input autoFocus value={draftBillingCompany} onChange={(e) => setDraftBillingCompany(e.target.value)} className="h-8 text-sm flex-1"
+                        onKeyDown={(e) => { if (e.key === "Enter") { setBillingCompany(draftBillingCompany); setEditingBillingCompany(false); } if (e.key === "Escape") { setDraftBillingCompany(billingCompany); setEditingBillingCompany(false); } }} />
+                      <Button size="sm" className="h-8 px-3" onClick={() => { setBillingCompany(draftBillingCompany); setEditingBillingCompany(false); }}>Save</Button>
+                      <Button size="sm" variant="ghost" className="h-8 px-2" onClick={() => { setDraftBillingCompany(billingCompany); setEditingBillingCompany(false); }}><X className="h-3.5 w-3.5" /></Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-foreground">{billingCompany}</span>
+                      <button onClick={() => { setDraftBillingCompany(billingCompany); setEditingBillingCompany(true); }} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex-shrink-0">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* GSTIN */}
+                <div className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">GSTIN</p>
+                      <div className="flex items-center gap-2">
+                        <Shield className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                        <span className="text-sm font-mono font-semibold text-foreground">{billingGSTIN}</span>
+                        <span className="text-[10px] bg-emerald-50 text-emerald-600 font-semibold px-1.5 py-0.5 rounded-full">Verified</span>
+                      </div>
+                    </div>
+                    <a href="/account-settings" className="text-xs text-primary font-medium hover:underline flex items-center gap-0.5 flex-shrink-0 mt-5">
+                      Change <ExternalLink className="h-3 w-3" />
+                    </a>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1.5">GSTIN is fetched from your KYC. To update, go to Business Settings.</p>
+                </div>
+
+                {/* Address */}
+                <div className="px-4 py-3">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">Business Address</p>
+                  {editingBillingAddr ? (
+                    <div className="space-y-2">
+                      <textarea value={draftBillingAddr} onChange={(e) => setDraftBillingAddr(e.target.value)} rows={3}
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" className="h-8 px-3" onClick={() => { setBillingAddress(draftBillingAddr); setEditingBillingAddr(false); }}>Save</Button>
+                        <Button size="sm" variant="ghost" className="h-8 px-3" onClick={() => { setDraftBillingAddr(billingAddress); setEditingBillingAddr(false); }}>Cancel</Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-2 flex-1 min-w-0">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                        <p className="text-sm text-foreground leading-relaxed">{billingAddress.split("\n").map((l, i) => <span key={i}>{l}{i < billingAddress.split("\n").length - 1 && <br />}</span>)}</p>
+                      </div>
+                      <button onClick={() => { setDraftBillingAddr(billingAddress); setEditingBillingAddr(true); }} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex-shrink-0">
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* ── Invoice Number Format ── */}
+            <div>
+              <p className="text-sm font-semibold text-foreground mb-0.5">Invoice Number Format</p>
+              <p className="text-xs text-muted-foreground mb-4">Configure the receipt numbering format for GST invoices.</p>
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Prefix</Label>
-                  <Input
-                    value={invPrefix}
-                    onChange={(e) => setInvPrefix(e.target.value)}
-                    placeholder="INV-"
-                    className="h-9 text-sm font-mono"
-                  />
+                  <Input value={invPrefix} onChange={(e) => setInvPrefix(e.target.value)} placeholder="INV-" className="h-9 text-sm font-mono" />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Start from</Label>
-                  <Input
-                    value={invStartFrom}
-                    onChange={(e) => setInvStartFrom(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                    placeholder="0001"
-                    className="h-9 text-sm font-mono"
-                  />
+                  <Input value={invStartFrom} onChange={(e) => setInvStartFrom(e.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="0001" className="h-9 text-sm font-mono" />
                 </div>
               </div>
-
-              {/* Preview */}
               <div className="flex items-center gap-2 rounded-lg bg-muted/40 border border-border px-4 py-3">
                 <span className="text-xs text-muted-foreground font-medium">Preview:</span>
                 <span className="text-sm font-bold font-mono text-foreground tracking-wide">{invPreview}</span>
@@ -687,13 +961,11 @@ const ReceiptsSettings = () => {
 
             <Separator />
 
-            {/* Product Config */}
+            {/* ── Product Config ── */}
             <div>
-              <p className="text-sm font-medium text-foreground mb-0.5">Product Config <span className="text-xs text-muted-foreground font-normal ml-1">(default)</span></p>
+              <p className="text-sm font-semibold text-foreground mb-0.5">Product Config <span className="text-xs text-muted-foreground font-normal ml-1">(default)</span></p>
               <p className="text-xs text-muted-foreground mb-4">Default tax settings applied to products on GST invoices.</p>
-
               <div className="space-y-4">
-                {/* HSN/SAC toggle */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground">HSN/SAC Code Applicable</p>
@@ -701,38 +973,127 @@ const ReceiptsSettings = () => {
                   </div>
                   <Toggle checked={hsnEnabled} onChange={() => setHsnEnabled(v => !v)} />
                 </div>
-
                 {hsnEnabled && (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Default HSN/SAC Code</Label>
-                    <Input
-                      value={hsnCode}
-                      onChange={(e) => setHsnCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
-                      placeholder="e.g. 998313"
-                      className="h-9 text-sm font-mono max-w-xs"
-                    />
+                    <Input value={hsnCode} onChange={(e) => setHsnCode(e.target.value.replace(/\D/g, "").slice(0, 8))} placeholder="e.g. 998313" className="h-9 text-sm font-mono max-w-xs" />
                     <p className="text-xs text-muted-foreground">6 or 8 digit code. Can be overridden per product.</p>
                   </div>
                 )}
-
-                {/* Tax Percentage */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Tax Percentage</Label>
                   <div className="relative max-w-xs">
-                    <Input
-                      value={taxPercentage}
-                      onChange={(e) => {
-                        const v = e.target.value.replace(/[^0-9.]/g, "");
-                        if (parseFloat(v) <= 100 || v === "") setTaxPercentage(v);
-                      }}
-                      placeholder="e.g. 18"
-                      className="h-9 text-sm font-mono pr-8"
-                    />
+                    <Input value={taxPercentage} onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ""); if (parseFloat(v) <= 100 || v === "") setTaxPercentage(v); }} placeholder="e.g. 18" className="h-9 text-sm font-mono pr-8" />
                     <Percent className="absolute right-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
                   </div>
-                  <p className="text-xs text-muted-foreground">Default GST rate applied to invoiced products. Common values: 0%, 5%, 12%, 18%, 28%.</p>
+                  <p className="text-xs text-muted-foreground">Default GST rate. Common values: 0%, 5%, 12%, 18%, 28%.</p>
                 </div>
               </div>
+            </div>
+
+            <Separator />
+
+            {/* ── Terms & Conditions ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <AlignLeft className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Terms & Conditions</p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">Printed at the bottom of every GST invoice sent to customers.</p>
+              <div className="space-y-2">
+                <textarea
+                  value={invoiceTerms}
+                  onChange={(e) => setInvoiceTerms(e.target.value)}
+                  placeholder="e.g. Payment is due within 7 days. Goods once sold will not be taken back."
+                  rows={4}
+                  maxLength={1000}
+                  className="w-full rounded-md border border-input bg-background px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                />
+                <div className="flex justify-end">
+                  <span className="text-xs text-muted-foreground">{invoiceTerms.length}/1000</span>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            {/* ── Authorised Signatory ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Pencil className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Authorised Signatory</p>
+              </div>
+              <p className="text-xs text-muted-foreground mb-3">Signature image printed at the bottom-right of every invoice. PNG with transparent background recommended.</p>
+              <label className="flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-border bg-muted/20 px-4 py-5 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors">
+                <input ref={signatoryInputRef} type="file" accept=".png,.jpg,.jpeg" className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] ?? null;
+                    if (file && file.size > 500 * 1024) { toast.error("File size must be under 500 KB"); return; }
+                    setSignatoryFile(file);
+                    if (file) setSignatoryUrl(URL.createObjectURL(file));
+                  }} />
+                {signatoryFile ? (
+                  <div className="flex items-center gap-2 text-sm text-green-700">
+                    <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                    <span className="truncate max-w-xs">{signatoryFile.name}</span>
+                    <button type="button" className="text-muted-foreground hover:text-destructive ml-1 flex-shrink-0"
+                      onClick={(e) => { e.preventDefault(); setSignatoryFile(null); setSignatoryUrl(undefined); }}>
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <span>Drag file here or</span>
+                      <span className="text-primary font-medium">Upload</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">PNG with transparent background · 500 KB max</p>
+                  </>
+                )}
+              </label>
+              {signatoryUrl && (
+                <div className="mt-3 flex items-end gap-3">
+                  <img src={signatoryUrl} alt="Signature preview" className="h-14 object-contain rounded border border-border bg-gray-50 px-3 py-2" />
+                  <button onClick={() => { setSignatoryFile(null); setSignatoryUrl(undefined); }} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
+                    <X className="h-3.5 w-3.5" /> Remove
+                  </button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── 6. Invoice PDF Template ───────────────────────────────────────── */}
+        <Card className="mb-6">
+          <CardContent className="p-6">
+            <SectionHeading
+              icon={<FileText className="h-4 w-4 text-primary" />}
+              title="Invoice PDF Template"
+              desc="Choose the visual style for your GST invoices."
+            />
+            <div className="grid grid-cols-2 gap-5">
+              {INVOICE_TEMPLATES.map(({ id, label, Component }) => (
+                <button key={id} onClick={() => setSelectedInvoiceTemplate(id)} className="group flex flex-col gap-2 text-left">
+                  <div className="relative w-full rounded-xl overflow-hidden transition-all"
+                    style={{
+                      border: selectedInvoiceTemplate === id ? `2.5px solid ${brandColor}` : "2px solid #e5e7eb",
+                      boxShadow: selectedInvoiceTemplate === id ? `0 0 0 3px ${brandColor}22` : "0 1px 4px rgba(0,0,0,0.06)",
+                    }}>
+                    <Component
+                      color={brandColor} name={brandName || "Brand"} logoUrl={logoUrl}
+                      invNum={invPreview} terms={invoiceTerms} signUrl={signatoryUrl}
+                      company={billingCompany} gstin={billingGSTIN} address={billingAddress}
+                    />
+                    {selectedInvoiceTemplate === id && (
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center shadow" style={{ background: brandColor }}>
+                        <Check className="h-3 w-3 text-white" strokeWidth={3} />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium text-center w-full" style={{ color: selectedInvoiceTemplate === id ? brandColor : "#6b7280" }}>{label}</span>
+                </button>
+              ))}
             </div>
           </CardContent>
         </Card>
