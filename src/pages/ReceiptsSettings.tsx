@@ -696,7 +696,6 @@ const ReceiptsSettings = () => {
               {/* GST */}
               <div className="flex items-center gap-3 px-4 py-3">
                 <span className="text-xs text-muted-foreground w-14 flex-shrink-0">GST</span>
-                <Shield className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
                 <span className="text-sm font-mono font-medium text-foreground">{billingGSTIN}</span>
                 <span className="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-1.5 py-0.5 rounded-full border border-emerald-100">Verified</span>
               </div>
