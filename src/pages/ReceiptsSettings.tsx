@@ -213,157 +213,253 @@ const RECEIPT_TEMPLATES = [
   { id: 3, label: "Minimal",  Component: TemplateMinimal },
 ];
 
-// ── Invoice A4 sub-components ─────────────────────────────────────────────────
+// ── Invoice A4 sub-components (matching wealthjoy reference format) ───────────
 
-const InvHeader = ({ color, logoUrl, name, invNum, titleColor = "#000" }: { color: string; logoUrl?: string; name: string; invNum: string; titleColor?: string }) => (
-  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-    <div>
-      <div style={{ fontSize: 36, fontWeight: 800, color: titleColor, letterSpacing: -0.5, lineHeight: 1, marginBottom: 14 }}>TAX INVOICE</div>
-      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "5px 16px" }}>
-        {[["Invoice No:", invNum], ["Invoice Date:", "13 Apr 2026"], ["Due Date:", "20 Apr 2026"]].map(([k, v], i) => ([
-          <span key={`k${i}`} style={{ fontSize: 12, color: "#888", whiteSpace: "nowrap" }}>{k}</span>,
-          <span key={`v${i}`} style={{ fontSize: 12, color: titleColor === "#000" ? "#1a1a1a" : titleColor, fontWeight: 600 }}>{v}</span>,
-        ]))}
+interface InvProps { color: string; name: string; logoUrl?: string; invNum: string; terms?: string; signUrl?: string; company?: string; gstin?: string; address?: string; notes?: string; }
+
+// Logo mark + brand name (top-right of header)
+const InvLogoMark = ({ color, logoUrl, name, nameDark = true }: { color: string; logoUrl?: string; name: string; nameDark?: boolean }) => (
+  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+    <div style={{ width: 52, height: 52, borderRadius: 10, background: logoUrl ? "transparent" : color, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", flexShrink: 0 }}>
+      {logoUrl
+        ? <img src={logoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        : <span style={{ fontSize: 17, fontWeight: 800, color: "#000", letterSpacing: -0.5 }}>{name.slice(0, 2).toUpperCase()}</span>}
+    </div>
+    <div style={{ fontSize: 21, fontWeight: 700, color: nameDark ? "#000" : "#fff", letterSpacing: -0.3 }}>{name}</div>
+  </div>
+);
+
+// Invoice title + meta (top-left of header)
+const InvMetaLeft = ({ invNum, titleColor = "#000", metaColor = "#666", valueColor = "#000" }: { invNum: string; titleColor?: string; metaColor?: string; valueColor?: string }) => (
+  <div>
+    <div style={{ fontSize: 36, fontWeight: 700, color: titleColor, letterSpacing: -0.5, lineHeight: 1, marginBottom: 22 }}>Invoice</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+      {[["Invoice ID:", `#${invNum}`], ["Invoice Date:", "13 Apr 2026"], ["Place of Supply:", "Karnataka"]].map(([label, val], i) => (
+        <div key={i} style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 13 }}>
+          <span style={{ fontWeight: 500, color: metaColor, whiteSpace: "nowrap" }}>{label}</span>
+          <span style={{ fontWeight: 600, color: valueColor }}>{val}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+// Bill From / Bill To
+const InvPartiesNew = ({ company = "Wealthjoy Technologies Pvt Ltd", gstin = "29AADCW4121C1CY", address = "123, MG Road\nBengaluru, KA 560038", labelColor = "#888" }: { company?: string; gstin?: string; address?: string; labelColor?: string }) => (
+  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr" }}>
+    <div style={{ paddingRight: 40 }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: labelColor, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>Bill From</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#000", marginBottom: 4 }}>{company}</div>
+      <div style={{ fontSize: 12.5, color: "#444", lineHeight: 1.8 }}>
+        <div>GSTIN: {gstin}</div>
+        {address.split("\n").map((l, i) => <div key={i}>{l}</div>)}
+        <div>support@wealthjoy.in</div>
       </div>
     </div>
-    <LogoBlock color={color} logoUrl={logoUrl} name={name} textColor={titleColor === "#000" ? "#333" : "rgba(255,255,255,0.75)"} />
-  </div>
-);
-
-const InvParties = ({ accentColor = "#888", company = "Wealthjoy Technologies Pvt Ltd", gstin = "29AADCW4121C1CY", address = "123, MG Road\nBengaluru, KA 560001" }: { accentColor?: string; company?: string; gstin?: string; address?: string }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-    {[
-      { label: "Bill From", name: company, details: [`GSTIN: ${gstin}`, ...address.split("\n"), "support@wealthjoy.in"] },
-      { label: "Bill To",   name: "Manish Reddy", details: ["manish@gmail.com", "+91 99209 72082", "Bengaluru, KA"] },
-    ].map(({ label, name, details }) => (
-      <div key={label}>
-        <div style={{ fontSize: 11, color: accentColor, fontWeight: 700, marginBottom: 8, textTransform: "uppercase", letterSpacing: 0.8 }}>{label}</div>
-        <div style={{ fontSize: 14, fontWeight: 700, color: "#000", marginBottom: 5 }}>{name}</div>
-        {details.map((d, i) => <div key={i} style={{ fontSize: 12, color: "#555", lineHeight: 1.8 }}>{d}</div>)}
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 600, color: labelColor, textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 10 }}>Bill To</div>
+      <div style={{ fontSize: 14, fontWeight: 700, color: "#000", marginBottom: 4 }}>Manish Reddy</div>
+      <div style={{ fontSize: 12.5, color: "#444", lineHeight: 1.8 }}>
+        <div>manishreddytirumala@gmail.com</div>
+        <div>+91 99209 72082</div>
+        <div>C904, Bren Avalon</div>
+        <div>Doddanekundi, Bengaluru 560048</div>
       </div>
-    ))}
+    </div>
   </div>
 );
 
-const InvTable = ({ thBg = "transparent", thColor = "#888", accentColor = "#e8e8e8" }: { thBg?: string; thColor?: string; accentColor?: string }) => (
-  <table style={{ width: "100%", borderCollapse: "collapse" }}>
+// Line items table
+const InvItemsTable = ({ thBg = "#f8f8f8", thColor = "#666" }: { thBg?: string; thColor?: string }) => (
+  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
     <thead>
-      <tr style={{ background: thBg, borderBottom: `1.5px solid ${accentColor}` }}>
-        {["Description", "HSN/SAC", "Qty", "Rate", "Tax", "Amount"].map((h, i) => (
-          <th key={h} style={{ padding: "9px 8px", fontSize: 11, fontWeight: 600, color: thColor, textAlign: i === 0 ? "left" : "right", whiteSpace: "nowrap" }}>{h}</th>
+      <tr style={{ background: thBg }}>
+        {[["Item", "44%", "left"], ["Unit Price", "", "right"], ["Qty", "", "right"], ["Tax Rate", "", "right"], ["Amount", "", "right"]].map(([h, w, align], i) => (
+          <th key={i} style={{
+            padding: "11px 14px", fontSize: 10, fontWeight: 700, color: thColor,
+            textTransform: "uppercase", letterSpacing: 1.2, textAlign: align as "left" | "right",
+            width: w || undefined,
+            borderRadius: i === 0 ? "4px 0 0 4px" : i === 4 ? "0 4px 4px 0" : undefined,
+          }}>{h}</th>
         ))}
       </tr>
     </thead>
     <tbody>
-      <tr style={{ borderBottom: "1px solid #f0f0f0" }}>
-        <td style={{ padding: "16px 8px", fontSize: 13, fontWeight: 500 }}>Online Course — Pro Plan</td>
-        <td style={{ padding: "16px 8px", fontSize: 12, color: "#888", textAlign: "right" }}>998313</td>
-        <td style={{ padding: "16px 8px", fontSize: 13, textAlign: "right" }}>1</td>
-        <td style={{ padding: "16px 8px", fontSize: 13, textAlign: "right" }}>₹4,237</td>
-        <td style={{ padding: "16px 8px", fontSize: 13, textAlign: "right" }}>18%</td>
-        <td style={{ padding: "16px 8px", fontSize: 13, fontWeight: 600, textAlign: "right" }}>₹5,000</td>
+      <tr>
+        <td style={{ padding: "20px 14px", verticalAlign: "top" }}>
+          <div style={{ fontWeight: 600, color: "#000", fontSize: 13.5, marginBottom: 3 }}>Online Course</div>
+          <div style={{ fontSize: 11.5, color: "#666", marginBottom: 3 }}>Digital learning product</div>
+          <div style={{ fontSize: 10.5, color: "#999", fontWeight: 500 }}>HSN: 999293</div>
+        </td>
+        <td style={{ padding: "20px 14px", textAlign: "right", color: "#222" }}>₹ 5.00</td>
+        <td style={{ padding: "20px 14px", textAlign: "right", color: "#222" }}>1</td>
+        <td style={{ padding: "20px 14px", textAlign: "right", color: "#222" }}>18%</td>
+        <td style={{ padding: "20px 14px", textAlign: "right", color: "#222", fontWeight: 600 }}>₹ 5.45</td>
       </tr>
     </tbody>
   </table>
 );
 
-const InvTotals = ({ color = "#e8e8e8" }: { color?: string }) => (
-  <div style={{ display: "flex", justifyContent: "flex-end" }}>
-    <div style={{ width: 280 }}>
-      {[["Subtotal", "₹4,237"], ["CGST (9%)", "₹381"], ["SGST (9%)", "₹382"]].map(([k, v]) => (
-        <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", fontSize: 12.5, color: "#555" }}>
+// PAID stamp + totals
+const InvTotalsNew = ({ borderColor = "#000" }: { borderColor?: string }) => (
+  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "28px 52px 28px" }}>
+    <div style={{ width: 110, height: 110, border: "3px solid #000", borderRadius: "50%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", transform: "rotate(-18deg)", opacity: 0.12, flexShrink: 0 }}>
+      <div style={{ fontSize: 20, fontWeight: 800, color: "#000", letterSpacing: 3, textTransform: "uppercase" }}>PAID</div>
+      <div style={{ fontSize: 7.5, fontWeight: 600, color: "#000", letterSpacing: 1.5, marginTop: 4 }}>13 APR 2026</div>
+    </div>
+    <div style={{ width: 296 }}>
+      {[["Sub Total", "₹ 5.00"], ["CGST (9%)", "₹ 0.23"], ["SGST (9%)", "₹ 0.23"]].map(([k, v]) => (
+        <div key={k} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", fontSize: 13, color: "#444" }}>
           <span>{k}</span><span>{v}</span>
         </div>
       ))}
-      <div style={{ display: "flex", justifyContent: "space-between", padding: "10px 8px", fontSize: 17, fontWeight: 700, borderTop: `1.5px solid ${color}`, marginTop: 6 }}>
-        <span>Total</span><span>₹5,000</span>
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "14px 0 7px", fontSize: 15, fontWeight: 700, color: "#000", borderTop: `1.5px solid ${borderColor}`, marginTop: 6 }}>
+        <span>Total</span><span>₹ 5.45</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 13, color: "#333" }}>
+        <span>Amount Paid</span><span>₹ 5.45</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", fontSize: 14, fontWeight: 700, color: "#000" }}>
+        <span>Amount Due</span><span>₹ 0.00</span>
       </div>
     </div>
   </div>
 );
 
-const InvTerms = ({ text }: { text?: string }) => text ? (
-  <div>
-    <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 1.2, marginBottom: 6 }}>Terms & Conditions</div>
-    <div style={{ fontSize: 11, color: "#555", lineHeight: 1.7 }}>{text}</div>
+// Customer notes + T&C block
+const InvNotesTCBlock = ({ notes, terms }: { notes?: string; terms?: string }) => (
+  <div style={{ padding: "0 52px 36px", display: "flex", flexDirection: "column", gap: 20 }}>
+    {notes && (
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 1.3, marginBottom: 8 }}>Customer Notes</div>
+        <div style={{ fontSize: 12.5, color: "#444", lineHeight: 1.75 }}>{notes}</div>
+      </div>
+    )}
+    {terms && (
+      <div>
+        <div style={{ fontSize: 10, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: 1.3, marginBottom: 8 }}>Terms & Conditions</div>
+        <div style={{ fontSize: 12, color: "#444", lineHeight: 1.75 }}>{terms}</div>
+      </div>
+    )}
   </div>
-) : null;
+);
 
-const InvSignatory = ({ signUrl }: { signUrl?: string }) => (
-  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-    {signUrl
-      ? <img src={signUrl} alt="Signature" style={{ height: 36, objectFit: "contain", opacity: 0.85 }} />
-      : <div style={{ width: 100, height: 32, borderBottom: "1.5px solid #ccc" }} />}
-    <div style={{ fontSize: 11, color: "#888", textAlign: "right" }}>Authorised Signatory</div>
-  </div>
+const InvDivider = ({ color = "#f0f0f0", mx = 52 }: { color?: string; mx?: number }) => (
+  <div style={{ height: 1, background: color, margin: `0 ${mx}px` }} />
 );
 
 // ── Invoice Template variants ─────────────────────────────────────────────────
 
-interface InvProps { color: string; name: string; logoUrl?: string; invNum: string; terms?: string; signUrl?: string; company?: string; gstin?: string; address?: string; }
-
-const InvoiceTemplateStandard = ({ color, name, logoUrl, invNum, terms, signUrl, company, gstin, address }: InvProps) => (
+// Standard — clean white, matches reference exactly
+const InvoiceTemplateStandard = ({ color, name, logoUrl, invNum, terms, company, gstin, address, notes }: InvProps) => (
   <A4Preview>
-    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "52px 60px 0" }}><InvHeader color={color} logoUrl={logoUrl} name={name} invNum={invNum} /></div>
-        <div style={{ padding: "0 60px" }}><div style={{ height: 1, background: "#e8e8e8", margin: "28px 0" }} /><InvParties company={company} gstin={gstin} address={address} /><div style={{ height: 1, background: "#e8e8e8", margin: "28px 0" }} /></div>
-        <div style={{ padding: "0 60px" }}><InvTable accentColor="#e8e8e8" /></div>
-        <div style={{ padding: "0 60px", marginTop: 12 }}><InvTotals /></div>
-        <div style={{ flex: 1, minHeight: 30 }} />
-        <div style={{ padding: "0 60px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <InvTerms text={terms} />
-          <InvSignatory signUrl={signUrl} />
-        </div>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column", fontFamily: "Inter, -apple-system, sans-serif" }}>
+      {/* Header */}
+      <div style={{ padding: "44px 52px 36px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <InvMetaLeft invNum={invNum} />
+        <InvLogoMark color={color} logoUrl={logoUrl} name={name} />
       </div>
-      <div style={{ borderTop: "1px solid #e8e8e8", padding: "16px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <RzpFooter /><span style={{ fontSize: 12, color: "#aaa" }}>Page 1 of 1</span>
+      <InvDivider />
+      {/* Parties */}
+      <div style={{ padding: "32px 52px" }}>
+        <InvPartiesNew company={company} gstin={gstin} address={address} />
+      </div>
+      <InvDivider />
+      {/* Items */}
+      <div style={{ padding: "28px 52px 0" }}>
+        <InvItemsTable />
+      </div>
+      {/* Totals */}
+      <InvTotalsNew />
+      <InvDivider />
+      {/* Notes + T&C */}
+      <div style={{ height: 28 }} />
+      <InvNotesTCBlock notes={notes} terms={terms} />
+      <div style={{ flex: 1 }} />
+      {/* Footer */}
+      <div style={{ background: "#f8f8f8", padding: "20px 52px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        <div style={{ fontSize: 11, color: "#888" }}>Invoicing and payments powered by</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13.5 2L4 14h8l-1.5 8L20 10h-8l1.5-8z" fill="#000" /></svg>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#000", letterSpacing: -0.3 }}>Razorpay</span>
+        </div>
       </div>
     </div>
   </A4Preview>
 );
 
-const InvoiceTemplateModern = ({ color, name, logoUrl, invNum, terms, signUrl, company, gstin, address }: InvProps) => (
+// Modern — dark header, white body
+const InvoiceTemplateModern = ({ color, name, logoUrl, invNum, terms, company, gstin, address, notes }: InvProps) => (
   <A4Preview>
-    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
-      <div style={{ background: "#111", padding: "52px 60px 32px" }}>
-        <InvHeader color={color} logoUrl={logoUrl} name={name} invNum={invNum} titleColor="#fff" />
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column", fontFamily: "Inter, -apple-system, sans-serif" }}>
+      {/* Dark header */}
+      <div style={{ background: "#111", padding: "44px 52px 36px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <InvMetaLeft invNum={invNum} titleColor="#fff" metaColor="rgba(255,255,255,0.5)" valueColor="#fff" />
+        <InvLogoMark color={color} logoUrl={logoUrl} name={name} nameDark={false} />
       </div>
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "32px 60px 0" }}><InvParties accentColor="rgba(0,0,0,0.4)" company={company} gstin={gstin} address={address} /></div>
-        <div style={{ height: 1, background: "#e8e8e8", margin: "24px 60px" }} />
-        <div style={{ padding: "0 60px" }}><InvTable thBg="#111" thColor="#fff" accentColor="#111" /></div>
-        <div style={{ padding: "0 60px", marginTop: 12 }}><InvTotals color="#111" /></div>
-        <div style={{ flex: 1, minHeight: 30 }} />
-        <div style={{ padding: "0 60px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <InvTerms text={terms} />
-          <InvSignatory signUrl={signUrl} />
+      {/* Parties */}
+      <div style={{ padding: "32px 52px" }}>
+        <InvPartiesNew company={company} gstin={gstin} address={address} labelColor="#aaa" />
+      </div>
+      <InvDivider />
+      {/* Items */}
+      <div style={{ padding: "28px 52px 0" }}>
+        <InvItemsTable thBg="#111" thColor="#fff" />
+      </div>
+      {/* Totals */}
+      <InvTotalsNew borderColor="#111" />
+      <InvDivider />
+      {/* Notes + T&C */}
+      <div style={{ height: 28 }} />
+      <InvNotesTCBlock notes={notes} terms={terms} />
+      <div style={{ flex: 1 }} />
+      {/* Footer */}
+      <div style={{ background: "#111", padding: "20px 52px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        <div style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>Invoicing and payments powered by</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13.5 2L4 14h8l-1.5 8L20 10h-8l1.5-8z" fill="#fff" /></svg>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#fff", letterSpacing: -0.3 }}>Razorpay</span>
         </div>
-      </div>
-      <div style={{ background: "#111", padding: "16px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <RzpFooter dark /><span style={{ fontSize: 12, color: "rgba(255,255,255,0.3)" }}>Page 1 of 1</span>
       </div>
     </div>
   </A4Preview>
 );
 
-const InvoiceTemplateMinimal = ({ color, name, logoUrl, invNum, terms, signUrl, company, gstin, address }: InvProps) => (
+// Minimal — ultra light, no fills, thin lines only
+const InvoiceTemplateMinimal = ({ color, name, logoUrl, invNum, terms, company, gstin, address, notes }: InvProps) => (
   <A4Preview>
-    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column" }}>
-      <div style={{ height: 4, background: color }} />
-      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-        <div style={{ padding: "50px 60px 0" }}><InvHeader color={color} logoUrl={logoUrl} name={name} invNum={invNum} /></div>
-        <div style={{ padding: "0 60px" }}><div style={{ height: 1, background: "#f0f0f0", margin: "26px 0" }} /><InvParties accentColor="#bbb" company={company} gstin={gstin} address={address} /><div style={{ height: 1, background: "#f0f0f0", margin: "26px 0" }} /></div>
-        <div style={{ padding: "0 60px" }}><InvTable thColor="#ccc" accentColor="#f0f0f0" /></div>
-        <div style={{ padding: "0 60px", marginTop: 12 }}><InvTotals color="#e0e0e0" /></div>
-        <div style={{ flex: 1, minHeight: 30 }} />
-        <div style={{ padding: "0 60px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
-          <InvTerms text={terms} />
-          <InvSignatory signUrl={signUrl} />
-        </div>
+    <div style={{ background: "#fff", minHeight: 1123, display: "flex", flexDirection: "column", fontFamily: "Inter, -apple-system, sans-serif" }}>
+      {/* Thin top accent */}
+      <div style={{ height: 3, background: color }} />
+      {/* Header */}
+      <div style={{ padding: "44px 52px 36px", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+        <InvMetaLeft invNum={invNum} metaColor="#aaa" />
+        <InvLogoMark color={color} logoUrl={logoUrl} name={name} />
       </div>
-      <div style={{ borderTop: "1px solid #f0f0f0", padding: "16px 60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <RzpFooter /><span style={{ fontSize: 12, color: "#ccc" }}>Page 1 of 1</span>
+      <InvDivider color="#ebebeb" />
+      {/* Parties */}
+      <div style={{ padding: "32px 52px" }}>
+        <InvPartiesNew company={company} gstin={gstin} address={address} labelColor="#bbb" />
+      </div>
+      <InvDivider color="#ebebeb" />
+      {/* Items — no fill on header row, just bottom border */}
+      <div style={{ padding: "28px 52px 0" }}>
+        <InvItemsTable thBg="transparent" thColor="#aaa" />
+      </div>
+      {/* Totals */}
+      <InvTotalsNew borderColor="#ccc" />
+      <InvDivider color="#ebebeb" />
+      {/* Notes + T&C */}
+      <div style={{ height: 28 }} />
+      <InvNotesTCBlock notes={notes} terms={terms} />
+      <div style={{ flex: 1 }} />
+      {/* Footer */}
+      <div style={{ borderTop: "1px solid #ebebeb", padding: "20px 52px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+        <div style={{ fontSize: 11, color: "#bbb" }}>Invoicing and payments powered by</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M13.5 2L4 14h8l-1.5 8L20 10h-8l1.5-8z" fill="#ccc" /></svg>
+          <span style={{ fontSize: 15, fontWeight: 700, color: "#ccc", letterSpacing: -0.3 }}>Razorpay</span>
+        </div>
       </div>
     </div>
   </A4Preview>
@@ -929,6 +1025,7 @@ const ReceiptsSettings = () => {
                   company: billingCompany,
                   gstin: billingGSTIN,
                   address: billingAddress,
+                  notes: customerNotes,
                 }}
               />
             </div>
