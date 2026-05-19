@@ -129,7 +129,9 @@ export function PaymentLinkCheckout() {
   const smartProducts = link?.smartProducts ?? [];
   const smartTotal = smartProducts.reduce((s, p) => s + p.price * p.qty, 0);
   const isSmartLink = !!(link?.isSmartLink && smartProducts.length > 0);
-  const effectiveAmount = isSmartLink ? smartTotal : payNowAmount;
+  const effectiveAmount = isSmartLink && isSchedule ? payNowAmount : isSmartLink ? smartTotal : payNowAmount;
+  const allPaid = installments.length > 0 && paidInstCount >= installments.length;
+  const justPaidAmt = lastPaidAmt || payNowAmount;
 
   const handleOverviewContinue = () => { setScreen("method"); window.scrollTo({ top: 0, behavior: "smooth" }); };
   const handleDetailsContinue = () => { if (!formData.name.trim()) return; setScreen("method"); window.scrollTo({ top: 0, behavior: "smooth" }); };
@@ -841,6 +843,51 @@ export function PaymentLinkCheckout() {
             </div>
           )}
 
+          {/* Payment Schedule — magic links with installment plan */}
+          {isSchedule && installments.length > 0 && (
+            <div className="mt-3 rounded-xl overflow-hidden flex-shrink-0" style={{ border: "1px solid rgba(255,255,255,0.12)" }}>
+              {/* Header */}
+              <div className="px-3 py-2 flex items-center gap-2" style={{ background: "rgba(255,255,255,0.10)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <Calendar className="h-3 w-3 text-blue-300 flex-shrink-0" />
+                <span className="text-[10px] font-bold text-blue-200 uppercase tracking-widest">Payment Plan</span>
+              </div>
+              {/* Installment rows */}
+              {installments.map((inst, i) => {
+                const isPaid = i < paidInstCount;
+                const isCurrent = i === paidInstCount && !allPaid;
+                return (
+                  <div key={inst.id} className="flex items-center gap-2.5 px-3 py-2.5"
+                    style={{
+                      background: isPaid ? "rgba(16,185,129,0.09)" : isCurrent ? "rgba(59,130,246,0.14)" : "rgba(255,255,255,0.03)",
+                      borderBottom: "1px solid rgba(255,255,255,0.05)",
+                    }}>
+                    <div className={`h-4 w-4 rounded-full flex-shrink-0 flex items-center justify-center border-2 ${isPaid ? "bg-emerald-500 border-emerald-500" : isCurrent ? "bg-blue-500 border-blue-400" : "border-white/20 bg-transparent"}`}>
+                      {isPaid && <Check className="h-2 w-2 text-white" strokeWidth={3.5} />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-1">
+                        <p className={`text-[11px] font-semibold truncate ${isPaid ? "text-emerald-300" : isCurrent ? "text-blue-200" : "text-blue-200/40"}`}>
+                          {inst.label}
+                        </p>
+                        <p className={`text-[11px] font-bold flex-shrink-0 ${isPaid ? "text-emerald-300" : isCurrent ? "text-white" : "text-blue-200/40"}`}>
+                          {fmtINR(Number(inst.amount))}
+                        </p>
+                      </div>
+                      <p className={`text-[9px] mt-0.5 ${isPaid ? "text-emerald-400/70" : isCurrent ? "text-blue-300" : "text-blue-400/35"}`}>
+                        {isPaid ? "Paid ✓" : isCurrent ? "Due now" : fmtRelative(inst.dueDate)}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+              {/* Total row */}
+              <div className="px-3 py-2 flex items-center justify-between" style={{ background: "rgba(255,255,255,0.07)" }}>
+                <span className="text-[9px] font-bold text-blue-300 uppercase tracking-widest">Total Amount</span>
+                <span className="text-xs font-black text-white">{fmtINR(totalAmount)}</span>
+              </div>
+            </div>
+          )}
+
           {/* Illustration area */}
           <div className="flex-1 flex items-end justify-center pb-2 pt-4 select-none pointer-events-none">
             <div className="flex items-end gap-3 opacity-30">
@@ -1058,7 +1105,7 @@ export function PaymentLinkCheckout() {
             {/* CTA */}
             <div className="mt-auto pt-2 space-y-2">
               <Button onClick={handlePay} disabled={processing} className="w-full h-11 bg-gray-900 hover:bg-gray-800 font-bold rounded-xl text-sm">
-                {processing ? <span className="flex items-center gap-2"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />Processing…</span> : <>Pay {fmtINR(smartTotal)} <ChevronRight className="ml-1 h-4 w-4" /></>}
+                {processing ? <span className="flex items-center gap-2"><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />Processing…</span> : <>Pay {fmtINR(isSchedule ? (payFull ? remainingAmt : payNowAmount) : smartTotal)} <ChevronRight className="ml-1 h-4 w-4" /></>}
               </Button>
               <p className="text-center text-[11px] text-gray-400 flex items-center justify-center gap-1">
                 <ShieldCheck className="h-3 w-3" /> PCI DSS Compliant · Secured by Razorpay
@@ -1069,15 +1116,138 @@ export function PaymentLinkCheckout() {
       </div>
     );
 
+    // ── V3 partial success (schedule smart links) ─────────────────────────
+    const renderV3PartialSuccess = () => (
+      <div className="flex-1 flex flex-col items-center justify-center p-6 gap-5" style={{ minHeight: 400 }}>
+        <div className="flex flex-col items-center text-center">
+          <div className="h-14 w-14 rounded-full bg-emerald-500 flex items-center justify-center mb-3 shadow-lg shadow-emerald-200">
+            <CheckCircle2 className="h-7 w-7 text-white" />
+          </div>
+          <p className="text-lg font-bold text-gray-900">Payment Successful!</p>
+          <p className="text-sm text-gray-500 mt-0.5">{fmtINR(justPaidAmt)} paid to {MERCHANT_NAME}</p>
+          <p className="text-xs text-gray-400 mt-1 font-mono">{txnId}</p>
+        </div>
+        {allPaid ? (
+          <div className="w-full max-w-xs rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-4 text-center">
+            <p className="text-sm font-semibold text-emerald-700">All payments complete 🎉</p>
+            <p className="text-xs text-emerald-600 mt-0.5">Total {fmtINR(totalAmount)} paid in full</p>
+          </div>
+        ) : (
+          <div className="w-full max-w-xs rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 space-y-1">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Next Payment</p>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-semibold text-gray-800">{installments[paidInstCount]?.label}</p>
+                {installments[paidInstCount]?.dueDate && (
+                  <p className="text-xs text-gray-500 mt-0.5">Due {fmtRelative(installments[paidInstCount].dueDate)}</p>
+                )}
+              </div>
+              <p className="text-base font-black text-gray-900">{fmtINR(Number(installments[paidInstCount]?.amount ?? 0))}</p>
+            </div>
+          </div>
+        )}
+        <div className="w-full max-w-xs space-y-2">
+          <Button
+            onClick={() => { if (allPaid) navigate("/"); else { setPayFull(false); setScreen("overview"); window.scrollTo({ top: 0, behavior: "smooth" }); } }}
+            className="w-full h-11 bg-gray-900 hover:bg-gray-800 font-bold rounded-xl"
+          >
+            Done
+          </Button>
+          {!allPaid && (
+            <Button variant="outline" className="w-full h-10 rounded-xl"
+              onClick={() => { setPayFull(false); setScreen("overview"); window.scrollTo({ top: 0, behavior: "smooth" }); }}>
+              Pay Next Instalment <ChevronRight className="ml-1.5 h-4 w-4" />
+            </Button>
+          )}
+        </div>
+        {renderSecured(true)}
+      </div>
+    );
+
+    // ── V3 returning payer overview (payment 2+) ───────────────────────────
+    const renderReturningPayerOverview = () => (
+      <div className="flex-1 p-6 space-y-4 overflow-y-auto">
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Choose payment option</p>
+        {/* Pay current instalment */}
+        <button type="button" onClick={() => setPayFull(false)}
+          className={`w-full flex items-start gap-3.5 px-4 py-4 rounded-xl border-2 text-left transition-all ${!payFull ? "border-blue-500 bg-blue-50/60" : "border-gray-200 bg-white hover:border-gray-300"}`}>
+          <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${!payFull ? "border-blue-600 bg-blue-600" : "border-gray-300"}`}>
+            {!payFull && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <p className={`text-sm font-semibold ${!payFull ? "text-blue-700" : "text-gray-800"}`}>{currentInst?.label ?? "Pay now"}</p>
+              <p className={`text-base font-black flex-shrink-0 ${!payFull ? "text-blue-700" : "text-gray-900"}`}>{fmtINR(Number(currentInst?.amount ?? 0))}</p>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Due {currentInst ? fmtRelative(currentInst.dueDate) : "now"} · {remainingInsts.length} more payment{remainingInsts.length !== 1 ? "s" : ""} after this
+            </p>
+          </div>
+        </button>
+        {/* Pay remaining */}
+        <button type="button" onClick={() => setPayFull(true)}
+          className={`w-full flex items-start gap-3.5 px-4 py-4 rounded-xl border-2 text-left transition-all ${payFull ? "border-blue-500 bg-blue-50/60" : "border-gray-200 bg-white hover:border-gray-300"}`}>
+          <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${payFull ? "border-blue-600 bg-blue-600" : "border-gray-300"}`}>
+            {payFull && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-2">
+              <p className={`text-sm font-semibold ${payFull ? "text-blue-700" : "text-gray-800"}`}>Pay Remaining Amount</p>
+              <p className={`text-base font-black flex-shrink-0 ${payFull ? "text-blue-700" : "text-gray-900"}`}>{fmtINR(remainingAmt)}</p>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {installments.length - paidInstCount} remaining payment{installments.length - paidInstCount !== 1 ? "s" : ""}
+            </p>
+          </div>
+        </button>
+        <Button onClick={() => setScreen("method")} className="w-full h-11 bg-gray-900 hover:bg-gray-800 font-bold rounded-xl">
+          Continue to Pay {fmtINR(payFull ? remainingAmt : Number(currentInst?.amount ?? 0))} <ChevronRight className="ml-1.5 h-5 w-5" />
+        </Button>
+        {renderSecured(true)}
+      </div>
+    );
+
     return (
       <div className="min-h-screen bg-[#eef0f5] flex flex-col items-center justify-start py-10 px-4">
         <div className="w-full max-w-[900px] bg-white rounded-2xl shadow-2xl overflow-hidden flex flex-col lg:flex-row" style={{ minHeight: 560 }}>
           {renderLeft()}
           <div className="flex-1 flex flex-col min-w-0 bg-white">
-            {v3Step === "contact" && renderContact()}
-            {v3Step === "address" && renderAddress()}
-            {v3Step === "payment" && renderPayment()}
-            {screen === "success" && <div className="flex-1">{renderSuccessPanel()}</div>}
+
+            {/* ── Success screen (all link types) ── */}
+            {screen === "success" ? (
+              <div className="flex-1">
+                {isSchedule ? renderV3PartialSuccess() : renderSuccessPanel()}
+              </div>
+
+            /* ── Returning payer: payment 2+ skips contact + address ── */
+            ) : isSchedule && paidInstCount > 0 ? (
+              <div className="flex-1 flex flex-col">
+                {/* Returning payer header */}
+                <div className="flex items-center gap-3 px-6 py-3.5 border-b border-gray-100 bg-gray-50/60 flex-shrink-0">
+                  <div className="h-7 w-7 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-gray-900">Payment {paidInstCount + 1} of {installments.length}</p>
+                    <p className="text-xs text-gray-500">Your details are saved · {paidInstCount} paid so far</p>
+                  </div>
+                  <span className="ml-auto text-[11px] text-gray-400 flex items-center gap-1">
+                    <Lock className="h-3 w-3" /> Secured
+                  </span>
+                </div>
+                {screen === "overview" && renderReturningPayerOverview()}
+                {screen === "method" && renderPayment()}
+              </div>
+
+            /* ── First-time payer: full Contact → Address → Payment flow ── */
+            ) : (
+              <>
+                {v3Step === "contact" && renderContact()}
+                {v3Step === "address" && renderAddress()}
+                {v3Step === "payment" && renderPayment()}
+              </>
+            )}
+
           </div>
         </div>
       </div>
@@ -1126,9 +1296,6 @@ export function PaymentLinkCheckout() {
   // ── Non-smart: Razorpay-style standard layout ────────────────────────────────
   if (!isSmartLink) {
     const stdAmt = isSchedule ? payNowAmount : totalAmount;
-
-    const allPaid = paidInstCount >= installments.length;
-    const justPaidAmt = lastPaidAmt || payNowAmount;
 
     // Right panel: radio selection for partial payment
     const renderPartialOverview = () => (
