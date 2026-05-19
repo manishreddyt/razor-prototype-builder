@@ -2759,6 +2759,30 @@ const PaymentLinks = () => {
                 </div>
               </div>
 
+              {/* Reminders */}
+              <div className="flex justify-between items-center py-3">
+                <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Reminders</span>
+                <div className="flex items-center gap-2 opacity-50 pointer-events-none">
+                  <span className="text-sm">Send auto reminders</span>
+                  <Switch checked={false} />
+                </div>
+              </div>
+
+              {/* Reference Id */}
+              <div className="flex justify-between items-center py-3">
+                <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Reference Id</span>
+                <span className="text-sm font-medium">{selectedLink.refId || "—"}</span>
+              </div>
+
+              {/* Created By */}
+              <div className="flex justify-between items-start py-3">
+                <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Created By</span>
+                <div className="text-right">
+                  <p className="text-sm font-medium">Manish R.</p>
+                  <p className="text-xs text-muted-foreground">manishreddy.t@razorpay.com</p>
+                </div>
+              </div>
+
               {/* Delivery Address — Magic Links only, shown once payment is made */}
               {selectedLink.isSmartLink && selectedLink.customerAddress && ["Paid", "Partially Paid"].includes(getDisplayStatus(selectedLink)) && (() => {
                 const addr = selectedLink.customerAddress;
@@ -2796,30 +2820,6 @@ const PaymentLinks = () => {
                   </div>
                 );
               })()}
-
-              {/* Reminders */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Reminders</span>
-                <div className="flex items-center gap-2 opacity-50 pointer-events-none">
-                  <span className="text-sm">Send auto reminders</span>
-                  <Switch checked={false} />
-                </div>
-              </div>
-
-              {/* Reference Id */}
-              <div className="flex justify-between items-center py-3">
-                <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Reference Id</span>
-                <span className="text-sm font-medium">{selectedLink.refId || "—"}</span>
-              </div>
-
-              {/* Created By */}
-              <div className="flex justify-between items-start py-3">
-                <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Created By</span>
-                <div className="text-right">
-                  <p className="text-sm font-medium">Manish R.</p>
-                  <p className="text-xs text-muted-foreground">manishreddy.t@razorpay.com</p>
-                </div>
-              </div>
 
               {/* Magic Link Order Details */}
               {selectedLink.isSmartLink && selectedLink.smartProducts?.length > 0 && (
