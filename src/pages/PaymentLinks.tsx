@@ -2760,23 +2760,42 @@ const PaymentLinks = () => {
               </div>
 
               {/* Delivery Address — Magic Links only, shown once payment is made */}
-              {selectedLink.isSmartLink && selectedLink.customerAddress && ["Paid", "Partially Paid"].includes(getDisplayStatus(selectedLink)) && (
-                <div className="flex justify-between items-start py-3">
-                  <span className="text-xs text-muted-foreground w-36 flex-shrink-0">Delivery Address</span>
-                  <div className="text-right space-y-0.5">
-                    {selectedLink.customerAddress.tag && (
-                      <span className="inline-block text-[10px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded mb-0.5">
-                        {selectedLink.customerAddress.tag}
-                      </span>
-                    )}
-                    {selectedLink.customerAddress.name && (
-                      <p className="text-sm font-medium">{selectedLink.customerAddress.name}</p>
-                    )}
-                    <p className="text-sm text-foreground leading-snug">{selectedLink.customerAddress.addressLine}</p>
-                    <p className="text-xs text-muted-foreground">{selectedLink.customerAddress.cityState}</p>
+              {selectedLink.isSmartLink && selectedLink.customerAddress && ["Paid", "Partially Paid"].includes(getDisplayStatus(selectedLink)) && (() => {
+                const addr = selectedLink.customerAddress;
+                const fullAddrText = [addr.name, addr.addressLine, addr.cityState].filter(Boolean).join(", ");
+                return (
+                  <div className="py-3 space-y-2 border-t border-border">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Delivery Address</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(fullAddrText);
+                          toast.success("Address copied to clipboard");
+                        }}
+                        className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded hover:bg-primary/5"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Copy
+                      </button>
+                    </div>
+                    <div className="rounded-lg border border-border bg-secondary/20 px-3 py-2.5 space-y-0.5">
+                      {addr.tag && (
+                        <span className="inline-block text-[10px] font-semibold uppercase tracking-wide bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded mb-1">
+                          {addr.tag}
+                        </span>
+                      )}
+                      {addr.name && (
+                        <p className="text-sm font-medium text-foreground">{addr.name}</p>
+                      )}
+                      <p className="text-sm text-foreground leading-snug">{addr.addressLine}</p>
+                      <p className="text-xs text-muted-foreground">{addr.cityState}</p>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               {/* Reminders */}
               <div className="flex justify-between items-center py-3">
