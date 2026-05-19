@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, Check, FileText, Info, Trash2, Download, Send, Receipt, Wand2, Sparkles, ImagePlus, Tag, ChevronUp, Truck, MapPin, Link2, ArrowRight, Settings } from "lucide-react";
+import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, Check, FileText, Info, Trash2, Download, Send, Receipt, Wand2, Sparkles, ImagePlus, Tag, ChevronUp, Truck, MapPin, Link2, ArrowRight, Settings, Edit2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -188,6 +188,8 @@ const PaymentLinks = () => {
 
   // Logistics / Advanced Settings
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  const [editingPickupAddress, setEditingPickupAddress] = useState(false);
+  const [savedPickupLabel, setSavedPickupLabel] = useState("");
   // Per-partner connection state (synced with pl_logistics_connections in localStorage)
   const loadPartnerConnections = () => {
     try {
@@ -620,6 +622,19 @@ const PaymentLinks = () => {
       localStorage.setItem("payment_links_version", "v6");
       setPaymentLinks(sampleLinks);
     }
+    // Load default pickup address from saved addresses
+    try {
+      const savedAddrs = JSON.parse(localStorage.getItem("pl_pickup_addresses") || "[]");
+      const def = savedAddrs.find((a: any) => a.isDefault) || savedAddrs[0];
+      if (def) {
+        setLsAddress(def.addressLine || "");
+        setLsCity(def.city || "");
+        setLsState(def.state || "");
+        setLsPin(def.pincode || "");
+        setSavedPickupLabel(def.label || "");
+      }
+    } catch {}
+
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
@@ -766,6 +781,16 @@ const PaymentLinks = () => {
       isSmartLink: createLinkTab === "smart",
       smartProducts: createLinkTab === "smart"
         ? smartInlineItems.filter(i => i.name.trim()).map(i => ({ id: `inline-${i.rowId}`, name: i.name.trim(), price: i.price, qty: i.qty }))
+        : undefined,
+      deliveryFee: createLinkTab === "smart" && !deliveryFreeShipping ? (Number(deliveryFee) || 0) : 0,
+      logistics: createLinkTab === "smart" && (partnerConnections.shiprocket?.connected || partnerConnections.delhivery?.connected)
+        ? {
+            partner: partnerConnections.shiprocket?.connected ? "shiprocket" : "delhivery",
+            enabled: true,
+            pickupAddress: { line: lsAddress, city: lsCity, state: lsState, pincode: lsPin },
+            deadWeight: lsDeadWeight,
+            dimL: lsDimL, dimB: lsDimB, dimH: lsDimH,
+          }
         : undefined,
     };
     const stored = localStorage.getItem("payment_links");
@@ -1998,31 +2023,71 @@ const PaymentLinks = () => {
                     </div>
                   </div>
                 )}
-          {/* Advanced Settings — Magic Link only, inside the scrollable area */}
+          {/* Logistics — Magic Link only, always visible (no accordion) */}
           {createLinkTab === "smart" && (
-            <div className="border border-border rounded-xl overflow-hidden">
-              <button
-                type="button"
-                onClick={() => setShowAdvancedSettings(v => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 bg-secondary/30 hover:bg-secondary/50 transition-colors"
-              >
-                <span className="text-sm font-semibold text-foreground">Advanced Settings</span>
-                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showAdvancedSettings ? "rotate-180" : ""}`} />
-              </button>
+            <div className="space-y-4 pt-2">
+              <div className="flex items-center gap-2">
+                <Truck className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-semibold text-foreground">Logistics</span>
+              </div>
 
-              {showAdvancedSettings && (
-                <div className="px-4 py-4 space-y-3 bg-white">
-                  {/* Section label */}
-                  <div className="flex items-center gap-2">
-                    <Truck className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-semibold text-foreground">Send order to logistics partner</span>
+              {/* Pickup Address sub-section */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Pickup Address</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    After payment, the order is automatically pushed to your connected partner for fulfilment.
-                  </p>
+                  <button type="button" onClick={() => setEditingPickupAddress(v => !v)} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                    <Edit2 className="h-3 w-3" /> {editingPickupAddress ? "Done" : "Edit"}
+                  </button>
+                </div>
 
-                  {/* Per-partner cards */}
-                  {(["shiprocket", "delhivery"] as const).map((partner) => {
+                {!editingPickupAddress ? (
+                  <div className="rounded-lg bg-secondary/40 border border-border px-3 py-2.5 space-y-0.5">
+                    {savedPickupLabel && <p className="text-[10px] font-semibold text-muted-foreground uppercase">{savedPickupLabel}</p>}
+                    <p className="text-xs text-foreground">{lsAddress || "—"}</p>
+                    <p className="text-xs text-muted-foreground">{[lsCity, lsState, lsPin].filter(Boolean).join(", ")}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Input placeholder="Full address" value={lsAddress} onChange={(e) => setLsAddress(e.target.value)} className="text-xs h-8" />
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <Input placeholder="City" value={lsCity} onChange={(e) => setLsCity(e.target.value)} className="text-xs h-8" />
+                      <Input placeholder="State" value={lsState} onChange={(e) => setLsState(e.target.value)} className="text-xs h-8" />
+                      <Input placeholder="Pincode" value={lsPin} onChange={(e) => setLsPin(e.target.value)} className="text-xs h-8" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Product Details sub-section */}
+              {smartInlineItems.some(i => i.name.trim()) && (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Products in this order</span>
+                  </div>
+                  <div className="rounded-lg bg-secondary/40 border border-border overflow-hidden divide-y divide-border">
+                    {smartInlineItems.filter(i => i.name.trim()).map((item) => (
+                      <div key={item.rowId} className="flex items-center justify-between px-3 py-2">
+                        <span className="text-xs text-foreground flex-1 truncate">{item.name}</span>
+                        <span className="text-[11px] text-muted-foreground ml-2 flex-shrink-0">×{item.qty}</span>
+                        <span className="text-xs font-medium ml-3 flex-shrink-0">₹{(item.price * item.qty).toLocaleString("en-IN")}</span>
+                      </div>
+                    ))}
+                    {!deliveryFreeShipping && Number(deliveryFee) > 0 && (
+                      <div className="flex items-center justify-between px-3 py-2">
+                        <span className="text-xs text-muted-foreground flex-1">Delivery</span>
+                        <span className="text-xs font-medium">₹{Number(deliveryFee).toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Per-partner cards */}
+              {(["shiprocket", "delhivery"] as const).map((partner) => {
                     const isConnected = !!partnerConnections[partner]?.connected;
                     const isExpanded = expandedConnectPartner === partner;
                     const meta = partner === "shiprocket"
@@ -2088,26 +2153,14 @@ const PaymentLinks = () => {
                           </div>
                         </div>
 
-                        {/* Connected state: pickup address */}
+                        {/* Connected state: info banner */}
                         {isConnected && (
-                          <div className="px-3.5 pb-3.5 space-y-2.5">
+                          <div className="px-3.5 pb-3.5">
                             <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
                               <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
                               <p className="text-xs text-blue-700">
                                 Orders will be sent to {meta.name} once payment is completed.
                               </p>
-                            </div>
-                            <div className="space-y-1.5">
-                              <div className="flex items-center gap-1.5">
-                                <MapPin className="h-3 w-3 text-muted-foreground" />
-                                <span className="text-[10px] font-semibold text-foreground uppercase tracking-wide">Pickup Address</span>
-                              </div>
-                              <Input placeholder="Full address" value={lsAddress} onChange={(e) => setLsAddress(e.target.value)} className="text-xs h-8" />
-                              <div className="grid grid-cols-3 gap-1.5">
-                                <Input placeholder="City" value={lsCity} onChange={(e) => setLsCity(e.target.value)} className="text-xs h-8" />
-                                <Input placeholder="State" value={lsState} onChange={(e) => setLsState(e.target.value)} className="text-xs h-8" />
-                                <Input placeholder="Pincode" value={lsPin} onChange={(e) => setLsPin(e.target.value)} className="text-xs h-8" />
-                              </div>
                             </div>
                           </div>
                         )}
@@ -2183,8 +2236,6 @@ const PaymentLinks = () => {
                       </div>
                     );
                   })}
-                </div>
-              )}
             </div>
           )}
           </div>{/* ← closes overflow-y-auto scrollable div */}
@@ -2705,6 +2756,104 @@ const PaymentLinks = () => {
                   <p className="text-xs text-muted-foreground">manishreddy.t@razorpay.com</p>
                 </div>
               </div>
+
+              {/* Magic Link Order Details */}
+              {selectedLink.isSmartLink && selectedLink.smartProducts?.length > 0 && (
+                <div className="space-y-3 py-3 border-t border-border">
+                  <div className="flex items-center gap-2">
+                    <Package className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground">Order Details</span>
+                  </div>
+
+                  {/* Product rows */}
+                  <div className="rounded-lg border border-border overflow-hidden divide-y divide-border">
+                    {selectedLink.smartProducts.map((p: any) => (
+                      <div key={p.id} className="flex items-center justify-between px-3 py-2.5">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground truncate">{p.name}</p>
+                          <p className="text-xs text-muted-foreground">×{p.qty} · ₹{p.price.toLocaleString("en-IN")} each</p>
+                        </div>
+                        <span className="text-sm font-medium ml-3 flex-shrink-0">₹{(p.price * p.qty).toLocaleString("en-IN")}</span>
+                      </div>
+                    ))}
+                    {selectedLink.deliveryFee > 0 && (
+                      <div className="flex items-center justify-between px-3 py-2.5 bg-secondary/20">
+                        <span className="text-sm text-muted-foreground">Delivery fee</span>
+                        <span className="text-sm font-medium">₹{Number(selectedLink.deliveryFee).toLocaleString("en-IN")}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between px-3 py-2.5 bg-secondary/30">
+                      <span className="text-xs font-semibold text-foreground">Total</span>
+                      <span className="text-sm font-bold text-foreground">
+                        ₹{(
+                          selectedLink.smartProducts.reduce((s: number, p: any) => s + p.price * p.qty, 0) +
+                          (selectedLink.deliveryFee || 0)
+                        ).toLocaleString("en-IN")}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Logistics card — shown only if logistics was configured */}
+                  {selectedLink.logistics?.enabled && (
+                    <div className="rounded-lg border border-border overflow-hidden">
+                      <div className="flex items-center gap-2 px-3 py-2.5 bg-secondary/20 border-b border-border">
+                        <Truck className="h-3.5 w-3.5 text-muted-foreground" />
+                        <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Logistics</span>
+                        <span className="ml-auto text-[10px] font-semibold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full capitalize">
+                          {selectedLink.logistics.partner === "shiprocket" ? "Shiprocket" : "Delhivery"}
+                        </span>
+                      </div>
+                      <div className="px-3 py-3 space-y-2.5">
+                        {/* Pickup address */}
+                        {selectedLink.logistics.pickupAddress && (
+                          <div className="flex gap-2">
+                            <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Pickup Address</p>
+                              <p className="text-xs text-foreground">{selectedLink.logistics.pickupAddress.line}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {[selectedLink.logistics.pickupAddress.city, selectedLink.logistics.pickupAddress.state, selectedLink.logistics.pickupAddress.pincode].filter(Boolean).join(", ")}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {/* Weight / dimensions */}
+                        {selectedLink.logistics.deadWeight && (
+                          <div className="flex gap-2">
+                            <Package className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Package</p>
+                              <p className="text-xs text-foreground">Dead weight: {selectedLink.logistics.deadWeight} kg</p>
+                              {selectedLink.logistics.dimL && selectedLink.logistics.dimB && selectedLink.logistics.dimH && (
+                                <p className="text-xs text-muted-foreground">
+                                  {selectedLink.logistics.dimL} × {selectedLink.logistics.dimB} × {selectedLink.logistics.dimH} cm
+                                  {" · "}
+                                  {((Number(selectedLink.logistics.dimL) * Number(selectedLink.logistics.dimB) * Number(selectedLink.logistics.dimH)) / 5000).toFixed(2)} kg vol.
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {/* Shipment status */}
+                        <div className="flex gap-2">
+                          <div className={`h-2 w-2 rounded-full flex-shrink-0 mt-1.5 ${getDisplayStatus(selectedLink) === "Paid" ? "bg-emerald-500" : "bg-amber-400"}`} />
+                          <div>
+                            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide mb-0.5">Shipment Status</p>
+                            {getDisplayStatus(selectedLink) === "Paid" ? (
+                              <>
+                                <p className="text-xs font-semibold text-emerald-700">Order pushed to {selectedLink.logistics.partner === "shiprocket" ? "Shiprocket" : "Delhivery"}</p>
+                                <p className="text-xs text-muted-foreground">Sent on {selectedLink.date}</p>
+                              </>
+                            ) : (
+                              <p className="text-xs text-amber-700">Pending payment — order will be pushed after payment is completed</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Receipt Section */}
               <div className="space-y-3 py-3">
