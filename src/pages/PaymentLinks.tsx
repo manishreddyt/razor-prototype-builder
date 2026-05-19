@@ -2023,219 +2023,264 @@ const PaymentLinks = () => {
                     </div>
                   </div>
                 )}
-          {/* Logistics — Magic Link only, always visible (no accordion) */}
+          {/* Logistics — Magic Link only */}
           {createLinkTab === "smart" && (
             <div className="space-y-4 pt-2">
+
+              {/* Section header */}
               <div className="flex items-center gap-2">
                 <Truck className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-semibold text-foreground">Logistics</span>
               </div>
 
-              {/* Pickup Address sub-section */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Pickup Address</span>
-                  </div>
-                  <button type="button" onClick={() => setEditingPickupAddress(v => !v)} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
-                    <Edit2 className="h-3 w-3" /> {editingPickupAddress ? "Done" : "Edit"}
-                  </button>
+              {/* Toggle row */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-foreground font-medium">Send order to logistics partner</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Automatically push order after payment is completed</p>
                 </div>
-
-                {!editingPickupAddress ? (
-                  <div className="rounded-lg bg-secondary/40 border border-border px-3 py-2.5 space-y-0.5">
-                    {savedPickupLabel && <p className="text-[10px] font-semibold text-muted-foreground uppercase">{savedPickupLabel}</p>}
-                    <p className="text-xs text-foreground">{lsAddress || "—"}</p>
-                    <p className="text-xs text-muted-foreground">{[lsCity, lsState, lsPin].filter(Boolean).join(", ")}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-1.5">
-                    <Input placeholder="Full address" value={lsAddress} onChange={(e) => setLsAddress(e.target.value)} className="text-xs h-8" />
-                    <div className="grid grid-cols-3 gap-1.5">
-                      <Input placeholder="City" value={lsCity} onChange={(e) => setLsCity(e.target.value)} className="text-xs h-8" />
-                      <Input placeholder="State" value={lsState} onChange={(e) => setLsState(e.target.value)} className="text-xs h-8" />
-                      <Input placeholder="Pincode" value={lsPin} onChange={(e) => setLsPin(e.target.value)} className="text-xs h-8" />
-                    </div>
-                  </div>
-                )}
+                <Switch checked={logisticsEnabled} onCheckedChange={setLogisticsEnabled} />
               </div>
 
-              {/* Product Details sub-section */}
-              {smartInlineItems.some(i => i.name.trim()) && (
-                <div className="space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <Package className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Products in this order</span>
-                  </div>
-                  <div className="rounded-lg bg-secondary/40 border border-border overflow-hidden divide-y divide-border">
-                    {smartInlineItems.filter(i => i.name.trim()).map((item) => (
-                      <div key={item.rowId} className="flex items-center justify-between px-3 py-2">
-                        <span className="text-xs text-foreground flex-1 truncate">{item.name}</span>
-                        <span className="text-[11px] text-muted-foreground ml-2 flex-shrink-0">×{item.qty}</span>
-                        <span className="text-xs font-medium ml-3 flex-shrink-0">₹{(item.price * item.qty).toLocaleString("en-IN")}</span>
-                      </div>
-                    ))}
-                    {!deliveryFreeShipping && Number(deliveryFee) > 0 && (
-                      <div className="flex items-center justify-between px-3 py-2">
-                        <span className="text-xs text-muted-foreground flex-1">Delivery</span>
-                        <span className="text-xs font-medium">₹{Number(deliveryFee).toLocaleString("en-IN")}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
+              {/* Rest of logistics — only when toggle is on */}
+              {logisticsEnabled && (
+                <div className="space-y-4">
 
-              {/* Per-partner cards */}
-              {(["shiprocket", "delhivery"] as const).map((partner) => {
-                    const isConnected = !!partnerConnections[partner]?.connected;
-                    const isExpanded = expandedConnectPartner === partner;
-                    const meta = partner === "shiprocket"
-                      ? { logo: "🚀", name: "Shiprocket", desc: "25+ courier partners · Pan-India coverage" }
-                      : { logo: "📦", name: "Delhivery", desc: "18,500+ pin codes · Same-day delivery" };
-                    const steps = partner === "shiprocket" ? [
-                      "Visit shiprocket.in and create a free seller account",
-                      "Verify your email and complete your store profile",
-                      "Enter your Shiprocket email & password below — Razorpay will connect via their secure API",
-                    ] : [
-                      "Visit business.delhivery.com and register as a business",
-                      "Get your account approved by the Delhivery team (usually 1–2 business days)",
-                      "Enter your Delhivery email & password below to authorise the connection",
-                    ];
+                  {/* Partner selector */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-foreground uppercase tracking-wide">Logistics Partner</label>
+                    <Select
+                      value={logisticsPartner}
+                      onValueChange={(v) => {
+                        setLogisticsPartner(v as "shiprocket" | "delhivery");
+                        setExpandedConnectPartner(null);
+                        setLogisticsEmail("");
+                        setLogisticsPassword("");
+                      }}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Select a logistics partner" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="shiprocket">🚀 Shiprocket</SelectItem>
+                        <SelectItem value="delhivery">📦 Delhivery</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                    return (
-                      <div key={partner} className={`rounded-xl border overflow-hidden transition-all ${isConnected ? "border-emerald-200 bg-emerald-50/30" : "border-border bg-background"}`}>
-                        {/* Card header row */}
-                        <div className="flex items-center gap-3 px-3.5 py-3">
-                          <span className="text-xl flex-shrink-0">{meta.logo}</span>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-sm font-semibold text-foreground">{meta.name}</span>
-                              {isConnected && (
-                                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
-                                  <CheckCircle2 className="h-2.5 w-2.5" /> Connected
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[11px] text-muted-foreground leading-tight">{meta.desc}</p>
+                  {/* Selected partner: connected state */}
+                  {partnerConnections[logisticsPartner]?.connected ? (
+                    <div className="space-y-4">
+                      {/* Connected badge */}
+                      <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
+                        <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Connected
+                          {partnerConnections[logisticsPartner].accountEmail && (
+                            <span className="font-normal text-emerald-600">· {partnerConnections[logisticsPartner].accountEmail}</span>
+                          )}
+                        </span>
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground hover:text-destructive font-medium transition-colors"
+                          onClick={() => {
+                            const updated = { ...partnerConnections, [logisticsPartner]: { connected: false, accountEmail: "" } };
+                            setPartnerConnections(updated);
+                            try { localStorage.setItem("pl_logistics_connections", JSON.stringify(updated)); } catch {}
+                            toast.success(`${logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} disconnected`);
+                          }}
+                        >
+                          Disconnect
+                        </button>
+                      </div>
+
+                      {/* Pickup Address */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Pickup Address</span>
                           </div>
-                          <div className="flex-shrink-0">
-                            {isConnected ? (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = { ...partnerConnections, [partner]: { connected: false, accountEmail: "" } };
-                                  setPartnerConnections(updated);
-                                  try { localStorage.setItem("pl_logistics_connections", JSON.stringify(updated)); } catch {}
-                                  toast.success(`${meta.name} disconnected`);
-                                }}
-                                className="text-xs text-muted-foreground hover:text-destructive font-medium transition-colors"
-                              >
-                                Disconnect
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setExpandedConnectPartner(isExpanded ? null : partner);
-                                  setLogisticsEmail("");
-                                  setLogisticsPassword("");
-                                }}
-                                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
-                              >
-                                {isExpanded ? (
-                                  "Cancel"
-                                ) : (
-                                  <><Link2 className="h-3 w-3" /> Connect</>
-                                )}
-                              </button>
+                          <button type="button" onClick={() => setEditingPickupAddress(v => !v)} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                            <Edit2 className="h-3 w-3" /> {editingPickupAddress ? "Done" : "Edit"}
+                          </button>
+                        </div>
+                        {!editingPickupAddress ? (
+                          <div className="rounded-lg bg-secondary/40 border border-border px-3 py-2.5 space-y-0.5">
+                            {savedPickupLabel && <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{savedPickupLabel}</p>}
+                            <p className="text-xs text-foreground">{lsAddress || "—"}</p>
+                            <p className="text-xs text-muted-foreground">{[lsCity, lsState, lsPin].filter(Boolean).join(", ")}</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <Input placeholder="Full address" value={lsAddress} onChange={(e) => setLsAddress(e.target.value)} className="text-xs h-8" />
+                            <div className="grid grid-cols-3 gap-1.5">
+                              <Input placeholder="City" value={lsCity} onChange={(e) => setLsCity(e.target.value)} className="text-xs h-8" />
+                              <Input placeholder="State" value={lsState} onChange={(e) => setLsState(e.target.value)} className="text-xs h-8" />
+                              <Input placeholder="Pincode" value={lsPin} onChange={(e) => setLsPin(e.target.value)} className="text-xs h-8" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Product Details — mirror from above */}
+                      {smartInlineItems.some(i => i.name.trim()) && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1.5">
+                            <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                            <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Products in this order</span>
+                          </div>
+                          <div className="rounded-lg bg-secondary/40 border border-border overflow-hidden divide-y divide-border">
+                            {smartInlineItems.filter(i => i.name.trim()).map((item) => (
+                              <div key={item.rowId} className="flex items-center justify-between px-3 py-2">
+                                <span className="text-xs text-foreground flex-1 truncate">{item.name}</span>
+                                <span className="text-[11px] text-muted-foreground ml-2 flex-shrink-0">×{item.qty}</span>
+                                <span className="text-xs font-medium ml-3 flex-shrink-0">₹{(item.price * item.qty).toLocaleString("en-IN")}</span>
+                              </div>
+                            ))}
+                            {!deliveryFreeShipping && Number(deliveryFee) > 0 && (
+                              <div className="flex items-center justify-between px-3 py-2">
+                                <span className="text-xs text-muted-foreground flex-1">Delivery fee</span>
+                                <span className="text-xs font-medium">₹{Number(deliveryFee).toLocaleString("en-IN")}</span>
+                              </div>
                             )}
                           </div>
                         </div>
+                      )}
 
-                        {/* Connected state: info banner */}
-                        {isConnected && (
-                          <div className="px-3.5 pb-3.5">
-                            <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
-                              <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
-                              <p className="text-xs text-blue-700">
-                                Orders will be sent to {meta.name} once payment is completed.
-                              </p>
+                      {/* Package Details */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1.5">
+                          <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Package Details</span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">Weight and dimensions of the packed shipment.</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-[10px] text-muted-foreground mb-1 block">Dead Weight (kg)</label>
+                            <input type="number" min={0} step={0.01} placeholder="0.00"
+                              value={lsDeadWeight}
+                              onChange={(e) => setLsDeadWeight(e.target.value)}
+                              className="w-full px-3 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                            <p className="text-[10px] text-muted-foreground mt-0.5">Min chargeable: 0.5 kg</p>
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-muted-foreground mb-1 block">Volumetric Weight (kg)</label>
+                            <div className="px-3 py-2 text-xs border border-input rounded-lg bg-muted/30 text-muted-foreground">
+                              {lsDimL && lsDimB && lsDimH
+                                ? `${((Number(lsDimL) * Number(lsDimB) * Number(lsDimH)) / 5000).toFixed(2)} kg`
+                                : "0 kg (auto-calculated)"}
                             </div>
                           </div>
-                        )}
-
-                        {/* Inline connect form */}
-                        {!isConnected && isExpanded && (
-                          <div className="border-t border-border px-3.5 py-4 space-y-4 bg-secondary/20">
-                            {/* Numbered steps */}
-                            <div className="space-y-2.5">
-                              {steps.map((step, i) => (
-                                <div key={i} className="flex items-start gap-2.5">
-                                  <span className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
-                                    {i + 1}
-                                  </span>
-                                  <p className="text-xs text-muted-foreground leading-snug">{step}</p>
-                                </div>
-                              ))}
-                            </div>
-
-                            <div className="h-px bg-border" />
-
-                            {/* Credentials form */}
-                            <div className="space-y-2">
-                              <p className="text-xs font-semibold text-foreground">{meta.name} account credentials</p>
-                              <Input
-                                type="email"
-                                placeholder={`Email address for ${meta.name}`}
-                                value={logisticsEmail}
-                                onChange={(e) => setLogisticsEmail(e.target.value)}
-                                className="text-sm h-9"
-                              />
-                              <Input
-                                type="password"
-                                placeholder="Password"
-                                value={logisticsPassword}
-                                onChange={(e) => setLogisticsPassword(e.target.value)}
-                                className="text-sm h-9"
-                              />
-                              <p className="text-[10px] text-muted-foreground">
-                                By connecting, you authorise Razorpay to push orders to {meta.name} on your behalf.
-                              </p>
-                            </div>
-
-                            <Button
-                              size="sm"
-                              className="w-full bg-blue-600 hover:bg-blue-700"
-                              disabled={!logisticsEmail.trim() || !logisticsPassword.trim()}
-                              onClick={() => {
-                                const updated = {
-                                  ...partnerConnections,
-                                  [partner]: { connected: true, accountEmail: logisticsEmail },
-                                };
-                                setPartnerConnections(updated);
-                                try {
-                                  const existing = JSON.parse(localStorage.getItem("pl_logistics_connections") || "{}");
-                                  existing[partner] = {
-                                    connected: true,
-                                    accountEmail: logisticsEmail,
-                                    connectedAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
-                                  };
-                                  localStorage.setItem("pl_logistics_connections", JSON.stringify(existing));
-                                } catch {}
-                                setExpandedConnectPartner(null);
-                                setLogisticsEmail("");
-                                setLogisticsPassword("");
-                                toast.success(`${meta.name} connected successfully!`);
-                              }}
-                            >
-                              Connect {meta.name} <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                            </Button>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-muted-foreground mb-1 block">Dimensions (cm) — L × B × H</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {([["Length", lsDimL, setLsDimL], ["Breadth", lsDimB, setLsDimB], ["Height", lsDimH, setLsDimH]] as const).map(([ph, val, set]) => (
+                              <input key={ph} type="number" min={0} step={0.1} placeholder={ph}
+                                value={val}
+                                onChange={(e) => set(e.target.value)}
+                                className="w-full px-3 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                            ))}
+                          </div>
+                        </div>
+                        {lsDeadWeight && (
+                          <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
+                            <p className="text-xs text-blue-700">
+                              <span className="font-semibold">Applicable weight:</span>{" "}
+                              {Math.max(Number(lsDeadWeight), lsDimL && lsDimB && lsDimH ? (Number(lsDimL) * Number(lsDimB) * Number(lsDimH)) / 5000 : 0).toFixed(2)} kg
+                              {" "}— higher of dead or volumetric
+                            </p>
                           </div>
                         )}
                       </div>
-                    );
-                  })}
+                    </div>
+
+                  ) : (
+                    /* Not connected — show inline connect form for selected partner */
+                    <div className="rounded-xl border border-border overflow-hidden">
+                      {/* Header */}
+                      <div className="flex items-center gap-3 px-3.5 py-3 bg-secondary/30 border-b border-border">
+                        <span className="text-xl flex-shrink-0">{logisticsPartner === "shiprocket" ? "🚀" : "📦"}</span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground">
+                            Connect {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">Account not connected yet</p>
+                        </div>
+                      </div>
+
+                      {/* Steps + credentials */}
+                      <div className="px-3.5 py-4 space-y-4 bg-white">
+                        <div className="space-y-2.5">
+                          {(logisticsPartner === "shiprocket" ? [
+                            "Visit shiprocket.in and create a free seller account",
+                            "Verify your email and complete your store profile",
+                            "Enter your Shiprocket email & password below — Razorpay connects via their secure API",
+                          ] : [
+                            "Visit business.delhivery.com and register as a business",
+                            "Get your account approved by the Delhivery team (usually 1–2 business days)",
+                            "Enter your Delhivery email & password below to authorise the connection",
+                          ]).map((step, i) => (
+                            <div key={i} className="flex items-start gap-2.5">
+                              <span className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                              <p className="text-xs text-muted-foreground leading-snug">{step}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="h-px bg-border" />
+
+                        <div className="space-y-2">
+                          <p className="text-xs font-semibold text-foreground">
+                            {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} account credentials
+                          </p>
+                          <Input type="email"
+                            placeholder={`Email address`}
+                            value={logisticsEmail}
+                            onChange={(e) => setLogisticsEmail(e.target.value)}
+                            className="text-sm h-9" />
+                          <Input type="password"
+                            placeholder="Password"
+                            value={logisticsPassword}
+                            onChange={(e) => setLogisticsPassword(e.target.value)}
+                            className="text-sm h-9" />
+                          <p className="text-[10px] text-muted-foreground">
+                            By connecting, you authorise Razorpay to push orders on your behalf.
+                          </p>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          className="w-full bg-blue-600 hover:bg-blue-700"
+                          disabled={!logisticsEmail.trim() || !logisticsPassword.trim()}
+                          onClick={() => {
+                            const updated = {
+                              ...partnerConnections,
+                              [logisticsPartner]: { connected: true, accountEmail: logisticsEmail },
+                            };
+                            setPartnerConnections(updated);
+                            try {
+                              const existing = JSON.parse(localStorage.getItem("pl_logistics_connections") || "{}");
+                              existing[logisticsPartner] = {
+                                connected: true,
+                                accountEmail: logisticsEmail,
+                                connectedAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+                              };
+                              localStorage.setItem("pl_logistics_connections", JSON.stringify(existing));
+                            } catch {}
+                            setLogisticsEmail("");
+                            setLogisticsPassword("");
+                            toast.success(`${logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} connected successfully!`);
+                          }}
+                        >
+                          Connect {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           </div>{/* ← closes overflow-y-auto scrollable div */}
