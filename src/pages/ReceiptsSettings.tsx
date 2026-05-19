@@ -413,12 +413,12 @@ function ReceiptTemplatePicker({ templates, selected, onSelect, previewProps }: 
 }) {
   const active = templates.find(t => t.id === selected) || templates[0];
   return (
-    <div className="flex gap-4 items-start">
-      {/* Option list */}
-      <div className="flex flex-col gap-2 w-32 flex-shrink-0">
+    <div className="space-y-3">
+      {/* Options row */}
+      <div className="flex gap-2">
         {templates.map(({ id, label }) => (
           <button key={id} onClick={() => onSelect(id)}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm font-medium text-left transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
               selected === id
                 ? "border-primary bg-primary/5 text-primary"
                 : "border-border text-muted-foreground hover:border-gray-300 hover:bg-secondary/50"
@@ -431,7 +431,7 @@ function ReceiptTemplatePicker({ templates, selected, onSelect, previewProps }: 
         ))}
       </div>
       {/* Live preview */}
-      <div className="flex-1 min-w-0 rounded-xl overflow-hidden"
+      <div className="rounded-xl overflow-hidden"
         style={{ border: `2px solid ${previewProps.color}22`, boxShadow: `0 0 0 3px ${previewProps.color}11` }}>
         <active.Component {...previewProps} />
       </div>
@@ -447,12 +447,12 @@ function InvoiceTemplatePicker({ templates, selected, onSelect, previewProps }: 
 }) {
   const active = templates.find(t => t.id === selected) || templates[0];
   return (
-    <div className="flex gap-4 items-start">
-      {/* Option list */}
-      <div className="flex flex-col gap-2 w-32 flex-shrink-0">
+    <div className="space-y-3">
+      {/* Options row */}
+      <div className="flex gap-2">
         {templates.map(({ id, label }) => (
           <button key={id} onClick={() => onSelect(id)}
-            className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg border text-sm font-medium text-left transition-all ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
               selected === id
                 ? "border-primary bg-primary/5 text-primary"
                 : "border-border text-muted-foreground hover:border-gray-300 hover:bg-secondary/50"
@@ -465,7 +465,7 @@ function InvoiceTemplatePicker({ templates, selected, onSelect, previewProps }: 
         ))}
       </div>
       {/* Live preview */}
-      <div className="flex-1 min-w-0 rounded-xl overflow-hidden"
+      <div className="rounded-xl overflow-hidden"
         style={{ border: `2px solid ${previewProps.color}22`, boxShadow: `0 0 0 3px ${previewProps.color}11` }}>
         <active.Component {...previewProps} />
       </div>
