@@ -430,10 +430,12 @@ function ReceiptTemplatePicker({ templates, selected, onSelect, previewProps }: 
           </button>
         ))}
       </div>
-      {/* Live preview */}
-      <div className="rounded-xl overflow-hidden"
-        style={{ border: `2px solid ${previewProps.color}22`, boxShadow: `0 0 0 3px ${previewProps.color}11` }}>
-        <active.Component {...previewProps} />
+      {/* Live preview — small thumbnail */}
+      <div className="flex justify-center">
+        <div className="w-48 rounded-xl overflow-hidden"
+          style={{ border: `2px solid ${previewProps.color}22`, boxShadow: `0 0 0 3px ${previewProps.color}11` }}>
+          <active.Component {...previewProps} />
+        </div>
       </div>
     </div>
   );
@@ -464,10 +466,12 @@ function InvoiceTemplatePicker({ templates, selected, onSelect, previewProps }: 
           </button>
         ))}
       </div>
-      {/* Live preview */}
-      <div className="rounded-xl overflow-hidden"
-        style={{ border: `2px solid ${previewProps.color}22`, boxShadow: `0 0 0 3px ${previewProps.color}11` }}>
-        <active.Component {...previewProps} />
+      {/* Live preview — small thumbnail */}
+      <div className="flex justify-center">
+        <div className="w-48 rounded-xl overflow-hidden"
+          style={{ border: `2px solid ${previewProps.color}22`, boxShadow: `0 0 0 3px ${previewProps.color}11` }}>
+          <active.Component {...previewProps} />
+        </div>
       </div>
     </div>
   );
@@ -556,173 +560,59 @@ const ReceiptsSettings = () => {
           </div>
         </div>
 
-        {/* ── Company Summary bar ──────────────────────────────────────────── */}
-        <div className="flex items-center justify-between mb-5 rounded-xl border border-border bg-muted/30 px-4 py-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="h-7 w-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: brandColor }}>
-              <Building2 className="h-3.5 w-3.5 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-foreground truncate">{billingCompany}</span>
-            <span className="text-xs text-muted-foreground flex-shrink-0 hidden sm:inline">· {billingGSTIN}</span>
-          </div>
-          <a href="/account-settings" className="flex items-center gap-1 text-xs text-primary font-medium hover:underline flex-shrink-0 ml-3">
-            Change <ExternalLink className="h-3 w-3" />
-          </a>
-        </div>
-
-        {/* ── 1. Brand Details ─────────────────────────────────────────────── */}
+        {/* ── 1. Billing From ──────────────────────────────────────────────── */}
         <Card className="mb-5">
-          <CardContent className="p-6 space-y-6">
-            <SectionHeading
-              icon={<Tag className="h-4 w-4 text-primary" />}
-              title="Brand Details"
-              desc="Your brand identity and billing information shown on receipts and invoices."
-            />
-
-            {/* Logo */}
-            <div>
-              <p className="text-sm font-medium text-foreground mb-3">Logo</p>
-              <div className="flex items-center gap-4">
-                <div className="relative flex-shrink-0">
-                  <div
-                    className="w-16 h-16 rounded-xl flex items-center justify-center overflow-hidden cursor-pointer group"
-                    style={{ background: logoUrl ? "transparent" : brandColor }}
-                    onClick={() => logoInputRef.current?.click()}
-                  >
-                    {logoUrl
-                      ? <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
-                      : <span className="text-white font-bold text-xl">{brandName.slice(0, 2).toUpperCase()}</span>}
-                    <div className="absolute inset-0 bg-black/40 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <Upload className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                  <input ref={logoInputRef} type="file" accept="image/*" className="sr-only" onChange={handleLogoUpload} />
+          <CardContent className="p-6">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="h-8 w-8 rounded-lg bg-primary/8 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Building2 className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <div className="flex items-center gap-3">
-                    <button onClick={() => logoInputRef.current?.click()} className="text-xs text-primary font-medium hover:underline flex items-center gap-1">
-                      <Upload className="h-3.5 w-3.5" /> {logoUrl ? "Change logo" : "Upload logo"}
-                    </button>
-                    {logoUrl && (
-                      <button onClick={() => { setLogoUrl(undefined); toast.success("Logo removed"); }} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
-                        <X className="h-3.5 w-3.5" /> Remove
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 2 MB. Square logo recommended.</p>
+                  <h3 className="font-semibold text-foreground">Billing From</h3>
+                  <p className="text-sm text-muted-foreground mt-0.5">Business identity shown on receipts and invoices.</p>
                 </div>
               </div>
+              <a href="/account-settings" className="flex items-center gap-1 text-xs text-primary font-medium hover:underline flex-shrink-0 mt-1">
+                Change <ExternalLink className="h-3 w-3" />
+              </a>
             </div>
 
-            <Separator />
-
-            {/* Brand Name */}
-            <div>
-              <p className="text-sm font-medium text-foreground mb-3">Brand Name</p>
-              {editingName ? (
-                <div className="flex items-center gap-2">
-                  <Input autoFocus value={draftName} onChange={(e) => setDraftName(e.target.value)} className="max-w-xs h-9 text-sm"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") { setBrandName(draftName); setEditingName(false); }
-                      if (e.key === "Escape") { setDraftName(brandName); setEditingName(false); }
-                    }} />
-                  <Button size="sm" className="h-9 px-3" onClick={() => { setBrandName(draftName); setEditingName(false); }}>Save</Button>
-                  <Button size="sm" variant="ghost" className="h-9 px-2" onClick={() => { setDraftName(brandName); setEditingName(false); }}><X className="h-4 w-4" /></Button>
+            <div className="rounded-lg border border-border bg-muted/20 divide-y divide-border overflow-hidden">
+              {/* Business name + logo + color */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <div className="w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center overflow-hidden"
+                  style={{ background: logoUrl ? "transparent" : brandColor }}>
+                  {logoUrl
+                    ? <img src={logoUrl} alt="logo" className="w-full h-full object-cover" />
+                    : <span className="text-white font-bold text-sm">{brandName.slice(0, 2).toUpperCase()}</span>}
                 </div>
-              ) : (
-                <div className="flex items-center gap-2.5">
-                  <span className="text-base font-semibold text-foreground">{brandName}</span>
-                  <button onClick={() => { setDraftName(brandName); setEditingName(true); }} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-foreground leading-tight">{billingCompany}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Billing label: <span className="font-medium text-foreground">{brandName}</span></p>
                 </div>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Brand Color */}
-            <div>
-              <p className="text-sm font-medium text-foreground mb-1">Brand Color</p>
-              <p className="text-xs text-muted-foreground mb-3">Used as the accent color on receipts and logo background.</p>
-              {!editingColor ? (
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg border border-border shadow-sm" style={{ background: brandColor }} />
-                  <span className="text-sm font-mono text-foreground">{brandColor.toUpperCase()}</span>
-                  <button onClick={() => { setDraftColor(brandColor); setEditingColor(true); }} className="flex items-center gap-1.5 text-sm text-primary font-medium hover:underline">
-                    <Pencil className="h-3.5 w-3.5" /> Edit
-                  </button>
+                <div className="flex items-center gap-1.5 flex-shrink-0">
+                  <div className="w-4 h-4 rounded border border-border/60 shadow-sm" style={{ background: brandColor }} />
+                  <span className="text-xs font-mono text-muted-foreground">{brandColor.toUpperCase()}</span>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg border border-border shadow-sm transition-colors" style={{ background: draftColor }} />
-                    <span className="text-sm font-mono text-foreground">{draftColor.toUpperCase()}</span>
-                  </div>
-                  <div className="flex items-center gap-2.5 flex-wrap">
-                    {PRESET_COLORS.map((c) => (
-                      <button key={c} onClick={() => setDraftColor(c)} className="w-8 h-8 rounded-full flex items-center justify-center transition-transform hover:scale-110"
-                        style={{ background: c, boxShadow: draftColor === c ? `0 0 0 2px #fff, 0 0 0 4px ${c}` : "none" }} title={c}>
-                        {draftColor === c && <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} />}
-                      </button>
-                    ))}
-                    <label className="cursor-pointer" title="Custom color">
-                      <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center hover:border-gray-500 transition-colors overflow-hidden"
-                        style={!PRESET_COLORS.includes(draftColor) ? { background: draftColor, border: `2px solid ${draftColor}`, boxShadow: `0 0 0 2px #fff, 0 0 0 4px ${draftColor}` } : {}}>
-                        {!PRESET_COLORS.includes(draftColor) ? <Check className="h-3.5 w-3.5 text-white drop-shadow" strokeWidth={3} /> : <span className="text-gray-400 text-sm leading-none">+</span>}
-                      </div>
-                      <input type="color" value={draftColor} onChange={(e) => setDraftColor(e.target.value)} className="sr-only" />
-                    </label>
-                  </div>
-                  <div className="flex items-center gap-2 pt-1">
-                    <Button size="sm" className="h-8 px-4" onClick={() => { setBrandColor(draftColor); setEditingColor(false); }}>Apply</Button>
-                    <Button size="sm" variant="ghost" className="h-8 px-3" onClick={() => { setDraftColor(brandColor); setEditingColor(false); }}>Cancel</Button>
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
 
-            <Separator />
+              {/* GST */}
+              <div className="flex items-center gap-3 px-4 py-3">
+                <span className="text-xs text-muted-foreground w-14 flex-shrink-0">GST</span>
+                <Shield className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
+                <span className="text-sm font-mono font-medium text-foreground">{billingGSTIN}</span>
+                <span className="text-[10px] bg-emerald-50 text-emerald-700 font-semibold px-1.5 py-0.5 rounded-full border border-emerald-100">Verified</span>
+              </div>
 
-            {/* ── Billing From (GSTIN + Address) ── */}
-            <div>
-              <p className="text-sm font-medium text-foreground mb-3">Billing From</p>
-              <div className="rounded-lg border border-border divide-y divide-border overflow-hidden">
-                {/* GSTIN */}
-                <div className="px-4 py-3">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">GSTIN</p>
-                  <div className="flex items-center gap-2">
-                    <Shield className="h-3.5 w-3.5 text-emerald-500 flex-shrink-0" />
-                    <span className="text-sm font-mono font-semibold text-foreground">{billingGSTIN}</span>
-                    <span className="text-[10px] bg-emerald-50 text-emerald-600 font-semibold px-1.5 py-0.5 rounded-full">Verified</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1.5">Fetched from your KYC. To update, use the Change link above.</p>
-                </div>
-
-                {/* Address */}
-                <div className="px-4 py-3">
-                  <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-1.5">Business Address</p>
-                  {editingBillingAddr ? (
-                    <div className="space-y-2">
-                      <textarea value={draftBillingAddr} onChange={(e) => setDraftBillingAddr(e.target.value)} rows={3}
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none" />
-                      <div className="flex items-center gap-2">
-                        <Button size="sm" className="h-8 px-3" onClick={() => { setBillingAddress(draftBillingAddr); setEditingBillingAddr(false); }}>Save</Button>
-                        <Button size="sm" variant="ghost" className="h-8 px-3" onClick={() => { setDraftBillingAddr(billingAddress); setEditingBillingAddr(false); }}>Cancel</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-start gap-2 flex-1 min-w-0">
-                        <MapPin className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
-                        <p className="text-sm text-foreground leading-relaxed">{billingAddress.split("\n").map((l, i) => <span key={i}>{l}{i < billingAddress.split("\n").length - 1 && <br />}</span>)}</p>
-                      </div>
-                      <button onClick={() => { setDraftBillingAddr(billingAddress); setEditingBillingAddr(true); }} className="p-1 rounded text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors flex-shrink-0">
-                        <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
-                  )}
-                </div>
+              {/* Address */}
+              <div className="flex items-start gap-3 px-4 py-3">
+                <span className="text-xs text-muted-foreground w-14 flex-shrink-0 mt-0.5">Address</span>
+                <p className="text-sm text-foreground leading-relaxed">
+                  {billingAddress.split("\n").map((l, i, arr) => (
+                    <span key={i}>{l}{i < arr.length - 1 && <br />}</span>
+                  ))}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -1003,7 +893,7 @@ const ReceiptsSettings = () => {
               </label>
               {signatoryUrl && (
                 <div className="mt-3 flex items-end gap-3">
-                  <img src={signatoryUrl} alt="Signature preview" className="h-14 object-contain rounded border border-border bg-gray-50 px-3 py-2" />
+                  <img src={signatoryUrl} alt="Signature preview" className="h-9 max-w-[140px] object-contain rounded border border-border bg-gray-50 px-2 py-1.5" />
                   <button onClick={() => { setSignatoryFile(null); setSignatoryUrl(undefined); }} className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1">
                     <X className="h-3.5 w-3.5" /> Remove
                   </button>
