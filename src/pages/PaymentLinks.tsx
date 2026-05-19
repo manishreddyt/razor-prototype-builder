@@ -184,6 +184,7 @@ const PaymentLinks = () => {
   const [smartSelectedItems, setSmartSelectedItems] = useState<Array<{ id: string; price: number; qty: number }>>([]);
   const [productSearch, setProductSearch] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
+  const [smartInlineItems, setSmartInlineItems] = useState<Array<{ rowId: string; name: string; price: number; qty: number }>>([{ rowId: "1", name: "", price: 0, qty: 1 }]);
 
   // Create-product modal
   const [showCreateProduct, setShowCreateProduct] = useState(false);
@@ -661,6 +662,7 @@ const PaymentLinks = () => {
     setSmartSelectedItems([]);
     setProductSearch("");
     setShowProductDropdown(false);
+    setSmartInlineItems([{ rowId: "1", name: "", price: 0, qty: 1 }]);
     setFormData({ description: "", amount: "", customerPhone: "", customerEmail: "", referenceId: "", customerName: "" });
     setAutoSendInvoice(false);
     setInvoiceConfigured(false);
@@ -729,11 +731,9 @@ const PaymentLinks = () => {
       sendReceiptAuto,
       // Smart link data
       isSmartLink: createLinkTab === "smart",
-      smartProducts: createLinkTab === "smart" ? smartSelectedItems.map((item) => {
-        const cat = smartCatalogue.find((p) => p.id === item.id);
-        const original = availableProducts.find((p) => p.id === item.id);
-        return { id: item.id, name: cat?.name ?? "Product", price: item.price, qty: item.qty, image: original?.image };
-      }) : undefined,
+      smartProducts: createLinkTab === "smart"
+        ? smartInlineItems.filter(i => i.name.trim()).map(i => ({ id: `inline-${i.rowId}`, name: i.name.trim(), price: i.price, qty: i.qty }))
+        : undefined,
     };
     const stored = localStorage.getItem("payment_links");
     const existingLinks = stored ? JSON.parse(stored) : [];
@@ -1146,185 +1146,111 @@ const PaymentLinks = () => {
               </>
             )}
 
-            {/* Magic Link: Products first, then auto-calculated amount */}
+            {/* Magic Link: Products — inline rows */}
             {createLinkTab === "smart" && (
               <div>
                 <label className="text-sm font-semibold text-foreground mb-2 block">
                   Products <span className="text-destructive">*</span>
                 </label>
 
-                {/* ── Added product rows ── */}
-                {smartSelectedItems.length > 0 && (
-                  <div className="space-y-2 mb-3">
-                    {smartSelectedItems.map((item) => {
-                      const p = smartCatalogue.find((x) => x.id === item.id);
-                      const orig = availableProducts.find((x) => x.id === item.id);
-                      if (!p) return null;
-                      const recalcTotal = (nextItems: typeof smartSelectedItems) => {
-                        const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
-                        const fee = deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0);
-                        setFormData((f) => ({ ...f, amount: String(t + fee) }));
-                      };
-                      return (
-                        <div key={item.id} className="flex items-center gap-2.5 border border-border rounded-xl p-2.5 bg-background">
-                          {/* Thumbnail */}
-                          {orig?.image
-                            ? <img src={orig.image} alt={p.name} className="h-11 w-11 rounded-lg object-cover flex-shrink-0" />
-                            : <div className="h-11 w-11 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center"><Package className="h-4 w-4 text-muted-foreground" /></div>
-                          }
-                          {/* Name */}
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
-                            <p className="text-xs text-muted-foreground">₹{p.price.toLocaleString()}</p>
-                          </div>
-                          {/* Price input */}
-                          <div className="relative w-24 flex-shrink-0">
-                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">₹</span>
-                            <input
-                              type="number" value={item.price} min={0}
-                              onChange={(e) => {
-                                const next = smartSelectedItems.map((si) => si.id === item.id ? { ...si, price: Number(e.target.value) || 0 } : si);
-                                setSmartSelectedItems(next); recalcTotal(next);
-                              }}
-                              className="w-full pl-5 pr-1 py-1.5 text-sm border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring"
-                            />
-                          </div>
-                          {/* Qty input */}
-                          <div className="flex items-center gap-1 flex-shrink-0">
-                            <button type="button"
-                              className="h-7 w-7 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors text-base leading-none"
-                              onClick={() => {
-                                const next = smartSelectedItems.map((si) => si.id === item.id ? { ...si, qty: Math.max(1, si.qty - 1) } : si);
-                                setSmartSelectedItems(next); recalcTotal(next);
-                              }}>−</button>
-                            <span className="w-6 text-center text-sm font-medium">{item.qty}</span>
-                            <button type="button"
-                              className="h-7 w-7 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors text-base leading-none"
-                              onClick={() => {
-                                const next = smartSelectedItems.map((si) => si.id === item.id ? { ...si, qty: si.qty + 1 } : si);
-                                setSmartSelectedItems(next); recalcTotal(next);
-                              }}>+</button>
-                          </div>
-                          {/* Remove */}
-                          <button type="button"
-                            className="h-7 w-7 flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
-                            onClick={() => {
-                              const next = smartSelectedItems.filter((si) => si.id !== item.id);
-                              setSmartSelectedItems(next);
-                              setSmartSelectedIds(smartSelectedIds.filter((id) => id !== item.id));
-                              recalcTotal(next);
-                            }}>
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                    {/* Total */}
-                    <div className="flex items-center justify-end gap-2 px-1 pt-1">
-                      <span className="text-xs text-muted-foreground">Total</span>
-                      <span className="text-sm font-semibold text-foreground">
-                        ₹{smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0).toLocaleString()}
-                      </span>
-                    </div>
+                {/* datalist for autocomplete from previously created products */}
+                <datalist id="product-name-suggestions">
+                  {smartCatalogue.map((p) => <option key={p.id} value={p.name} />)}
+                </datalist>
+
+                <div className="space-y-2">
+                  {/* Column headers */}
+                  <div className="flex items-center gap-2 px-1">
+                    <span className="flex-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Item name</span>
+                    <span className="w-24 text-[10px] font-medium text-muted-foreground uppercase tracking-wide flex-shrink-0">Price</span>
+                    <span className="w-20 text-[10px] font-medium text-muted-foreground uppercase tracking-wide flex-shrink-0 text-center">Qty</span>
+                    <span className="w-7 flex-shrink-0" />
                   </div>
-                )}
 
-                {/* ── Add product trigger ── */}
-                <div className="relative">
-                  {/* Trigger button */}
-                  {!showProductDropdown && (
-                    <button
-                      type="button"
-                      onClick={() => { setShowProductDropdown(true); setProductSearch(""); }}
-                      className={
-                        smartSelectedItems.length === 0
-                          ? "w-full flex items-center gap-2 px-3 h-10 border border-dashed border-input rounded-xl bg-muted/30 text-sm text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors"
-                          : "flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:underline"
-                      }
-                    >
-                      <Plus className="h-3.5 w-3.5" />
-                      {smartSelectedItems.length === 0 ? "Select a product" : "Add product"}
-                    </button>
-                  )}
-
-                  {/* ── Product picker panel ── */}
-                  {showProductDropdown && (
-                    <div className="border border-border rounded-xl bg-white shadow-xl overflow-hidden">
-                      {/* Search */}
-                      <div className="p-2.5 border-b border-border">
-                        <div className="relative">
-                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                  {smartInlineItems.map((item, idx) => {
+                    const recalcInline = (next: typeof smartInlineItems) => {
+                      const t = next.reduce((s, i) => s + i.price * i.qty, 0);
+                      const fee = deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0);
+                      setFormData((f) => ({ ...f, amount: String(t + fee) }));
+                    };
+                    return (
+                      <div key={item.rowId} className="flex items-center gap-2">
+                        {/* Name input with autocomplete */}
+                        <input
+                          list="product-name-suggestions"
+                          placeholder="Product name"
+                          value={item.name}
+                          onChange={(e) => {
+                            const name = e.target.value;
+                            const match = smartCatalogue.find((p) => p.name.toLowerCase() === name.toLowerCase());
+                            const next = smartInlineItems.map((si, i) =>
+                              i === idx ? { ...si, name, price: match ? (match.discountedPrice ?? match.price) : si.price } : si
+                            );
+                            setSmartInlineItems(next);
+                            recalcInline(next);
+                          }}
+                          className="flex-1 px-3 py-2 text-sm border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring bg-background"
+                        />
+                        {/* Price */}
+                        <div className="relative w-24 flex-shrink-0">
+                          <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground select-none">₹</span>
                           <input
-                            autoFocus
-                            placeholder="Search products…"
-                            value={productSearch}
-                            onChange={(e) => setProductSearch(e.target.value)}
-                            className="w-full pl-8 pr-3 py-1.5 text-sm border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring"
+                            type="number" min={0} placeholder="0"
+                            value={item.price || ""}
+                            onChange={(e) => {
+                              const next = smartInlineItems.map((si, i) => i === idx ? { ...si, price: Number(e.target.value) || 0 } : si);
+                              setSmartInlineItems(next); recalcInline(next);
+                            }}
+                            className="w-full pl-6 pr-2 py-2 text-sm border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring bg-background"
                           />
                         </div>
-                      </div>
-
-                      {/* Product cards — only unselected */}
-                      <div className="max-h-52 overflow-y-auto p-2 space-y-1">
-                        {smartCatalogue
-                          .filter((p) =>
-                            !smartSelectedIds.includes(p.id) &&
-                            p.name.toLowerCase().includes(productSearch.toLowerCase())
-                          )
-                          .map((p) => {
-                            const orig = availableProducts.find((x) => x.id === p.id);
-                            return (
-                              <button
-                                key={p.id}
-                                type="button"
-                                className="w-full flex items-center gap-3 px-2.5 py-2 rounded-lg hover:bg-muted/60 transition-colors text-left"
-                                onClick={() => {
-                                  const effectivePrice = p.discountedPrice ?? p.price;
-                                  const nextItems = [...smartSelectedItems, { id: p.id, price: effectivePrice, qty: 1 }];
-                                  setSmartSelectedItems(nextItems);
-                                  setSmartSelectedIds([...smartSelectedIds, p.id]);
-                                  const t = nextItems.reduce((s, si) => s + si.price * si.qty, 0);
-                                  const fee = deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0);
-                                  setFormData((f) => ({ ...f, amount: String(t + fee) }));
-                                  setShowProductDropdown(false);
-                                  setProductSearch("");
-                                }}
-                              >
-                                {orig?.image
-                                  ? <img src={orig.image} alt={p.name} className="h-10 w-10 rounded-lg object-cover flex-shrink-0" />
-                                  : <div className="h-10 w-10 rounded-lg bg-muted flex-shrink-0 flex items-center justify-center"><Package className="h-4 w-4 text-muted-foreground" /></div>
-                                }
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {p.discountedPrice
-                                      ? <><span className="text-green-600 font-medium">₹{p.discountedPrice.toLocaleString()}</span><span className="line-through ml-1">₹{p.price.toLocaleString()}</span></>
-                                      : `₹${p.price.toLocaleString()}`}
-                                  </p>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        {smartCatalogue.filter((p) => !smartSelectedIds.includes(p.id) && p.name.toLowerCase().includes(productSearch.toLowerCase())).length === 0 && (
-                          <p className="px-3 py-3 text-sm text-muted-foreground">
-                            {smartSelectedIds.length === smartCatalogue.length ? "All products added" : "No products found"}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Footer actions */}
-                      <div className="border-t border-border p-1.5 flex items-center justify-between">
+                        {/* Qty */}
+                        <div className="flex items-center gap-1 w-20 flex-shrink-0 justify-center">
+                          <button type="button"
+                            className="h-8 w-8 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:bg-muted text-base leading-none"
+                            onClick={() => {
+                              const next = smartInlineItems.map((si, i) => i === idx ? { ...si, qty: Math.max(1, si.qty - 1) } : si);
+                              setSmartInlineItems(next); recalcInline(next);
+                            }}>−</button>
+                          <span className="w-5 text-center text-sm font-medium">{item.qty}</span>
+                          <button type="button"
+                            className="h-8 w-8 rounded-md border border-input flex items-center justify-center text-muted-foreground hover:bg-muted text-base leading-none"
+                            onClick={() => {
+                              const next = smartInlineItems.map((si, i) => i === idx ? { ...si, qty: si.qty + 1 } : si);
+                              setSmartInlineItems(next); recalcInline(next);
+                            }}>+</button>
+                        </div>
+                        {/* Remove */}
                         <button type="button"
-                          className="flex items-center gap-2 px-3 py-1.5 text-sm text-primary font-medium hover:bg-primary/5 rounded-md transition-colors"
-                          onClick={() => { setShowProductDropdown(false); setShowCreateProduct(true); }}>
-                          <Plus className="h-3.5 w-3.5" /> Create new product
-                        </button>
-                        <button type="button"
-                          className="px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground rounded-md transition-colors"
-                          onClick={() => { setShowProductDropdown(false); setProductSearch(""); }}>
-                          Cancel
+                          className="w-7 h-8 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-md transition-colors flex-shrink-0"
+                          onClick={() => {
+                            const next = smartInlineItems.filter((_, i) => i !== idx);
+                            const safe = next.length ? next : [{ rowId: Date.now().toString(), name: "", price: 0, qty: 1 }];
+                            setSmartInlineItems(safe);
+                            const t = safe.reduce((s, i) => s + i.price * i.qty, 0);
+                            const fee = deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0);
+                            setFormData((f) => ({ ...f, amount: String(t + fee) }));
+                          }}>
+                          <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
+                    );
+                  })}
+                </div>
+
+                {/* Footer: Add item + running total */}
+                <div className="flex items-center justify-between mt-2.5">
+                  <button type="button"
+                    className="flex items-center gap-1.5 text-sm text-blue-600 font-medium hover:underline"
+                    onClick={() => setSmartInlineItems(prev => [...prev, { rowId: Date.now().toString(), name: "", price: 0, qty: 1 }])}>
+                    <Plus className="h-3.5 w-3.5" /> Add item
+                  </button>
+                  {smartInlineItems.some((i) => i.name.trim()) && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Total</span>
+                      <span className="text-sm font-semibold text-foreground">
+                        ₹{smartInlineItems.reduce((s, i) => s + i.price * i.qty, 0).toLocaleString("en-IN")}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -1343,7 +1269,7 @@ const PaymentLinks = () => {
                       setDeliveryFreeShipping(!adding);
                       if (!adding) {
                         setDeliveryFee("");
-                        const t = smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0);
+                        const t = smartInlineItems.reduce((s, i) => s + i.price * i.qty, 0);
                         setFormData((f) => ({ ...f, amount: String(t) }));
                       }
                     }}
@@ -1360,7 +1286,7 @@ const PaymentLinks = () => {
                       value={deliveryFee}
                       onChange={(e) => {
                         setDeliveryFee(e.target.value);
-                        const t = smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0);
+                        const t = smartInlineItems.reduce((s, i) => s + i.price * i.qty, 0);
                         const fee = Number(e.target.value) || 0;
                         setFormData((f) => ({ ...f, amount: String(t + fee) }));
                       }}
@@ -1373,19 +1299,19 @@ const PaymentLinks = () => {
             )}
 
             {/* Magic Link: Total (read-only summary) */}
-            {createLinkTab === "smart" && smartSelectedItems.length > 0 && (
+            {createLinkTab === "smart" && smartInlineItems.some((i) => i.name.trim()) && (
               <div className="rounded-lg bg-muted/40 border border-border px-4 py-3 flex items-center justify-between gap-3">
                 <div>
                   <p className="text-xs text-muted-foreground font-medium">Total Amount</p>
                   {!deliveryFreeShipping && Number(deliveryFee) > 0 && (
                     <p className="text-[11px] text-muted-foreground mt-0.5">
-                      ₹{smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0).toLocaleString()} products
-                      {" + "}₹{Number(deliveryFee).toLocaleString()} delivery
+                      ₹{smartInlineItems.reduce((s, i) => s + i.price * i.qty, 0).toLocaleString("en-IN")} products
+                      {" + "}₹{Number(deliveryFee).toLocaleString("en-IN")} delivery
                     </p>
                   )}
                 </div>
                 <p className="text-xl font-black text-foreground">
-                  ₹{(smartSelectedItems.reduce((s, si) => s + si.price * si.qty, 0) + (deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0))).toLocaleString()}
+                  ₹{(smartInlineItems.reduce((s, i) => s + i.price * i.qty, 0) + (deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0))).toLocaleString("en-IN")}
                 </p>
               </div>
             )}
