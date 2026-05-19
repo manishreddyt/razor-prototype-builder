@@ -1,0 +1,4 @@
+src/pages/ReceiptsSettings.tsx
+  f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-19T12:43:37.953Z 433-438,469-474,563,565-569,572-573,576-578,581-588,590-592,594-596,598,600-606,608-615,896
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-19T12:43:37.953Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 54, "overriden_lines": 0}}}
