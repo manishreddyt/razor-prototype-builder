@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, Check, FileText, Info, Trash2, Download, Send, Receipt, Wand2, Sparkles, ImagePlus, Tag, ChevronUp, Truck, MapPin, Link2, ArrowRight } from "lucide-react";
+import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, Check, FileText, Info, Trash2, Download, Send, Receipt, Wand2, Sparkles, ImagePlus, Tag, ChevronUp, Truck, MapPin, Link2, ArrowRight, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -190,7 +190,16 @@ const PaymentLinks = () => {
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [logisticsEnabled, setLogisticsEnabled] = useState(false);
   const [logisticsPartner, setLogisticsPartner] = useState<"shiprocket" | "delhivery">("shiprocket");
-  const [logisticsConnected, setLogisticsConnected] = useState(false);
+  const [logisticsConnected, setLogisticsConnected] = useState(() => {
+    try {
+      const stored = localStorage.getItem("pl_logistics_connections");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return parsed.shiprocket?.connected || parsed.delhivery?.connected || false;
+      }
+    } catch {}
+    return false;
+  });
   const [showConnectLogistics, setShowConnectLogistics] = useState(false);
   const [logisticsApiKey, setLogisticsApiKey] = useState("");
   const [logisticsConnectStep, setLogisticsConnectStep] = useState(1);
@@ -995,10 +1004,15 @@ const PaymentLinks = () => {
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Payment Links</h1>
           </div>
-          <Button className="gap-2 w-full sm:w-auto" onClick={() => setShowCreate(true)}>
-            <Plus className="h-4 w-4" />
-            <span className="whitespace-nowrap">Create Payment Link</span>
-          </Button>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="icon" className="h-9 w-9 flex-shrink-0" title="Payment Links Settings" onClick={() => navigate("/payment-links/settings")}>
+              <Settings className="h-4 w-4" />
+            </Button>
+            <Button className="gap-2 flex-1 sm:flex-none" onClick={() => setShowCreate(true)}>
+              <Plus className="h-4 w-4" />
+              <span className="whitespace-nowrap">Create Payment Link</span>
+            </Button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -2302,6 +2316,17 @@ const PaymentLinks = () => {
                   setLogisticsEnabled(true);
                   setShowConnectLogistics(false);
                   setLogisticsConnectStep(1);
+                  // Persist to shared storage so Settings page stays in sync
+                  try {
+                    const existing = JSON.parse(localStorage.getItem("pl_logistics_connections") || "{}");
+                    existing[logisticsPartner] = {
+                      connected: true,
+                      accountEmail: `merchant@${logisticsPartner}.com`,
+                      connectedAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+                      apiKey: logisticsApiKey,
+                    };
+                    localStorage.setItem("pl_logistics_connections", JSON.stringify(existing));
+                  } catch {}
                   toast.success(`${logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} connected successfully!`);
                 }}>
                 Done

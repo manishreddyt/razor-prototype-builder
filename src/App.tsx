@@ -50,6 +50,7 @@ import AIAppBuilderDetail from "./pages/AIAppBuilderDetail";
 import Orders from "./pages/Orders";
 import AccountSettings from "./pages/AccountSettings";
 import ReceiptsSettings from "./pages/ReceiptsSettings";
+import PaymentLinksSettings from "./pages/PaymentLinksSettings";
 import NotFound from "./pages/NotFound";
 import { PaymentLinkCheckout } from "./components/PaymentLinkCheckout";
 import { PaymentSuccess } from "./components/PaymentSuccess";
@@ -103,6 +104,7 @@ const App = () => {
           <Route path="/reports" element={<Reports />} />
           <Route path="/magic-checkout" element={<MagicCheckout />} />
           <Route path="/payment-links" element={<PaymentLinks />} />
+          <Route path="/payment-links/settings" element={<PaymentLinksSettings />} />
           <Route path="/pay/:linkId" element={<PaymentLinkCheckout />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/payment-pages" element={<PaymentPages />} />
