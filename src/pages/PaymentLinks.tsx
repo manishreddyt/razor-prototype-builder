@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, Check, FileText, Info, Trash2, Download, Send, Receipt, Wand2, Sparkles, ImagePlus, Tag, ChevronUp } from "lucide-react";
+import { Plus, Search, ExternalLink, X, Copy, Eye, Share2, MessageCircle, Mail, ChevronDown, Package, CheckCircle2, Check, FileText, Info, Trash2, Download, Send, Receipt, Wand2, Sparkles, ImagePlus, Tag, ChevronUp, Truck, MapPin, Link2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -185,6 +185,28 @@ const PaymentLinks = () => {
   const [productSearch, setProductSearch] = useState("");
   const [showProductDropdown, setShowProductDropdown] = useState(false);
   const [smartInlineItems, setSmartInlineItems] = useState<Array<{ rowId: string; name: string; price: number; qty: number }>>([{ rowId: "1", name: "", price: 0, qty: 1 }]);
+
+  // Logistics / Advanced Settings
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  const [logisticsEnabled, setLogisticsEnabled] = useState(false);
+  const [logisticsPartner, setLogisticsPartner] = useState<"shiprocket" | "delhivery">("shiprocket");
+  const [logisticsConnected, setLogisticsConnected] = useState(false);
+  const [showConnectLogistics, setShowConnectLogistics] = useState(false);
+  const [logisticsApiKey, setLogisticsApiKey] = useState("");
+  const [logisticsConnectStep, setLogisticsConnectStep] = useState(1);
+  const [lsAddress, setLsAddress] = useState("5th Cross, Koramangala 4th Block");
+  const [lsCity, setLsCity] = useState("Bengaluru");
+  const [lsState, setLsState] = useState("Karnataka");
+  const [lsPin, setLsPin] = useState("560034");
+  const [lsProducts, setLsProducts] = useState([{ id: "1", name: "", price: 0, qty: 1, discount: 0, taxRate: 0 }]);
+  const [lsShipping, setLsShipping] = useState(0);
+  const [lsGiftWrap, setLsGiftWrap] = useState(0);
+  const [lsTxnCharges, setLsTxnCharges] = useState(0);
+  const [lsTotalDiscount, setLsTotalDiscount] = useState(0);
+  const [lsDeadWeight, setLsDeadWeight] = useState("");
+  const [lsDimL, setLsDimL] = useState("");
+  const [lsDimB, setLsDimB] = useState("");
+  const [lsDimH, setLsDimH] = useState("");
 
   // Create-product modal
   const [showCreateProduct, setShowCreateProduct] = useState(false);
@@ -1962,6 +1984,244 @@ const PaymentLinks = () => {
                 )}
           </div>
 
+          {/* Advanced Settings — Magic Link only */}
+          {createLinkTab === "smart" && (
+            <div className="px-6 pb-4">
+              <div className="border border-border rounded-xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedSettings(v => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                >
+                  <span className="text-sm font-semibold text-foreground">Advanced Settings</span>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showAdvancedSettings ? "rotate-180" : ""}`} />
+                </button>
+                {showAdvancedSettings && (
+                  <div className="px-4 py-4 space-y-5 bg-white">
+                    {/* Send to Logistics Partner toggle */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Truck className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-semibold text-foreground">Send order to logistics partner</span>
+                        </div>
+                        <Switch
+                          checked={logisticsEnabled}
+                          onCheckedChange={(v) => {
+                            if (v && !logisticsConnected) {
+                              setLogisticsPartner("shiprocket");
+                              setShowConnectLogistics(true);
+                            } else {
+                              setLogisticsEnabled(v);
+                            }
+                          }}
+                        />
+                      </div>
+
+                      {logisticsEnabled && logisticsConnected && (
+                        <div className="space-y-4">
+                          {/* Partner selector */}
+                          <div className="flex gap-2">
+                            {(["shiprocket", "delhivery"] as const).map((p) => (
+                              <button key={p} type="button"
+                                onClick={() => setLogisticsPartner(p)}
+                                className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold capitalize transition-all ${logisticsPartner === p ? "border-blue-500 bg-blue-50 text-blue-700" : "border-border text-muted-foreground hover:border-gray-300"}`}>
+                                {p.charAt(0).toUpperCase() + p.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+
+                          {/* Info message */}
+                          <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5">
+                            <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-blue-700">
+                              Order will be sent to {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} once the payment is successfully completed by the customer.
+                            </p>
+                          </div>
+
+                          {/* Pickup Address */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Pickup Address</span>
+                            </div>
+                            <Input placeholder="Full address" value={lsAddress} onChange={(e) => setLsAddress(e.target.value)} className="text-sm" />
+                            <div className="grid grid-cols-3 gap-2">
+                              <Input placeholder="City" value={lsCity} onChange={(e) => setLsCity(e.target.value)} className="text-sm" />
+                              <Input placeholder="State" value={lsState} onChange={(e) => setLsState(e.target.value)} className="text-sm" />
+                              <Input placeholder="Pincode" value={lsPin} onChange={(e) => setLsPin(e.target.value)} className="text-sm" />
+                            </div>
+                          </div>
+
+                          {/* Product Details */}
+                          <div className="space-y-2">
+                            <span className="text-xs font-semibold text-foreground uppercase tracking-wide block">Product Details</span>
+                            <div className="space-y-3">
+                              {/* Column headers */}
+                              <div className="grid grid-cols-[1fr_80px_80px_70px_70px_24px] gap-1.5 px-0.5">
+                                {["Product Name", "Unit Price", "Qty", "Discount", "Tax %", ""].map((h) => (
+                                  <span key={h} className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{h}</span>
+                                ))}
+                              </div>
+                              {lsProducts.map((prod, idx) => (
+                                <div key={prod.id} className="grid grid-cols-[1fr_80px_80px_70px_70px_24px] gap-1.5 items-center">
+                                  <input
+                                    list="product-name-suggestions"
+                                    placeholder="Product name"
+                                    value={prod.name}
+                                    onChange={(e) => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, name: e.target.value } : p))}
+                                    className="w-full px-2.5 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring"
+                                  />
+                                  <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">₹</span>
+                                    <input type="number" min={0} placeholder="0.00" value={prod.price || ""}
+                                      onChange={(e) => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, price: Number(e.target.value) } : p))}
+                                      className="w-full pl-5 pr-1 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                                  </div>
+                                  <div className="flex items-center gap-0.5">
+                                    <button type="button" className="h-7 w-6 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted text-sm"
+                                      onClick={() => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, qty: Math.max(1, p.qty - 1) } : p))}>−</button>
+                                    <span className="w-6 text-center text-xs font-medium">{prod.qty}</span>
+                                    <button type="button" className="h-7 w-6 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted text-sm"
+                                      onClick={() => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, qty: p.qty + 1 } : p))}>+</button>
+                                  </div>
+                                  <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">₹</span>
+                                    <input type="number" min={0} placeholder="0.00" value={prod.discount || ""}
+                                      onChange={(e) => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, discount: Number(e.target.value) } : p))}
+                                      className="w-full pl-5 pr-1 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                                  </div>
+                                  <div className="relative">
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
+                                    <input type="number" min={0} max={28} placeholder="0" value={prod.taxRate || ""}
+                                      onChange={(e) => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, taxRate: Number(e.target.value) } : p))}
+                                      className="w-full pl-5 pr-1 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                                  </div>
+                                  <button type="button" className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-destructive"
+                                    onClick={() => setLsProducts(prev => prev.filter((_, i) => i !== idx).length ? prev.filter((_, i) => i !== idx) : [{ id: "1", name: "", price: 0, qty: 1, discount: 0, taxRate: 0 }])}>
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            <button type="button"
+                              className="flex items-center gap-1.5 text-xs text-blue-600 font-medium hover:underline mt-1"
+                              onClick={() => setLsProducts(prev => [...prev, { id: Date.now().toString(), name: "", price: 0, qty: 1, discount: 0, taxRate: 0 }])}>
+                              <Plus className="h-3 w-3" /> Add Another Product
+                            </button>
+                          </div>
+
+                          {/* Other Charges */}
+                          <div className="space-y-2">
+                            <span className="text-xs font-semibold text-foreground uppercase tracking-wide block">Other Charges &amp; Discounts <span className="text-muted-foreground font-normal normal-case">(Optional)</span></span>
+                            <div className="grid grid-cols-2 gap-2">
+                              {[
+                                { label: "Shipping Charges", val: lsShipping, set: setLsShipping },
+                                { label: "Gift Wrap", val: lsGiftWrap, set: setLsGiftWrap },
+                                { label: "Transaction Charges", val: lsTxnCharges, set: setLsTxnCharges },
+                                { label: "Total Discount", val: lsTotalDiscount, set: setLsTotalDiscount },
+                              ].map(({ label, val, set }) => (
+                                <div key={label}>
+                                  <label className="text-[10px] text-muted-foreground mb-1 block">{label}</label>
+                                  <div className="relative">
+                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₹</span>
+                                    <input type="number" min={0} value={val || ""}
+                                      onChange={(e) => set(Number(e.target.value) || 0)}
+                                      className="w-full pl-6 pr-2 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            {/* Sub-totals */}
+                            <div className="mt-2 rounded-lg bg-secondary/40 divide-y divide-border border border-border overflow-hidden">
+                              {[
+                                { label: "Sub-total for Products", val: lsProducts.reduce((s, p) => s + p.price * p.qty - p.discount, 0) },
+                                { label: "Other Charges", val: lsShipping + lsGiftWrap + lsTxnCharges },
+                                { label: "Total Discount", val: -lsTotalDiscount },
+                              ].map(({ label, val }) => (
+                                <div key={label} className="flex items-center justify-between px-3 py-2">
+                                  <span className="text-xs text-muted-foreground">{label}</span>
+                                  <span className="text-xs font-medium">₹ {val.toLocaleString("en-IN")}</span>
+                                </div>
+                              ))}
+                              <div className="flex items-center justify-between px-3 py-2.5 bg-white">
+                                <span className="text-xs font-semibold text-foreground">Total Order Value</span>
+                                <span className="text-sm font-bold text-foreground">
+                                  ₹ {(lsProducts.reduce((s, p) => s + p.price * p.qty - p.discount, 0) + lsShipping + lsGiftWrap + lsTxnCharges - lsTotalDiscount).toLocaleString("en-IN")}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">Note: All prices/charges are inclusive of GST.</p>
+                          </div>
+
+                          {/* Package Details */}
+                          <div className="space-y-2">
+                            <span className="text-xs font-semibold text-foreground uppercase tracking-wide block">Package Details</span>
+                            <p className="text-[11px] text-muted-foreground">Provide details of the final package that includes all ordered items packed together.</p>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="text-[10px] text-muted-foreground mb-1 block">Dead Weight (kg)</label>
+                                <input type="number" min={0} step={0.01} placeholder="0.00"
+                                  value={lsDeadWeight}
+                                  onChange={(e) => setLsDeadWeight(e.target.value)}
+                                  className="w-full px-3 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                                <p className="text-[10px] text-muted-foreground mt-0.5">Min chargeable: 0.5 kg</p>
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-muted-foreground mb-1 block">Volumetric Weight (kg)</label>
+                                <div className="px-3 py-2 text-xs border border-input rounded-lg bg-muted/30 text-muted-foreground">
+                                  {lsDimL && lsDimB && lsDimH
+                                    ? `${((Number(lsDimL) * Number(lsDimB) * Number(lsDimH)) / 5000).toFixed(2)} kg`
+                                    : "0 kg"}
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-muted-foreground mb-1 block">Package Dimensions (cm) — L × B × H</label>
+                              <div className="grid grid-cols-3 gap-2">
+                                {[
+                                  { ph: "Length", val: lsDimL, set: setLsDimL },
+                                  { ph: "Breadth", val: lsDimB, set: setLsDimB },
+                                  { ph: "Height", val: lsDimH, set: setLsDimH },
+                                ].map(({ ph, val, set }) => (
+                                  <input key={ph} type="number" min={0} step={0.1} placeholder={ph}
+                                    value={val}
+                                    onChange={(e) => set(e.target.value)}
+                                    className="w-full px-3 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                                ))}
+                              </div>
+                              <p className="text-[10px] text-muted-foreground mt-0.5">Value should be greater than 0.50 cm</p>
+                            </div>
+                            {lsDeadWeight && (
+                              <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
+                                <p className="text-xs text-blue-700">
+                                  <span className="font-semibold">Applicable Weight:</span>{" "}
+                                  {Math.max(Number(lsDeadWeight), lsDimL && lsDimB && lsDimH ? (Number(lsDimL) * Number(lsDimB) * Number(lsDimH)) / 5000 : 0).toFixed(2)} kg
+                                  {" "}— higher of dead weight or volumetric weight
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Not connected yet */}
+                      {logisticsEnabled && !logisticsConnected && (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-center justify-between gap-3">
+                          <p className="text-xs text-amber-700">Connect your logistics account to enable this feature</p>
+                          <button type="button" className="text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap"
+                            onClick={() => setShowConnectLogistics(true)}>
+                            Connect <ArrowRight className="h-3 w-3 inline" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 flex-shrink-0 bg-white">
             <Button variant="outline" className="px-6" onClick={() => { setShowCreate(false); resetCreateForm(); }}>
@@ -1971,6 +2231,83 @@ const PaymentLinks = () => {
               Create Payment Link
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Connect Logistics Partner Modal ── */}
+      <Dialog open={showConnectLogistics} onOpenChange={(open) => { if (!open) { setShowConnectLogistics(false); setLogisticsConnectStep(1); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-blue-600" />
+              Connect {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"}
+            </DialogTitle>
+          </DialogHeader>
+
+          {logisticsConnectStep === 1 && (
+            <div className="space-y-4">
+              <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 space-y-3">
+                <p className="text-sm font-semibold text-blue-800">Steps to connect your account</p>
+                {[
+                  `Log in to your ${logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} account`,
+                  "Go to Settings → API → Generate API Key",
+                  "Copy the API Key and paste it below",
+                  "Click Connect — your account will be linked instantly",
+                ].map((step, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div className="h-5 w-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
+                    <p className="text-sm text-blue-700">{step}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-foreground">
+                  {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} API Key
+                </label>
+                <Input
+                  placeholder="Paste your API key here"
+                  value={logisticsApiKey}
+                  onChange={(e) => setLogisticsApiKey(e.target.value)}
+                  className="font-mono text-sm"
+                />
+              </div>
+
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => { setShowConnectLogistics(false); setLogisticsConnectStep(1); }}>Cancel</Button>
+                <Button
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={!logisticsApiKey.trim()}
+                  onClick={() => setLogisticsConnectStep(2)}>
+                  Connect <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {logisticsConnectStep === 2 && (
+            <div className="space-y-4 text-center py-4">
+              <div className="h-14 w-14 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+                <CheckCircle2 className="h-7 w-7 text-green-600" />
+              </div>
+              <div>
+                <p className="text-base font-bold text-foreground">
+                  {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} Connected!
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">Your logistics account is now linked to Razorpay. Orders will be auto-pushed after payment.</p>
+              </div>
+              <Button className="w-full bg-blue-600 hover:bg-blue-700"
+                onClick={() => {
+                  setLogisticsConnected(true);
+                  setLogisticsEnabled(true);
+                  setShowConnectLogistics(false);
+                  setLogisticsConnectStep(1);
+                  toast.success(`${logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} connected successfully!`);
+                }}>
+                Done
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
