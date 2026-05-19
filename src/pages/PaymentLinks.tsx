@@ -188,21 +188,23 @@ const PaymentLinks = () => {
 
   // Logistics / Advanced Settings
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
-  const [logisticsEnabled, setLogisticsEnabled] = useState(false);
-  const [logisticsPartner, setLogisticsPartner] = useState<"shiprocket" | "delhivery">("shiprocket");
-  const [logisticsConnected, setLogisticsConnected] = useState(() => {
+  // Per-partner connection state (synced with pl_logistics_connections in localStorage)
+  const loadPartnerConnections = () => {
     try {
       const stored = localStorage.getItem("pl_logistics_connections");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        return parsed.shiprocket?.connected || parsed.delhivery?.connected || false;
-      }
+      if (stored) return JSON.parse(stored) as Record<string, { connected: boolean; accountEmail: string }>;
     } catch {}
-    return false;
-  });
-  const [showConnectLogistics, setShowConnectLogistics] = useState(false);
-  const [logisticsApiKey, setLogisticsApiKey] = useState("");
-  const [logisticsConnectStep, setLogisticsConnectStep] = useState(1);
+    return { shiprocket: { connected: false, accountEmail: "" }, delhivery: { connected: false, accountEmail: "" } };
+  };
+  const [partnerConnections, setPartnerConnections] = useState(loadPartnerConnections);
+  // Which partner's inline connect form is open (null = none)
+  const [expandedConnectPartner, setExpandedConnectPartner] = useState<"shiprocket" | "delhivery" | null>(null);
+  const [logisticsEmail, setLogisticsEmail] = useState("");
+  const [logisticsPassword, setLogisticsPassword] = useState("");
+  // Legacy: keep for save logic
+  const [logisticsEnabled, setLogisticsEnabled] = useState(false);
+  const [logisticsPartner, setLogisticsPartner] = useState<"shiprocket" | "delhivery">("shiprocket");
+  const logisticsConnected = partnerConnections.shiprocket?.connected || partnerConnections.delhivery?.connected || false;
   const [lsAddress, setLsAddress] = useState("5th Cross, Koramangala 4th Block");
   const [lsCity, setLsCity] = useState("Bengaluru");
   const [lsState, setLsState] = useState("Karnataka");
@@ -1996,245 +1998,196 @@ const PaymentLinks = () => {
                     </div>
                   </div>
                 )}
-          </div>
-
-          {/* Advanced Settings — Magic Link only */}
+          {/* Advanced Settings — Magic Link only, inside the scrollable area */}
           {createLinkTab === "smart" && (
-            <div className="px-6 pb-4">
-              <div className="border border-border rounded-xl overflow-hidden">
-                <button
-                  type="button"
-                  onClick={() => setShowAdvancedSettings(v => !v)}
-                  className="w-full flex items-center justify-between px-4 py-3 bg-secondary/30 hover:bg-secondary/50 transition-colors"
-                >
-                  <span className="text-sm font-semibold text-foreground">Advanced Settings</span>
-                  <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showAdvancedSettings ? "rotate-180" : ""}`} />
-                </button>
-                {showAdvancedSettings && (
-                  <div className="px-4 py-4 space-y-5 bg-white">
-                    {/* Send to Logistics Partner toggle */}
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Truck className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-semibold text-foreground">Send order to logistics partner</span>
-                        </div>
-                        <Switch
-                          checked={logisticsEnabled}
-                          onCheckedChange={(v) => {
-                            if (v && !logisticsConnected) {
-                              setLogisticsPartner("shiprocket");
-                              setShowConnectLogistics(true);
-                            } else {
-                              setLogisticsEnabled(v);
-                            }
-                          }}
-                        />
-                      </div>
+            <div className="border border-border rounded-xl overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowAdvancedSettings(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-secondary/30 hover:bg-secondary/50 transition-colors"
+              >
+                <span className="text-sm font-semibold text-foreground">Advanced Settings</span>
+                <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${showAdvancedSettings ? "rotate-180" : ""}`} />
+              </button>
 
-                      {logisticsEnabled && logisticsConnected && (
-                        <div className="space-y-4">
-                          {/* Partner selector */}
-                          <div className="flex gap-2">
-                            {(["shiprocket", "delhivery"] as const).map((p) => (
-                              <button key={p} type="button"
-                                onClick={() => setLogisticsPartner(p)}
-                                className={`flex-1 py-2.5 rounded-xl border-2 text-sm font-semibold capitalize transition-all ${logisticsPartner === p ? "border-blue-500 bg-blue-50 text-blue-700" : "border-border text-muted-foreground hover:border-gray-300"}`}>
-                                {p.charAt(0).toUpperCase() + p.slice(1)}
-                              </button>
-                            ))}
-                          </div>
+              {showAdvancedSettings && (
+                <div className="px-4 py-4 space-y-3 bg-white">
+                  {/* Section label */}
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground">Send order to logistics partner</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    After payment, the order is automatically pushed to your connected partner for fulfilment.
+                  </p>
 
-                          {/* Info message */}
-                          <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2.5">
-                            <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
-                            <p className="text-xs text-blue-700">
-                              Order will be sent to {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} once the payment is successfully completed by the customer.
-                            </p>
-                          </div>
+                  {/* Per-partner cards */}
+                  {(["shiprocket", "delhivery"] as const).map((partner) => {
+                    const isConnected = !!partnerConnections[partner]?.connected;
+                    const isExpanded = expandedConnectPartner === partner;
+                    const meta = partner === "shiprocket"
+                      ? { logo: "🚀", name: "Shiprocket", desc: "25+ courier partners · Pan-India coverage" }
+                      : { logo: "📦", name: "Delhivery", desc: "18,500+ pin codes · Same-day delivery" };
+                    const steps = partner === "shiprocket" ? [
+                      "Visit shiprocket.in and create a free seller account",
+                      "Verify your email and complete your store profile",
+                      "Enter your Shiprocket email & password below — Razorpay will connect via their secure API",
+                    ] : [
+                      "Visit business.delhivery.com and register as a business",
+                      "Get your account approved by the Delhivery team (usually 1–2 business days)",
+                      "Enter your Delhivery email & password below to authorise the connection",
+                    ];
 
-                          {/* Pickup Address */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-1.5">
-                              <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
-                              <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Pickup Address</span>
-                            </div>
-                            <Input placeholder="Full address" value={lsAddress} onChange={(e) => setLsAddress(e.target.value)} className="text-sm" />
-                            <div className="grid grid-cols-3 gap-2">
-                              <Input placeholder="City" value={lsCity} onChange={(e) => setLsCity(e.target.value)} className="text-sm" />
-                              <Input placeholder="State" value={lsState} onChange={(e) => setLsState(e.target.value)} className="text-sm" />
-                              <Input placeholder="Pincode" value={lsPin} onChange={(e) => setLsPin(e.target.value)} className="text-sm" />
-                            </div>
-                          </div>
-
-                          {/* Product Details */}
-                          <div className="space-y-2">
-                            <span className="text-xs font-semibold text-foreground uppercase tracking-wide block">Product Details</span>
-                            <div className="space-y-3">
-                              {/* Column headers */}
-                              <div className="grid grid-cols-[1fr_80px_80px_70px_70px_24px] gap-1.5 px-0.5">
-                                {["Product Name", "Unit Price", "Qty", "Discount", "Tax %", ""].map((h) => (
-                                  <span key={h} className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">{h}</span>
-                                ))}
-                              </div>
-                              {lsProducts.map((prod, idx) => (
-                                <div key={prod.id} className="grid grid-cols-[1fr_80px_80px_70px_70px_24px] gap-1.5 items-center">
-                                  <input
-                                    list="product-name-suggestions"
-                                    placeholder="Product name"
-                                    value={prod.name}
-                                    onChange={(e) => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, name: e.target.value } : p))}
-                                    className="w-full px-2.5 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring"
-                                  />
-                                  <div className="relative">
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">₹</span>
-                                    <input type="number" min={0} placeholder="0.00" value={prod.price || ""}
-                                      onChange={(e) => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, price: Number(e.target.value) } : p))}
-                                      className="w-full pl-5 pr-1 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
-                                  </div>
-                                  <div className="flex items-center gap-0.5">
-                                    <button type="button" className="h-7 w-6 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted text-sm"
-                                      onClick={() => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, qty: Math.max(1, p.qty - 1) } : p))}>−</button>
-                                    <span className="w-6 text-center text-xs font-medium">{prod.qty}</span>
-                                    <button type="button" className="h-7 w-6 rounded border border-input flex items-center justify-center text-muted-foreground hover:bg-muted text-sm"
-                                      onClick={() => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, qty: p.qty + 1 } : p))}>+</button>
-                                  </div>
-                                  <div className="relative">
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">₹</span>
-                                    <input type="number" min={0} placeholder="0.00" value={prod.discount || ""}
-                                      onChange={(e) => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, discount: Number(e.target.value) } : p))}
-                                      className="w-full pl-5 pr-1 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
-                                  </div>
-                                  <div className="relative">
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">%</span>
-                                    <input type="number" min={0} max={28} placeholder="0" value={prod.taxRate || ""}
-                                      onChange={(e) => setLsProducts(prev => prev.map((p, i) => i === idx ? { ...p, taxRate: Number(e.target.value) } : p))}
-                                      className="w-full pl-5 pr-1 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
-                                  </div>
-                                  <button type="button" className="h-6 w-6 flex items-center justify-center text-muted-foreground hover:text-destructive"
-                                    onClick={() => setLsProducts(prev => prev.filter((_, i) => i !== idx).length ? prev.filter((_, i) => i !== idx) : [{ id: "1", name: "", price: 0, qty: 1, discount: 0, taxRate: 0 }])}>
-                                    <X className="h-3 w-3" />
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                            <button type="button"
-                              className="flex items-center gap-1.5 text-xs text-blue-600 font-medium hover:underline mt-1"
-                              onClick={() => setLsProducts(prev => [...prev, { id: Date.now().toString(), name: "", price: 0, qty: 1, discount: 0, taxRate: 0 }])}>
-                              <Plus className="h-3 w-3" /> Add Another Product
-                            </button>
-                          </div>
-
-                          {/* Other Charges */}
-                          <div className="space-y-2">
-                            <span className="text-xs font-semibold text-foreground uppercase tracking-wide block">Other Charges &amp; Discounts <span className="text-muted-foreground font-normal normal-case">(Optional)</span></span>
-                            <div className="grid grid-cols-2 gap-2">
-                              {[
-                                { label: "Shipping Charges", val: lsShipping, set: setLsShipping },
-                                { label: "Gift Wrap", val: lsGiftWrap, set: setLsGiftWrap },
-                                { label: "Transaction Charges", val: lsTxnCharges, set: setLsTxnCharges },
-                                { label: "Total Discount", val: lsTotalDiscount, set: setLsTotalDiscount },
-                              ].map(({ label, val, set }) => (
-                                <div key={label}>
-                                  <label className="text-[10px] text-muted-foreground mb-1 block">{label}</label>
-                                  <div className="relative">
-                                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">₹</span>
-                                    <input type="number" min={0} value={val || ""}
-                                      onChange={(e) => set(Number(e.target.value) || 0)}
-                                      className="w-full pl-6 pr-2 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                            {/* Sub-totals */}
-                            <div className="mt-2 rounded-lg bg-secondary/40 divide-y divide-border border border-border overflow-hidden">
-                              {[
-                                { label: "Sub-total for Products", val: lsProducts.reduce((s, p) => s + p.price * p.qty - p.discount, 0) },
-                                { label: "Other Charges", val: lsShipping + lsGiftWrap + lsTxnCharges },
-                                { label: "Total Discount", val: -lsTotalDiscount },
-                              ].map(({ label, val }) => (
-                                <div key={label} className="flex items-center justify-between px-3 py-2">
-                                  <span className="text-xs text-muted-foreground">{label}</span>
-                                  <span className="text-xs font-medium">₹ {val.toLocaleString("en-IN")}</span>
-                                </div>
-                              ))}
-                              <div className="flex items-center justify-between px-3 py-2.5 bg-white">
-                                <span className="text-xs font-semibold text-foreground">Total Order Value</span>
-                                <span className="text-sm font-bold text-foreground">
-                                  ₹ {(lsProducts.reduce((s, p) => s + p.price * p.qty - p.discount, 0) + lsShipping + lsGiftWrap + lsTxnCharges - lsTotalDiscount).toLocaleString("en-IN")}
+                    return (
+                      <div key={partner} className={`rounded-xl border overflow-hidden transition-all ${isConnected ? "border-emerald-200 bg-emerald-50/30" : "border-border bg-background"}`}>
+                        {/* Card header row */}
+                        <div className="flex items-center gap-3 px-3.5 py-3">
+                          <span className="text-xl flex-shrink-0">{meta.logo}</span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-sm font-semibold text-foreground">{meta.name}</span>
+                              {isConnected && (
+                                <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">
+                                  <CheckCircle2 className="h-2.5 w-2.5" /> Connected
                                 </span>
-                              </div>
+                              )}
                             </div>
-                            <p className="text-[10px] text-muted-foreground">Note: All prices/charges are inclusive of GST.</p>
+                            <p className="text-[11px] text-muted-foreground leading-tight">{meta.desc}</p>
                           </div>
-
-                          {/* Package Details */}
-                          <div className="space-y-2">
-                            <span className="text-xs font-semibold text-foreground uppercase tracking-wide block">Package Details</span>
-                            <p className="text-[11px] text-muted-foreground">Provide details of the final package that includes all ordered items packed together.</p>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-[10px] text-muted-foreground mb-1 block">Dead Weight (kg)</label>
-                                <input type="number" min={0} step={0.01} placeholder="0.00"
-                                  value={lsDeadWeight}
-                                  onChange={(e) => setLsDeadWeight(e.target.value)}
-                                  className="w-full px-3 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
-                                <p className="text-[10px] text-muted-foreground mt-0.5">Min chargeable: 0.5 kg</p>
-                              </div>
-                              <div>
-                                <label className="text-[10px] text-muted-foreground mb-1 block">Volumetric Weight (kg)</label>
-                                <div className="px-3 py-2 text-xs border border-input rounded-lg bg-muted/30 text-muted-foreground">
-                                  {lsDimL && lsDimB && lsDimH
-                                    ? `${((Number(lsDimL) * Number(lsDimB) * Number(lsDimH)) / 5000).toFixed(2)} kg`
-                                    : "0 kg"}
-                                </div>
-                              </div>
-                            </div>
-                            <div>
-                              <label className="text-[10px] text-muted-foreground mb-1 block">Package Dimensions (cm) — L × B × H</label>
-                              <div className="grid grid-cols-3 gap-2">
-                                {[
-                                  { ph: "Length", val: lsDimL, set: setLsDimL },
-                                  { ph: "Breadth", val: lsDimB, set: setLsDimB },
-                                  { ph: "Height", val: lsDimH, set: setLsDimH },
-                                ].map(({ ph, val, set }) => (
-                                  <input key={ph} type="number" min={0} step={0.1} placeholder={ph}
-                                    value={val}
-                                    onChange={(e) => set(e.target.value)}
-                                    className="w-full px-3 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
-                                ))}
-                              </div>
-                              <p className="text-[10px] text-muted-foreground mt-0.5">Value should be greater than 0.50 cm</p>
-                            </div>
-                            {lsDeadWeight && (
-                              <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
-                                <p className="text-xs text-blue-700">
-                                  <span className="font-semibold">Applicable Weight:</span>{" "}
-                                  {Math.max(Number(lsDeadWeight), lsDimL && lsDimB && lsDimH ? (Number(lsDimL) * Number(lsDimB) * Number(lsDimH)) / 5000 : 0).toFixed(2)} kg
-                                  {" "}— higher of dead weight or volumetric weight
-                                </p>
-                              </div>
+                          <div className="flex-shrink-0">
+                            {isConnected ? (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = { ...partnerConnections, [partner]: { connected: false, accountEmail: "" } };
+                                  setPartnerConnections(updated);
+                                  try { localStorage.setItem("pl_logistics_connections", JSON.stringify(updated)); } catch {}
+                                  toast.success(`${meta.name} disconnected`);
+                                }}
+                                className="text-xs text-muted-foreground hover:text-destructive font-medium transition-colors"
+                              >
+                                Disconnect
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setExpandedConnectPartner(isExpanded ? null : partner);
+                                  setLogisticsEmail("");
+                                  setLogisticsPassword("");
+                                }}
+                                className="flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
+                              >
+                                {isExpanded ? (
+                                  "Cancel"
+                                ) : (
+                                  <><Link2 className="h-3 w-3" /> Connect</>
+                                )}
+                              </button>
                             )}
                           </div>
                         </div>
-                      )}
 
-                      {/* Not connected yet */}
-                      {logisticsEnabled && !logisticsConnected && (
-                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex items-center justify-between gap-3">
-                          <p className="text-xs text-amber-700">Connect your logistics account to enable this feature</p>
-                          <button type="button" className="text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap"
-                            onClick={() => setShowConnectLogistics(true)}>
-                            Connect <ArrowRight className="h-3 w-3 inline" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+                        {/* Connected state: pickup address */}
+                        {isConnected && (
+                          <div className="px-3.5 pb-3.5 space-y-2.5">
+                            <div className="flex items-start gap-2 rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
+                              <Info className="h-3.5 w-3.5 text-blue-500 mt-0.5 flex-shrink-0" />
+                              <p className="text-xs text-blue-700">
+                                Orders will be sent to {meta.name} once payment is completed.
+                              </p>
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-1.5">
+                                <MapPin className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-[10px] font-semibold text-foreground uppercase tracking-wide">Pickup Address</span>
+                              </div>
+                              <Input placeholder="Full address" value={lsAddress} onChange={(e) => setLsAddress(e.target.value)} className="text-xs h-8" />
+                              <div className="grid grid-cols-3 gap-1.5">
+                                <Input placeholder="City" value={lsCity} onChange={(e) => setLsCity(e.target.value)} className="text-xs h-8" />
+                                <Input placeholder="State" value={lsState} onChange={(e) => setLsState(e.target.value)} className="text-xs h-8" />
+                                <Input placeholder="Pincode" value={lsPin} onChange={(e) => setLsPin(e.target.value)} className="text-xs h-8" />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Inline connect form */}
+                        {!isConnected && isExpanded && (
+                          <div className="border-t border-border px-3.5 py-4 space-y-4 bg-secondary/20">
+                            {/* Numbered steps */}
+                            <div className="space-y-2.5">
+                              {steps.map((step, i) => (
+                                <div key={i} className="flex items-start gap-2.5">
+                                  <span className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
+                                    {i + 1}
+                                  </span>
+                                  <p className="text-xs text-muted-foreground leading-snug">{step}</p>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="h-px bg-border" />
+
+                            {/* Credentials form */}
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-foreground">{meta.name} account credentials</p>
+                              <Input
+                                type="email"
+                                placeholder={`Email address for ${meta.name}`}
+                                value={logisticsEmail}
+                                onChange={(e) => setLogisticsEmail(e.target.value)}
+                                className="text-sm h-9"
+                              />
+                              <Input
+                                type="password"
+                                placeholder="Password"
+                                value={logisticsPassword}
+                                onChange={(e) => setLogisticsPassword(e.target.value)}
+                                className="text-sm h-9"
+                              />
+                              <p className="text-[10px] text-muted-foreground">
+                                By connecting, you authorise Razorpay to push orders to {meta.name} on your behalf.
+                              </p>
+                            </div>
+
+                            <Button
+                              size="sm"
+                              className="w-full bg-blue-600 hover:bg-blue-700"
+                              disabled={!logisticsEmail.trim() || !logisticsPassword.trim()}
+                              onClick={() => {
+                                const updated = {
+                                  ...partnerConnections,
+                                  [partner]: { connected: true, accountEmail: logisticsEmail },
+                                };
+                                setPartnerConnections(updated);
+                                try {
+                                  const existing = JSON.parse(localStorage.getItem("pl_logistics_connections") || "{}");
+                                  existing[partner] = {
+                                    connected: true,
+                                    accountEmail: logisticsEmail,
+                                    connectedAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+                                  };
+                                  localStorage.setItem("pl_logistics_connections", JSON.stringify(existing));
+                                } catch {}
+                                setExpandedConnectPartner(null);
+                                setLogisticsEmail("");
+                                setLogisticsPassword("");
+                                toast.success(`${meta.name} connected successfully!`);
+                              }}
+                            >
+                              Connect {meta.name} <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
+          </div>{/* ← closes overflow-y-auto scrollable div */}
 
           {/* Footer */}
           <div className="px-6 py-4 border-t border-border flex items-center justify-end gap-3 flex-shrink-0 bg-white">
@@ -2245,94 +2198,6 @@ const PaymentLinks = () => {
               Create Payment Link
             </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* ── Connect Logistics Partner Modal ── */}
-      <Dialog open={showConnectLogistics} onOpenChange={(open) => { if (!open) { setShowConnectLogistics(false); setLogisticsConnectStep(1); } }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Truck className="h-5 w-5 text-blue-600" />
-              Connect {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"}
-            </DialogTitle>
-          </DialogHeader>
-
-          {logisticsConnectStep === 1 && (
-            <div className="space-y-4">
-              <div className="rounded-xl bg-blue-50 border border-blue-200 p-4 space-y-3">
-                <p className="text-sm font-semibold text-blue-800">Steps to connect your account</p>
-                {[
-                  `Log in to your ${logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} account`,
-                  "Go to Settings → API → Generate API Key",
-                  "Copy the API Key and paste it below",
-                  "Click Connect — your account will be linked instantly",
-                ].map((step, i) => (
-                  <div key={i} className="flex items-start gap-2.5">
-                    <div className="h-5 w-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">{i + 1}</div>
-                    <p className="text-sm text-blue-700">{step}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-foreground">
-                  {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} API Key
-                </label>
-                <Input
-                  placeholder="Paste your API key here"
-                  value={logisticsApiKey}
-                  onChange={(e) => setLogisticsApiKey(e.target.value)}
-                  className="font-mono text-sm"
-                />
-              </div>
-
-              <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => { setShowConnectLogistics(false); setLogisticsConnectStep(1); }}>Cancel</Button>
-                <Button
-                  className="bg-blue-600 hover:bg-blue-700"
-                  disabled={!logisticsApiKey.trim()}
-                  onClick={() => setLogisticsConnectStep(2)}>
-                  Connect <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {logisticsConnectStep === 2 && (
-            <div className="space-y-4 text-center py-4">
-              <div className="h-14 w-14 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-                <CheckCircle2 className="h-7 w-7 text-green-600" />
-              </div>
-              <div>
-                <p className="text-base font-bold text-foreground">
-                  {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} Connected!
-                </p>
-                <p className="text-sm text-muted-foreground mt-1">Your logistics account is now linked to Razorpay. Orders will be auto-pushed after payment.</p>
-              </div>
-              <Button className="w-full bg-blue-600 hover:bg-blue-700"
-                onClick={() => {
-                  setLogisticsConnected(true);
-                  setLogisticsEnabled(true);
-                  setShowConnectLogistics(false);
-                  setLogisticsConnectStep(1);
-                  // Persist to shared storage so Settings page stays in sync
-                  try {
-                    const existing = JSON.parse(localStorage.getItem("pl_logistics_connections") || "{}");
-                    existing[logisticsPartner] = {
-                      connected: true,
-                      accountEmail: `merchant@${logisticsPartner}.com`,
-                      connectedAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
-                      apiKey: logisticsApiKey,
-                    };
-                    localStorage.setItem("pl_logistics_connections", JSON.stringify(existing));
-                  } catch {}
-                  toast.success(`${logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} connected successfully!`);
-                }}>
-                Done
-              </Button>
-            </div>
-          )}
         </DialogContent>
       </Dialog>
 
