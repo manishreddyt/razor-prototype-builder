@@ -1248,17 +1248,22 @@ const PaymentLinks = () => {
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                         {link.refId || "—"}
                       </td>
-                      {/* Address with copy */}
+                      {/* Address with copy + hover tooltip */}
                       <td className="px-4 py-3 text-xs">
                         {customerAddress ? (
-                          <div className="flex items-start gap-1.5 max-w-[180px]">
-                            <span className="text-foreground line-clamp-2 leading-relaxed">{customerAddress}</span>
+                          <div className="relative group flex items-start gap-1.5 max-w-[180px]">
+                            <span className="text-foreground line-clamp-2 leading-relaxed cursor-default">{customerAddress}</span>
                             <button
                               onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(customerAddress); }}
                               className="hover:text-primary text-muted-foreground flex-shrink-0 mt-0.5"
                             >
                               <Copy className="h-3 w-3" />
                             </button>
+                            {/* Full address tooltip on hover */}
+                            <div className="absolute bottom-full left-0 mb-1.5 z-50 hidden group-hover:block w-64 rounded-lg border border-border bg-popover shadow-lg px-3 py-2.5">
+                              <p className="text-xs text-popover-foreground leading-relaxed whitespace-normal">{customerAddress}</p>
+                              <div className="absolute top-full left-4 -translate-y-px w-2 h-2 rotate-45 border-r border-b border-border bg-popover" />
+                            </div>
                           </div>
                         ) : (
                           <span className="text-muted-foreground">—</span>
