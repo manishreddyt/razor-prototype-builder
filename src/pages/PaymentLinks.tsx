@@ -122,6 +122,7 @@ const PaymentLinks = () => {
   const navigate = useNavigate();
   const [paymentLinks, setPaymentLinks] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("All");
+  const [showOverdueOnly, setShowOverdueOnly] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdLink, setCreatedLink] = useState("");
@@ -700,7 +701,14 @@ const PaymentLinks = () => {
     return link.status;
   };
 
-  const filtered = activeTab === "All" ? paymentLinks : paymentLinks.filter((l) => getDisplayStatus(l) === activeTab);
+  const hasOverdueInstallment = (link: any) => {
+    const insts: any[] = link.installments || [];
+    const now = new Date();
+    return insts.some((i) => (i.status === "Pending" || i.status === "Upcoming") && i.dueDate && new Date(i.dueDate) < now);
+  };
+
+  const filtered = (activeTab === "All" ? paymentLinks : paymentLinks.filter((l) => getDisplayStatus(l) === activeTab))
+    .filter((l) => !showOverdueOnly || hasOverdueInstallment(l));
 
   const copyLink = (link: string) => {
     navigator.clipboard.writeText(link);
@@ -1100,6 +1108,18 @@ const PaymentLinks = () => {
             <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-muted-foreground text-xs sm:text-sm whitespace-nowrap">
               Duration: 19/02/26 - 26/02/26 <X className="h-3 w-3 cursor-pointer hover:text-foreground" />
             </span>
+            <button
+              onClick={() => setShowOverdueOnly((v) => !v)}
+              className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs sm:text-sm whitespace-nowrap border transition-colors ${
+                showOverdueOnly
+                  ? "bg-red-50 border-red-300 text-red-700 font-medium"
+                  : "bg-secondary border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${showOverdueOnly ? "bg-red-500" : "bg-muted-foreground/50"}`} />
+              Installment Due
+              {showOverdueOnly && <X className="h-3 w-3 ml-0.5" onClick={(e) => { e.stopPropagation(); setShowOverdueOnly(false); }} />}
+            </button>
           </div>
         </div>
 
