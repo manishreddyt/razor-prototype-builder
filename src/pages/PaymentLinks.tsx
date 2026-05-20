@@ -13,6 +13,24 @@ import { toast } from "sonner";
 
 const tabs = ["All", "Created", "Partially Paid", "Paid", "Cancelled", "Expired"];
 
+// Dummy enrichment for links that don't carry customer contact/address in their data
+const DUMMY_CUSTOMER_DATA: Record<string, { phone?: string; email?: string; address?: string }> = {
+  "plink_PartialEdu001":     { phone: "+91 98765 43210", email: "rohit.verma@gmail.com" },
+  "plink_PartialConsult002": { phone: "+91 91234 56789", email: "divya.menon@webworks.in" },
+  "demo-wj-001":             { phone: "",                email: "" },
+  "plink_OnlineCourse001":   { phone: "+91 99001 22334", email: "deepak.joshi@outlook.com" },
+  "plink_CoachingSession042":{ phone: "+91 88991 23456", email: "sneha.iyer@gmail.com" },
+  "plink_SaaSInvoice099":    { phone: "+91 77001 98765", email: "arjun@techcorp.in" },
+  "plink_EcommOrder221":     { phone: "+91 90012 34567", email: "meera.nair@gmail.com",     address: "Meera Nair · 14, Rose Garden Apts, Kottayam Road, Kochi, Kerala 682001" },
+  "plink_WebDevProject33":   { phone: "+91 85001 23456", email: "vikram.bose@designstudio.in" },
+  "plink_SchoolFeeQ1_07":    { phone: "+91 94001 56789", email: "ramesh.pillai@email.com" },
+  "plink_ConsultationFee55": { phone: "+91 82001 34567", email: "fatima.sheikh@legalfirm.in" },
+  "plink_ABcDeFgHiJkL01":    { phone: "+91 93001 45678", email: "priya.sharma@gmail.com",   address: "Priya Sharma · 42A, MG Road, Indiranagar, Bengaluru, Karnataka 560038" },
+  "plink_MnOpQrStUvWx02":    { phone: "+91 87001 23456", email: "rahul.mehta@gmail.com",    address: "Rahul Mehta · Plot 7, Vasant Kunj Phase 2, New Delhi 110070" },
+  "plink_YzAbCdEfGhIj03":    { phone: "+91 96001 78901", email: "ananya.gupta@outlook.com", address: "Ananya Gupta · B-12, Satellite Town, Andheri West, Mumbai 400053" },
+  "plink_KlMnOpQrStUv04":    { phone: "+91 99876 54321", email: "buyer.anonymous@gmail.com" },
+};
+
 const statusBadgeClass: Record<string, string> = {
   "Paid": "blade-badge-paid",
   "Created": "blade-badge-created",
@@ -1084,47 +1102,82 @@ const PaymentLinks = () => {
         {/* Table */}
         <div className="blade-card overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm min-w-[800px]">
+            <table className="w-full text-sm min-w-[1400px]">
               <thead>
                 <tr className="border-b border-border bg-secondary/50">
-                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Payment Link Id</th>
-                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Created At</th>
-                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Amount</th>
-                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Amount Paid</th>
-                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden md:table-cell">Reference Id</th>
-                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap hidden lg:table-cell">Customer</th>
-                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Payment Link</th>
-                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left whitespace-nowrap">Status</th>
-                  <th className="blade-table-header px-3 sm:px-5 py-3 text-left"></th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Payment Link ID</th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Created At</th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Amount</th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Customer</th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Payment Link</th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Status</th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Installments</th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Due Date</th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Reference ID</th>
+                  <th className="blade-table-header px-4 py-3 text-left whitespace-nowrap">Address</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((link) => {
                   const displayStatus = getDisplayStatus(link);
                   const linkUrl = `${window.location.origin}/pay/${link.id}`;
+                  const dummy = DUMMY_CUSTOMER_DATA[link.id] || {};
+                  const customerEmail = (link as any).customerEmail || dummy.email || "";
+                  const customerPhone = (link as any).customerPhone || dummy.phone || "";
+                  const rawAddr = (link as any).customerAddress;
+                  const customerAddress = rawAddr
+                    ? [rawAddr.name, rawAddr.addressLine, rawAddr.cityState].filter(Boolean).join(", ")
+                    : dummy.address || "";
+                  const insts: any[] = (link as any).installments || [];
+                  const paidCount = insts.filter((i) => i.status === "Paid").length;
+                  const totalCount = insts.length;
+                  const remainingCount = totalCount - paidCount;
+                  const nextPending = insts.find((i) => i.status === "Pending" || i.status === "Upcoming");
+                  const nextDueDate = nextPending?.dueDate
+                    ? new Date(nextPending.dueDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+                    : null;
+                  const amountPaid =
+                    link.amountPaid != null
+                      ? link.amountPaid
+                      : link.status === "Paid"
+                      ? link.amount
+                      : null;
                   return (
                     <tr key={link.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
-                      <td className="px-3 sm:px-5 py-3 font-medium text-primary cursor-pointer hover:underline text-xs sm:text-sm"
+                      {/* Payment Link ID */}
+                      <td className="px-4 py-3 font-medium text-primary cursor-pointer hover:underline text-xs"
                           onClick={() => setSelectedLink(link)}>
-                        <span className="block max-w-[100px] truncate">{link.id}</span>
+                        <span className="block max-w-[110px] truncate">{link.id}</span>
                       </td>
-                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm whitespace-nowrap">{link.date}</td>
-                      <td className="px-3 sm:px-5 py-3 text-foreground text-xs sm:text-sm whitespace-nowrap">₹{link.amount.toLocaleString('en-IN')}</td>
-                      <td className="px-3 sm:px-5 py-3 text-xs sm:text-sm whitespace-nowrap hidden md:table-cell">
-                        {link.amountPaid != null
-                          ? <span className="text-green-700 font-medium">₹{link.amountPaid.toLocaleString('en-IN')}</span>
-                          : link.status === "Paid"
-                            ? <span className="text-green-700 font-medium">₹{link.amount.toLocaleString('en-IN')}</span>
-                            : <span className="text-muted-foreground">—</span>
-                        }
+                      {/* Created At */}
+                      <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{link.date}</td>
+                      {/* Amount + X Paid */}
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">
+                        <span className="font-medium text-foreground">₹{link.amount.toLocaleString('en-IN')}</span>
+                        {amountPaid != null && (
+                          <span className="block text-[11px] text-green-700 mt-0.5">
+                            ₹{amountPaid.toLocaleString('en-IN')} paid
+                          </span>
+                        )}
                       </td>
-                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden md:table-cell">{link.refId || "—"}</td>
-                      <td className="px-3 sm:px-5 py-3 text-muted-foreground text-xs sm:text-sm hidden lg:table-cell">{link.customer || "—"}</td>
-                      <td className="px-3 sm:px-5 py-3">
-                        <div className="flex items-center gap-1.5">
+                      {/* Customer — email + phone stacked */}
+                      <td className="px-4 py-3 text-xs">
+                        {customerEmail ? (
+                          <span className="block text-foreground truncate max-w-[160px]">{customerEmail}</span>
+                        ) : null}
+                        {customerPhone ? (
+                          <span className="block text-muted-foreground mt-0.5">{customerPhone}</span>
+                        ) : null}
+                        {!customerEmail && !customerPhone && (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      {/* Payment Link with copy */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5 max-w-[180px]">
                           <button
                             onClick={(e) => { e.stopPropagation(); window.open(`/pay/${link.id}`, '_blank'); }}
-                            className="text-xs sm:text-sm text-primary hover:underline cursor-pointer truncate max-w-[120px] sm:max-w-[200px]"
+                            className="text-xs text-primary hover:underline truncate"
                           >
                             {linkUrl}
                           </button>
@@ -1134,21 +1187,50 @@ const PaymentLinks = () => {
                           >
                             <Copy className="h-3 w-3" />
                           </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); window.open(`/pay/${link.id}`, '_blank'); }}
-                            className="hover:text-primary text-muted-foreground flex-shrink-0 hidden sm:block"
-                          >
-                            <ExternalLink className="h-3 w-3" />
-                          </button>
                         </div>
                       </td>
-                      <td className="px-3 sm:px-5 py-3">
+                      {/* Status */}
+                      <td className="px-4 py-3">
                         <span className={`${statusBadgeClass[displayStatus] || "blade-badge"} text-xs whitespace-nowrap`}>{displayStatus}</span>
                       </td>
-                      <td className="px-3 sm:px-5 py-3">
-                        <button className="text-muted-foreground hover:text-primary" onClick={() => setSelectedLink(link)}>
-                          <Eye className="h-4 w-4" />
-                        </button>
+                      {/* Installments */}
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">
+                        {totalCount > 0 ? (
+                          <>
+                            <span className="font-medium text-foreground">{paidCount} of {totalCount} paid</span>
+                            <span className="block text-muted-foreground mt-0.5">{remainingCount} remaining</span>
+                          </>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      {/* Due Date */}
+                      <td className="px-4 py-3 text-xs whitespace-nowrap">
+                        {nextDueDate ? (
+                          <span className="text-foreground">{nextDueDate}</span>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      {/* Reference ID */}
+                      <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                        {link.refId || "—"}
+                      </td>
+                      {/* Address with copy */}
+                      <td className="px-4 py-3 text-xs">
+                        {customerAddress ? (
+                          <div className="flex items-start gap-1.5 max-w-[180px]">
+                            <span className="text-foreground line-clamp-2 leading-relaxed">{customerAddress}</span>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); navigator.clipboard.writeText(customerAddress); }}
+                              className="hover:text-primary text-muted-foreground flex-shrink-0 mt-0.5"
+                            >
+                              <Copy className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                     </tr>
                   );
