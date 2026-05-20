@@ -693,6 +693,10 @@ const PaymentLinks = () => {
   // Map link status to display status
   const getDisplayStatus = (link: any) => {
     if (link.status === "active") return "Created";
+    // If a partial amount has been paid but not the full amount, force "Partially Paid"
+    if (link.amountPaid != null && link.amountPaid > 0 && link.amountPaid < link.amount) {
+      return "Partially Paid";
+    }
     return link.status;
   };
 
@@ -1142,6 +1146,8 @@ const PaymentLinks = () => {
                       : link.status === "Paid"
                       ? link.amount
                       : null;
+                  // Only show the paid sub-line when partially paid (not when fully paid)
+                  const isPartiallyPaid = amountPaid != null && amountPaid < link.amount;
                   return (
                     <tr key={link.id} className="border-b border-border last:border-0 hover:bg-secondary/30 transition-colors">
                       {/* Payment Link ID */}
@@ -1151,12 +1157,12 @@ const PaymentLinks = () => {
                       </td>
                       {/* Created At */}
                       <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{link.date}</td>
-                      {/* Amount + X Paid */}
+                      {/* Amount — show paid sub-line only when partially paid */}
                       <td className="px-4 py-3 text-xs whitespace-nowrap">
                         <span className="font-medium text-foreground">₹{link.amount.toLocaleString('en-IN')}</span>
-                        {amountPaid != null && (
+                        {isPartiallyPaid && (
                           <span className="block text-[11px] text-green-700 mt-0.5">
-                            ₹{amountPaid.toLocaleString('en-IN')} paid
+                            ₹{amountPaid!.toLocaleString('en-IN')} paid
                           </span>
                         )}
                       </td>
@@ -1193,22 +1199,28 @@ const PaymentLinks = () => {
                       <td className="px-4 py-3">
                         <span className={`${statusBadgeClass[displayStatus] || "blade-badge"} text-xs whitespace-nowrap`}>{displayStatus}</span>
                       </td>
-                      {/* Installments */}
+                      {/* Installments — X of Y paid only */}
                       <td className="px-4 py-3 text-xs whitespace-nowrap">
                         {totalCount > 0 ? (
-                          <>
-                            <span className="font-medium text-foreground">{paidCount} of {totalCount} paid</span>
-                            <span className="block text-muted-foreground mt-0.5">{remainingCount} remaining</span>
-                          </>
+                          <span className="font-medium text-foreground">{paidCount} of {totalCount} paid</span>
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
-                      {/* Due Date */}
+                      {/* Due Date — with overdue flag */}
                       <td className="px-4 py-3 text-xs whitespace-nowrap">
-                        {nextDueDate ? (
-                          <span className="text-foreground">{nextDueDate}</span>
-                        ) : (
+                        {nextPending?.dueDate ? (() => {
+                          const due = new Date(nextPending.dueDate);
+                          const isOverdue = due < new Date();
+                          return (
+                            <div>
+                              <span className={isOverdue ? "text-red-600 font-medium" : "text-foreground"}>{nextDueDate}</span>
+                              {isOverdue && (
+                                <span className="block mt-0.5 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 rounded px-1 py-px w-fit">DUE</span>
+                              )}
+                            </div>
+                          );
+                        })() : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
