@@ -597,10 +597,17 @@ const ReceiptsSettings = () => {
   const [editingBillingAddr, setEditingBillingAddr] = useState(false);
   const [draftBillingAddr, setDraftBillingAddr] = useState("123, MG Road, Indiranagar\nBengaluru, Karnataka 560038");
 
+  // Payment confirmation mode
+  const [confirmationMode, setConfirmationMode] = useState<"receipt" | "invoice">("receipt");
+
   // Receipt config
   const [sendAutomatically, setSendAutomatically] = useState(true);
   const [sendViaEmail, setSendViaEmail] = useState(true);
   const [sendViaWhatsapp, setSendViaWhatsapp] = useState(true);
+
+  // Invoice delivery
+  const [sendInvoiceViaEmail, setSendInvoiceViaEmail] = useState(true);
+  const [sendInvoiceViaWhatsapp, setSendInvoiceViaWhatsapp] = useState(false);
 
   // 80G
   const [enable80g, setEnable80g] = useState(false);
@@ -721,6 +728,54 @@ const ReceiptsSettings = () => {
               title="Receipt Settings"
               desc="Configure how and when receipts are sent to your customers."
             />
+
+            {/* ── Payment Confirmation Mode ── */}
+            <div className="mb-5">
+              <p className="text-sm font-semibold text-foreground mb-0.5">Payment Confirmation Mode</p>
+              <p className="text-xs text-muted-foreground mb-3">Select what gets sent to customers after a successful payment. Only one can be active.</p>
+              <div className="grid grid-cols-2 gap-3">
+                {/* Receipt option */}
+                <button
+                  onClick={() => setConfirmationMode("receipt")}
+                  className={`flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
+                    confirmationMode === "receipt"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-gray-300 bg-muted/20"
+                  }`}
+                >
+                  <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                    confirmationMode === "receipt" ? "border-primary" : "border-gray-300"
+                  }`}>
+                    {confirmationMode === "receipt" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold leading-tight ${confirmationMode === "receipt" ? "text-primary" : "text-foreground"}`}>Receipt</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Simple payment acknowledgment. No GST breakdown.</p>
+                  </div>
+                </button>
+                {/* Tax Invoice option */}
+                <button
+                  onClick={() => setConfirmationMode("invoice")}
+                  className={`flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
+                    confirmationMode === "invoice"
+                      ? "border-primary bg-primary/5"
+                      : "border-border hover:border-gray-300 bg-muted/20"
+                  }`}
+                >
+                  <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                    confirmationMode === "invoice" ? "border-primary" : "border-gray-300"
+                  }`}>
+                    {confirmationMode === "invoice" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                  </div>
+                  <div>
+                    <p className={`text-sm font-semibold leading-tight ${confirmationMode === "invoice" ? "text-primary" : "text-foreground"}`}>Tax Invoice</p>
+                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">GST-compliant invoice with CGST/SGST breakdown.</p>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            <Separator className="mb-5" />
 
             {/* Send automatically — simple checkbox */}
             <div className="flex items-center gap-3 mb-5">
@@ -881,6 +936,24 @@ const ReceiptsSettings = () => {
                 <BookOpen className="h-3.5 w-3.5" /> Docs
               </a>
             </div>
+
+            {/* ── Send Invoice via ── */}
+            <div>
+              <p className="text-sm font-medium text-foreground mb-1">Send Invoice via</p>
+              <p className="text-xs text-muted-foreground mb-3">Choose how GST invoices are delivered to your customers after payment.</p>
+              <div className="flex gap-5">
+                <div className="flex items-center gap-2">
+                  <Checkbox checked={sendInvoiceViaEmail} onCheckedChange={(v) => setSendInvoiceViaEmail(!!v)} id="invEmail" />
+                  <Label htmlFor="invEmail" className="text-sm">Email</Label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox checked={sendInvoiceViaWhatsapp} onCheckedChange={(v) => setSendInvoiceViaWhatsapp(!!v)} id="invWhatsapp" />
+                  <Label htmlFor="invWhatsapp" className="text-sm">WhatsApp</Label>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
 
             {/* ── Invoice Number Format ── */}
             <div>
