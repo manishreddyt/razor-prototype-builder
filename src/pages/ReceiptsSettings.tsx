@@ -744,7 +744,7 @@ const ReceiptsSettings = () => {
                 </div>
                 <div>
                   <p className={`text-sm font-semibold leading-tight ${confirmationMode === "receipt" ? "text-primary" : "text-foreground"}`}>Receipt</p>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Simple payment acknowledgment. No GST breakdown.</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Simple payment acknowledgment. No tax details added.</p>
                 </div>
               </button>
               <button
