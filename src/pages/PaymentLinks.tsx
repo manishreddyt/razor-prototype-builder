@@ -1753,56 +1753,6 @@ const PaymentLinks = () => {
               </div>
             </div>
 
-            {/* Post-payment confirmation */}
-            <div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Send post-payment confirmation</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Send a confirmation to the customer after payment</p>
-                </div>
-                <Switch checked={postPaymentConfirmation} onCheckedChange={setPostPaymentConfirmation} />
-              </div>
-              {postPaymentConfirmation && (
-                <div className="mt-3 rounded-lg border border-border bg-secondary/20 p-4 space-y-3">
-                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Payment Confirmation Mode</p>
-                  <p className="text-xs text-muted-foreground -mt-1">Select what gets sent to customers after a successful payment. Only one can be active.</p>
-                  <div className="grid grid-cols-2 gap-3 mt-1">
-                    {/* Receipt option */}
-                    <button
-                      type="button"
-                      onClick={() => setPostPaymentMode("receipt")}
-                      className={`flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${postPaymentMode === "receipt" ? "border-primary bg-primary/5" : "border-border bg-white hover:bg-secondary/30"}`}
-                    >
-                      <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${postPaymentMode === "receipt" ? "border-primary" : "border-muted-foreground"}`}>
-                        {postPaymentMode === "receipt" && <div className="h-2 w-2 rounded-full bg-primary" />}
-                      </div>
-                      <div>
-                        <p className={`text-sm font-semibold ${postPaymentMode === "receipt" ? "text-primary" : "text-foreground"}`}>Receipt</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Simple payment acknowledgment. No tax details added.</p>
-                      </div>
-                    </button>
-                    {/* Tax Invoice option */}
-                    <button
-                      type="button"
-                      onClick={() => setPostPaymentMode("invoice")}
-                      className={`flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${postPaymentMode === "invoice" ? "border-primary bg-primary/5" : "border-border bg-white hover:bg-secondary/30"}`}
-                    >
-                      <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${postPaymentMode === "invoice" ? "border-primary" : "border-muted-foreground"}`}>
-                        {postPaymentMode === "invoice" && <div className="h-2 w-2 rounded-full bg-primary" />}
-                      </div>
-                      <div>
-                        <p className={`text-sm font-semibold ${postPaymentMode === "invoice" ? "text-primary" : "text-foreground"}`}>Tax Invoice</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">GST-compliant invoice with CGST/SGST breakdown.</p>
-                      </div>
-                    </button>
-                  </div>
-                  <button className="text-xs text-primary hover:underline mt-1" onClick={() => navigate("/account-settings/receipts")}>
-                    Configure settings →
-                  </button>
-                </div>
-              )}
-            </div>
-
             {/* Notes */}
             <div>
               <label className="text-sm text-muted-foreground mb-2 block">Notes</label>
@@ -2687,6 +2637,52 @@ const PaymentLinks = () => {
                 )}
               </div>
             )}
+
+            {/* Post-payment confirmation */}
+            <div className="rounded-lg border border-border bg-background p-3 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Send post-payment confirmation</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Send a confirmation to the customer after payment</p>
+                </div>
+                <Switch checked={postPaymentConfirmation} onCheckedChange={setPostPaymentConfirmation} />
+              </div>
+              {postPaymentConfirmation && (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPostPaymentMode("receipt")}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-colors ${postPaymentMode === "receipt" ? "border-primary bg-primary/5" : "border-border bg-white hover:bg-secondary/30"}`}
+                    >
+                      <div className={`mt-0.5 h-3.5 w-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${postPaymentMode === "receipt" ? "border-primary" : "border-muted-foreground"}`}>
+                        {postPaymentMode === "receipt" && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                      </div>
+                      <div>
+                        <p className={`text-xs font-semibold ${postPaymentMode === "receipt" ? "text-primary" : "text-foreground"}`}>Receipt</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">Simple payment acknowledgment. No tax details.</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPostPaymentMode("invoice")}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-lg border text-left transition-colors ${postPaymentMode === "invoice" ? "border-primary bg-primary/5" : "border-border bg-white hover:bg-secondary/30"}`}
+                    >
+                      <div className={`mt-0.5 h-3.5 w-3.5 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${postPaymentMode === "invoice" ? "border-primary" : "border-muted-foreground"}`}>
+                        {postPaymentMode === "invoice" && <div className="h-1.5 w-1.5 rounded-full bg-primary" />}
+                      </div>
+                      <div>
+                        <p className={`text-xs font-semibold ${postPaymentMode === "invoice" ? "text-primary" : "text-foreground"}`}>Tax Invoice</p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">GST-compliant with CGST/SGST breakdown.</p>
+                      </div>
+                    </button>
+                  </div>
+                  <button className="text-xs text-primary hover:underline" onClick={() => { setShowSuccessModal(false); navigate("/account-settings/receipts"); }}>
+                    Configure settings →
+                  </button>
+                </div>
+              )}
+            </div>
 
           </div>
 
