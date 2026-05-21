@@ -1629,10 +1629,6 @@ const PaymentLinks = () => {
                 </div>
               </div>
 
-              {/* More ways to notify */}
-              <button className="mt-2 text-sm text-blue-600 hover:underline flex items-center gap-1">
-                More ways to notify <ExternalLink className="h-3.5 w-3.5" />
-              </button>
 
               {/* Customer Name */}
               <div className="space-y-1.5 mt-3">
