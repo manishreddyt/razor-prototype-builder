@@ -149,6 +149,7 @@ const App = () => {
           <Route path="/apps/:appId" element={<InstalledApp />} />
           <Route path="/account-settings" element={<AccountSettings />} />
           <Route path="/account-settings/receipts" element={<ReceiptsSettings />} />
+          <Route path="/account-settings/logistics" element={<PaymentLinksSettings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

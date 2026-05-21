@@ -67,7 +67,7 @@ const AccountSettings = () => {
           {[
             { icon: "💳", title: "Payment methods", bg: "bg-primary/10", links: ["Cards", "UPI/QR", "Netbanking", "EMI", "Wallet", "Pay Later", "International payments"] },
             { icon: "🌐", title: "Website and app settings", bg: "bg-green-100", links: ["Business website detail", "API Keys", "Webhooks", "Applications"] },
-            { icon: "🏢", title: "Business settings", bg: "bg-yellow-100", links: ["GST details", { label: "Receipt & Invoice Settings", action: () => navigate("/account-settings/receipts") }, "Business details", "Bank account"] },
+            { icon: "🏢", title: "Business settings", bg: "bg-yellow-100", links: ["GST details", { label: "Receipt & Invoice Settings", action: () => navigate("/account-settings/receipts") }, { label: "Logistics Partner Settings", action: () => navigate("/account-settings/logistics") }, "Business details", "Bank account"] },
             { icon: "💰", title: "Payments and refunds", bg: "bg-blue-100", links: ["Payment capture settings", "Refund settings", "Flash checkout", "Checkout customisation"] },
           ].map((card) => (
             <div key={card.title} className="w-[340px]">

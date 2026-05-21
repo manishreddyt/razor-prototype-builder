@@ -1309,7 +1309,7 @@ const PaymentLinks = () => {
                 icon: "🚚",
                 label: "Logistics",
                 description: "Connect Shiprocket, Delhivery & more",
-                path: "/payment-links/settings",
+                path: "/account-settings/logistics",
               },
             ].map(({ icon, label, description, path }) => (
               <button
@@ -1853,7 +1853,7 @@ const PaymentLinks = () => {
                     <button
                       type="button"
                       className="text-xs text-primary hover:underline mt-1"
-                      onClick={() => navigate("/payment-links/settings")}
+                      onClick={() => navigate("/account-settings/logistics")}
                     >
                       Manage connectors →
                     </button>
