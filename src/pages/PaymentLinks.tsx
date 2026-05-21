@@ -2688,48 +2688,6 @@ const PaymentLinks = () => {
               </div>
             )}
 
-            {/* Post-payment invoice option */}
-            <div className="rounded-lg border border-border bg-background">
-              <div className="flex items-start gap-3 px-3 pt-3 pb-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="text-sm font-medium text-foreground">Send invoice post payment automatically</span>
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary text-white leading-none flex-shrink-0">New</span>
-                  </div>
-                  {invoiceConfigured ? (
-                    <span className="inline-flex items-center gap-1 text-xs text-green-600 font-medium mt-0.5">
-                      <CheckCircle2 className="h-3 w-3" /> Configured
-                    </span>
-                  ) : (
-                    <p className="text-xs text-muted-foreground mt-0.5">GST-compliant invoice will be sent to the customer on payment.</p>
-                  )}
-                  {autoSendInvoice && invoiceConfigured && (
-                    <button onClick={() => { setShowSuccessModal(false); setShowGstModal(true); }} className="text-xs text-primary hover:underline mt-1 flex items-center gap-1">
-                      <FileText className="h-3 w-3" /> Edit invoice details
-                    </button>
-                  )}
-                </div>
-                <Switch
-                  checked={autoSendInvoice}
-                  onCheckedChange={(checked) => {
-                    setAutoSendInvoice(checked);
-                    if (checked) {
-                      setShowSuccessModal(false);
-                      setShowGstModal(true);
-                    } else {
-                      setInvoiceConfigured(false);
-                    }
-                  }}
-                  className="flex-shrink-0 mt-0.5"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground px-3 pb-3 leading-relaxed">
-                You can create the invoice later post payment confirmation too from the{" "}
-                <span className="text-primary font-medium cursor-pointer hover:underline" onClick={() => setShowSuccessModal(false)}>
-                  payment link details
-                </span>{" "}section.
-              </p>
-            </div>
           </div>
 
           {/* Footer */}
