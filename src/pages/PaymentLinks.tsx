@@ -141,6 +141,8 @@ const PaymentLinks = () => {
   const [expiryDate, setExpiryDate] = useState("");
   // Receipt state
   const [sendReceiptAuto, setSendReceiptAuto] = useState(true);
+  const [postPaymentConfirmation, setPostPaymentConfirmation] = useState(false);
+  const [postPaymentMode, setPostPaymentMode] = useState<"receipt" | "invoice">("receipt");
   const [gstReceiptEnabled, setGstReceiptEnabled] = useState(false);
   const [gstCustomerName, setGstCustomerName] = useState("");
   const [gstNumber, setGstNumber] = useState("");
@@ -1060,9 +1062,6 @@ const PaymentLinks = () => {
             <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Payment Links</h1>
           </div>
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <Button variant="outline" size="icon" className="h-9 w-9 flex-shrink-0" title="Payment Links Settings" onClick={() => navigate("/payment-links/settings")}>
-              <Settings className="h-4 w-4" />
-            </Button>
             <Button className="gap-2 flex-1 sm:flex-none" onClick={() => setShowCreate(true)}>
               <Plus className="h-4 w-4" />
               <span className="whitespace-nowrap">Create Payment Link</span>
@@ -1072,11 +1071,17 @@ const PaymentLinks = () => {
 
         {/* Tabs */}
         <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-          <div className="flex items-center gap-4 sm:gap-6 border-b border-border min-w-max">
-            <span className="blade-tab-active whitespace-nowrap">Payment Links</span>
-            <span className="blade-tab whitespace-nowrap hidden sm:inline-flex">Reminder Settings</span>
-            <span className="blade-tab whitespace-nowrap hidden md:inline-flex items-center gap-1">Need help? Take a tour</span>
-            <span className="blade-tab whitespace-nowrap hidden lg:inline-flex items-center gap-1">Documentation <span className="blade-badge-new ml-1">new</span></span>
+          <div className="flex items-center border-b border-border min-w-max">
+            <div className="flex items-center gap-4 sm:gap-6 flex-1">
+              <span className="blade-tab-active whitespace-nowrap">Payment Links</span>
+              <span className="blade-tab whitespace-nowrap hidden sm:inline-flex">Reminder Settings</span>
+            </div>
+            <div className="flex items-center gap-4 pb-2.5">
+              <button className="text-sm text-primary hover:underline whitespace-nowrap" onClick={() => navigate("/payment-links/settings")}>Settings</button>
+              <button className="text-sm text-primary hover:underline whitespace-nowrap flex items-center gap-1" onClick={() => toast.info("Documentation coming soon")}>
+                Documentation <span className="text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wide leading-none">New</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1698,6 +1703,56 @@ const PaymentLinks = () => {
                   </p>
                 )}
               </div>
+            </div>
+
+            {/* Post-payment confirmation */}
+            <div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Send post-payment confirmation</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Send a confirmation to the customer after payment</p>
+                </div>
+                <Switch checked={postPaymentConfirmation} onCheckedChange={setPostPaymentConfirmation} />
+              </div>
+              {postPaymentConfirmation && (
+                <div className="mt-3 rounded-lg border border-border bg-secondary/20 p-4 space-y-3">
+                  <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Payment Confirmation Mode</p>
+                  <p className="text-xs text-muted-foreground -mt-1">Select what gets sent to customers after a successful payment. Only one can be active.</p>
+                  <div className="grid grid-cols-2 gap-3 mt-1">
+                    {/* Receipt option */}
+                    <button
+                      type="button"
+                      onClick={() => setPostPaymentMode("receipt")}
+                      className={`flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${postPaymentMode === "receipt" ? "border-primary bg-primary/5" : "border-border bg-white hover:bg-secondary/30"}`}
+                    >
+                      <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${postPaymentMode === "receipt" ? "border-primary" : "border-muted-foreground"}`}>
+                        {postPaymentMode === "receipt" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                      </div>
+                      <div>
+                        <p className={`text-sm font-semibold ${postPaymentMode === "receipt" ? "text-primary" : "text-foreground"}`}>Receipt</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Simple payment acknowledgment. No tax details added.</p>
+                      </div>
+                    </button>
+                    {/* Tax Invoice option */}
+                    <button
+                      type="button"
+                      onClick={() => setPostPaymentMode("invoice")}
+                      className={`flex items-start gap-3 p-3 rounded-lg border text-left transition-colors ${postPaymentMode === "invoice" ? "border-primary bg-primary/5" : "border-border bg-white hover:bg-secondary/30"}`}
+                    >
+                      <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${postPaymentMode === "invoice" ? "border-primary" : "border-muted-foreground"}`}>
+                        {postPaymentMode === "invoice" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                      </div>
+                      <div>
+                        <p className={`text-sm font-semibold ${postPaymentMode === "invoice" ? "text-primary" : "text-foreground"}`}>Tax Invoice</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">GST-compliant invoice with CGST/SGST breakdown.</p>
+                      </div>
+                    </button>
+                  </div>
+                  <button className="text-xs text-primary hover:underline mt-1" onClick={() => navigate("/account-settings/receipts")}>
+                    Configure settings →
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Notes */}
