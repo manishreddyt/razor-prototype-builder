@@ -1643,6 +1643,15 @@ const PaymentLinks = () => {
                   onChange={(e) => setFormData({ ...formData, customerName: e.target.value })}
                 />
               </div>
+
+              {/* Collect address from customer */}
+              <div className="flex items-center justify-between pt-3 mt-1 border-t border-border">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Collect address from customer</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Customer will be asked to provide their delivery address at checkout</p>
+                </div>
+                <Switch checked={collectAddress} onCheckedChange={setCollectAddress} />
+              </div>
             </div>
 
             {/* Reference Id */}
@@ -1695,19 +1704,17 @@ const PaymentLinks = () => {
               </div>
             </div>
 
-            {/* Collect address from customer */}
+            {/* Notes */}
             <div>
-              <div className="flex items-center justify-between py-1">
-                <div>
-                  <p className="text-sm font-medium text-foreground">Collect address from customer</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Customer will be asked to provide their delivery address at checkout</p>
-                </div>
-                <Switch checked={collectAddress} onCheckedChange={setCollectAddress} />
-              </div>
+              <label className="text-sm text-muted-foreground mb-2 block">Notes</label>
+              <button className="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                + Add New
+              </button>
+            </div>
 
-              {/* Logistics — shown when address collection is enabled */}
-              {collectAddress && (
-                <div className="space-y-4 pt-2">
+            {/* Send order to logistics partner — shown when collect address is on */}
+            {collectAddress && (
+                <div className="space-y-4">
 
                   {/* Section header */}
                   <div className="flex items-center gap-2">
@@ -1939,16 +1946,7 @@ const PaymentLinks = () => {
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-
-            {/* Notes */}
-            <div>
-              <label className="text-sm text-muted-foreground mb-2 block">Notes</label>
-              <button className="text-sm text-blue-600 hover:underline flex items-center gap-1">
-                + Add New
-              </button>
-            </div>
+            )}
 
             {/* Receipt section removed — configured globally in Receipt Settings */}
             {false && (
