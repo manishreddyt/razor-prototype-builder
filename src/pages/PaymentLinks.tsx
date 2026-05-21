@@ -1309,7 +1309,7 @@ const PaymentLinks = () => {
                 icon: "🚚",
                 label: "Logistics",
                 description: "Connect Shiprocket, Delhivery & more",
-                path: "/connectors",
+                path: "/payment-links/settings",
               },
             ].map(({ icon, label, description, path }) => (
               <button
