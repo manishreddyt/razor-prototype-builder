@@ -295,13 +295,13 @@ const PaymentLinksSettings = () => {
             Payment Links
           </button>
           <span className="text-muted-foreground">/</span>
-          <span className="text-sm font-medium text-foreground">Settings</span>
+          <span className="text-sm font-medium text-foreground">Logistics Partner Settings</span>
         </div>
 
         <div>
-          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Payment Links Settings</h1>
+          <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Logistics Partner Settings</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Manage logistics partners, pickup addresses, and other Payment Link configurations.
+            Connect courier partners and manage pickup addresses for auto-fulfilment after payment.
           </p>
         </div>
 
