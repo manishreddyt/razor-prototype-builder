@@ -124,6 +124,7 @@ const PaymentLinks = () => {
   const [activeTab, setActiveTab] = useState("All");
   const [showOverdueOnly, setShowOverdueOnly] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdLink, setCreatedLink] = useState("");
   const [createdLinkId, setCreatedLinkId] = useState("");
@@ -1077,7 +1078,7 @@ const PaymentLinks = () => {
               <span className="blade-tab whitespace-nowrap hidden sm:inline-flex">Reminder Settings</span>
             </div>
             <div className="flex items-center gap-4 pb-2.5">
-              <button className="text-sm text-primary hover:underline whitespace-nowrap" onClick={() => navigate("/payment-links/settings")}>Settings</button>
+              <button className="text-sm text-primary hover:underline whitespace-nowrap" onClick={() => setShowSettingsModal(true)}>Settings</button>
               <button className="text-sm text-primary hover:underline whitespace-nowrap flex items-center gap-1" onClick={() => toast.info("Documentation coming soon")}>
                 Documentation <span className="text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wide leading-none">New</span>
               </button>
@@ -1283,6 +1284,53 @@ const PaymentLinks = () => {
           </div>
         </div>
       </div>
+
+      {/* Settings Modal */}
+      <Dialog open={showSettingsModal} onOpenChange={setShowSettingsModal}>
+        <DialogContent className="max-w-sm p-0 gap-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+            <DialogTitle className="text-lg font-semibold">Settings</DialogTitle>
+          </DialogHeader>
+          <div className="px-4 py-3 space-y-1">
+            {[
+              {
+                icon: "🔔",
+                label: "Reminders",
+                description: "Configure auto-reminder schedules",
+                path: "/payment-links/settings",
+              },
+              {
+                icon: "🧾",
+                label: "Receipts & Tax Invoice",
+                description: "Templates, GST details, branding",
+                path: "/account-settings/receipts",
+              },
+              {
+                icon: "🚚",
+                label: "Logistics",
+                description: "Connect Shiprocket, Delhivery & more",
+                path: "/connectors",
+              },
+            ].map(({ icon, label, description, path }) => (
+              <button
+                key={label}
+                onClick={() => { setShowSettingsModal(false); navigate(path); }}
+                className="w-full flex items-center gap-4 px-3 py-3.5 rounded-lg hover:bg-secondary/60 transition-colors text-left group"
+              >
+                <span className="text-xl flex-shrink-0">{icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{label}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors flex-shrink-0" />
+              </button>
+            ))}
+          </div>
+          <div className="px-6 py-4 border-t border-border">
+            <Button variant="outline" className="w-full" onClick={() => setShowSettingsModal(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Create Payment Link Dialog */}
       <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) resetCreateForm(); }}>
