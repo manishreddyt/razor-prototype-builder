@@ -720,7 +720,56 @@ const ReceiptsSettings = () => {
           </CardContent>
         </Card>
 
-        {/* ── 2. Receipt Settings ───────────────────────────────────────────── */}
+        {/* ── 2. Payment Confirmation Mode ─────────────────────────────────── */}
+        <Card className="mb-5">
+          <CardContent className="p-6">
+            <SectionHeading
+              icon={<CheckCircle2 className="h-4 w-4 text-primary" />}
+              title="Payment Confirmation Mode"
+              desc="Select what gets sent to customers after a successful payment. Only one can be active."
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setConfirmationMode("receipt")}
+                className={`flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
+                  confirmationMode === "receipt"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-gray-300 bg-muted/20"
+                }`}
+              >
+                <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                  confirmationMode === "receipt" ? "border-primary" : "border-gray-300"
+                }`}>
+                  {confirmationMode === "receipt" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                </div>
+                <div>
+                  <p className={`text-sm font-semibold leading-tight ${confirmationMode === "receipt" ? "text-primary" : "text-foreground"}`}>Receipt</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Simple payment acknowledgment. No GST breakdown.</p>
+                </div>
+              </button>
+              <button
+                onClick={() => setConfirmationMode("invoice")}
+                className={`flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
+                  confirmationMode === "invoice"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-gray-300 bg-muted/20"
+                }`}
+              >
+                <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                  confirmationMode === "invoice" ? "border-primary" : "border-gray-300"
+                }`}>
+                  {confirmationMode === "invoice" && <div className="h-2 w-2 rounded-full bg-primary" />}
+                </div>
+                <div>
+                  <p className={`text-sm font-semibold leading-tight ${confirmationMode === "invoice" ? "text-primary" : "text-foreground"}`}>Tax Invoice</p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">GST-compliant invoice with CGST/SGST breakdown.</p>
+                </div>
+              </button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ── 3. Receipt Settings ───────────────────────────────────────────── */}
         <Card className="mb-5">
           <CardContent className="p-6">
             <SectionHeading
@@ -728,54 +777,6 @@ const ReceiptsSettings = () => {
               title="Receipt Settings"
               desc="Configure how and when receipts are sent to your customers."
             />
-
-            {/* ── Payment Confirmation Mode ── */}
-            <div className="mb-5">
-              <p className="text-sm font-semibold text-foreground mb-0.5">Payment Confirmation Mode</p>
-              <p className="text-xs text-muted-foreground mb-3">Select what gets sent to customers after a successful payment. Only one can be active.</p>
-              <div className="grid grid-cols-2 gap-3">
-                {/* Receipt option */}
-                <button
-                  onClick={() => setConfirmationMode("receipt")}
-                  className={`flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
-                    confirmationMode === "receipt"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-gray-300 bg-muted/20"
-                  }`}
-                >
-                  <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                    confirmationMode === "receipt" ? "border-primary" : "border-gray-300"
-                  }`}>
-                    {confirmationMode === "receipt" && <div className="h-2 w-2 rounded-full bg-primary" />}
-                  </div>
-                  <div>
-                    <p className={`text-sm font-semibold leading-tight ${confirmationMode === "receipt" ? "text-primary" : "text-foreground"}`}>Receipt</p>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">Simple payment acknowledgment. No GST breakdown.</p>
-                  </div>
-                </button>
-                {/* Tax Invoice option */}
-                <button
-                  onClick={() => setConfirmationMode("invoice")}
-                  className={`flex items-start gap-3 rounded-xl border-2 p-4 text-left transition-all ${
-                    confirmationMode === "invoice"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-gray-300 bg-muted/20"
-                  }`}
-                >
-                  <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                    confirmationMode === "invoice" ? "border-primary" : "border-gray-300"
-                  }`}>
-                    {confirmationMode === "invoice" && <div className="h-2 w-2 rounded-full bg-primary" />}
-                  </div>
-                  <div>
-                    <p className={`text-sm font-semibold leading-tight ${confirmationMode === "invoice" ? "text-primary" : "text-foreground"}`}>Tax Invoice</p>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed">GST-compliant invoice with CGST/SGST breakdown.</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            <Separator className="mb-5" />
 
             {/* Send automatically — simple checkbox */}
             <div className="flex items-center gap-3 mb-5">
