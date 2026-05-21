@@ -803,17 +803,15 @@ const PaymentLinks = () => {
       shiprocketEnabled,
       whatsappConfirmation: whatsappConfirmationEnabled,
       collectInMultiplePayments,
-      multiPaymentMode: collectInMultiplePayments ? multiPaymentMode : undefined,
-      splitType: collectInMultiplePayments && multiPaymentMode === "schedule" ? splitType : undefined,
-      installments: collectInMultiplePayments && multiPaymentMode === "schedule" ? installments.map(i => ({ ...i, amount: Number(i.amount) })) : undefined,
+      multiPaymentMode: collectInMultiplePayments ? "schedule" : undefined,
+      splitType: collectInMultiplePayments ? splitType : undefined,
+      installments: collectInMultiplePayments ? installments.map(i => ({ ...i, amount: Number(i.amount) })) : undefined,
       sendReceiptAuto,
       // Smart link data
-      isSmartLink: createLinkTab === "smart",
-      smartProducts: createLinkTab === "smart"
-        ? smartInlineItems.filter(i => i.name.trim()).map(i => ({ id: `inline-${i.rowId}`, name: i.name.trim(), price: i.price, qty: i.qty }))
-        : undefined,
-      deliveryFee: createLinkTab === "smart" && !deliveryFreeShipping ? (Number(deliveryFee) || 0) : 0,
-      logistics: createLinkTab === "smart" && (partnerConnections.shiprocket?.connected || partnerConnections.delhivery?.connected)
+      isSmartLink: collectAddress,
+      smartProducts: undefined,
+      deliveryFee: 0,
+      logistics: collectAddress && (partnerConnections.shiprocket?.connected || partnerConnections.delhivery?.connected)
         ? {
             partner: partnerConnections.shiprocket?.connected ? "shiprocket" : "delhivery",
             enabled: true,
@@ -1284,52 +1282,177 @@ const PaymentLinks = () => {
       {/* Create Payment Link Dialog */}
       <Dialog open={showCreate} onOpenChange={(open) => { setShowCreate(open); if (!open) resetCreateForm(); }}>
         <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden max-h-[82vh] flex flex-col">
-          <DialogHeader className="px-6 pt-6 pb-0 flex-shrink-0">
-            <DialogTitle className="text-xl font-semibold mb-4">New Payment Link</DialogTitle>
-            {/* Standard / Magic Link tabs */}
-            <div className="flex border-b border-border -mx-6 px-6">
-              <button
-                onClick={() => setCreateLinkTab("standard")}
-                className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-medium border-b-2 transition-colors ${createLinkTab === "standard" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-              >
-                Standard
-              </button>
-              <button
-                onClick={() => setCreateLinkTab("smart")}
-                className={`flex items-center gap-1.5 pb-3 px-1 mr-6 text-sm font-medium border-b-2 transition-colors ${createLinkTab === "smart" ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Magic Link
-                <span className="ml-1 text-[9px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded-full uppercase tracking-wide leading-none">New</span>
-              </button>
-            </div>
+          <DialogHeader className="px-6 pt-6 pb-4 flex-shrink-0">
+            <DialogTitle className="text-xl font-semibold">New Payment Link</DialogTitle>
           </DialogHeader>
 
           <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
-            {/* Standard: Amount + description */}
-            {createLinkTab === "standard" && (
-              <>
-                <div>
-                  <label className="text-sm font-semibold text-foreground mb-2 block">
-                    Amount <span className="text-destructive">*</span>
-                  </label>
-                  <div className="flex gap-2">
-                    <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-lg bg-muted/30 text-sm text-muted-foreground whitespace-nowrap select-none">
-                      ₹ (INR) <X className="h-3.5 w-3.5 cursor-pointer hover:text-foreground" />
+            {/* Amount + description */}
+            <div>
+              <label className="text-sm font-semibold text-foreground mb-2 block">
+                Amount <span className="text-destructive">*</span>
+              </label>
+              <div className="flex gap-2">
+                <div className="flex items-center gap-2 px-3 py-2 border border-input rounded-lg bg-muted/30 text-sm text-muted-foreground whitespace-nowrap select-none">
+                  ₹ (INR) <X className="h-3.5 w-3.5 cursor-pointer hover:text-foreground" />
+                </div>
+                <Input type="number" placeholder="0" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} className="flex-1" />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm text-muted-foreground mb-2 block">Payment For</label>
+              <Input placeholder="Payment description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+            </div>
+
+            {/* Accept payment in parts */}
+            <div>
+              <div className="flex items-center gap-2 mb-3">
+                <Checkbox id="collectInMultiplePayments" checked={collectInMultiplePayments} onCheckedChange={(v) => setCollectInMultiplePayments(!!v)} />
+                <label htmlFor="collectInMultiplePayments" className="text-sm text-foreground cursor-pointer">Accept payment in parts</label>
+              </div>
+
+              {collectInMultiplePayments && (
+                <div className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-border">
+                  {/* Schedule builder */}
+                  <div className="space-y-3">
+                    {/* Split type toggle */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        className={`px-3 py-1 text-xs rounded-full border transition-colors ${splitType === "equal" ? "bg-blue-600 text-white border-blue-600" : "border-border text-muted-foreground hover:bg-secondary/50"}`}
+                        onClick={() => {
+                          setSplitType("equal");
+                          if (formData.amount && Number(formData.amount) > 0) {
+                            const target = Number(formData.amount);
+                            const count = installments.length;
+                            const baseAmt = Math.floor(target / count * 100) / 100;
+                            const lastAmt = Math.round((target - baseAmt * (count - 1)) * 100) / 100;
+                            setInstallments(installments.map((i, idx2) => ({ ...i, amount: idx2 === count - 1 ? lastAmt.toFixed(2) : baseAmt.toFixed(2) })));
+                          }
+                        }}
+                      >
+                        Equal split
+                      </button>
+                      <button
+                        className={`px-3 py-1 text-xs rounded-full border transition-colors ${splitType === "custom" ? "bg-blue-600 text-white border-blue-600" : "border-border text-muted-foreground hover:bg-secondary/50"}`}
+                        onClick={() => setSplitType("custom")}
+                      >
+                        Custom split
+                      </button>
                     </div>
-                    <Input type="number" placeholder="0" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} className="flex-1" />
+
+                    {/* Installments list */}
+                    <div className="space-y-3">
+                      {installments.map((inst, idx) => (
+                        <div key={inst.id} className="p-3 bg-white border border-border rounded-lg space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium text-foreground">Payment {idx + 1}</span>
+                            {installments.length > 2 && (
+                              <button
+                                onClick={() => setInstallments(installments.filter(i => i.id !== inst.id))}
+                                className="text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">Label</label>
+                              <Input
+                                placeholder="e.g. Token, Part 1"
+                                value={inst.label}
+                                onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, label: e.target.value } : i))}
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">Amount (₹)</label>
+                              <Input
+                                type="number"
+                                placeholder="0.00"
+                                value={inst.amount}
+                                disabled={splitType === "equal"}
+                                onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, amount: e.target.value } : i))}
+                                className="h-8 text-xs disabled:opacity-60"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">{idx === 0 ? "Due Date" : "Due Date (optional)"}</label>
+                              <Input
+                                type="date"
+                                value={inst.dueDate}
+                                onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: e.target.value } : i))}
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">Description (optional)</label>
+                              <Input
+                                placeholder="e.g. First payment"
+                                value={inst.description}
+                                onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, description: e.target.value } : i))}
+                                className="h-8 text-xs"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Validation: total must equal amount */}
+                    {formData.amount && Number(formData.amount) > 0 && (
+                      (() => {
+                        const total = installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+                        const target = Number(formData.amount);
+                        const diff = Math.abs(total - target);
+                        if (diff > 0.01) {
+                          return (
+                            <p className="text-xs text-destructive flex items-center gap-1">
+                              <Info className="h-3 w-3" />
+                              Payment total (₹{total.toFixed(2)}) must equal link amount (₹{target.toFixed(2)})
+                            </p>
+                          );
+                        }
+                        return (
+                          <p className="text-xs text-green-600 flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Payment total matches link amount
+                          </p>
+                        );
+                      })()
+                    )}
+
+                    {/* Add installment button */}
+                    <button
+                      className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
+                      onClick={() => {
+                        const newId = String(Date.now());
+                        const newInst = { id: newId, label: `Payment ${installments.length + 1}`, amount: "", dueDate: "", description: "" };
+                        const updated = [...installments, newInst];
+                        if (splitType === "equal" && formData.amount && Number(formData.amount) > 0) {
+                          const target = Number(formData.amount);
+                          const count = updated.length;
+                          const baseAmt = Math.floor(target / count * 100) / 100;
+                          const lastAmt = Math.round((target - baseAmt * (count - 1)) * 100) / 100;
+                          setInstallments(updated.map((i, idx2) => ({ ...i, amount: idx2 === count - 1 ? lastAmt.toFixed(2) : baseAmt.toFixed(2) })));
+                        } else {
+                          setInstallments(updated);
+                        }
+                      }}
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Add Payment
+                    </button>
                   </div>
                 </div>
-                <div>
-                  <label className="text-sm text-muted-foreground mb-2 block">Payment For</label>
-                  <Input placeholder="Payment description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
-                </div>
-              </>
-            )}
+              )}
+            </div>
 
-            {/* Magic Link: Products — inline rows */}
-            {createLinkTab === "smart" && (
+            {/* Magic Link: Products — inline rows (removed) */}
+            {false && (
               <div>
                 <label className="text-sm font-semibold text-foreground mb-2 block">
                   Products <span className="text-destructive">*</span>
@@ -1436,65 +1559,6 @@ const PaymentLinks = () => {
                     </div>
                   )}
                 </div>
-              </div>
-            )}
-
-            {/* Magic Link: Delivery fee */}
-            {createLinkTab === "smart" && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="addDeliveryFee"
-                    checked={!deliveryFreeShipping}
-                    onCheckedChange={(checked) => {
-                      const adding = !!checked;
-                      setDeliveryFreeShipping(!adding);
-                      if (!adding) {
-                        setDeliveryFee("");
-                        const t = smartInlineItems.reduce((s, i) => s + i.price * i.qty, 0);
-                        setFormData((f) => ({ ...f, amount: String(t) }));
-                      }
-                    }}
-                  />
-                  <label htmlFor="addDeliveryFee" className="text-sm text-foreground cursor-pointer">Add delivery fee</label>
-                </div>
-                {!deliveryFreeShipping && (
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground select-none">₹</span>
-                    <input
-                      type="number"
-                      min={0}
-                      placeholder="Enter delivery amount"
-                      value={deliveryFee}
-                      onChange={(e) => {
-                        setDeliveryFee(e.target.value);
-                        const t = smartInlineItems.reduce((s, i) => s + i.price * i.qty, 0);
-                        const fee = Number(e.target.value) || 0;
-                        setFormData((f) => ({ ...f, amount: String(t + fee) }));
-                      }}
-                      className="w-full pl-7 pr-3 py-2 text-sm border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring bg-background"
-                      autoFocus
-                    />
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Magic Link: Total (read-only summary) */}
-            {createLinkTab === "smart" && smartInlineItems.some((i) => i.name.trim()) && (
-              <div className="rounded-lg bg-muted/40 border border-border px-4 py-3 flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium">Total Amount</p>
-                  {!deliveryFreeShipping && Number(deliveryFee) > 0 && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      ₹{smartInlineItems.reduce((s, i) => s + i.price * i.qty, 0).toLocaleString("en-IN")} products
-                      {" + "}₹{Number(deliveryFee).toLocaleString("en-IN")} delivery
-                    </p>
-                  )}
-                </div>
-                <p className="text-xl font-black text-foreground">
-                  ₹{(smartInlineItems.reduce((s, i) => s + i.price * i.qty, 0) + (deliveryFreeShipping ? 0 : (Number(deliveryFee) || 0))).toLocaleString("en-IN")}
-                </p>
               </div>
             )}
 
@@ -1631,198 +1695,247 @@ const PaymentLinks = () => {
               </div>
             </div>
 
-            {/* Partial Payments */}
+            {/* Collect address from customer */}
             <div>
-              <label className="text-sm text-muted-foreground mb-2 block">Partial Payments</label>
-              <div className="flex items-center gap-2 mb-3">
-                <Checkbox id="collectInMultiplePayments" checked={collectInMultiplePayments} onCheckedChange={(v) => setCollectInMultiplePayments(!!v)} />
-                <label htmlFor="collectInMultiplePayments" className="text-sm text-foreground cursor-pointer">Enable Partial Payment</label>
+              <div className="flex items-center justify-between py-1">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Collect address from customer</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Customer will be asked to provide their delivery address at checkout</p>
+                </div>
+                <Switch checked={collectAddress} onCheckedChange={setCollectAddress} />
               </div>
 
-              {collectInMultiplePayments && (
-                <div className="space-y-4 p-4 bg-secondary/20 rounded-lg border border-border">
-                  {/* Mode selection */}
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-foreground mb-2">How should the customer pay?</p>
+              {/* Logistics — shown when address collection is enabled */}
+              {collectAddress && (
+                <div className="space-y-4 pt-2">
 
-                    {/* Option 1: Pre-Configured */}
-                    <div
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "schedule" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-white hover:bg-secondary/30"}`}
-                      onClick={() => setMultiPaymentMode("schedule")}
-                    >
-                      <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 ${multiPaymentMode === "schedule" ? "border-blue-500 bg-blue-500" : "border-muted-foreground"}`}>
-                        {multiPaymentMode === "schedule" && <div className="h-full w-full rounded-full bg-white scale-50" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-medium text-foreground">As per defined schedule</span>
-                          <div className="relative group">
-                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2 bg-popover border border-border rounded-md shadow-lg text-xs text-muted-foreground hidden group-hover:block z-50">
-                              You define the payment schedule — amounts, labels, and due dates. The customer pays each installment as per your plan.
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Option 2: Flexible */}
-                    <div
-                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${multiPaymentMode === "customer_choice" ? "border-blue-500 bg-blue-50 dark:bg-blue-950/30" : "border-border bg-white hover:bg-secondary/30"}`}
-                      onClick={() => setMultiPaymentMode("customer_choice")}
-                    >
-                      <div className={`mt-0.5 h-4 w-4 rounded-full border-2 flex-shrink-0 ${multiPaymentMode === "customer_choice" ? "border-blue-500 bg-blue-500" : "border-muted-foreground"}`}>
-                        {multiPaymentMode === "customer_choice" && <div className="h-full w-full rounded-full bg-white scale-50" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-medium text-foreground">Let customer choose and pay</span>
-                          <div className="relative group">
-                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 p-2 bg-popover border border-border rounded-md shadow-lg text-xs text-muted-foreground hidden group-hover:block z-50">
-                              The customer decides how much to pay each time. They can pay any amount up to the total, and return to pay the remainder later.
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                  {/* Section header */}
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-semibold text-foreground">Logistics</span>
                   </div>
 
-                  {/* Schedule builder — only shown for "schedule" mode */}
-                  {multiPaymentMode === "schedule" && (
-                    <div className="space-y-3">
-                      <Separator />
+                  {/* Toggle row */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-foreground font-medium">Send order to logistics partner</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Automatically push order after payment is completed</p>
+                    </div>
+                    <Switch checked={logisticsEnabled} onCheckedChange={setLogisticsEnabled} />
+                  </div>
 
-                      {/* Split type toggle */}
-                      <div className="flex items-center gap-2">
-                        <button
-                          className={`px-3 py-1 text-xs rounded-full border transition-colors ${splitType === "equal" ? "bg-blue-600 text-white border-blue-600" : "border-border text-muted-foreground hover:bg-secondary/50"}`}
-                          onClick={() => {
-                            setSplitType("equal");
-                            if (formData.amount && Number(formData.amount) > 0) {
-                              const target = Number(formData.amount);
-                              const count = installments.length;
-                              const baseAmt = Math.floor(target / count * 100) / 100;
-                              const lastAmt = Math.round((target - baseAmt * (count - 1)) * 100) / 100;
-                              setInstallments(installments.map((i, idx2) => ({ ...i, amount: idx2 === count - 1 ? lastAmt.toFixed(2) : baseAmt.toFixed(2) })));
-                            }
+                  {/* Rest of logistics — only when toggle is on */}
+                  {logisticsEnabled && (
+                    <div className="space-y-4">
+
+                      {/* Partner selector */}
+                      <div className="space-y-1.5">
+                        <label className="text-xs font-semibold text-foreground uppercase tracking-wide">Logistics Partner</label>
+                        <Select
+                          value={logisticsPartner}
+                          onValueChange={(v) => {
+                            setLogisticsPartner(v as "shiprocket" | "delhivery");
+                            setExpandedConnectPartner(null);
+                            setLogisticsEmail("");
+                            setLogisticsPassword("");
                           }}
                         >
-                          Equal split
-                        </button>
-                        <button
-                          className={`px-3 py-1 text-xs rounded-full border transition-colors ${splitType === "custom" ? "bg-blue-600 text-white border-blue-600" : "border-border text-muted-foreground hover:bg-secondary/50"}`}
-                          onClick={() => setSplitType("custom")}
-                        >
-                          Custom split
-                        </button>
+                          <SelectTrigger className="h-9 text-sm">
+                            <SelectValue placeholder="Select a logistics partner" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="shiprocket">🚀 Shiprocket</SelectItem>
+                            <SelectItem value="delhivery">📦 Delhivery</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
-                      {/* Installments list */}
-                      <div className="space-y-3">
-                        {installments.map((inst, idx) => (
-                          <div key={inst.id} className="p-3 bg-white border border-border rounded-lg space-y-2">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-medium text-foreground">Payment {idx + 1}</span>
-                              {installments.length > 2 && (
-                                <button
-                                  onClick={() => setInstallments(installments.filter(i => i.id !== inst.id))}
-                                  className="text-muted-foreground hover:text-destructive transition-colors"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                </button>
+                      {/* Selected partner: connected state */}
+                      {partnerConnections[logisticsPartner]?.connected ? (
+                        <div className="space-y-4">
+                          {/* Connected badge */}
+                          <div className="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
+                            <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Connected
+                              {partnerConnections[logisticsPartner].accountEmail && (
+                                <span className="font-normal text-emerald-600">· {partnerConnections[logisticsPartner].accountEmail}</span>
                               )}
+                            </span>
+                            <button
+                              type="button"
+                              className="text-xs text-muted-foreground hover:text-destructive font-medium transition-colors"
+                              onClick={() => {
+                                const updated = { ...partnerConnections, [logisticsPartner]: { connected: false, accountEmail: "" } };
+                                setPartnerConnections(updated);
+                                try { localStorage.setItem("pl_logistics_connections", JSON.stringify(updated)); } catch {}
+                                toast.success(`${logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} disconnected`);
+                              }}
+                            >
+                              Disconnect
+                            </button>
+                          </div>
+
+                          {/* Pickup Address */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5">
+                                <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                                <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Pickup Address</span>
+                              </div>
+                              <button type="button" onClick={() => setEditingPickupAddress(v => !v)} className="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                                <Edit2 className="h-3 w-3" /> {editingPickupAddress ? "Done" : "Edit"}
+                              </button>
                             </div>
+                            {!editingPickupAddress ? (
+                              <div className="rounded-lg bg-secondary/40 border border-border px-3 py-2.5 space-y-0.5">
+                                {savedPickupLabel && <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">{savedPickupLabel}</p>}
+                                <p className="text-xs text-foreground">{lsAddress || "—"}</p>
+                                <p className="text-xs text-muted-foreground">{[lsCity, lsState, lsPin].filter(Boolean).join(", ")}</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-1.5">
+                                <Input placeholder="Full address" value={lsAddress} onChange={(e) => setLsAddress(e.target.value)} className="text-xs h-8" />
+                                <div className="grid grid-cols-3 gap-1.5">
+                                  <Input placeholder="City" value={lsCity} onChange={(e) => setLsCity(e.target.value)} className="text-xs h-8" />
+                                  <Input placeholder="State" value={lsState} onChange={(e) => setLsState(e.target.value)} className="text-xs h-8" />
+                                  <Input placeholder="Pincode" value={lsPin} onChange={(e) => setLsPin(e.target.value)} className="text-xs h-8" />
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Package Details */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-1.5">
+                              <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                              <span className="text-xs font-semibold text-foreground uppercase tracking-wide">Package Details</span>
+                            </div>
+                            <p className="text-[11px] text-muted-foreground">Weight and dimensions of the packed shipment.</p>
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <label className="text-xs text-muted-foreground mb-1 block">Label</label>
-                                <Input
-                                  placeholder="e.g. Token, Part 1"
-                                  value={inst.label}
-                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, label: e.target.value } : i))}
-                                  className="h-8 text-xs"
-                                />
+                                <label className="text-[10px] text-muted-foreground mb-1 block">Dead Weight (kg)</label>
+                                <input type="number" min={0} step={0.01} placeholder="0.00"
+                                  value={lsDeadWeight}
+                                  onChange={(e) => setLsDeadWeight(e.target.value)}
+                                  className="w-full px-3 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                                <p className="text-[10px] text-muted-foreground mt-0.5">Min chargeable: 0.5 kg</p>
                               </div>
                               <div>
-                                <label className="text-xs text-muted-foreground mb-1 block">Amount (₹)</label>
-                                <Input
-                                  type="number"
-                                  placeholder="0.00"
-                                  value={inst.amount}
-                                  disabled={splitType === "equal"}
-                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, amount: e.target.value } : i))}
-                                  className="h-8 text-xs disabled:opacity-60"
-                                />
+                                <label className="text-[10px] text-muted-foreground mb-1 block">Volumetric Weight (kg)</label>
+                                <div className="px-3 py-2 text-xs border border-input rounded-lg bg-muted/30 text-muted-foreground">
+                                  {lsDimL && lsDimB && lsDimH
+                                    ? `${((Number(lsDimL) * Number(lsDimB) * Number(lsDimH)) / 5000).toFixed(2)} kg`
+                                    : "0 kg (auto-calculated)"}
+                                </div>
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="text-xs text-muted-foreground mb-1 block">{idx === 0 ? "Due Date" : "Due Date (optional)"}</label>
-                                <Input
-                                  type="date"
-                                  value={inst.dueDate}
-                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, dueDate: e.target.value } : i))}
-                                  className="h-8 text-xs"
-                                />
+                            <div>
+                              <label className="text-[10px] text-muted-foreground mb-1 block">Dimensions (cm) — L × B × H</label>
+                              <div className="grid grid-cols-3 gap-2">
+                                {([["Length", lsDimL, setLsDimL], ["Breadth", lsDimB, setLsDimB], ["Height", lsDimH, setLsDimH]] as const).map(([ph, val, set]) => (
+                                  <input key={ph} type="number" min={0} step={0.1} placeholder={ph}
+                                    value={val}
+                                    onChange={(e) => set(e.target.value)}
+                                    className="w-full px-3 py-1.5 text-xs border border-input rounded-lg focus:outline-none focus:ring-1 focus:ring-ring" />
+                                ))}
                               </div>
-                              <div>
-                                <label className="text-xs text-muted-foreground mb-1 block">Description (optional)</label>
-                                <Input
-                                  placeholder="e.g. First payment"
-                                  value={inst.description}
-                                  onChange={(e) => setInstallments(installments.map(i => i.id === inst.id ? { ...i, description: e.target.value } : i))}
-                                  className="h-8 text-xs"
-                                />
+                            </div>
+                            {lsDeadWeight && (
+                              <div className="rounded-lg bg-blue-50 border border-blue-200 px-3 py-2">
+                                <p className="text-xs text-blue-700">
+                                  <span className="font-semibold">Applicable weight:</span>{" "}
+                                  {Math.max(Number(lsDeadWeight), lsDimL && lsDimB && lsDimH ? (Number(lsDimL) * Number(lsDimB) * Number(lsDimH)) / 5000 : 0).toFixed(2)} kg
+                                  {" "}— higher of dead or volumetric
+                                </p>
                               </div>
+                            )}
+                          </div>
+                        </div>
+
+                      ) : (
+                        /* Not connected — show inline connect form for selected partner */
+                        <div className="rounded-xl border border-border overflow-hidden">
+                          {/* Header */}
+                          <div className="flex items-center gap-3 px-3.5 py-3 bg-secondary/30 border-b border-border">
+                            <span className="text-xl flex-shrink-0">{logisticsPartner === "shiprocket" ? "🚀" : "📦"}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-foreground">
+                                Connect {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"}
+                              </p>
+                              <p className="text-[11px] text-muted-foreground">Account not connected yet</p>
                             </div>
                           </div>
-                        ))}
-                      </div>
 
-                      {/* Validation: total must equal amount */}
-                      {formData.amount && Number(formData.amount) > 0 && (
-                        (() => {
-                          const total = installments.reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
-                          const target = Number(formData.amount);
-                          const diff = Math.abs(total - target);
-                          if (diff > 0.01) {
-                            return (
-                              <p className="text-xs text-destructive flex items-center gap-1">
-                                <Info className="h-3 w-3" />
-                                Payment total (₹{total.toFixed(2)}) must equal link amount (₹{target.toFixed(2)})
+                          {/* Steps + credentials */}
+                          <div className="px-3.5 py-4 space-y-4 bg-white">
+                            <div className="space-y-2.5">
+                              {(logisticsPartner === "shiprocket" ? [
+                                "Visit shiprocket.in and create a free seller account",
+                                "Verify your email and complete your store profile",
+                                "Enter your Shiprocket email & password below — Razorpay connects via their secure API",
+                              ] : [
+                                "Visit business.delhivery.com and register as a business",
+                                "Get your account approved by the Delhivery team (usually 1–2 business days)",
+                                "Enter your Delhivery email & password below to authorise the connection",
+                              ]).map((step, i) => (
+                                <div key={i} className="flex items-start gap-2.5">
+                                  <span className="flex-shrink-0 h-5 w-5 rounded-full bg-blue-600 text-white text-[10px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                                  <p className="text-xs text-muted-foreground leading-snug">{step}</p>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="h-px bg-border" />
+
+                            <div className="space-y-2">
+                              <p className="text-xs font-semibold text-foreground">
+                                {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} account credentials
                               </p>
-                            );
-                          }
-                          return (
-                            <p className="text-xs text-green-600 flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" />
-                              Payment total matches link amount
-                            </p>
-                          );
-                        })()
-                      )}
+                              <Input type="email"
+                                placeholder={`Email address`}
+                                value={logisticsEmail}
+                                onChange={(e) => setLogisticsEmail(e.target.value)}
+                                className="text-sm h-9" />
+                              <Input type="password"
+                                placeholder="Password"
+                                value={logisticsPassword}
+                                onChange={(e) => setLogisticsPassword(e.target.value)}
+                                className="text-sm h-9" />
+                              <p className="text-[10px] text-muted-foreground">
+                                By connecting, you authorise Razorpay to push orders on your behalf.
+                              </p>
+                            </div>
 
-                      {/* Add installment button */}
-                      <button
-                        className="flex items-center gap-1.5 text-xs text-blue-600 hover:text-blue-700 font-medium"
-                        onClick={() => {
-                          const newId = String(Date.now());
-                          const newInst = { id: newId, label: `Payment ${installments.length + 1}`, amount: "", dueDate: "", description: "" };
-                          const updated = [...installments, newInst];
-                          if (splitType === "equal" && formData.amount && Number(formData.amount) > 0) {
-                            const target = Number(formData.amount);
-                            const count = updated.length;
-                            const baseAmt = Math.floor(target / count * 100) / 100;
-                            const lastAmt = Math.round((target - baseAmt * (count - 1)) * 100) / 100;
-                            setInstallments(updated.map((i, idx2) => ({ ...i, amount: idx2 === count - 1 ? lastAmt.toFixed(2) : baseAmt.toFixed(2) })));
-                          } else {
-                            setInstallments(updated);
-                          }
-                        }}
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                        Add Payment
-                      </button>
+                            <Button
+                              size="sm"
+                              className="w-full bg-blue-600 hover:bg-blue-700"
+                              disabled={!logisticsEmail.trim() || !logisticsPassword.trim()}
+                              onClick={() => {
+                                const updated = {
+                                  ...partnerConnections,
+                                  [logisticsPartner]: { connected: true, accountEmail: logisticsEmail },
+                                };
+                                setPartnerConnections(updated);
+                                try {
+                                  const existing = JSON.parse(localStorage.getItem("pl_logistics_connections") || "{}");
+                                  existing[logisticsPartner] = {
+                                    connected: true,
+                                    accountEmail: logisticsEmail,
+                                    connectedAt: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+                                  };
+                                  localStorage.setItem("pl_logistics_connections", JSON.stringify(existing));
+                                } catch {}
+                                setLogisticsEmail("");
+                                setLogisticsPassword("");
+                                toast.success(`${logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} connected successfully!`);
+                              }}
+                            >
+                              Connect {logisticsPartner === "shiprocket" ? "Shiprocket" : "Delhivery"} <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2142,8 +2255,8 @@ const PaymentLinks = () => {
                     </div>
                   </div>
                 )}
-          {/* Logistics — Magic Link only */}
-          {createLinkTab === "smart" && (
+          {/* Old logistics block removed — now inside collectAddress toggle above */}
+          {false && (
             <div className="space-y-4 pt-2">
 
               {/* Section header */}
