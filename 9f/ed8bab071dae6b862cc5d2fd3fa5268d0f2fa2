@@ -1,0 +1,10 @@
+src/App.tsx
+  f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-21T09:32:09.097Z 152
+src/pages/AccountSettings.tsx
+  f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-21T09:32:17.007Z 70
+src/pages/PaymentLinks.tsx
+  f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-21T09:32:38.634Z 1312,1856
+src/pages/PaymentLinksSettings.tsx
+  f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-21T09:32:24.000Z 291,295
+---
+{"schema_version": "authorship/3.0.0", "base_commit_sha": "HEAD~1", "prompts": {"f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-21T09:32:09.097Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 1, "overriden_lines": 0}, "f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-21T09:32:17.007Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 1, "overriden_lines": 0}, "f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-21T09:32:38.634Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 2, "overriden_lines": 0}, "f4c7e56e-055a-4635-ab49-9d86bfafb128:2026-05-21T09:32:24.000Z": {"agent_id": {"tool": "claude_code", "model": ""}, "human_author": "manishreddy.t@razorpay.com", "accepted_lines": 2, "overriden_lines": 0}}}
