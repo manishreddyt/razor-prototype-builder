@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  ArrowLeft, Sparkles, Search, ArrowRight, Eye, Monitor, Smartphone,
+  ArrowLeft, Sparkles, Search, ArrowRight, Monitor, Smartphone,
   Send, Video, BookOpen, UserCheck,
   Brain, Wand2, CheckCircle2,
 } from "lucide-react";
@@ -252,24 +252,19 @@ const SmartPageCreate = () => {
                 {/* Templates */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filtered.map((t) => (
-                    <div key={t.id} className="rounded-lg border border-border bg-card overflow-hidden group hover:border-primary/30 hover:shadow-md transition-all">
-                      <div className="relative cursor-pointer" onClick={() => setPreviewTemplate(t)}>
-                        <TemplateThumb template={t} />
-                        <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                          <Button size="sm" variant="secondary" className="gap-1.5 shadow-md text-xs" onClick={(e) => { e.stopPropagation(); setPreviewTemplate(t); }}>
-                            <Eye className="h-3.5 w-3.5" /> Preview
-                          </Button>
-                          <Button size="sm" className="gap-1.5 shadow-md text-xs" onClick={(e) => { e.stopPropagation(); handleUseTemplate(t); }}>
-                            Use Template
-                          </Button>
-                        </div>
-                        </div>
-                        <div className="p-4">
-                          <p className="font-medium text-foreground text-sm">{t.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.desc}</p>
-                        </div>
+                    <button
+                      key={t.id}
+                      onClick={() => handleUseTemplate(t)}
+                      className="text-left rounded-lg border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-md transition-all active:scale-[0.99]"
+                    >
+                      <TemplateThumb template={t} />
+                      <div className="p-4">
+                        <p className="font-medium text-foreground text-sm">{t.title}</p>
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.desc}</p>
+                        <p className="text-xs font-medium text-primary mt-3">Use Template →</p>
                       </div>
-                    ))}
+                    </button>
+                  ))}
                 </div>
               </div>
             )}
@@ -285,21 +280,15 @@ const SmartPageCreate = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filtered.map((t) => (
-                    <div key={t.id} className="rounded-lg border border-border bg-card overflow-hidden group hover:border-primary/30 hover:shadow-md transition-all">
-                      <div className="relative cursor-pointer" onClick={() => setPreviewTemplate(t)}>
-                        <TemplateThumb template={t} />
-                        <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                          <Button size="sm" variant="secondary" className="gap-1.5 shadow-md text-xs" onClick={(e) => { e.stopPropagation(); setPreviewTemplate(t); }}>
-                            <Eye className="h-3.5 w-3.5" /> Preview
-                          </Button>
-                          <Button size="sm" className="gap-1.5 shadow-md text-xs" onClick={(e) => { e.stopPropagation(); handleUseTemplate(t); }}>
-                            Use Template
-                          </Button>
-                        </div>
-                      </div>
+                    <button
+                      key={t.id}
+                      onClick={() => handleUseTemplate(t)}
+                      className="text-left rounded-lg border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-md transition-all active:scale-[0.99]"
+                    >
+                      <TemplateThumb template={t} />
                       <div className="p-4">
                         <div className="flex items-start justify-between gap-2">
-                          <div>
+                          <div className="min-w-0">
                             <p className="font-medium text-foreground text-sm">{t.title}</p>
                             <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.desc}</p>
                           </div>
@@ -307,8 +296,9 @@ const SmartPageCreate = () => {
                             {t.category === "nonprofit" ? "Non-Profit" : t.category}
                           </span>
                         </div>
+                        <p className="text-xs font-medium text-primary mt-3">Use Template →</p>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
                 {filtered.length === 0 && (

@@ -363,19 +363,19 @@ export const templates: TemplateData[] = [
   // ─── General ───
   {
     id: "portfolio", title: "Personal Portfolio", desc: "Showcase your work, bio, and contact info with a stunning portfolio.", category: "general", icon: Users,
-    pages: ["Home", "About", "Portfolio", "Contact"],
+    pages: ["Home", "About", "Portfolio"],
     heroTitle: "Hi, I'm Alex 👋", heroTagline: "Designer, Developer & Creative Thinker",
     heroDescription: "I craft beautiful digital experiences that combine aesthetics with functionality. Let's build something amazing together.",
     heroCta: "View My Work", bannerImage: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=900&h=300&fit=crop",
-    sections: [heroSection(), aboutSection("About Me", "I'm a multi-disciplinary designer with 8+ years of experience creating brands, products, and digital experiences for startups and Fortune 500 companies."), portfolioSection(), statsSection([{ value: "50+", label: "Projects" }, { value: "30+", label: "Clients" }, { value: "8", label: "Years" }, { value: "12", label: "Awards" }]), testimonialsSection(), contactFormSection(), newsletterSection(), googleReviewsSection()],
+    sections: [heroSection(), aboutSection("About Me", "I'm a multi-disciplinary designer with 8+ years of experience creating brands, products, and digital experiences for startups and Fortune 500 companies."), portfolioSection(), statsSection([{ value: "50+", label: "Projects" }, { value: "30+", label: "Clients" }, { value: "8", label: "Years" }, { value: "12", label: "Awards" }]), testimonialsSection(), newsletterSection(), googleReviewsSection()],
   },
   {
     id: "business", title: "Business Website", desc: "Professional company website with services, team, and contact pages.", category: "general", icon: Briefcase,
-    pages: ["Home", "About", "Services", "Team", "Contact"],
+    pages: ["Home", "About", "Services", "Team"],
     heroTitle: "Grow Your Business", heroTagline: "Strategic solutions for modern enterprises",
     heroDescription: "We help businesses scale with data-driven strategies, innovative design, and robust technology solutions.",
     heroCta: "Get a Free Consultation", bannerImage: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=900&h=300&fit=crop",
-    sections: [heroSection(), aboutSection(), servicesSection(), featuresSection(), statsSection(), teamSection(), clientsSection(), testimonialsSection(), googleReviewsSection(), faqSection(), ctaBannerSection(), contactFormSection(), newsletterSection(), gallerySection()],
+    sections: [heroSection(), aboutSection(), servicesSection(), featuresSection(), statsSection(), teamSection(), clientsSection(), testimonialsSection(), googleReviewsSection(), faqSection(), ctaBannerSection(), newsletterSection(), gallerySection()],
   },
   {
     id: "biolink", title: "Bio Link Page", desc: "Single-page link hub perfect for social bios and creators.", category: "general", icon: CreditCard,
@@ -391,7 +391,7 @@ export const templates: TemplateData[] = [
     heroTitle: "TechSummit 2026", heroTagline: "India's Largest Technology Conference",
     heroDescription: "Join 5,000+ professionals for 2 days of talks, workshops, and networking. April 15-16, 2026 — Bangalore.",
     heroCta: "Register Now", bannerImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&h=300&fit=crop",
-    sections: [heroSection(), countdownSection(), speakersSection(), scheduleSection(), statsSection([{ value: "5000+", label: "Attendees" }, { value: "40+", label: "Speakers" }, { value: "20+", label: "Workshops" }, { value: "2", label: "Days" }]), testimonialsSection([{ name: "Vikram S.", text: "Best tech conference in India. The networking alone is worth it.", rating: 5, avatar: "VS" }, { name: "Meera P.", text: "Incredible speakers and well-organized sessions.", rating: 5, avatar: "MP" }, { name: "Arjun R.", text: "Learned so much. Already booked for next year.", rating: 5, avatar: "AR" }]), faqSection([{ q: "Where is the venue?", a: "Bangalore International Exhibition Centre (BIEC), Bangalore." }, { q: "Is food included?", a: "Yes, lunch and refreshments are provided on both days." }, { q: "Can I get a refund?", a: "Full refund available up to 7 days before the event." }]), contactFormSection(), gallerySection(), googleReviewsSection()],
+    sections: [heroSection(), countdownSection(), speakersSection(), scheduleSection(), statsSection([{ value: "5000+", label: "Attendees" }, { value: "40+", label: "Speakers" }, { value: "20+", label: "Workshops" }, { value: "2", label: "Days" }]), testimonialsSection([{ name: "Vikram S.", text: "Best tech conference in India. The networking alone is worth it.", rating: 5, avatar: "VS" }, { name: "Meera P.", text: "Incredible speakers and well-organized sessions.", rating: 5, avatar: "MP" }, { name: "Arjun R.", text: "Learned so much. Already booked for next year.", rating: 5, avatar: "AR" }]), faqSection([{ q: "Where is the venue?", a: "Bangalore International Exhibition Centre (BIEC), Bangalore." }, { q: "Is food included?", a: "Yes, lunch and refreshments are provided on both days." }, { q: "Can I get a refund?", a: "Full refund available up to 7 days before the event." }]), gallerySection(), googleReviewsSection()],
   },
 
   // ─── Education ───
@@ -644,7 +644,6 @@ export const templates: TemplateData[] = [
         heroDescription: "Complete the form below to reserve your spot. You'll get instant access to pre-course materials and our student community.",
         heroCta: "Reserve My Seat", bannerImage: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=900&h=300&fit=crop",
         sections: [
-          contactFormSection(),
           featuresSection([
             { title: "Instant Access", desc: "Get pre-course materials immediately after enrollment.", icon: "⚡" },
             { title: "Community Access", desc: "Join our Slack community of 2000+ developers.", icon: "🤝" },
@@ -668,7 +667,6 @@ export const templates: TemplateData[] = [
             { q: "Can I pay in installments?", a: "Yes, EMI options available at 0% interest for 3-6 months." },
             { q: "What tech stack will I learn?", a: "HTML, CSS, JavaScript, React, Node.js, Express, MongoDB, PostgreSQL, Docker, AWS, and Git." },
           ]),
-          contactFormSection(),
         ],
       },
     },
@@ -721,11 +719,6 @@ export const templates: TemplateData[] = [
         { q: "Will I get a recording?", a: "Yes, all registered attendees get the replay within 24 hours." },
         { q: "Do I need any prior knowledge?", a: "No, this is beginner-friendly with something for everyone." },
       ]),
-      contactFormSection({ heading: "Register for Webinar", submitText: "Register", fields: [
-        { label: "Full Name", type: "text", required: true },
-        { label: "Email", type: "email", required: true },
-        { label: "Phone", type: "tel", required: false },
-      ] }),
     ],
     pagesData: {
       "Agenda": {
@@ -759,11 +752,6 @@ export const templates: TemplateData[] = [
         heroDescription: "Fill in your details below and we'll send you the joining link, calendar invite, and pre-event materials.",
         heroCta: "Complete Registration", bannerImage: "https://images.unsplash.com/photo-1591115765373-5207764f72e7?w=900&h=300&fit=crop",
         sections: [
-          contactFormSection({ heading: "Register for Webinar", submitText: "Register", fields: [
-            { label: "Full Name", type: "text", required: true },
-            { label: "Email", type: "email", required: true },
-            { label: "Phone", type: "tel", required: false },
-          ] }),
           featuresSection([
             { title: "Instant Confirmation", desc: "Get your joining link immediately after registration.", icon: "✅" },
             { title: "Calendar Invite", desc: "We'll send a Google Calendar invite so you don't forget.", icon: "📅" },
@@ -788,7 +776,7 @@ export const templates: TemplateData[] = [
   // 4. 1:1 COACHING
   {
     id: "coaching", title: "1:1 Coaching", desc: "Personal coaching page with booking, coach bio, and transformation stories.", category: "education", icon: UserCheck,
-    pages: ["Home", "About", "Book Session", "Results", "Contact"],
+    pages: ["Home", "About", "Book Session", "Results"],
     heroTitle: "Unlock Your Full Potential", heroTagline: "Personalized coaching for ambitious professionals",
     heroDescription: "Get clarity, accountability, and proven strategies from a certified coach who's helped 200+ professionals land dream roles at top companies.",
     heroCta: "Book a Free Discovery Call", bannerImage: "https://images.unsplash.com/photo-1552581234-26160f608093?w=900&h=300&fit=crop",
@@ -818,7 +806,6 @@ export const templates: TemplateData[] = [
         { q: "What's the cancellation policy?", a: "Free rescheduling up to 24 hours before. No cancellation fees." },
         { q: "Is this for experienced professionals only?", a: "No — I work with early-career, mid-level, and senior professionals." },
       ]),
-      contactFormSection(),
     ],
     pagesData: {
       "About": {
@@ -850,7 +837,6 @@ export const templates: TemplateData[] = [
             { name: "Growth Package", price: "₹9,999", period: "/4 sessions", features: ["4 × 60-min calls", "WhatsApp support", "Resume review", "Mock interview"], highlighted: true },
             { name: "Transformation", price: "₹24,999", period: "/12 sessions", features: ["12 × 60-min calls", "Priority scheduling", "Unlimited chat", "Career roadmap", "Placement guarantee"], highlighted: false },
           ]),
-          contactFormSection(),
           faqSection([
             { q: "How do I book?", a: "Fill the form above and I'll send you my calendar link within 24 hours." },
             { q: "What platform do we use?", a: "All sessions are on Zoom. I'll send the link before each session." },
@@ -874,19 +860,6 @@ export const templates: TemplateData[] = [
           ]),
           googleReviewsSection(),
           ctaBannerSection("Your Transformation is Next", "Book a free discovery call and let's discuss your goals.", "Book Free Call"),
-        ],
-      },
-      "Contact": {
-        heroTitle: "Get in Touch", heroTagline: "I'd love to hear from you",
-        heroDescription: "Whether you have questions about coaching, want to discuss a corporate workshop, or just want to say hello — reach out!",
-        heroCta: "Send a Message", bannerImage: "https://images.unsplash.com/photo-1552581234-26160f608093?w=900&h=300&fit=crop",
-        sections: [
-          contactFormSection(),
-          featuresSection([
-            { title: "Email", desc: "nandini@coachingsite.com — response within 24 hours.", icon: "📧" },
-            { title: "LinkedIn", desc: "Connect with me for daily career tips.", icon: "💼" },
-            { title: "Instagram", desc: "@nandini.coach — behind-the-scenes and tips.", icon: "📱" },
-          ]),
         ],
       },
     },
@@ -989,7 +962,6 @@ export const templates: TemplateData[] = [
         heroDescription: "Select your workshop, fill in your details, and pay to confirm your spot. You'll receive a setup guide and joining link immediately.",
         heroCta: "Complete Enrollment", bannerImage: "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=900&h=300&fit=crop",
         sections: [
-          contactFormSection(),
           featuresSection([
             { title: "Setup Guide", desc: "Get a pre-workshop setup guide with all requirements.", icon: "📋" },
             { title: "Community Access", desc: "Join the workshop Slack channel for support.", icon: "💬" },
@@ -1116,7 +1088,6 @@ export const templates: TemplateData[] = [
         heroDescription: "Fill in your details below to create your free account. You'll get instant access to the community, newsletter, and public events.",
         heroCta: "Create Free Account", bannerImage: "https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=900&h=300&fit=crop",
         sections: [
-          contactFormSection(),
           featuresSection([
             { title: "Instant Access", desc: "Get your Slack invite and welcome kit immediately.", icon: "⚡" },
             { title: "No Credit Card", desc: "Free tier requires no payment information.", icon: "🆓" },
@@ -1140,11 +1111,11 @@ export const templates: TemplateData[] = [
   // ─── Services ───
   {
     id: "consulting", title: "Consulting Firm", desc: "Professional consulting with case studies and booking.", category: "services", icon: Briefcase,
-    pages: ["Home", "Services", "Case Studies", "Book", "Contact"],
+    pages: ["Home", "Services", "Case Studies", "Book"],
     heroTitle: "Strategic Business Consulting", heroTagline: "Drive growth with data-driven strategies",
     heroDescription: "We partner with ambitious companies to solve complex challenges and unlock sustainable growth.",
     heroCta: "Schedule Consultation", bannerImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=900&h=300&fit=crop",
-    sections: [heroSection(), aboutSection(), servicesSection([{ title: "Growth Strategy", desc: "Market analysis and growth roadmaps.", icon: "📈" }, { title: "Digital Transformation", desc: "Modernize operations with technology.", icon: "🔄" }, { title: "Process Optimization", desc: "Streamline workflows for efficiency.", icon: "⚙️" }, { title: "M&A Advisory", desc: "Due diligence and integration support.", icon: "🤝" }]), clientsSection(), portfolioSection([{ title: "FinTech Startup — 300% Growth", category: "Strategy", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop" }, { title: "E-commerce Scale-Up", category: "Digital", image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop" }, { title: "Healthcare Platform Launch", category: "Advisory", image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=300&fit=crop" }]), statsSection(), teamSection(), testimonialsSection(), googleReviewsSection(), faqSection(), contactFormSection(), newsletterSection()],
+    sections: [heroSection(), aboutSection(), servicesSection([{ title: "Growth Strategy", desc: "Market analysis and growth roadmaps.", icon: "📈" }, { title: "Digital Transformation", desc: "Modernize operations with technology.", icon: "🔄" }, { title: "Process Optimization", desc: "Streamline workflows for efficiency.", icon: "⚙️" }, { title: "M&A Advisory", desc: "Due diligence and integration support.", icon: "🤝" }]), clientsSection(), portfolioSection([{ title: "FinTech Startup — 300% Growth", category: "Strategy", image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=300&fit=crop" }, { title: "E-commerce Scale-Up", category: "Digital", image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=300&fit=crop" }, { title: "Healthcare Platform Launch", category: "Advisory", image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=300&fit=crop" }]), statsSection(), teamSection(), testimonialsSection(), googleReviewsSection(), faqSection(), newsletterSection()],
   },
   {
     id: "freelancer", title: "Freelancer Profile", desc: "Showcase skills, past work, and testimonials.", category: "services", icon: UserCheck,
@@ -1152,15 +1123,15 @@ export const templates: TemplateData[] = [
     heroTitle: "Freelance Designer & Developer", heroTagline: "Crafting digital experiences since 2018",
     heroDescription: "I help startups and small businesses build beautiful, high-converting websites and apps. Let's create something great together.",
     heroCta: "Hire Me", bannerImage: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=900&h=300&fit=crop",
-    sections: [heroSection(), aboutSection("About Me", "I'm a full-stack designer-developer hybrid. 6 years of experience, 80+ projects, clients in 12 countries. I specialize in React, Next.js, and design systems."), servicesSection([{ title: "Web Design", desc: "Custom responsive websites.", icon: "🎨" }, { title: "Web Development", desc: "React & Next.js applications.", icon: "💻" }, { title: "UI/UX Design", desc: "User research to pixel-perfect UI.", icon: "📐" }]), portfolioSection(), statsSection([{ value: "80+", label: "Projects" }, { value: "45+", label: "Clients" }, { value: "12", label: "Countries" }, { value: "100%", label: "On Time" }]), testimonialsSection(), googleReviewsSection(), pricingSection([{ name: "Starter", price: "₹25,000", period: "", features: ["Landing page", "5 sections", "Mobile responsive", "2 revisions"], highlighted: false }, { name: "Standard", price: "₹50,000", period: "", features: ["Multi-page website", "CMS integration", "SEO setup", "5 revisions"], highlighted: true }, { name: "Custom", price: "Custom", period: "", features: ["Full web app", "Backend API", "Admin panel", "Ongoing support"], highlighted: false }]), contactFormSection(), newsletterSection()],
+    sections: [heroSection(), aboutSection("About Me", "I'm a full-stack designer-developer hybrid. 6 years of experience, 80+ projects, clients in 12 countries. I specialize in React, Next.js, and design systems."), servicesSection([{ title: "Web Design", desc: "Custom responsive websites.", icon: "🎨" }, { title: "Web Development", desc: "React & Next.js applications.", icon: "💻" }, { title: "UI/UX Design", desc: "User research to pixel-perfect UI.", icon: "📐" }]), portfolioSection(), statsSection([{ value: "80+", label: "Projects" }, { value: "45+", label: "Clients" }, { value: "12", label: "Countries" }, { value: "100%", label: "On Time" }]), testimonialsSection(), googleReviewsSection(), pricingSection([{ name: "Starter", price: "₹25,000", period: "", features: ["Landing page", "5 sections", "Mobile responsive", "2 revisions"], highlighted: false }, { name: "Standard", price: "₹50,000", period: "", features: ["Multi-page website", "CMS integration", "SEO setup", "5 revisions"], highlighted: true }, { name: "Custom", price: "Custom", period: "", features: ["Full web app", "Backend API", "Admin panel", "Ongoing support"], highlighted: false }]), newsletterSection()],
   },
   {
     id: "agency", title: "Creative Agency", desc: "Agency website with portfolio and client testimonials.", category: "services", icon: Store,
-    pages: ["Home", "Work", "Team", "Clients", "Contact"],
+    pages: ["Home", "Work", "Team", "Clients"],
     heroTitle: "We Build Brands", heroTagline: "Full-service creative agency",
     heroDescription: "From brand strategy to digital execution, we create experiences that move people and drive results.",
     heroCta: "Start a Project", bannerImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=900&h=300&fit=crop",
-    sections: [heroSection(), aboutSection(), servicesSection([{ title: "Brand Strategy", desc: "Position your brand for growth.", icon: "🎯" }, { title: "Visual Identity", desc: "Logo, colors, typography, guidelines.", icon: "🎨" }, { title: "Web & Mobile", desc: "Custom digital products.", icon: "📱" }, { title: "Content & Social", desc: "Engaging content that converts.", icon: "📣" }]), portfolioSection(), clientsSection(["Swiggy", "Cred", "Meesho", "PhonePe", "Myntra", "UrbanClap"]), teamSection([{ name: "Ritu Sharma", role: "Creative Director", avatar: "RS", bio: "Ex-Ogilvy. 15 years in advertising." }, { name: "Deepak Nair", role: "Tech Lead", avatar: "DN", bio: "Full-stack architect. Built products at scale." }, { name: "Kavya Iyer", role: "Strategy Head", avatar: "KI", bio: "MBA, IIM-A. Growth marketing expert." }]), statsSection([{ value: "200+", label: "Projects" }, { value: "50+", label: "Clients" }, { value: "15+", label: "Awards" }, { value: "12", label: "Team Members" }]), testimonialsSection(), googleReviewsSection(), gallerySection(), ctaBannerSection("Let's Create Together", "Have a project in mind? We'd love to hear about it.", "Get in Touch"), contactFormSection(), newsletterSection()],
+    sections: [heroSection(), aboutSection(), servicesSection([{ title: "Brand Strategy", desc: "Position your brand for growth.", icon: "🎯" }, { title: "Visual Identity", desc: "Logo, colors, typography, guidelines.", icon: "🎨" }, { title: "Web & Mobile", desc: "Custom digital products.", icon: "📱" }, { title: "Content & Social", desc: "Engaging content that converts.", icon: "📣" }]), portfolioSection(), clientsSection(["Swiggy", "Cred", "Meesho", "PhonePe", "Myntra", "UrbanClap"]), teamSection([{ name: "Ritu Sharma", role: "Creative Director", avatar: "RS", bio: "Ex-Ogilvy. 15 years in advertising." }, { name: "Deepak Nair", role: "Tech Lead", avatar: "DN", bio: "Full-stack architect. Built products at scale." }, { name: "Kavya Iyer", role: "Strategy Head", avatar: "KI", bio: "MBA, IIM-A. Growth marketing expert." }]), statsSection([{ value: "200+", label: "Projects" }, { value: "50+", label: "Clients" }, { value: "15+", label: "Awards" }, { value: "12", label: "Team Members" }]), testimonialsSection(), googleReviewsSection(), gallerySection(), ctaBannerSection("Let's Create Together", "Have a project in mind? We'd love to hear about it.", "Get in Touch"), newsletterSection()],
   },
 
   // ─── Non-Profit ───
@@ -1170,7 +1141,7 @@ export const templates: TemplateData[] = [
     heroTitle: "Building a Better Tomorrow", heroTagline: "Every contribution creates lasting change",
     heroDescription: "We work in education, healthcare, and sustainability to uplift communities across rural India. Join our mission.",
     heroCta: "Donate Now", bannerImage: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=900&h=300&fit=crop",
-    sections: [heroSection(), aboutSection("Our Mission", "Since 2015, we've been working tirelessly to provide education, clean water, and healthcare to underserved communities. Every rupee donated goes directly to impact."), impactSection(), statsSection([{ value: "50K+", label: "Lives Impacted" }, { value: "500+", label: "Villages Reached" }, { value: "100+", label: "Schools Built" }, { value: "92%", label: "Funds to Programs" }]), donationSection(), teamSection([{ name: "Dr. Lakshmi Rao", role: "Founder & Director", avatar: "LR", bio: "Social entrepreneur with 20 years in development." }, { name: "Suresh Menon", role: "Operations Head", avatar: "SM", bio: "MBA, managed programs across 10 states." }]), testimonialsSection([{ name: "Ramesh V.", text: "Volunteered for 2 years. The impact is real and measurable.", rating: 5, avatar: "RV" }, { name: "Corporate Partner", text: "Transparent, efficient, and deeply committed to their cause.", rating: 5, avatar: "CP" }]), googleReviewsSection(), gallerySection(), faqSection([{ q: "How are funds used?", a: "92% goes directly to programs. Full financial reports available." }, { q: "Can I volunteer?", a: "Yes! We welcome volunteers. Fill the contact form to get started." }, { q: "Is my donation tax-deductible?", a: "Yes, all donations are eligible for 80G tax benefits." }]), contactFormSection(), newsletterSection()],
+    sections: [heroSection(), aboutSection("Our Mission", "Since 2015, we've been working tirelessly to provide education, clean water, and healthcare to underserved communities. Every rupee donated goes directly to impact."), impactSection(), statsSection([{ value: "50K+", label: "Lives Impacted" }, { value: "500+", label: "Villages Reached" }, { value: "100+", label: "Schools Built" }, { value: "92%", label: "Funds to Programs" }]), donationSection(), teamSection([{ name: "Dr. Lakshmi Rao", role: "Founder & Director", avatar: "LR", bio: "Social entrepreneur with 20 years in development." }, { name: "Suresh Menon", role: "Operations Head", avatar: "SM", bio: "MBA, managed programs across 10 states." }]), testimonialsSection([{ name: "Ramesh V.", text: "Volunteered for 2 years. The impact is real and measurable.", rating: 5, avatar: "RV" }, { name: "Corporate Partner", text: "Transparent, efficient, and deeply committed to their cause.", rating: 5, avatar: "CP" }]), googleReviewsSection(), gallerySection(), faqSection([{ q: "How are funds used?", a: "92% goes directly to programs. Full financial reports available." }, { q: "Can I volunteer?", a: "Yes! We welcome volunteers. Fill the contact form to get started." }, { q: "Is my donation tax-deductible?", a: "Yes, all donations are eligible for 80G tax benefits." }]), newsletterSection()],
   },
   {
     id: "fundraiser", title: "Fundraiser Campaign", desc: "Campaign page with progress bar and donate button.", category: "nonprofit", icon: Gift,
@@ -1178,7 +1149,7 @@ export const templates: TemplateData[] = [
     heroTitle: "Help Us Reach Our Goal", heroTagline: "Every contribution brings us closer",
     heroDescription: "We're raising ₹10,00,000 to build a new computer lab for 500 rural students. Help us make digital education accessible.",
     heroCta: "Contribute Now", bannerImage: "https://images.unsplash.com/photo-1497375638960-ca368c7231e4?w=900&h=300&fit=crop",
-    sections: [heroSection(), donationSection(), impactSection(), statsSection([{ value: "₹7.5L", label: "Raised" }, { value: "75%", label: "Goal Reached" }, { value: "342", label: "Donors" }, { value: "15", label: "Days Left" }]), testimonialsSection([{ name: "Donor", text: "Proud to contribute to such a meaningful cause.", rating: 5, avatar: "D" }]), gallerySection(), faqSection(), contactFormSection(), newsletterSection(), googleReviewsSection()],
+    sections: [heroSection(), donationSection(), impactSection(), statsSection([{ value: "₹7.5L", label: "Raised" }, { value: "75%", label: "Goal Reached" }, { value: "342", label: "Donors" }, { value: "15", label: "Days Left" }]), testimonialsSection([{ name: "Donor", text: "Proud to contribute to such a meaningful cause.", rating: 5, avatar: "D" }]), gallerySection(), faqSection(), newsletterSection(), googleReviewsSection()],
   },
 
   // ─── E-commerce ───
@@ -1635,7 +1606,6 @@ export const getDefaultSectionsForPageName = (name: string): SectionData[] => {
   }
   if (lower.includes("contact")) {
     return [
-      contactFormSection({ heading: "Get in Touch", submitText: "Send Message" }),
       faqSection([
         { q: "How quickly do you respond?", a: "We typically respond within 24 hours on business days." },
         { q: "Can I speak with someone before enrolling?", a: "Absolutely! Book a free 15-minute call using the form above and we'll be happy to answer all your questions." },
