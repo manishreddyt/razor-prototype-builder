@@ -308,7 +308,7 @@ const WebsiteBuilder = () => {
           localStorage.setItem('websiteBuilderPrefill', copilotData);
 
           // Show success toast
-          toast.success("Pre-filled from Education Co-pilot! Let's create your website.");
+          toast.success("Pre-filled from Education Co-pilot! Let's create your page.");
 
           // Navigate to create page with template parameter
           navigate(`/website-builder/create?source=education-copilot&template=${data.template || 'academy-platform'}`);
@@ -370,13 +370,13 @@ const WebsiteBuilder = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Websites</h1>
+              <h1 className="text-xl sm:text-2xl font-semibold text-foreground">Pages</h1>
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Build websites, landing pages, and storefronts — powered by AI.</p>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">Build pages, landing pages, and storefronts — powered by AI.</p>
           </div>
           <Button className="gap-2 w-full sm:w-auto flex-shrink-0" onClick={() => navigate("/website-builder/create")}>
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Create Website</span>
+            <span className="hidden sm:inline">Create Page</span>
             <span className="sm:hidden">Create</span>
           </Button>
         </div>

@@ -60,7 +60,7 @@ const FLOWS: Record<string, { message: string; actions: ActionItem[] }> = {
     message: "Let's build your course website! 🌐 I can help you with:",
     actions: [
       { label: "Use Smart Pages builder", icon: "⚡", route: "/smart-pages/create", description: "AI-powered page builder — just describe your course" },
-      { label: "Use Website Builder", icon: "🎨", route: "/website-builder", description: "Full website with custom pages" },
+      { label: "Use Pages Builder", icon: "🎨", route: "/website-builder", description: "Full page with custom layouts" },
       { label: "Install Simple LMS", icon: "📚", route: "/app-marketplace/simple-lms", description: "Full LMS with student management" },
       { label: "Install Graphy", icon: "🎓", route: "/app-marketplace/graphy", description: "All-in-one creator platform with mobile app" },
     ],
@@ -166,7 +166,7 @@ Available features and routes:
 - Payment Links: /payment-links (quick payment links)
 - Subscriptions: /subscriptions (recurring payments)
 - Email Workflows: /email-workflows (automated emails)
-- Website Builder: /website-builder (full websites)
+- Pages Builder: /website-builder (full pages)
 - Webinar Pages: /website-builder/webinar/chat (webinar landing pages)
 - App Marketplace: /app-marketplace (integrations)
 - AI Agents: /agents (deploy AI sales/support agents)
@@ -175,7 +175,7 @@ Available features and routes:
 - Customer Tracker: /customer-tracker (track customers)
 
 When users mention:
-- Selling courses/education → recommend Smart Pages or Website Builder
+- Selling courses/education → recommend Smart Pages or Pages Builder
 - 1:1 sessions/coaching → recommend Smart Pages with booking
 - Social commerce/WhatsApp → recommend Smart Pages + WhatsApp integration
 - Webinars → recommend Webinar landing pages

@@ -44,7 +44,7 @@ const navSections = [
     items: [
       { icon: Sparkles, label: "Magic Checkout", path: "/magic-checkout" },
       { icon: Link2, label: "Payment Links", path: "/payment-links" },
-      { icon: FileText, label: "Payment Pages", path: "/payment-pages" },
+      { icon: Globe, label: "Payment Pages", path: "/website-builder", badge: "AI" },
       { icon: FileText, label: "Payment Pages", path: "/payment-pages-current", badge: "Current" },
       { icon: CreditCard, label: "Subscriptions", path: "/subscriptions" },
     ],
@@ -52,7 +52,6 @@ const navSections = [
   {
     title: "TOOLS",
     items: [
-      { icon: Globe, label: "Websites", path: "/website-builder" },
       { icon: Megaphone, label: "Campaigns", path: "/marketing-campaigns" },
       { icon: ShoppingBag, label: "App Store", path: "/app-marketplace" },
       { icon: MessageCircle, label: "Agents", path: "/agents" },
