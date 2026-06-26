@@ -249,42 +249,20 @@ const SmartPageCreate = () => {
           <div className="max-w-5xl mx-auto px-6 py-8">
             {isEducation && (
               <div className="space-y-8">
-                {/* Purpose-driven cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {educationPageTypes.map((card) => (
-                    <button
-                      key={card.id}
-                      onClick={() => handleEducationCard(card)}
-                      className="text-left p-5 rounded-lg border border-border bg-card hover:border-primary/40 hover:shadow-md transition-all group"
-                    >
-                      <div className="w-9 h-9 rounded-lg bg-accent flex items-center justify-center mb-3">
-                        <card.icon className="h-4.5 w-4.5 text-primary" />
-                      </div>
-                      <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">{card.title}</h3>
-                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{card.desc}</p>
-                      <div className="flex items-center gap-1 mt-3 text-xs font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                        Get started <ArrowRight className="h-3 w-3" />
-                      </div>
-                    </button>
-                  ))}
-                </div>
-
                 {/* Templates */}
-                <div className="pt-6 border-t border-border">
-                  <h3 className="text-sm font-medium text-muted-foreground mb-4">Or start from a template</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filtered.map((t) => (
-                      <div key={t.id} className="rounded-lg border border-border bg-card overflow-hidden group hover:border-primary/30 hover:shadow-md transition-all">
-                        <div className="relative cursor-pointer" onClick={() => setPreviewTemplate(t)}>
-                          <TemplateThumb template={t} />
-                          <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
-                            <Button size="sm" variant="secondary" className="gap-1.5 shadow-md text-xs" onClick={(e) => { e.stopPropagation(); setPreviewTemplate(t); }}>
-                              <Eye className="h-3.5 w-3.5" /> Preview
-                            </Button>
-                            <Button size="sm" className="gap-1.5 shadow-md text-xs" onClick={(e) => { e.stopPropagation(); handleUseTemplate(t); }}>
-                              Use Template
-                            </Button>
-                          </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {filtered.map((t) => (
+                    <div key={t.id} className="rounded-lg border border-border bg-card overflow-hidden group hover:border-primary/30 hover:shadow-md transition-all">
+                      <div className="relative cursor-pointer" onClick={() => setPreviewTemplate(t)}>
+                        <TemplateThumb template={t} />
+                        <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/50 transition-all flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+                          <Button size="sm" variant="secondary" className="gap-1.5 shadow-md text-xs" onClick={(e) => { e.stopPropagation(); setPreviewTemplate(t); }}>
+                            <Eye className="h-3.5 w-3.5" /> Preview
+                          </Button>
+                          <Button size="sm" className="gap-1.5 shadow-md text-xs" onClick={(e) => { e.stopPropagation(); handleUseTemplate(t); }}>
+                            Use Template
+                          </Button>
+                        </div>
                         </div>
                         <div className="p-4">
                           <p className="font-medium text-foreground text-sm">{t.title}</p>
@@ -292,7 +270,6 @@ const SmartPageCreate = () => {
                         </div>
                       </div>
                     ))}
-                  </div>
                 </div>
               </div>
             )}
