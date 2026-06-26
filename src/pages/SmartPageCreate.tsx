@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -13,9 +13,15 @@ import { categories, templates, type TemplateData } from "@/data/smartPageTempla
 import { SitePreview } from "@/components/SitePreview";
 import { SmartPageCheckout } from "@/components/SmartPageCheckout";
 
-const promptSuggestions = [
-  "Online yoga classes with 3 months, 6 months, yearly plans",
-  "1:1 coaching session for new parents",
+const placeholderExamples = [
+  "I teach Mandarin to adults — 3 pricing tiers, free trial class, and a batch calendar",
+  "12-week full-stack bootcamp with curriculum, batch dates, and an early-bird discount",
+  "Monthly yoga membership with live & recorded classes, and a free 7-day trial",
+  "1:1 financial planning sessions — 45 min at ₹2,500 with a booking calendar",
+  "Annual photography masterclass with early-bird pricing and alumni testimonials",
+  "Online Kathak dance classes for kids — monthly batches and WhatsApp enrolment",
+  "SaaS product launch page with a waitlist form, feature highlights, and pricing",
+  "Webinar on Instagram growth for small businesses — free registration, limited seats",
 ];
 
 const TemplateThumb = ({ template }: { template: TemplateData }) => {
@@ -77,6 +83,14 @@ const SmartPageCreate = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [detectedType, setDetectedType] = useState("");
+  const [placeholderIdx, setPlaceholderIdx] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setPlaceholderIdx((i) => (i + 1) % placeholderExamples.length);
+    }, 3000);
+    return () => clearInterval(id);
+  }, []);
 
   const isEducation = activeCategory === "education";
 
@@ -189,7 +203,7 @@ const SmartPageCreate = () => {
                   onFocus={() => setIsFocused(true)}
                   onBlur={() => setIsFocused(false)}
                   onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleGenerate(); } }}
-                  placeholder="e.g. 'A website for my 12-week coding bootcamp with pricing, curriculum, and enrollment...'"
+                  placeholder={placeholderExamples[placeholderIdx]}
                 />
                 <div className="flex items-center justify-between px-4 pb-3">
                   <div className="flex items-center gap-1.5 text-muted-foreground">
@@ -200,19 +214,6 @@ const SmartPageCreate = () => {
                     Generate <Send className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-              </div>
-
-              {/* Suggestion chips */}
-              <div className="flex flex-wrap items-center justify-center gap-2 mt-4 max-w-2xl">
-                {promptSuggestions.map((s, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setAiPrompt(s)}
-                    className="text-xs px-3.5 py-1.5 rounded-full border border-border bg-card text-muted-foreground hover:text-foreground hover:border-primary/40 transition-colors"
-                  >
-                    {s}
-                  </button>
-                ))}
               </div>
 
               {/* Zap icon accent */}
