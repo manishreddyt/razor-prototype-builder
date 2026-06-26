@@ -322,7 +322,6 @@ export const categories = [
   { id: "services", label: "Services", icon: Briefcase },
   { id: "nonprofit", label: "Non-Profit", icon: Heart },
   { id: "ecommerce", label: "E-commerce", icon: ShoppingBag },
-  { id: "general", label: "General", icon: Globe },
   { id: "all", label: "All", icon: LayoutGrid },
 ];
 
@@ -392,6 +391,105 @@ export const templates: TemplateData[] = [
     heroDescription: "Join 5,000+ professionals for 2 days of talks, workshops, and networking. April 15-16, 2026 — Bangalore.",
     heroCta: "Register Now", bannerImage: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=900&h=300&fit=crop",
     sections: [heroSection(), countdownSection(), speakersSection(), scheduleSection(), statsSection([{ value: "5000+", label: "Attendees" }, { value: "40+", label: "Speakers" }, { value: "20+", label: "Workshops" }, { value: "2", label: "Days" }]), testimonialsSection([{ name: "Vikram S.", text: "Best tech conference in India. The networking alone is worth it.", rating: 5, avatar: "VS" }, { name: "Meera P.", text: "Incredible speakers and well-organized sessions.", rating: 5, avatar: "MP" }, { name: "Arjun R.", text: "Learned so much. Already booked for next year.", rating: 5, avatar: "AR" }]), faqSection([{ q: "Where is the venue?", a: "Bangalore International Exhibition Centre (BIEC), Bangalore." }, { q: "Is food included?", a: "Yes, lunch and refreshments are provided on both days." }, { q: "Can I get a refund?", a: "Full refund available up to 7 days before the event." }]), gallerySection(), googleReviewsSection()],
+  },
+
+  // ─── Payment Page: School Fee Collection ───
+  {
+    id: "pay-school-fee",
+    layout: "payment-page" as const,
+    title: "School Fee Collection",
+    desc: "Single-page fee collection for schools and colleges — admission, tuition, exam, or activity fees with Razorpay checkout.",
+    category: "education",
+    icon: GraduationCap,
+    pages: ["Home"],
+    heroTitle: "School / College Fee Payment",
+    heroTagline: "Secure • Instant • GST Compliant",
+    heroDescription: "Pay your school or college fees quickly and securely via UPI, cards, net banking, or EMI. Instant payment confirmation and receipt sent to your email.",
+    heroCta: "Pay Fees Now",
+    bannerImage: "https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=900&h=300&fit=crop",
+    sections: [
+      featuresSection([
+        { title: "Instant Confirmation", desc: "Payment receipt sent to your email immediately.", icon: "✅" },
+        { title: "All Payment Modes", desc: "UPI, debit/credit cards, net banking, wallets, and EMI.", icon: "💳" },
+        { title: "GST Compliant", desc: "Automated GST invoice generated for every payment.", icon: "📄" },
+        { title: "Secure & Safe", desc: "256-bit encryption and PCI-DSS compliant checkout.", icon: "🔒" },
+      ]),
+      testimonialsSection([
+        { name: "Priya S.", text: "Paid my daughter's school fees in under 2 minutes. So convenient!", rating: 5, avatar: "PS" },
+        { name: "Rahul M.", text: "Got the receipt instantly on email. No more standing in queues.", rating: 5, avatar: "RM" },
+        { name: "Ananya G.", text: "Easy EMI option made the annual fee very manageable.", rating: 4, avatar: "AG" },
+      ]),
+      faqSection([
+        { q: "What payment methods are accepted?", a: "UPI, credit/debit cards, net banking, wallets, and EMI via Razorpay." },
+        { q: "Will I get a receipt?", a: "Yes, an instant payment receipt is emailed to you right after payment." },
+        { q: "Is my payment secure?", a: "Absolutely. All transactions are protected by 256-bit encryption and are PCI-DSS certified." },
+        { q: "Can I pay in installments?", a: "Yes, EMI options are available on credit cards for amounts above ₹3,000." },
+      ]),
+    ],
+    checkout: createCheckoutConfig(5000, "Pay Now", [
+      "Instant payment confirmation",
+      "Receipt sent to your email",
+      "GST invoice included",
+      "Secure Razorpay checkout",
+      "All payment modes accepted",
+    ], [
+      { id: "f_student", label: "Student Name", type: "text", required: true, placeholder: "Enter student's full name" },
+      { id: "f_class", label: "Class / Course", type: "text", required: true, placeholder: "e.g. Class 10, B.Tech 2nd Year" },
+      { id: "f_rollno", label: "Roll / Admission No.", type: "text", required: false, placeholder: "Enter roll or admission number" },
+      { id: "f_feetype", label: "Fee Type", type: "select", required: true, placeholder: "Select fee type", options: ["Tuition Fee", "Admission Fee", "Exam Fee", "Activity Fee", "Hostel Fee", "Other"] },
+    ], { amountType: "fixed" as const }),
+  },
+
+  // ─── Payment Page: Online Course Collection ───
+  {
+    id: "pay-online-course",
+    layout: "payment-page" as const,
+    title: "Online Course Enrollment",
+    desc: "Single-page enrollment page for online courses — AI-powered, cohort-based, or self-paced — with instant Razorpay checkout.",
+    category: "education",
+    icon: BookOpen,
+    pages: ["Home"],
+    heroTitle: "Enroll in Your Course",
+    heroTagline: "Learn from Experts • Lifetime Access • Certificate Included",
+    heroDescription: "Join thousands of learners who've transformed their careers. Enroll today and get instant access to all course materials, live sessions, and our student community.",
+    heroCta: "Enroll Now",
+    bannerImage: "https://images.unsplash.com/photo-1501504905252-473c47e087f8?w=900&h=300&fit=crop",
+    sections: [
+      featuresSection([
+        { title: "Lifetime Access", desc: "All course materials are yours forever — including future updates.", icon: "♾️" },
+        { title: "Live Mentoring", desc: "Weekly live sessions and doubt-clearing with expert instructors.", icon: "🎓" },
+        { title: "Certificate", desc: "Industry-recognized certificate upon completion.", icon: "🏆" },
+        { title: "Community", desc: "Access to a private community of 10,000+ learners.", icon: "👥" },
+      ]),
+      statsSection([
+        { value: "10K+", label: "Students Enrolled" },
+        { value: "4.9★", label: "Average Rating" },
+        { value: "92%", label: "Completion Rate" },
+        { value: "85%", label: "Got Jobs / Promoted" },
+      ]),
+      testimonialsSection([
+        { name: "Karthik M.", text: "Best investment I've made in my career. Got promoted within 3 months of completing the course.", rating: 5, avatar: "KM" },
+        { name: "Divya R.", text: "The live sessions and doubt support were incredible. Never felt stuck for long.", rating: 5, avatar: "DR" },
+        { name: "Amit P.", text: "Real projects, real skills. The certificate opened doors I didn't expect.", rating: 5, avatar: "AP" },
+      ]),
+      faqSection([
+        { q: "How long do I have access?", a: "Lifetime access — once enrolled, all materials are yours forever including future updates." },
+        { q: "Can I get a refund?", a: "Yes, we offer a 7-day no-questions-asked refund policy." },
+        { q: "Is this course beginner-friendly?", a: "Yes! We start from the basics and progressively build to advanced topics." },
+        { q: "What payment modes are supported?", a: "UPI, credit/debit cards, net banking, and EMI via Razorpay." },
+      ]),
+    ],
+    checkout: createCheckoutConfig(2999, "Enroll Now", [
+      "Lifetime access to all materials",
+      "Live weekly sessions with instructors",
+      "Hands-on projects and assignments",
+      "Industry-recognized certificate",
+      "Private student community",
+      "7-day money-back guarantee",
+    ], [
+      { id: "f_exp", label: "Experience Level", type: "select", required: true, placeholder: "Select your level", options: ["Beginner", "Intermediate", "Advanced"] },
+      { id: "f_goal", label: "What do you want to achieve?", type: "textarea", required: false, placeholder: "Tell us your learning goal..." },
+    ]),
   },
 
   // ─── Education ───
@@ -1132,6 +1230,52 @@ export const templates: TemplateData[] = [
     heroDescription: "From brand strategy to digital execution, we create experiences that move people and drive results.",
     heroCta: "Start a Project", bannerImage: "https://images.unsplash.com/photo-1552664730-d307ca884978?w=900&h=300&fit=crop",
     sections: [heroSection(), aboutSection(), servicesSection([{ title: "Brand Strategy", desc: "Position your brand for growth.", icon: "🎯" }, { title: "Visual Identity", desc: "Logo, colors, typography, guidelines.", icon: "🎨" }, { title: "Web & Mobile", desc: "Custom digital products.", icon: "📱" }, { title: "Content & Social", desc: "Engaging content that converts.", icon: "📣" }]), portfolioSection(), clientsSection(["Swiggy", "Cred", "Meesho", "PhonePe", "Myntra", "UrbanClap"]), teamSection([{ name: "Ritu Sharma", role: "Creative Director", avatar: "RS", bio: "Ex-Ogilvy. 15 years in advertising." }, { name: "Deepak Nair", role: "Tech Lead", avatar: "DN", bio: "Full-stack architect. Built products at scale." }, { name: "Kavya Iyer", role: "Strategy Head", avatar: "KI", bio: "MBA, IIM-A. Growth marketing expert." }]), statsSection([{ value: "200+", label: "Projects" }, { value: "50+", label: "Clients" }, { value: "15+", label: "Awards" }, { value: "12", label: "Team Members" }]), testimonialsSection(), googleReviewsSection(), gallerySection(), ctaBannerSection("Let's Create Together", "Have a project in mind? We'd love to hear about it.", "Get in Touch"), newsletterSection()],
+  },
+
+  // ─── Payment Page: NGO Fund Raising ───
+  {
+    id: "pay-ngo-fundraise",
+    layout: "payment-page" as const,
+    title: "NGO Fundraiser",
+    desc: "Single-page donation collection for NGOs and charities — fixed or custom amounts with instant 80G receipt.",
+    category: "nonprofit",
+    icon: Heart,
+    pages: ["Home"],
+    heroTitle: "Support Our Cause",
+    heroTagline: "Every Contribution Creates Lasting Change",
+    heroDescription: "Your donation directly funds education, healthcare, and livelihoods for underserved communities across India. Every rupee is accounted for — transparent, impactful, and tax-deductible under 80G.",
+    heroCta: "Donate Now",
+    bannerImage: "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=900&h=300&fit=crop",
+    sections: [
+      impactSection(),
+      statsSection([
+        { value: "50K+", label: "Lives Impacted" },
+        { value: "500+", label: "Villages Reached" },
+        { value: "₹2.5Cr", label: "Raised Last Year" },
+        { value: "92%", label: "Funds to Programs" },
+      ]),
+      testimonialsSection([
+        { name: "Ramesh V.", text: "I've been donating for 3 years. The impact reports are detailed and trustworthy.", rating: 5, avatar: "RV" },
+        { name: "Sunita K.", text: "The 80G certificate arrived instantly. Made my tax filing so much easier.", rating: 5, avatar: "SK" },
+        { name: "Corporate Donor", text: "Transparent, efficient, and deeply committed to their mission.", rating: 5, avatar: "CD" },
+      ]),
+      faqSection([
+        { q: "Is my donation tax-deductible?", a: "Yes, all donations are eligible for 50% deduction under Section 80G of the Income Tax Act." },
+        { q: "How are funds used?", a: "92% of all donations go directly to programs. Full financial reports are published annually." },
+        { q: "Will I get a receipt?", a: "Yes, an 80G donation receipt is emailed to you immediately after payment." },
+        { q: "Can I donate a custom amount?", a: "Absolutely — enter any amount you're comfortable with during checkout." },
+      ]),
+    ],
+    checkout: createCheckoutConfig(1000, "Donate Now", [
+      "100% secure payment via Razorpay",
+      "Instant 80G donation receipt by email",
+      "92% of funds go directly to programs",
+      "Tax-deductible under Section 80G",
+      "Annual impact report shared with donors",
+    ], [
+      { id: "f_pan", label: "PAN Number (for 80G receipt)", type: "text", required: false, placeholder: "Enter PAN number" },
+      { id: "f_message", label: "Dedication / Message (optional)", type: "textarea", required: false, placeholder: "Dedicate your donation or leave a message..." },
+    ], { amountType: "custom" as const, amount: 1000 }),
   },
 
   // ─── Non-Profit ───
