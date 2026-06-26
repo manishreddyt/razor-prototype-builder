@@ -187,10 +187,10 @@ const SmartPageCreate = () => {
 
             <div className="relative z-10 flex flex-col items-center px-6 pt-8 pb-4">
               <h1 className="text-[28px] font-semibold text-foreground tracking-tight text-center">
-                What would you like to sell?
+                Let's start collecting payments
               </h1>
               <p className="text-sm text-muted-foreground mt-2 text-center max-w-md">
-                Describe your website and AI will design it for you — or pick a template below.
+                Describe what you want to collect payments for and AI will design it for you — or start with a template below.
               </p>
 
               {/* Prompt Input — Clean card */}
