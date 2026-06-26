@@ -25,17 +25,48 @@ const placeholderExamples = [
 ];
 
 const TemplateThumb = ({ template }: { template: TemplateData }) => {
-  // Biolink templates are mobile-first with max-width 400px
-  const isBiolink = template.id.startsWith("biolink");
-  const width = isBiolink ? 400 : 1200;
-  const scale = isBiolink ? 0.9 : 0.3;
+  // Biolink templates: keep live mobile preview
+  if (template.id.startsWith("biolink")) {
+    return (
+      <div className="h-52 rounded-t-lg border-b border-border overflow-hidden relative bg-background">
+        <div className="origin-top-left absolute left-1/2 -translate-x-1/2" style={{ width: 400, transform: "scale(0.9) translateX(-50%)", transformOrigin: "top center" }}>
+          <SitePreview template={template} sections={template.sections} compact biolinkConfig={template.biolinkConfig as any} productsConfig={template.productsConfig} />
+        </div>
+        <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent" />
+      </div>
+    );
+  }
+
+  // All other templates: show bannerImage with branded overlay
+  const brandName = template.heroTagline.includes("—")
+    ? template.heroTagline.split("—")[0].trim()
+    : template.heroTagline.split("|")[0].trim();
 
   return (
-    <div className="h-52 rounded-t-lg border-b border-border overflow-hidden relative bg-background">
-      <div className={`origin-top-left absolute ${isBiolink ? 'left-1/2 -translate-x-1/2' : ''}`} style={{ width, transform: `scale(${scale})${isBiolink ? ' translateX(-50%)' : ''}`, transformOrigin: isBiolink ? "top center" : "top left" }}>
-        <SitePreview template={template} sections={template.sections} compact biolinkConfig={template.biolinkConfig as any} productsConfig={template.productsConfig} />
+    <div className="h-52 rounded-t-lg overflow-hidden relative bg-muted">
+      <img
+        src={template.bannerImage}
+        alt={template.title}
+        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=416&fit=crop";
+        }}
+      />
+      {/* Dark gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+      {/* Brand badge top-left */}
+      {brandName && (
+        <div className="absolute top-3 left-3">
+          <span className="inline-flex items-center bg-white/90 backdrop-blur-sm text-[11px] font-semibold text-gray-800 px-2.5 py-1 rounded-full shadow-sm">
+            {brandName}
+          </span>
+        </div>
+      )}
+      {/* Title + CTA bottom */}
+      <div className="absolute bottom-0 left-0 right-0 p-3.5">
+        <p className="text-white font-bold text-sm leading-tight line-clamp-1">{template.heroTitle}</p>
+        <p className="text-white/70 text-xs mt-0.5 line-clamp-1">{template.heroCta} →</p>
       </div>
-      <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent" />
     </div>
   );
 };
