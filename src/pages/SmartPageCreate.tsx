@@ -252,18 +252,20 @@ const SmartPageCreate = () => {
                 {/* Templates */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filtered.map((t) => (
-                    <button
+                    <div
                       key={t.id}
-                      onClick={() => handleUseTemplate(t)}
-                      className="text-left rounded-lg border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-md transition-all active:scale-[0.99]"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => { setPreviewTemplate(t); setPreviewActivePage("Home"); setPreviewView("site"); setPreviewSelectedProduct(-1); }}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPreviewTemplate(t); setPreviewActivePage("Home"); setPreviewView("site"); setPreviewSelectedProduct(-1); } }}
+                      className="cursor-pointer rounded-lg border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-md transition-all active:scale-[0.99] select-none"
                     >
                       <TemplateThumb template={t} />
                       <div className="p-4">
                         <p className="font-medium text-foreground text-sm">{t.title}</p>
                         <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.desc}</p>
-                        <p className="text-xs font-medium text-primary mt-3">Use Template →</p>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -280,10 +282,13 @@ const SmartPageCreate = () => {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filtered.map((t) => (
-                    <button
+                    <div
                       key={t.id}
-                      onClick={() => handleUseTemplate(t)}
-                      className="text-left rounded-lg border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-md transition-all active:scale-[0.99]"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => { setPreviewTemplate(t); setPreviewActivePage("Home"); setPreviewView("site"); setPreviewSelectedProduct(-1); }}
+                      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setPreviewTemplate(t); setPreviewActivePage("Home"); setPreviewView("site"); setPreviewSelectedProduct(-1); } }}
+                      className="cursor-pointer rounded-lg border border-border bg-card overflow-hidden hover:border-primary/40 hover:shadow-md transition-all active:scale-[0.99] select-none"
                     >
                       <TemplateThumb template={t} />
                       <div className="p-4">
@@ -296,9 +301,8 @@ const SmartPageCreate = () => {
                             {t.category === "nonprofit" ? "Non-Profit" : t.category}
                           </span>
                         </div>
-                        <p className="text-xs font-medium text-primary mt-3">Use Template →</p>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
                 {filtered.length === 0 && (
